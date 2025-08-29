@@ -1300,29 +1300,63 @@ function closeAccountModal() {
     announceToScreenReader('Account modal closed');
 }
 
-        function highlightInitiativeAndTeam(initiativeId) {
+function highlightInitiativeAndTeam(initiativeId) {
+    console.log("FUNCTION CALLED WITH ID:", initiativeId);
     clearHighlights();
     selectedInitiativeId = initiativeId;
     
     const initiative = boardData.initiatives.find(init => init.id === initiativeId);
     if (!initiative) return;
     
+    // DEBUG: Log the teams for this initiative
+    console.log(`=== HOVER DEBUG for ${initiative.title} (ID: ${initiativeId}) ===`);
+    console.log('Initiative teams:', initiative.teams);
+    console.log('Initiative teams type:', typeof initiative.teams);
+    console.log('Initiative teams length:', initiative.teams ? initiative.teams.length : 'null');
+    
     // Highlight the initiative card
     document.querySelectorAll('.initiative-card').forEach(card => {
         if (parseInt(card.dataset.initiativeId) === initiativeId) {
             card.classList.add('highlighted');
+            console.log(`Highlighted initiative card: ${card.dataset.initiativeId}`);
         }
     });
     
+    // Debug which other initiatives share teams
+    if (initiative.teams && Array.isArray(initiative.teams)) {
+        initiative.teams.forEach((teamName, index) => {
+            console.log(`Checking team ${index}: "${teamName}" (type: ${typeof teamName})`);
+            
+            // Find which OTHER initiatives also have this team
+            boardData.initiatives.forEach(otherInit => {
+                if (otherInit.id !== initiativeId && otherInit.teams && otherInit.teams.includes(teamName)) {
+                    console.log(`  -> ${otherInit.title} ALSO has team "${teamName}"`);
+                    console.log(`     Other init teams:`, otherInit.teams);
+                }
+            });
+        });
+    } else {
+        console.log('Teams is not an array or is null:', initiative.teams);
+    }
+    
     // Only highlight team cards on the same row as the initiative
     initiative.teams.forEach(teamName => {
+        console.log(`Looking for team cards with team: "${teamName}" and initiativeId: ${initiativeId}`);
+        
         document.querySelectorAll('.team-health-card').forEach(card => {
-            if (card.dataset.teamName === teamName && 
-                parseInt(card.dataset.initiativeId) === initiativeId) {
+            const cardTeamName = card.dataset.teamName;
+            const cardInitiativeId = parseInt(card.dataset.initiativeId);
+            
+            console.log(`  Checking card: team="${cardTeamName}", initId=${cardInitiativeId}`);
+            
+            if (cardTeamName === teamName && cardInitiativeId === initiativeId) {
                 card.classList.add('highlighted');
+                console.log(`  -> Highlighted team card: ${cardTeamName} for initiative ${cardInitiativeId}`);
             }
         });
     });
+    
+    console.log('=== END HOVER DEBUG ===');
 }
 
         function highlightTeamAndInitiatives(teamName) {
@@ -1419,6 +1453,7 @@ function closeAccountModal() {
     const card = document.createElement('div');
     card.className = 'initiative-card ' + getTypeColor(initiative.type) + ' text-white';
     card.dataset.initiativeId = initiative.id;
+    card.id = 'initiative-card-${initiative.id}';
     card.style.position = 'relative';
     
     // Add ARIA attributes
