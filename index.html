@@ -1188,18 +1188,15 @@
 
 
 <script>
-    
+// Jira Proxy Integration
 async function syncWithJira() {
     try {
-        console.log('🔄 Syncing with Jira via proxy...');
-        showSyncStatus('Loading initiatives from Jira...', 'loading');
+        showSyncStatus('Loading initiatives from Jira via proxy...', 'loading');
         
-        // Use proxy API instead of direct Jira calls
-        const initiatives = await fetch('/api/jira', {
+        // Get initiatives via proxy
+        const initiativesResponse = await fetch('/api/jira', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 endpoint: '/rest/api/3/search',
                 method: 'POST',
@@ -1211,19 +1208,17 @@ async function syncWithJira() {
             })
         });
 
-        if (!initiatives.ok) {
-            const error = await initiatives.json();
-            throw new Error(error.error || `HTTP ${initiatives.status}`);
+        if (!initiativesResponse.ok) {
+            const error = await initiativesResponse.json();
+            throw new Error(error.error || `HTTP ${initiativesResponse.status}`);
         }
 
-        const initiativesData = await initiatives.json();
-        
-        // Load OKRs via proxy
-        const okrs = await fetch('/api/jira', {
+        const initiatives = await initiativesResponse.json();
+
+        // Get OKRs via proxy
+        const okrsResponse = await fetch('/api/jira', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 endpoint: '/rest/api/3/search',
                 method: 'POST',
@@ -1235,41 +1230,31 @@ async function syncWithJira() {
             })
         });
 
-        const okrsData = await okrs.json();
+        const okrs = await okrsResponse.json();
 
-        // Transform and update (same as before)
-        const transformedData = transformJiraData(initiativesData, okrsData);
+        // Transform data
+        const transformedData = transformJiraData(initiatives, okrs);
         updateBoardWithLiveData(transformedData);
         
-        showSyncStatus(`✅ Successfully synced ${transformedData.initiatives.length} initiatives via proxy!`, 'success');
+        showSyncStatus(`Successfully synced ${transformedData.initiatives.length} initiatives!`, 'success');
         
     } catch (error) {
-        console.error('Proxy sync failed:', error);
-        
-        let errorMessage = error.message;
-        if (error.message.includes('Missing Jira configuration')) {
-            errorMessage = 'Proxy not configured. Need to set JIRA_URL, JIRA_EMAIL, and JIRA_TOKEN environment variables.';
-        }
-        
-        showSyncStatus(`❌ Proxy sync failed: ${errorMessage}`, 'error');
+        console.error('Sync failed:', error);
+        showSyncStatus(`Sync failed: ${error.message}`, 'error');
     }
 }
 
-// Transform Jira data to match your existing board structure
+// Transform Jira data to board format
 function transformJiraData(initiativesResponse, okrsResponse) {
     const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
         const project = issue.fields.project.key;
-        
-        // Map project to initiative type
         const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
         
-        // Get custom field values (using your actual field IDs)
-        const matrixSlot = getFieldValue(issue, 'customfield_10065'); // Matrix Slot
-        const validationStatus = getFieldValue(issue, 'customfield_10052'); // Validation Status  
-        const teamsAssigned = getFieldValue(issue, 'customfield_10053'); // Teams Assigned
-        const initiativeType = getFieldValue(issue, 'customfield_10051'); // Initiative Type
+        const matrixSlot = getFieldValue(issue, 'customfield_10065');
+        const validationStatus = getFieldValue(issue, 'customfield_10052');
+        const teamsAssigned = getFieldValue(issue, 'customfield_10053');
+        const initiativeType = getFieldValue(issue, 'customfield_10051');
         
-        // Check if it's pipeline or has a matrix position
         let priority = matrixSlot === 'Pipeline' ? 'pipeline' : (index + 1);
         
         return {
@@ -1279,7 +1264,7 @@ function transformJiraData(initiativesResponse, okrsResponse) {
             validation: validationStatus || 'not-validated',
             priority: priority,
             teams: Array.isArray(teamsAssigned) ? teamsAssigned : (teamsAssigned ? [teamsAssigned] : ['Core Platform']),
-            progress: Math.floor(Math.random() * 80) + 10, // Mock progress for now
+            progress: Math.floor(Math.random() * 80) + 10,
             jira: {
                 key: issue.key,
                 stories: Math.floor(Math.random() * 30) + 10,
@@ -1302,31 +1287,28 @@ function transformJiraData(initiativesResponse, okrsResponse) {
         };
     });
 
-    // Separate pipeline from active initiatives
     const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
     const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
 
     return {
         initiatives: activeInitiatives,
         bullpen: pipelineInitiatives,
-        teams: window.boardData.teams // Keep existing team data for now
+        teams: window.boardData.teams
     };
 }
 
-// Helper function to get custom field values
+// Helper functions
 function getFieldValue(issue, fieldId) {
     const fieldValue = issue.fields[fieldId];
     if (!fieldValue) return null;
     
-    // Handle different Jira field types
     if (typeof fieldValue === 'object') {
-        if (fieldValue.value) return fieldValue.value; // Single select
-        if (Array.isArray(fieldValue)) return fieldValue.map(item => item.value || item); // Multi-select
+        if (fieldValue.value) return fieldValue.value;
+        if (Array.isArray(fieldValue)) return fieldValue.map(item => item.value || item);
     }
     return fieldValue;
 }
 
-// Format market size from TAM/SAM/SOM fields
 function formatMarketSize(issue) {
     const tam = getFieldValue(issue, 'customfield_10056');
     const sam = getFieldValue(issue, 'customfield_10057'); 
@@ -1342,13 +1324,11 @@ function formatMarketSize(issue) {
     return 'Market size TBD';
 }
 
-// Find OKR alignment from issue links
 function findOKRAlignment(issue, okrIssues) {
     if (!issue.fields.issuelinks || issue.fields.issuelinks.length === 0) {
         return null;
     }
     
-    // Look for links to OKR tasks (key results)
     for (const link of issue.fields.issuelinks) {
         const linkedIssue = link.outwardIssue || link.inwardIssue;
         if (linkedIssue && linkedIssue.key.startsWith('OKR-')) {
@@ -1362,56 +1342,30 @@ function findOKRAlignment(issue, okrIssues) {
     return null;
 }
 
-// Update the board with live data
 function updateBoardWithLiveData(newData) {
-    // Replace the global boardData with live data
-    window.boardData = {
-        ...window.boardData,
-        ...newData
-    };
+    window.boardData = { ...window.boardData, ...newData };
     
-    // Trigger a refresh of the board UI
-    if (typeof updateBoard === 'function') {
-        updateBoard();
-    }
+    if (typeof updateBoard === 'function') updateBoard();
+    if (typeof updateBentoCards === 'function') updateBentoCards();
     
-    // Update bento cards
-    if (typeof updateBentoCards === 'function') {
-        updateBentoCards();
-    }
-    
-    // Force re-render of the matrix
     setTimeout(() => {
         populateMatrix();
         updatePipelineInitiatives();
     }, 100);
 }
 
-// Show sync status messages
 function showSyncStatus(message, type) {
-    // Remove any existing status
     const existingStatus = document.getElementById('sync-status');
-    if (existingStatus) {
-        existingStatus.remove();
-    }
+    if (existingStatus) existingStatus.remove();
     
-    // Create status message
     const status = document.createElement('div');
     status.id = 'sync-status';
     status.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        border-radius: 6px;
-        color: white;
-        font-weight: 500;
-        z-index: 10000;
-        max-width: 300px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        position: fixed; top: 20px; right: 20px; padding: 12px 20px;
+        border-radius: 6px; color: white; font-weight: 500; z-index: 10000;
+        max-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     `;
     
-    // Set colors based on type
     if (type === 'loading') {
         status.style.background = '#2196F3';
         status.innerHTML = `🔄 ${message}`;
@@ -1425,17 +1379,12 @@ function showSyncStatus(message, type) {
     
     document.body.appendChild(status);
     
-    // Auto-hide success/error messages after 4 seconds
     if (type !== 'loading') {
-        setTimeout(() => {
-            if (status && status.parentNode) {
-                status.remove();
-            }
-        }, 4000);
+        setTimeout(() => status.remove(), 4000);
     }
 }
 
-/ Update the sync button text to indicate proxy usage
+// Add sync button
 function addSyncButton() {
     if (document.getElementById('jira-sync-btn')) return;
     
@@ -1448,7 +1397,7 @@ function addSyncButton() {
             <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
             <path d="M3 21v-5h5"/>
         </svg>
-        Sync via Proxy
+        Sync Jira
     `;
     
     syncButton.style.cssText = `
@@ -1463,114 +1412,10 @@ function addSyncButton() {
     syncButton.addEventListener('click', syncWithJira);
     document.body.appendChild(syncButton);
 }
-</script>
-    
-    
-    
-    // Add this to your HTML file to debug the issue
-<script>
-function checkDomainAndTest() {
-    const currentDomain = window.location.href;
-    const isFileProtocol = currentDomain.startsWith('file://');
-    const isJiraDomain = currentDomain.includes('atlassian.net');
-    
-    console.log('🔍 Domain Check:');
-    console.log('Current URL:', currentDomain);
-    console.log('Is file:// protocol:', isFileProtocol);
-    console.log('Is Jira domain:', isJiraDomain);
-    
-    // Show status
-    const status = document.createElement('div');
-    status.style.cssText = `
-        position: fixed; top: 60px; left: 20px; right: 20px;
-        background: white; padding: 20px; border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 10000;
-        color: #333; font-family: monospace; line-height: 1.5;
-    `;
-    
-    if (isFileProtocol) {
-        status.innerHTML = `
-            <h3 style="color: red;">❌ Domain Issue Found</h3>
-            <p><strong>Problem:</strong> You're opening from file:// - Jira API won't work</p>
-            <p><strong>Current URL:</strong> ${currentDomain}</p>
-            <p><strong>Solution:</strong></p>
-            <ol>
-                <li>Upload HTML file to a web server</li>
-                <li>Or open from Jira domain (yourcompany.atlassian.net)</li>
-                <li>Or try the data URL method below</li>
-            </ol>
-            <button onclick="tryDataURL()" style="background: #0066cc; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Try Data URL Method</button>
-            <button onclick="this.parentNode.remove()" style="background: #999; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Close</button>
-        `;
-    } else if (isJiraDomain) {
-        status.innerHTML = `
-            <h3 style="color: green;">✅ Domain looks good</h3>
-            <p><strong>Current URL:</strong> ${currentDomain}</p>
-            <p>You're on the Jira domain. The API should work.</p>
-            <button onclick="testJiraAPI()" style="background: #0066cc; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Test Jira API</button>
-            <button onclick="this.parentNode.remove()" style="background: #999; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Close</button>
-        `;
-    } else {
-        status.innerHTML = `
-            <h3 style="color: orange;">⚠️ Not on Jira Domain</h3>
-            <p><strong>Current URL:</strong> ${currentDomain}</p>
-            <p><strong>Jira Domain needed:</strong> yourcompany.atlassian.net</p>
-            <p><strong>Solution:</strong> Open this file from your Jira domain</p>
-            <button onclick="this.parentNode.remove()" style="background: #999; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Close</button>
-        `;
-    }
-    
-    document.body.appendChild(status);
-}
 
-function tryDataURL() {
-    alert('Copy your HTML file content, then paste this in Chrome address bar:\n\ndata:text/html;charset=utf-8,<YOUR HTML HERE>\n\nReplace <YOUR HTML HERE> with your actual HTML code.');
-}
-
-async function testJiraAPI() {
-    try {
-        console.log('Testing basic Jira API access...');
-        
-        const response = await fetch('/rest/api/3/myself', {
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const user = await response.json();
-            alert(`✅ Jira API works!\nUser: ${user.displayName}\nEmail: ${user.emailAddress}`);
-        } else {
-            alert(`❌ Jira API failed: ${response.status} ${response.statusText}`);
-        }
-    } catch (error) {
-        alert(`❌ Jira API error: ${error.message}`);
-    }
-}
-
-// Add check domain button
-function addDomainCheckButton() {
-    const checkButton = document.createElement('button');
-    checkButton.innerHTML = '🔍 Check Domain';
-    checkButton.style.cssText = `
-        position: fixed; top: 20px; right: 140px;
-        background: #ff9800; color: white; border: none;
-        padding: 10px 15px; border-radius: 6px; cursor: pointer;
-        font-size: 14px; font-weight: 500; z-index: 1000;
-    `;
-    checkButton.onclick = checkDomainAndTest;
-    document.body.appendChild(checkButton);
-}
-
-// Run check when page loads
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    addDomainCheckButton();
-    
-    // Auto-check after a moment
-    setTimeout(() => {
-        console.log('Auto-running domain check...');
-        checkDomainAndTest();
-    }, 1000);
+    addSyncButton();
 });
 </script>
     
