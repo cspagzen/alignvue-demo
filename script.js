@@ -7450,53 +7450,53 @@ async function processPendingUpdates() {
 }
 
 // Write changes back to Jira
-// Replace your existing writeToJira function with this debug version
 async function writeToJira(initiative, changes) {
     console.log('=== WRITING TO JIRA ===');
-    console.log('Initiative:', initiative.jira?.key || 'No Jira key');
+    console.log('Initiative Key:', initiative.jira?.key);
+    console.log('Initiative Type:', initiative.type);
     console.log('Changes:', changes);
     
     const fields = {};
     
     // Map changes to Jira custom fields
     if (changes.priority !== undefined) {
-        fields['customfield_10091'] = changes.priority; // Matrix Position
+        const fieldId = 'customfield_10091';
+        fields[fieldId] = changes.priority; // Matrix Position
         console.log('Setting Matrix Position to:', changes.priority);
     }
     
-    if (changes.teams !== undefined) {
-        fields['customfield_10053'] = changes.teams.map(team => ({value: team}));
-    }
-    
-    if (changes.validation !== undefined) {
-        fields['customfield_10052'] = {value: changes.validation};
-    }
-    
-    console.log('Fields to update:', fields);
+    console.log('API Call Details:');
+    console.log('- Endpoint:', `/rest/api/3/issue/${initiative.jira.key}`);
+    console.log('- Fields:', fields);
     
     try {
+        const requestBody = {
+            endpoint: `/rest/api/3/issue/${initiative.jira.key}`,
+            method: 'PUT',
+            body: { fields }
+        };
+        
+        console.log('Full request body:', JSON.stringify(requestBody, null, 2));
+        
         const response = await fetch('/api/jira', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                endpoint: `/rest/api/3/issue/${initiative.jira.key}`,
-                method: 'PUT',
-                body: { fields }
-            })
+            body: JSON.stringify(requestBody)
         });
         
-        console.log('Jira update response status:', response.status);
+        console.log('Response status:', response.status);
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Jira update failed:', errorText);
+            console.error('❌ Jira update failed:', errorText);
             throw new Error(`HTTP ${response.status}: ${errorText}`);
         } else {
-            console.log('✅ Successfully updated Jira');
+            const responseText = await response.text();
+            console.log('✅ Jira update successful:', responseText);
         }
         
     } catch (error) {
-        console.error('❌ Error writing to Jira:', error);
+        console.error('❌ Error in writeToJira:', error);
         throw error;
     }
 }
