@@ -1361,38 +1361,33 @@ function findOKRAlignment(issue, okrIssues) {
 }
 
 function updateBoardWithLiveData(newData) {
-    console.log('🔧 Updating board with new data:', newData);
-    console.log('🔧 Number of initiatives:', newData.initiatives.length);
-    console.log('🔧 First initiative title:', newData.initiatives[0]?.title);
+    console.log('Updating board with live data:', newData);
     
-    // Update the global data
-    window.boardData = { ...window.boardData, ...newData };
-    
-    console.log('🔧 Updated boardData:', window.boardData);
-    
-    // Force refresh everything
-    if (typeof updateBoard === 'function') {
-        console.log('🔧 Calling updateBoard()');
-        updateBoard();
+    // Update the GLOBAL boardData variable that the UI actually uses
+    if (typeof boardData !== 'undefined') {
+        // Preserve existing structure but update with live data
+        boardData.initiatives = newData.initiatives || [];
+        boardData.bullpen = newData.bullpen || [];
+        boardData.teams = newData.teams || boardData.teams;
+        
+        console.log('Updated global boardData. First initiative:', boardData.initiatives[0]?.title);
     }
     
-    if (typeof updateBentoCards === 'function') {
-        console.log('🔧 Calling updateBentoCards()');
-        updateBentoCards();
-    }
+    // Also update window.boardData as backup
+    window.boardData = boardData;
     
-    // Force refresh the matrix display
+    // Force complete re-render
     setTimeout(() => {
-        console.log('🔧 Refreshing matrix...');
         if (typeof populateMatrix === 'function') {
             populateMatrix();
         }
         if (typeof updatePipelineInitiatives === 'function') {
             updatePipelineInitiatives();
         }
-    }, 100);
-    
-    
+        if (typeof updateBentoCards === 'function') {
+            updateBentoCards();
+        }
+    }, 200);
 }
 
 function showSyncStatus(message, type) {
