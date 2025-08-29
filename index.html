@@ -1282,6 +1282,7 @@ function extractTextFromDoc(docField) {
 }
 
 // Complete fixed transformJiraData function
+// Complete fixed transformJiraData function with proper teams processing
 function transformJiraData(initiativesResponse, okrsResponse) {
     // Debug: Check what we're getting from the API
     console.log('Raw API response for first issue:', initiativesResponse.issues[0]);
@@ -1326,22 +1327,42 @@ function transformJiraData(initiativesResponse, okrsResponse) {
             priority = 'pipeline';
         }
         
-        // Process teams correctly - handle Jira select field format
+        // FIXED: Process teams correctly - handle Jira select field format AND split concatenated teams
         let processedTeams;
         if (Array.isArray(teamsAssigned)) {
             processedTeams = teamsAssigned.map(team => {
+                let teamValue;
                 if (typeof team === 'object' && team.value) {
-                    return team.value;
+                    teamValue = team.value;
+                } else {
+                    teamValue = team;
                 }
-                return team;
-            });
+                
+                // Split concatenated teams (semicolon separated)
+                if (teamValue && teamValue.includes(';')) {
+                    return teamValue.split(';').map(t => t.trim());
+                }
+                return teamValue;
+            }).flat(); // Flatten in case we split any teams
         } else if (teamsAssigned && typeof teamsAssigned === 'object' && teamsAssigned.value) {
-            processedTeams = [teamsAssigned.value];
+            const teamValue = teamsAssigned.value;
+            if (teamValue.includes(';')) {
+                processedTeams = teamValue.split(';').map(t => t.trim());
+            } else {
+                processedTeams = [teamValue];
+            }
         } else if (teamsAssigned) {
-            processedTeams = [teamsAssigned];
+            if (teamsAssigned.includes(';')) {
+                processedTeams = teamsAssigned.split(';').map(t => t.trim());
+            } else {
+                processedTeams = [teamsAssigned];
+            }
         } else {
             processedTeams = ['Core Platform'];
         }
+        
+        // Remove any empty strings
+        processedTeams = processedTeams.filter(team => team && team.trim());
         
         console.log(`${issue.fields.summary} FINAL TEAMS:`, processedTeams);
         console.log(`${issue.fields.summary}: Final Priority = ${priority}`);
