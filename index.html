@@ -1273,7 +1273,17 @@ function transformJiraData(initiativesResponse, okrsResponse) {
         const teamsAssigned = getFieldValue(issue, 'customfield_10053');
         const initiativeType = getFieldValue(issue, 'customfield_10051');
         
-        let priority = matrixSlot === 'Pipeline' ? 'pipeline' : (index + 1);
+        // Fix the priority mapping - use actual Matrix Slot numbers
+        let priority;
+        if (matrixSlot === 'Pipeline') {
+            priority = 'pipeline';
+        } else if (typeof matrixSlot === 'number') {
+            priority = matrixSlot; // Use the actual slot number from Jira
+        } else {
+            priority = index + 1; // Fallback to sequential numbering
+        }
+        
+        console.log(`Initiative: ${issue.fields.summary}, Matrix Slot: ${matrixSlot}, Priority: ${priority}`);
         
         return {
             id: parseInt(issue.key.split('-')[1]),
@@ -1311,7 +1321,7 @@ function transformJiraData(initiativesResponse, okrsResponse) {
     return {
         initiatives: activeInitiatives,
         bullpen: pipelineInitiatives,
-        teams: window.boardData.teams
+        teams: boardData.teams
     };
 }
 
@@ -1363,16 +1373,17 @@ function findOKRAlignment(issue, okrIssues) {
 function updateBoardWithLiveData(newData) {
     console.log('Updating boardData directly:', newData.initiatives[0]?.title);
     
-    // CRITICAL: Update the actual boardData global variable
     boardData.initiatives = newData.initiatives;
     boardData.bullpen = newData.bullpen;
     
     console.log('Verification - boardData now has:', boardData.initiatives[0]?.title);
     
-    // Force all rendering functions to run with updated data
+    // Only call functions that exist
     generatePyramid();
-    updateBentoCards();
-    updatePipelineCard();
+    // Skip updateBentoCards since it doesn't exist
+    if (typeof updatePipelineCard === 'function') {
+        updatePipelineCard();
+    }
 }
 
 function showSyncStatus(message, type) {
