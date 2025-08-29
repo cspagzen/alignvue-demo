@@ -7450,12 +7450,18 @@ async function processPendingUpdates() {
 }
 
 // Write changes back to Jira
+// Replace your existing writeToJira function with this debug version
 async function writeToJira(initiative, changes) {
+    console.log('=== WRITING TO JIRA ===');
+    console.log('Initiative:', initiative.jira?.key || 'No Jira key');
+    console.log('Changes:', changes);
+    
     const fields = {};
     
     // Map changes to Jira custom fields
     if (changes.priority !== undefined) {
         fields['customfield_10091'] = changes.priority; // Matrix Position
+        console.log('Setting Matrix Position to:', changes.priority);
     }
     
     if (changes.teams !== undefined) {
@@ -7466,15 +7472,33 @@ async function writeToJira(initiative, changes) {
         fields['customfield_10052'] = {value: changes.validation};
     }
     
-    await fetch('/api/jira', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: `/rest/api/3/issue/${initiative.jira.key}`,
-            method: 'PUT',
-            body: { fields }
-        })
-    });
+    console.log('Fields to update:', fields);
+    
+    try {
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: `/rest/api/3/issue/${initiative.jira.key}`,
+                method: 'PUT',
+                body: { fields }
+            })
+        });
+        
+        console.log('Jira update response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Jira update failed:', errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        } else {
+            console.log('✅ Successfully updated Jira');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error writing to Jira:', error);
+        throw error;
+    }
 }
 
 // Subtle sync indicator
