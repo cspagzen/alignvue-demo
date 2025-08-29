@@ -1262,33 +1262,61 @@ async function syncWithJira() {
     }
 }
 
+// Add this helper function for extracting text from Jira doc format
+function extractTextFromDoc(docField) {
+    if (!docField || !docField.content) return null;
+    
+    let text = '';
+    function extractText(content) {
+        content.forEach(item => {
+            if (item.type === 'text') {
+                text += item.text;
+            } else if (item.content) {
+                extractText(item.content);
+            }
+        });
+    }
+    
+    extractText(docField.content);
+    return text.trim() || null;
+}
+
+// Complete fixed transformJiraData function
 function transformJiraData(initiativesResponse, okrsResponse) {
     // Debug: Check what we're getting from the API
-console.log('Raw API response for first issue:', initiativesResponse.issues[0]);
-console.log('Custom fields in first issue:', Object.keys(initiativesResponse.issues[0].fields).filter(key => key.startsWith('customfield_')));
+    console.log('Raw API response for first issue:', initiativesResponse.issues[0]);
+    console.log('Custom fields in first issue:', Object.keys(initiativesResponse.issues[0].fields).filter(key => key.startsWith('customfield_')));
 
-// NEW DEBUG: Show all custom field values
-console.log('All custom fields for first issue:');
-const firstIssue = initiativesResponse.issues[0];
-Object.keys(firstIssue.fields).forEach(key => {
-    if (key.startsWith('customfield_')) {
-        console.log(`${key}:`, firstIssue.fields[key]);
-    }
-});
+    // NEW DEBUG: Show all custom field values
+    console.log('All custom fields for first issue:');
+    const firstIssue = initiativesResponse.issues[0];
+    Object.keys(firstIssue.fields).forEach(key => {
+        if (key.startsWith('customfield_')) {
+            console.log(`${key}:`, firstIssue.fields[key]);
+        }
+    });
     
     const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
         const project = issue.fields.project.key;
         const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
         
-        // Debug the Matrix Slot field specifically
+        // Debug the Matrix Position field specifically
         const rawMatrixSlot = issue.fields['customfield_10091'];
+        console.log(`${issue.fields.summary}: Raw Matrix Position field =`, rawMatrixSlot, typeof rawMatrixSlot);
+        
         const matrixSlot = getFieldValue(issue, 'customfield_10091');
+        console.log(`${issue.fields.summary}: Processed Matrix Position =`, matrixSlot, typeof matrixSlot);
         
         const validationStatus = getFieldValue(issue, 'customfield_10052');
         const teamsAssigned = getFieldValue(issue, 'customfield_10053');
         const initiativeType = getFieldValue(issue, 'customfield_10051');
         
-        // Handle numeric Matrix Slot
+        // DEBUG: Log the teams data specifically
+        console.log(`${issue.fields.summary} TEAMS DEBUG:`);
+        console.log('Raw teams field:', issue.fields['customfield_10053']);
+        console.log('Processed teams:', teamsAssigned);
+        
+        // Handle numeric Matrix Position
         let priority;
         if (matrixSlot === 0 || matrixSlot === null || matrixSlot === undefined) {
             priority = 'pipeline';
@@ -1298,15 +1326,33 @@ Object.keys(firstIssue.fields).forEach(key => {
             priority = 'pipeline';
         }
         
+        // Process teams correctly - handle Jira select field format
+        let processedTeams;
+        if (Array.isArray(teamsAssigned)) {
+            processedTeams = teamsAssigned.map(team => {
+                if (typeof team === 'object' && team.value) {
+                    return team.value;
+                }
+                return team;
+            });
+        } else if (teamsAssigned && typeof teamsAssigned === 'object' && teamsAssigned.value) {
+            processedTeams = [teamsAssigned.value];
+        } else if (teamsAssigned) {
+            processedTeams = [teamsAssigned];
+        } else {
+            processedTeams = ['Core Platform'];
+        }
+        
+        console.log(`${issue.fields.summary} FINAL TEAMS:`, processedTeams);
         console.log(`${issue.fields.summary}: Final Priority = ${priority}`);
         
-        return {
+        const transformedInitiative = {
             id: parseInt(issue.key.split('-')[1]),
             title: issue.fields.summary,
-            type: initiativeType || typeMapping[project] || 'strategic',
-            validation: validationStatus || 'not-validated',
+            type: initiativeType?.value || typeMapping[project] || 'strategic',
+            validation: validationStatus?.value || 'not-validated',
             priority: priority,
-            teams: Array.isArray(teamsAssigned) ? teamsAssigned : (teamsAssigned ? [teamsAssigned] : ['Core Platform']),
+            teams: processedTeams,
             progress: Math.floor(Math.random() * 80) + 10,
             jira: {
                 key: issue.key,
@@ -1317,31 +1363,35 @@ Object.keys(firstIssue.fields).forEach(key => {
                 velocity: Math.floor(Math.random() * 15) + 5
             },
             canvas: {
-                outcome: getFieldValue(issue, 'customfield_10060') || 'Outcome to be defined',
-                measures: getFieldValue(issue, 'customfield_10061') || 'Success measures TBD',
+                outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10060')) || 'Outcome to be defined',
+                measures: extractTextFromDoc(getFieldValue(issue, 'customfield_10061')) || 'Success measures TBD',
                 keyResult: findOKRAlignment(issue, okrsResponse.issues) || 'No OKR',
                 marketSize: formatMarketSize(issue),
                 customer: getFieldValue(issue, 'customfield_10059') || 'Customer segment TBD',
-                problem: getFieldValue(issue, 'customfield_10063') || 'Problem statement needed',
-                solution: getFieldValue(issue, 'customfield_10054') || 'Solution to be defined',
-                bigPicture: getFieldValue(issue, 'customfield_10055') || 'Vision to be articulated',
+                problem: extractTextFromDoc(getFieldValue(issue, 'customfield_10063')) || 'Problem statement needed',
+                solution: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Solution to be defined',
+                bigPicture: extractTextFromDoc(getFieldValue(issue, 'customfield_10055')) || 'Vision to be articulated',
                 alternatives: 'Alternatives to be researched'
             }
         };
+        
+        console.log(`TRANSFORMED INITIATIVE ${issue.fields.summary}:`, transformedInitiative);
+        return transformedInitiative;
     });
 
     const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
     const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
     
     console.log(`Active on board: ${activeInitiatives.length}, Pipeline: ${pipelineInitiatives.length}`);
+    
     // Add this right after the console.log lines in transformJiraData
-console.log('=== ALL CUSTOM FIELDS DEBUG ===');
-Object.keys(firstIssue.fields).forEach(key => {
-    if (key.startsWith('customfield_')) {
-        console.log(`${key}: ${JSON.stringify(firstIssue.fields[key])}`);
-    }
-});
-console.log('=== END CUSTOM FIELDS DEBUG ===');
+    console.log('=== ALL CUSTOM FIELDS DEBUG ===');
+    Object.keys(firstIssue.fields).forEach(key => {
+        if (key.startsWith('customfield_')) {
+            console.log(`${key}: ${JSON.stringify(firstIssue.fields[key])}`);
+        }
+    });
+    console.log('=== END CUSTOM FIELDS DEBUG ===');
 
     return {
         initiatives: activeInitiatives,
@@ -1349,7 +1399,8 @@ console.log('=== END CUSTOM FIELDS DEBUG ===');
         teams: boardData.teams
     };
 }
-// Helper functions
+
+// Make sure getFieldValue handles the object format properly
 function getFieldValue(issue, fieldId) {
     const fieldValue = issue.fields[fieldId];
     if (!fieldValue) return null;
@@ -1361,6 +1412,7 @@ function getFieldValue(issue, fieldId) {
     return fieldValue;
 }
 
+// Update formatMarketSize to handle proper field IDs
 function formatMarketSize(issue) {
     const tam = getFieldValue(issue, 'customfield_10056');
     const sam = getFieldValue(issue, 'customfield_10057'); 
@@ -1376,6 +1428,7 @@ function formatMarketSize(issue) {
     return 'Market size TBD';
 }
 
+// Keep the existing findOKRAlignment function as is
 function findOKRAlignment(issue, okrIssues) {
     if (!issue.fields.issuelinks || issue.fields.issuelinks.length === 0) {
         return null;
