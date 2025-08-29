@@ -1392,12 +1392,7 @@ function updateBoardWithLiveData(newData) {
         }
     }, 100);
     
-    / Force page refresh to see updated data
-setTimeout(() => {
-    console.log('Final boardData check:', window.boardData.initiatives[0]);
-    // Uncomment the next line if you want to force refresh
-    // window.location.reload();
-}, 500);
+    
 }
 
 function showSyncStatus(message, type) {
