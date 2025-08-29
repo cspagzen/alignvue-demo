@@ -1262,7 +1262,6 @@ async function syncWithJira() {
     }
 }
 
-// Transform Jira data to board format
 function transformJiraData(initiativesResponse, okrsResponse) {
     const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
         const project = issue.fields.project.key;
@@ -1273,17 +1272,17 @@ function transformJiraData(initiativesResponse, okrsResponse) {
         const teamsAssigned = getFieldValue(issue, 'customfield_10053');
         const initiativeType = getFieldValue(issue, 'customfield_10051');
         
-        // Fix the priority mapping - use actual Matrix Slot numbers
+        // Handle numeric Matrix Slot: 0 = pipeline, 1-36 = board positions
         let priority;
-        if (matrixSlot === 'Pipeline') {
+        if (matrixSlot === 0 || matrixSlot === null || matrixSlot === undefined) {
             priority = 'pipeline';
-        } else if (typeof matrixSlot === 'number') {
-            priority = matrixSlot; // Use the actual slot number from Jira
+        } else if (typeof matrixSlot === 'number' && matrixSlot >= 1 && matrixSlot <= 36) {
+            priority = matrixSlot;
         } else {
-            priority = index + 1; // Fallback to sequential numbering
+            priority = 'pipeline'; // Default fallback
         }
         
-        console.log(`Initiative: ${issue.fields.summary}, Matrix Slot: ${matrixSlot}, Priority: ${priority}`);
+        console.log(`${issue.fields.summary}: Matrix Slot = ${matrixSlot}, Priority = ${priority}`);
         
         return {
             id: parseInt(issue.key.split('-')[1]),
@@ -1317,6 +1316,8 @@ function transformJiraData(initiativesResponse, okrsResponse) {
 
     const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
     const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
+    
+    console.log(`Active on board: ${activeInitiatives.length}, Pipeline: ${pipelineInitiatives.length}`);
 
     return {
         initiatives: activeInitiatives,
@@ -1324,7 +1325,6 @@ function transformJiraData(initiativesResponse, okrsResponse) {
         teams: boardData.teams
     };
 }
-
 // Helper functions
 function getFieldValue(issue, fieldId) {
     const fieldValue = issue.fields[fieldId];
