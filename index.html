@@ -1370,8 +1370,8 @@ function transformJiraData(initiativesResponse, okrsResponse) {
         const transformedInitiative = {
             id: parseInt(issue.key.split('-')[1]),
             title: issue.fields.summary,
-            type: initiativeType?.value || typeMapping[project] || 'strategic',
-            validation: validationStatus?.value || 'not-validated',
+            type: initiativeType || typeMapping[project] || 'strategic',
+validation: validationStatus || 'not-validated',
             priority: priority,
             teams: processedTeams,
             progress: Math.floor(Math.random() * 80) + 10,
