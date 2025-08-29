@@ -1232,6 +1232,24 @@ async function syncWithJira() {
 
         const okrs = await okrsResponse.json();
 
+        // Ensure boardData.teams exists
+        if (!window.boardData || !window.boardData.teams) {
+            console.warn('boardData.teams not found, creating default teams');
+            window.boardData = window.boardData || {};
+            window.boardData.teams = {
+                "Core Platform": { capacity: "healthy", skillset: "healthy", vision: "healthy" },
+                "User Experience": { capacity: "healthy", skillset: "healthy", vision: "healthy" },
+                "Security": { capacity: "healthy", skillset: "healthy", vision: "healthy" },
+                "Data Engineering": { capacity: "healthy", skillset: "healthy", vision: "healthy" },
+                "Analytics": { capacity: "healthy", skillset: "healthy", vision: "healthy" },
+                "Site Reliability": { capacity: "healthy", skillset: "healthy", vision: "healthy" },
+                "Customer Support": { capacity: "healthy", skillset: "healthy", vision: "healthy" },
+                "Business Operations": { capacity: "healthy", skillset: "healthy", vision: "healthy" },
+                "Mobile Development": { capacity: "healthy", skillset: "healthy", vision: "healthy" },
+                "Machine Learning": { capacity: "healthy", skillset: "healthy", vision: "healthy" }
+            };
+        }
+
         // Transform data
         const transformedData = transformJiraData(initiatives, okrs);
         updateBoardWithLiveData(transformedData);
@@ -1368,13 +1386,13 @@ function showSyncStatus(message, type) {
     
     if (type === 'loading') {
         status.style.background = '#2196F3';
-        status.innerHTML = `🔄 ${message}`;
+        status.innerHTML = `Loading... ${message}`;
     } else if (type === 'success') {
         status.style.background = '#4CAF50';
-        status.innerHTML = `✅ ${message}`;
+        status.innerHTML = `Success! ${message}`;
     } else if (type === 'error') {
         status.style.background = '#F44336';
-        status.innerHTML = `❌ ${message}`;
+        status.innerHTML = `Error: ${message}`;
     }
     
     document.body.appendChild(status);
