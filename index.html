@@ -1361,14 +1361,35 @@ function findOKRAlignment(issue, okrIssues) {
 }
 
 function updateBoardWithLiveData(newData) {
+    console.log('🔧 Updating board with new data:', newData);
+    console.log('🔧 Number of initiatives:', newData.initiatives.length);
+    console.log('🔧 First initiative title:', newData.initiatives[0]?.title);
+    
+    // Update the global data
     window.boardData = { ...window.boardData, ...newData };
     
-    if (typeof updateBoard === 'function') updateBoard();
-    if (typeof updateBentoCards === 'function') updateBentoCards();
+    console.log('🔧 Updated boardData:', window.boardData);
     
+    // Force refresh everything
+    if (typeof updateBoard === 'function') {
+        console.log('🔧 Calling updateBoard()');
+        updateBoard();
+    }
+    
+    if (typeof updateBentoCards === 'function') {
+        console.log('🔧 Calling updateBentoCards()');
+        updateBentoCards();
+    }
+    
+    // Force refresh the matrix display
     setTimeout(() => {
-        populateMatrix();
-        updatePipelineInitiatives();
+        console.log('🔧 Refreshing matrix...');
+        if (typeof populateMatrix === 'function') {
+            populateMatrix();
+        }
+        if (typeof updatePipelineInitiatives === 'function') {
+            updatePipelineInitiatives();
+        }
     }, 100);
 }
 
