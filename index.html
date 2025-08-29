@@ -1384,16 +1384,16 @@ validation: validationStatus || 'not-validated',
                 velocity: Math.floor(Math.random() * 15) + 5
             },
             canvas: {
-                outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10060')) || 'Outcome to be defined',
-                measures: extractTextFromDoc(getFieldValue(issue, 'customfield_10061')) || 'Success measures TBD',
-                keyResult: findOKRAlignment(issue, okrsResponse.issues) || 'No OKR',
-                marketSize: formatMarketSize(issue),
-                customer: getFieldValue(issue, 'customfield_10059') || 'Customer segment TBD',
-                problem: extractTextFromDoc(getFieldValue(issue, 'customfield_10063')) || 'Problem statement needed',
-                solution: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Solution to be defined',
-                bigPicture: extractTextFromDoc(getFieldValue(issue, 'customfield_10055')) || 'Vision to be articulated',
-                alternatives: 'Alternatives to be researched'
-            }
+    outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Outcome to be defined',
+    measures: extractTextFromDoc(getFieldValue(issue, 'customfield_10055')) || 'Success measures TBD',
+    keyResult: findOKRAlignment(issue, okrsResponse.issues) || 'No OKR',
+    marketSize: formatMarketSize(issue),
+    customer: getFieldValue(issue, 'customfield_10059') || 'Customer segment TBD',
+    problem: extractTextFromDoc(getFieldValue(issue, 'customfield_10060')) || 'Problem statement needed',
+    solution: extractTextFromDoc(getFieldValue(issue, 'customfield_10061')) || 'Solution to be defined',
+    bigPicture: extractTextFromDoc(getFieldValue(issue, 'customfield_10062')) || 'Vision to be articulated',
+    alternatives: extractTextFromDoc(getFieldValue(issue, 'customfield_10063')) || 'Alternatives to be researched'
+}
         };
         
         console.log(`TRANSFORMED INITIATIVE ${issue.fields.summary}:`, transformedInitiative);
