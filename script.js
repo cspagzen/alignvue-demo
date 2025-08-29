@@ -181,12 +181,13 @@ function handleBullpenToMatrix(initiative, targetSlot) {
     
     // Place initiative at target slot
     initiative.priority = targetSlot;
+    queueJiraUpdate(initiative, { priority: targetSlot });
     boardData.initiatives.push(initiative);
     
     // Refresh the pipeline display after moving item
-setTimeout(() => {
-    updatePipelineCard();
-}, 100);
+    setTimeout(() => {
+        updatePipelineCard();
+    }, 100);
 }
 
 function handleMatrixToMatrix(initiative, targetSlot) {
@@ -225,6 +226,7 @@ function handleMatrixToMatrix(initiative, targetSlot) {
     
     // Place dragged initiative at target slot
     initiative.priority = targetSlot;
+    queueJiraUpdate(initiative, { priority: targetSlot });
 }
       
 function handleAtRiskCardClick(initiativeId) {
@@ -6880,36 +6882,40 @@ function expandSidebarForSearch() {
 }
         
 // Fix search expansion
+// Fix search expansion
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         const searchInput = document.getElementById('global-search');
         if (searchInput) {
             searchInput.addEventListener('focus', function() {
-    const sidebar = document.getElementById('sidebar-nav');
-    const mainContent = document.getElementById('main-content');
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    
-    if (sidebar && !sidebar.classList.contains('expanded')) {
-        // Update global state
-        sidebarExpanded = true;
-        
-        sidebar.classList.add('expanded');
-        mainContent.classList.add('sidebar-expanded');
-        document.getElementById('sidebar-overlay').classList.add('active');
-        
-        // Update caret to close state
-        if (sidebarToggle) {
-            sidebarToggle.innerHTML = `
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/>
-                </svg>
-            `;
-        }
-    }
-});
+                const sidebar = document.getElementById('sidebar-nav');
+                const mainContent = document.getElementById('main-content');
+                const sidebarToggle = document.getElementById('sidebar-toggle');
+                
+                if (sidebar && !sidebar.classList.contains('expanded')) {
+                    // Update global state
+                    sidebarExpanded = true;
+                    
+                    sidebar.classList.add('expanded');
+                    mainContent.classList.add('sidebar-expanded');
+                    document.getElementById('sidebar-overlay').classList.add('active');
+                    
+                    // Update caret to close state
+                    if (sidebarToggle) {
+                        sidebarToggle.innerHTML = `
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/>
+                            </svg>
+                        `;
+                    }
+                }
+            });
         }
     }, 1000);
-});  
+    
+    // Initialize smart sync
+    initSmartSync();
+});
       
 // Handle window resize for chip bar responsiveness
 function handleChipBarResize() {
@@ -7029,4 +7035,510 @@ function initEssentialKeyboard() {
         }
     });
 }      
+
+// =============================================================================
+// JIRA INTEGRATION AND SMART SYNC SYSTEM
+// Add this entire block to the end of your script.js file
+// =============================================================================
+
+// Smart Bidirectional Sync State
+let syncState = {
+    isActive: true,
+    isPaused: false,
+    lastSyncData: null,
+    lastSyncTime: null,
+    syncInterval: null,
+    updateQueue: []
+};
+
+// Helper function for extracting text from Jira doc format
+function extractTextFromDoc(docField) {
+    if (!docField || !docField.content) return null;
+    
+    let text = '';
+    function extractText(content) {
+        content.forEach(item => {
+            if (item.type === 'text') {
+                text += item.text;
+            } else if (item.content) {
+                extractText(item.content);
+            }
+        });
+    }
+    
+    extractText(docField.content);
+    return text.trim() || null;
+}
+
+// Make sure getFieldValue handles the object format properly
+function getFieldValue(issue, fieldId) {
+    const fieldValue = issue.fields[fieldId];
+    if (!fieldValue) return null;
+    
+    if (typeof fieldValue === 'object') {
+        if (fieldValue.value) return fieldValue.value;
+        if (Array.isArray(fieldValue)) return fieldValue.map(item => item.value || item);
+    }
+    return fieldValue;
+}
+
+// Update formatMarketSize to handle proper field IDs
+function formatMarketSize(issue) {
+    const tam = getFieldValue(issue, 'customfield_10056');
+    const sam = getFieldValue(issue, 'customfield_10057'); 
+    const som = getFieldValue(issue, 'customfield_10058');
+    
+    if (tam || sam || som) {
+        const parts = [];
+        if (tam) parts.push(`TAM: $${tam}M`);
+        if (sam) parts.push(`SAM: $${sam}M`);
+        if (som) parts.push(`SOM: $${som}M`);
+        return parts.join(', ');
+    }
+    return 'Market size TBD';
+}
+
+// Find OKR alignment function
+function findOKRAlignment(issue, okrIssues) {
+    if (!issue.fields.issuelinks || issue.fields.issuelinks.length === 0) {
+        return null;
+    }
+    
+    for (const link of issue.fields.issuelinks) {
+        const linkedIssue = link.outwardIssue || link.inwardIssue;
+        if (linkedIssue && linkedIssue.key.startsWith('OKR-')) {
+            const okrTask = okrIssues.find(okr => okr.key === linkedIssue.key);
+            if (okrTask) {
+                return okrTask.fields.summary;
+            }
+        }
+    }
+    
+    return null;
+}
+
+// Transform Jira data to board format
+function transformJiraData(initiativesResponse, okrsResponse) {
+    console.log('Transforming Jira data...');
+    
+    const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
+        const project = issue.fields.project.key;
+        const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
+        
+        const matrixSlot = getFieldValue(issue, 'customfield_10091');
+        const validationStatus = getFieldValue(issue, 'customfield_10052');
+        const teamsAssigned = getFieldValue(issue, 'customfield_10053');
+        const initiativeType = getFieldValue(issue, 'customfield_10051');
+        
+        // Handle numeric Matrix Position
+        let priority;
+        if (matrixSlot === 0 || matrixSlot === null || matrixSlot === undefined) {
+            priority = 'pipeline';
+        } else if (typeof matrixSlot === 'number' && matrixSlot >= 1 && matrixSlot <= 36) {
+            priority = matrixSlot;
+        } else {
+            priority = 'pipeline';
+        }
+        
+        // Process teams correctly - handle Jira select field format AND split concatenated teams
+        let processedTeams;
+        if (Array.isArray(teamsAssigned)) {
+            processedTeams = teamsAssigned.map(team => {
+                let teamValue;
+                if (typeof team === 'object' && team.value) {
+                    teamValue = team.value;
+                } else {
+                    teamValue = team;
+                }
+                
+                // Split concatenated teams (semicolon separated)
+                if (teamValue && teamValue.includes(';')) {
+                    return teamValue.split(';').map(t => t.trim());
+                }
+                return teamValue;
+            }).flat(); // Flatten in case we split any teams
+        } else if (teamsAssigned && typeof teamsAssigned === 'object' && teamsAssigned.value) {
+            const teamValue = teamsAssigned.value;
+            if (teamValue.includes(';')) {
+                processedTeams = teamValue.split(';').map(t => t.trim());
+            } else {
+                processedTeams = [teamValue];
+            }
+        } else if (teamsAssigned) {
+            if (teamsAssigned.includes(';')) {
+                processedTeams = teamsAssigned.split(';').map(t => t.trim());
+            } else {
+                processedTeams = [teamsAssigned];
+            }
+        } else {
+            processedTeams = ['Core Platform'];
+        }
+        
+        // Remove any empty strings
+        processedTeams = processedTeams.filter(team => team && team.trim());
+        
+        return {
+            id: parseInt(issue.id),
+            title: issue.fields.summary,
+            type: initiativeType || typeMapping[project] || 'strategic',
+            validation: validationStatus || 'not-validated',
+            priority: priority,
+            teams: processedTeams,
+            progress: Math.floor(Math.random() * 80) + 10,
+            jira: {
+                key: issue.key,
+                stories: Math.floor(Math.random() * 30) + 10,
+                completed: Math.floor(Math.random() * 15) + 5,
+                inProgress: Math.floor(Math.random() * 10) + 3,
+                blocked: Math.floor(Math.random() * 5),
+                velocity: Math.floor(Math.random() * 15) + 5
+            },
+            canvas: {
+                outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Outcome to be defined',
+                measures: extractTextFromDoc(getFieldValue(issue, 'customfield_10055')) || 'Success measures TBD',
+                keyResult: findOKRAlignment(issue, okrsResponse.issues) || 'No OKR',
+                marketSize: formatMarketSize(issue),
+                customer: getFieldValue(issue, 'customfield_10059') || 'Customer segment TBD',
+                problem: extractTextFromDoc(getFieldValue(issue, 'customfield_10060')) || 'Problem statement needed',
+                solution: extractTextFromDoc(getFieldValue(issue, 'customfield_10061')) || 'Solution to be defined',
+                bigPicture: extractTextFromDoc(getFieldValue(issue, 'customfield_10062')) || 'Vision to be articulated',
+                alternatives: extractTextFromDoc(getFieldValue(issue, 'customfield_10063')) || 'Alternatives to be researched'
+            }
+        };
+    });
+
+    const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
+    const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
+    
+    console.log(`Active on board: ${activeInitiatives.length}, Pipeline: ${pipelineInitiatives.length}`);
+
+    return {
+        initiatives: activeInitiatives,
+        bullpen: pipelineInitiatives,
+        teams: boardData.teams
+    };
+}
+
+// Fetch data from Jira
+async function fetchJiraData() {
+    // Get initiatives via proxy
+    const initiativesResponse = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/search',
+            method: 'POST',
+            body: {
+                jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
+                fields: ["*all"]
+            }
+        })
+    });
+
+    if (!initiativesResponse.ok) {
+        const error = await initiativesResponse.json();
+        throw new Error(error.error || `HTTP ${initiativesResponse.status}`);
+    }
+
+    const initiatives = await initiativesResponse.json();
+
+    // Get OKRs via proxy
+    const okrsResponse = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/search',
+            method: 'POST',
+            body: {
+                jql: 'project = OKR',
+                maxResults: 20,
+                fields: ['summary', 'issuetype', 'issuelinks', 'parent']
+            }
+        })
+    });
+
+    const okrs = await okrsResponse.json();
+
+    // Ensure boardData.teams exists
+    if (!window.boardData || !window.boardData.teams) {
+        console.warn('boardData.teams not found, creating default teams');
+        window.boardData = window.boardData || {};
+        window.boardData.teams = {
+            "Core Platform": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "User Experience": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Security": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Data Engineering": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Analytics": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Site Reliability": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Customer Support": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Business Operations": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Mobile Development": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Machine Learning": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" }
+        };
+    }
+
+    return transformJiraData(initiatives, okrs);
+}
+
+// Initialize smart sync on page load
+function initSmartSync() {
+    // Initial sync
+    syncWithJira();
+    
+    // Start auto-sync every 30 seconds
+    syncState.syncInterval = setInterval(() => {
+        if (syncState.isActive && !syncState.isPaused) {
+            syncWithJira();
+        }
+    }, 30000);
+    
+    // Pause sync during user interactions
+    setupSyncPauseHandlers();
+}
+
+// Enhanced sync function with change detection
+async function syncWithJira() {
+    if (syncState.isPaused) return;
+    
+    try {
+        showSyncIndicator('syncing');
+        
+        // Get current data from Jira
+        const newData = await fetchJiraData();
+        
+        // Check if data actually changed
+        if (hasDataChanged(newData)) {
+            updateBoardWithLiveData(newData);
+            syncState.lastSyncData = newData;
+            syncState.lastSyncTime = Date.now();
+            
+            showSyncIndicator('success');
+        } else {
+            showSyncIndicator('no-change');
+        }
+        
+        // Process any pending updates to Jira
+        await processPendingUpdates();
+        
+    } catch (error) {
+        console.error('Smart sync failed:', error);
+        showSyncIndicator('error');
+    }
+}
+
+// Detect if data has actually changed
+function hasDataChanged(newData) {
+    if (!syncState.lastSyncData) return true;
+    
+    const oldData = syncState.lastSyncData;
+    
+    // Quick checks for changes
+    if (newData.initiatives.length !== oldData.initiatives.length) return true;
+    if (newData.bullpen.length !== oldData.bullpen.length) return true;
+    
+    // Deep check initiative changes (priority, teams, progress, validation)
+    for (let i = 0; i < newData.initiatives.length; i++) {
+        const newInit = newData.initiatives[i];
+        const oldInit = oldData.initiatives.find(init => init.id === newInit.id);
+        
+        if (!oldInit) return true;
+        
+        // Check key fields that matter for the UI
+        if (newInit.priority !== oldInit.priority) return true;
+        if (newInit.progress !== oldInit.progress) return true;
+        if (newInit.validation !== oldInit.validation) return true;
+        if (JSON.stringify(newInit.teams) !== JSON.stringify(oldInit.teams)) return true;
+    }
+    
+    return false;
+}
+
+// Pause sync during user interactions
+function setupSyncPauseHandlers() {
+    let pauseTimeout;
+    
+    // Pause during drag operations
+    document.addEventListener('dragstart', () => {
+        syncState.isPaused = true;
+        clearTimeout(pauseTimeout);
+    });
+    
+    document.addEventListener('dragend', () => {
+        // Resume sync 2 seconds after drag ends
+        pauseTimeout = setTimeout(() => {
+            syncState.isPaused = false;
+        }, 2000);
+    });
+    
+    // Pause during modal interactions
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.modal-content')) {
+            syncState.isPaused = true;
+            clearTimeout(pauseTimeout);
+            
+            // Resume 5 seconds after modal interaction
+            pauseTimeout = setTimeout(() => {
+                syncState.isPaused = false;
+            }, 5000);
+        }
+    });
+}
+
+// Queue updates to write back to Jira
+function queueJiraUpdate(initiative, changes) {
+    syncState.updateQueue.push({
+        initiative: initiative,
+        changes: changes,
+        timestamp: Date.now()
+    });
+    
+    // Process immediately for responsive UI
+    setTimeout(processPendingUpdates, 100);
+}
+
+// Process pending updates to Jira
+async function processPendingUpdates() {
+    if (syncState.updateQueue.length === 0) return;
+    
+    const updates = [...syncState.updateQueue];
+    syncState.updateQueue = [];
+    
+    for (const update of updates) {
+        try {
+            await writeToJira(update.initiative, update.changes);
+        } catch (error) {
+            console.error('Failed to write to Jira:', error);
+            // Re-queue failed updates
+            syncState.updateQueue.push(update);
+        }
+    }
+}
+
+// Write changes back to Jira
+async function writeToJira(initiative, changes) {
+    const fields = {};
+    
+    // Map changes to Jira custom fields
+    if (changes.priority !== undefined) {
+        fields['customfield_10091'] = changes.priority; // Matrix Position
+    }
+    
+    if (changes.teams !== undefined) {
+        fields['customfield_10053'] = changes.teams.map(team => ({value: team}));
+    }
+    
+    if (changes.validation !== undefined) {
+        fields['customfield_10052'] = {value: changes.validation};
+    }
+    
+    await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: `/rest/api/3/issue/${initiative.jira.key}`,
+            method: 'PUT',
+            body: { fields }
+        })
+    });
+}
+
+// Subtle sync indicator
+function showSyncIndicator(type) {
+    let indicator = document.getElementById('sync-indicator');
+    
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'sync-indicator';
+        indicator.style.cssText = `
+            position: fixed; top: 10px; right: 10px; 
+            padding: 6px 12px; border-radius: 4px; 
+            font-size: 12px; z-index: 9999;
+            transition: all 0.3s ease;
+        `;
+        document.body.appendChild(indicator);
+    }
+    
+    // Clear any existing timeout
+    clearTimeout(indicator.timeout);
+    
+    switch (type) {
+        case 'syncing':
+            indicator.style.background = 'rgba(59, 130, 246, 0.9)';
+            indicator.style.color = 'white';
+            indicator.textContent = '⟳ Syncing...';
+            break;
+        case 'success':
+            indicator.style.background = 'rgba(34, 197, 94, 0.9)';
+            indicator.style.color = 'white';
+            indicator.textContent = '✓ Updated';
+            break;
+        case 'no-change':
+            indicator.style.background = 'rgba(107, 114, 128, 0.7)';
+            indicator.style.color = 'white';
+            indicator.textContent = '○ Current';
+            break;
+        case 'error':
+            indicator.style.background = 'rgba(239, 68, 68, 0.9)';
+            indicator.style.color = 'white';
+            indicator.textContent = '✗ Error';
+            break;
+    }
+    
+    // Fade out after 3 seconds
+    indicator.timeout = setTimeout(() => {
+        indicator.style.opacity = '0';
+        setTimeout(() => {
+            if (indicator.style.opacity === '0') {
+                indicator.style.display = 'none';
+            }
+        }, 300);
+    }, 3000);
+    
+    // Show indicator
+    indicator.style.display = 'block';
+    indicator.style.opacity = '1';
+}
+
+// =============================================================================
+// MODIFY EXISTING FUNCTIONS - Add these lines to your existing functions
+// =============================================================================
+
+// FIND your existing handleMatrixToMatrix function and ADD this line:
+// queueJiraUpdate(initiative, { priority: targetSlot });
+
+// FIND your existing handleBullpenToMatrix function and ADD this line:  
+// queueJiraUpdate(initiative, { priority: targetSlot });
+
+// FIND your existing DOMContentLoaded event listener and ADD this line:
+// initSmartSync();
+
+// Example of how to modify existing functions:
+/*
+function handleMatrixToMatrix(initiative, targetSlot) {
+    const oldPriority = initiative.priority;
+    initiative.priority = targetSlot;
+    
+    // ADD THIS LINE:
+    queueJiraUpdate(initiative, { priority: targetSlot });
+    
+    // Continue with existing logic...
+}
+
+function handleBullpenToMatrix(initiative, targetSlot) {
+    initiative.priority = targetSlot;
+    
+    // ADD THIS LINE:
+    queueJiraUpdate(initiative, { priority: targetSlot });
+    
+    // Continue with existing logic...
+}
+
+// In your DOMContentLoaded event listener, ADD:
+document.addEventListener('DOMContentLoaded', () => {
+    // Your existing initialization code...
+    
+    // ADD THIS LINE:
+    initSmartSync();
+});
+*/
         init();
