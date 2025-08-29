@@ -1284,8 +1284,17 @@ async function syncWithJira() {
 
 function transformJiraData(initiativesResponse, okrsResponse) {
     // Debug: Check what we're getting from the API
-    console.log('Raw API response for first issue:', initiativesResponse.issues[0]);
-    console.log('Custom fields in first issue:', Object.keys(initiativesResponse.issues[0].fields).filter(key => key.startsWith('customfield_')));
+console.log('Raw API response for first issue:', initiativesResponse.issues[0]);
+console.log('Custom fields in first issue:', Object.keys(initiativesResponse.issues[0].fields).filter(key => key.startsWith('customfield_')));
+
+// NEW DEBUG: Show all custom field values
+console.log('All custom fields for first issue:');
+const firstIssue = initiativesResponse.issues[0];
+Object.keys(firstIssue.fields).forEach(key => {
+    if (key.startsWith('customfield_')) {
+        console.log(`${key}:`, firstIssue.fields[key]);
+    }
+});
     
     const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
         const project = issue.fields.project.key;
