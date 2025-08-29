@@ -1263,26 +1263,36 @@ async function syncWithJira() {
 }
 
 function transformJiraData(initiativesResponse, okrsResponse) {
+    // Debug: Check what we're getting from the API
+    console.log('Raw API response for first issue:', initiativesResponse.issues[0]);
+    console.log('Custom fields in first issue:', Object.keys(initiativesResponse.issues[0].fields).filter(key => key.startsWith('customfield_')));
+    
     const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
         const project = issue.fields.project.key;
         const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
         
+        // Debug the Matrix Slot field specifically
+        const rawMatrixSlot = issue.fields['customfield_10065'];
+        console.log(`${issue.fields.summary}: Raw Matrix Slot field =`, rawMatrixSlot, typeof rawMatrixSlot);
+        
         const matrixSlot = getFieldValue(issue, 'customfield_10065');
+        console.log(`${issue.fields.summary}: Processed Matrix Slot =`, matrixSlot, typeof matrixSlot);
+        
         const validationStatus = getFieldValue(issue, 'customfield_10052');
         const teamsAssigned = getFieldValue(issue, 'customfield_10053');
         const initiativeType = getFieldValue(issue, 'customfield_10051');
         
-        // Handle numeric Matrix Slot: 0 = pipeline, 1-36 = board positions
+        // Handle numeric Matrix Slot
         let priority;
         if (matrixSlot === 0 || matrixSlot === null || matrixSlot === undefined) {
             priority = 'pipeline';
         } else if (typeof matrixSlot === 'number' && matrixSlot >= 1 && matrixSlot <= 36) {
             priority = matrixSlot;
         } else {
-            priority = 'pipeline'; // Default fallback
+            priority = 'pipeline';
         }
         
-        console.log(`${issue.fields.summary}: Matrix Slot = ${matrixSlot}, Priority = ${priority}`);
+        console.log(`${issue.fields.summary}: Final Priority = ${priority}`);
         
         return {
             id: parseInt(issue.key.split('-')[1]),
