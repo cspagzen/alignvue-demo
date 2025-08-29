@@ -1359,7 +1359,6 @@ Object.keys(firstIssue.fields).forEach(key => {
     console.log(`Active on board: ${activeInitiatives.length}, Pipeline: ${pipelineInitiatives.length}`);
     // Add this right after the console.log lines in transformJiraData
 console.log('=== ALL CUSTOM FIELDS DEBUG ===');
-const firstIssue = initiativesResponse.issues[0];
 Object.keys(firstIssue.fields).forEach(key => {
     if (key.startsWith('customfield_')) {
         console.log(`${key}: ${JSON.stringify(firstIssue.fields[key])}`);
