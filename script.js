@@ -7034,7 +7034,42 @@ function initEssentialKeyboard() {
             }
         }
     });
-}      
+} 
+
+// Add this function to your script.js file (before the sync functions)
+function updateBoardWithLiveData(newData) {
+    console.log('Updating boardData with live data from Jira...');
+    
+    // Update the global boardData object
+    boardData.initiatives = newData.initiatives || [];
+    boardData.bullpen = newData.bullpen || [];
+    
+    // Keep existing teams data (don't replace)
+    if (newData.teams) {
+        boardData.teams = { ...boardData.teams, ...newData.teams };
+    }
+    
+    console.log(`Updated with ${boardData.initiatives.length} initiatives and ${boardData.bullpen.length} bullpen items`);
+    
+    // Regenerate the UI with new data
+    try {
+        generatePyramid();
+        generateTeamHealthMatrix();
+        
+        // Update pipeline if the function exists
+        if (typeof updatePipelineCard === 'function') {
+            updatePipelineCard();
+        }
+        
+        // Refresh search index with new data
+        if (typeof buildSearchIndex === 'function') {
+            buildSearchIndex();
+        }
+        
+    } catch (error) {
+        console.error('Error updating UI with live data:', error);
+    }
+}
 
 // =============================================================================
 // JIRA INTEGRATION AND SMART SYNC SYSTEM
