@@ -1204,26 +1204,10 @@ async function syncWithJira() {
                 body: {
                     jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
                     maxResults: 50,
-                    fields: [
-                        'summary', 
-                        'project', 
-                        'status', 
-                        'issuelinks',
-                        'customfield_10065', // Matrix Slot
-                        'customfield_10052', // Validation Status
-                        'customfield_10053', // Teams Assigned
-                        'customfield_10051', // Initiative Type
-                        'customfield_10060', // Canvas Outcome
-                        'customfield_10061', // Success Measures
-                        'customfield_10062', // Key Result Mapping
-                        'customfield_10056', // TAM
-                        'customfield_10057', // SAM
-                        'customfield_10058', // SOM
-                        'customfield_10059', // Target Customer
-                        'customfield_10063', // Problem Statement
-                        'customfield_10054', // Solution Description
-                        'customfield_10055'  // Big Picture Vision
-                    ]
+                    body: {
+    jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
+    maxResults: 1
+}
                 }
             })
         });
