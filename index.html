@@ -1468,17 +1468,22 @@ function findOKRAlignment(issue, okrIssues) {
     return null;
 }
 
+// REPLACE the updateBoardWithLiveData function with this corrected version:
+
 function updateBoardWithLiveData(newData) {
     console.log('Updating boardData directly:', newData.initiatives[0]?.title);
     
+    // Update the data first
     boardData.initiatives = newData.initiatives;
     boardData.bullpen = newData.bullpen;
     
     console.log('Verification - boardData now has:', boardData.initiatives[0]?.title);
     
-    // Only call functions that exist
+    // Regenerate both matrices with the new unique IDs
     generatePyramid();
-    // Skip updateBentoCards since it doesn't exist
+    generateTeamHealthMatrix(); // ADD THIS LINE - was missing!
+    
+    // Update other components
     if (typeof updatePipelineCard === 'function') {
         updatePipelineCard();
     }
