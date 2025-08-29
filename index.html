@@ -1361,33 +1361,18 @@ function findOKRAlignment(issue, okrIssues) {
 }
 
 function updateBoardWithLiveData(newData) {
-    console.log('Updating board with live data:', newData);
+    console.log('Updating boardData directly:', newData.initiatives[0]?.title);
     
-    // Update the GLOBAL boardData variable that the UI actually uses
-    if (typeof boardData !== 'undefined') {
-        // Preserve existing structure but update with live data
-        boardData.initiatives = newData.initiatives || [];
-        boardData.bullpen = newData.bullpen || [];
-        boardData.teams = newData.teams || boardData.teams;
-        
-        console.log('Updated global boardData. First initiative:', boardData.initiatives[0]?.title);
-    }
+    // CRITICAL: Update the actual boardData global variable
+    boardData.initiatives = newData.initiatives;
+    boardData.bullpen = newData.bullpen;
     
-    // Also update window.boardData as backup
-    window.boardData = boardData;
+    console.log('Verification - boardData now has:', boardData.initiatives[0]?.title);
     
-    // Force complete re-render
-    setTimeout(() => {
-        if (typeof populateMatrix === 'function') {
-            populateMatrix();
-        }
-        if (typeof updatePipelineInitiatives === 'function') {
-            updatePipelineInitiatives();
-        }
-        if (typeof updateBentoCards === 'function') {
-            updateBentoCards();
-        }
-    }, 200);
+    // Force all rendering functions to run with updated data
+    generatePyramid();
+    updateBentoCards();
+    updatePipelineCard();
 }
 
 function showSyncStatus(message, type) {
