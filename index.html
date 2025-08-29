@@ -1282,11 +1282,8 @@ Object.keys(firstIssue.fields).forEach(key => {
         const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
         
         // Debug the Matrix Slot field specifically
-        const rawMatrixSlot = issue.fields['customfield_10065'];
-        console.log(`${issue.fields.summary}: Raw Matrix Slot field =`, rawMatrixSlot, typeof rawMatrixSlot);
-        
-        const matrixSlot = getFieldValue(issue, 'customfield_10065');
-        console.log(`${issue.fields.summary}: Processed Matrix Slot =`, matrixSlot, typeof matrixSlot);
+        const rawMatrixSlot = issue.fields['customfield_10091'];
+        const matrixSlot = getFieldValue(issue, 'customfield_10091');
         
         const validationStatus = getFieldValue(issue, 'customfield_10052');
         const teamsAssigned = getFieldValue(issue, 'customfield_10053');
