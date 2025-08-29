@@ -1368,7 +1368,7 @@ function transformJiraData(initiativesResponse, okrsResponse) {
         console.log(`${issue.fields.summary}: Final Priority = ${priority}`);
         
         const transformedInitiative = {
-            id: parseInt(issue.key.split('-')[1]),
+            id: parseInt(issue.id),
             title: issue.fields.summary,
             type: initiativeType || typeMapping[project] || 'strategic',
 validation: validationStatus || 'not-validated',
