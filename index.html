@@ -1202,13 +1202,10 @@ async function syncWithJira() {
                 endpoint: '/rest/api/3/search',
                 method: 'POST',
                 body: {
-                    jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
-                    maxResults: 50,
-                    body: {
     jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
-    maxResults: 1
+    maxResults: 1,
+    fields: ["*all"]
 }
-                }
             })
         });
 
