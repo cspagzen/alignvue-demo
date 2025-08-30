@@ -818,7 +818,6 @@ function showRiskScoreInfoModal() {
     announceToScreenReader(`Opened details for ${initiative.title} initiative`);
 }
 
-// Add this function anywhere in your script.js file
 function openJiraEpic(epicKey) {
     const jiraUrl = `https://alignvue.atlassian.net/browse/${epicKey}`;
     window.open(jiraUrl, '_blank', 'noopener,noreferrer');
@@ -7297,15 +7296,67 @@ function initSmartSync() {
     // Initial sync
     syncWithJira();
     
-    // Start auto-sync every 30 seconds
+    // Track user activity
+    let lastActivity = Date.now();
+    
+    const updateActivity = () => lastActivity = Date.now();
+    document.addEventListener('mousemove', updateActivity);
+    document.addEventListener('keypress', updateActivity);
+    document.addEventListener('click', updateActivity);
+    document.addEventListener('scroll', updateActivity);
+    
+    // Smart polling - only when recently active
     syncState.syncInterval = setInterval(() => {
-        if (syncState.isActive && !syncState.isPaused) {
+        const isRecentlyActive = Date.now() - lastActivity < 120000; // Active in last 2 minutes
+        
+        if (syncState.isActive && !syncState.isPaused && isRecentlyActive) {
+            console.log('Auto-syncing due to recent user activity');
             syncWithJira();
         }
-    }, 30000);
+    }, 180000); // Check every 3 minutes, sync only if active in last 2 minutes
     
-    // Pause sync during user interactions
+    // Setup pause handlers
     setupSyncPauseHandlers();
+    
+    // Add manual sync button
+    addManualSyncButton();
+}
+
+function addManualSyncButton() {
+    // Remove any existing manual sync button
+    const existingButton = document.getElementById('manual-sync-btn');
+    if (existingButton) existingButton.remove();
+    
+    const syncButton = document.createElement('button');
+    syncButton.id = 'manual-sync-btn';
+    syncButton.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+            <path d="M3 21v-5h5"/>
+        </svg>
+        Sync
+    `;
+    
+    syncButton.style.cssText = `
+        position: fixed; top: 50px; right: 10px;
+        background: var(--accent-blue); color: white; border: none;
+        padding: 8px 12px; border-radius: 4px; cursor: pointer;
+        display: flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 500; z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        opacity: 0.7; transition: opacity 0.2s;
+    `;
+    
+    syncButton.addEventListener('mouseenter', () => syncButton.style.opacity = '1');
+    syncButton.addEventListener('mouseleave', () => syncButton.style.opacity = '0.7');
+    syncButton.addEventListener('click', () => {
+        console.log('Manual sync triggered');
+        syncWithJira();
+    });
+    
+    document.body.appendChild(syncButton);
 }
 
 // Enhanced sync function with change detection
@@ -7396,16 +7447,66 @@ function setupSyncPauseHandlers() {
     });
 }
 
-// Queue updates to write back to Jira
+// Delayed batch update system
+let pendingMoveTimeout = null;
+
 function queueJiraUpdate(initiative, changes) {
-    syncState.updateQueue.push({
-        initiative: initiative,
-        changes: changes,
-        timestamp: Date.now()
-    });
+    // Clear any existing timeout to reset the delay
+    clearTimeout(pendingMoveTimeout);
     
-    // Process immediately for responsive UI
-    setTimeout(processPendingUpdates, 100);
+    console.log(`Queuing update for ${initiative.jira?.key}, will batch sync in 7 seconds...`);
+    
+    // Set a new timeout for 7 seconds from now
+    pendingMoveTimeout = setTimeout(() => {
+        batchSyncAllPositions();
+    }, 7000);
+}
+
+async function batchSyncAllPositions() {
+    console.log('Starting batch sync of all positions to Jira...');
+    showSyncIndicator('syncing');
+    
+    try {
+        // Get current state of all initiatives with Jira keys
+        const allUpdates = [];
+        
+        boardData.initiatives.forEach(init => {
+            if (init.jira?.key && typeof init.priority === 'number') {
+                allUpdates.push({
+                    key: init.jira.key,
+                    position: init.priority,
+                    title: init.title
+                });
+            }
+        });
+        
+        console.log(`Batch syncing ${allUpdates.length} initiatives to Jira...`);
+        
+        // Send updates sequentially with delays to avoid conflicts
+        for (const update of allUpdates) {
+            try {
+                console.log(`Updating ${update.key} to position ${update.position}`);
+                
+                await writeToJira(
+                    { jira: { key: update.key } }, 
+                    { priority: update.position }
+                );
+                
+                // Small delay between updates
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+            } catch (error) {
+                console.error(`Failed to update ${update.key} (${update.title}):`, error);
+            }
+        }
+        
+        console.log('Batch sync completed successfully');
+        showSyncIndicator('success');
+        
+    } catch (error) {
+        console.error('Batch sync failed:', error);
+        showSyncIndicator('error');
+    }
 }
 
 // Process pending updates to Jira
@@ -7428,30 +7529,59 @@ async function processPendingUpdates() {
 
 // Write changes back to Jira
 async function writeToJira(initiative, changes) {
+    console.log('=== WRITING TO JIRA ===');
+    console.log('Initiative Key:', initiative.jira?.key);
+    console.log('Changes:', changes);
+    
     const fields = {};
     
     // Map changes to Jira custom fields
     if (changes.priority !== undefined) {
-        fields['customfield_10091'] = changes.priority; // Matrix Position
+        // IMPORTANT: Make sure the value is a number, not string
+        fields.customfield_10091 = Number(changes.priority);
+        console.log('Setting Matrix Position to:', Number(changes.priority));
     }
     
-    if (changes.teams !== undefined) {
-        fields['customfield_10053'] = changes.teams.map(team => ({value: team}));
-    }
-    
-    if (changes.validation !== undefined) {
-        fields['customfield_10052'] = {value: changes.validation};
-    }
-    
-    await fetch('/api/jira', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    try {
+        const requestBody = {
             endpoint: `/rest/api/3/issue/${initiative.jira.key}`,
             method: 'PUT',
-            body: { fields }
-        })
-    });
+            body: {
+                fields: fields
+            }
+        };
+        
+        console.log('Request:', JSON.stringify(requestBody, null, 2));
+        
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        console.log('Response status:', response.status);
+        
+        // Handle empty responses properly
+        let responseText = '';
+        try {
+            responseText = await response.text();
+        } catch (e) {
+            console.log('No response body');
+        }
+        
+        if (!response.ok) {
+            console.error('❌ Jira update failed:', response.status, responseText);
+            throw new Error(`HTTP ${response.status}: ${responseText || 'No response body'}`);
+        } else {
+            console.log('✅ Jira update successful');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error in writeToJira:', error);
+        throw error;
+    }
 }
 
 // Subtle sync indicator
