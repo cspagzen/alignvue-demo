@@ -5469,7 +5469,7 @@ function showOKRAlignmentModal() {
                     '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
                         misalignedInitiatives.map(init => `
                             <div class="bento-pipeline-item" 
-                                 onclick="closeModal(); setTimeout(() => showInitiativeModal(${JSON.stringify(init).replace(/"/g, '&quot;')}), 200);"
+                                 onclick="showInitiativeModal(boardData.initiatives.find(init => init.id === ${init.id}))"
                                  style="position: relative; cursor: pointer;">
                                 <div class="bento-pipeline-item-header">
                                     <div class="bento-pipeline-item-title">
