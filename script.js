@@ -3275,31 +3275,48 @@ function updateCompletedCard() {
     `).join('');
 }
 
+// Updated Validation Pipeline functions to work with live JIRA data
+
 function updateValidationCard() {
     const content = document.getElementById('validation-pipeline-content');
     
-    // Count totals for the main numbers
-    const totalInValidation = boardData.initiatives.filter(init => init.validation === 'in-validation').length;
-    const totalNotValidated = boardData.initiatives.filter(init => init.validation === 'not-validated').length;
+    // Get all initiatives (active + pipeline) for comprehensive validation tracking
+    const allInitiatives = [...(boardData.initiatives || []), ...(boardData.bullpen || [])];
+    
+    // Count totals for the main numbers - focus on active initiatives primarily
+    const activeInitiatives = boardData.initiatives || [];
+    const totalInValidation = activeInitiatives.filter(init => init.validation === 'in-validation').length;
+    const totalNotValidated = activeInitiatives.filter(init => init.validation === 'not-validated').length;
+    
+    // Also count pipeline items for context
+    const pipelineInValidation = (boardData.bullpen || []).filter(init => init.validation === 'in-validation').length;
+    const pipelineNotValidated = (boardData.bullpen || []).filter(init => init.validation === 'not-validated').length;
     
     content.innerHTML = `
     <div class="h-full flex items-center justify-center gap-6">
         <!-- In Validation - Left -->
         <div class="validation-metric-card cursor-pointer hover:scale-105 transition-all duration-200" onclick="showInValidationModal()">
             <div class="kpi-current-value" style="color: #f59e0b;">${totalInValidation}</div>
-            <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Initiatives<br>In Validation</div>
+            <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Active Initiatives<br>In Validation</div>
+            ${pipelineInValidation > 0 ? `<div class="text-xs opacity-75" style="color: var(--text-tertiary);">+${pipelineInValidation} pipeline</div>` : ''}
         </div>
         
         <!-- Not Validated - Right -->
         <div class="validation-metric-card cursor-pointer hover:scale-105 transition-all duration-200" onclick="showNotValidatedModal()">
             <div class="kpi-current-value" style="color: #ef4444;">${totalNotValidated}</div>
-            <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Initiatives<br>Not Validated</div>
+            <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Active Initiatives<br>Not Validated</div>
+            ${pipelineNotValidated > 0 ? `<div class="text-xs opacity-75" style="color: var(--text-tertiary);">+${pipelineNotValidated} pipeline</div>` : ''}
         </div>
     </div>
     `;
+    
+    // Ensure validation card styles are applied
+    ensureValidationCardStyles();
 }
 
-// Add this CSS to your styles.css file
+
+
+// Add this CSS to styles.css file
 const validationCardStyles = `
 /* Validation Metric Cards - Match KPI Gauge Card Styling */
 .validation-metric-card {
@@ -3339,38 +3356,66 @@ function ensureValidationCardStyles() {
 }
 
 function showInValidationModal() {
-   const modal = document.getElementById('detail-modal');
-   const title = document.getElementById('modal-title');
-   const content = document.getElementById('modal-content');
-   
-   const inValidationInitiatives = boardData.initiatives
-       .filter(init => init.validation === 'in-validation')
-       .sort((a, b) => {
-           // Sort by priority order (lower number = higher priority)
-           if (a.priority === "bullpen" && b.priority === "bullpen") return 0;
-           if (a.priority === "bullpen") return 1;
-           if (b.priority === "bullpen") return -1;
-           return a.priority - b.priority;
-       });
-   
-   const highPriorityInValidation = inValidationInitiatives.filter(init => {
-       if (init.priority === "bullpen") return false;
-       return getRowColFromSlot(init.priority).row <= 4;
-   });
-   
-   title.textContent = 'Initiatives In Validation';
-   content.innerHTML = 
-       '<div class="space-y-6">' +
-           // Header Section
-           '<div>' +
-               '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                   '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                       '<path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/>' +
-                   '</svg>' +
-                   'Validation Pipeline Overview - ' + inValidationInitiatives.length + ' Initiatives In Validation' +
-               '</h3>' +
+    const modal = document.getElementById('detail-modal');
+    const title = document.getElementById('modal-title');
+    const content = document.getElementById('modal-content');
+    
+    // Get all initiatives in validation (active + pipeline)
+    const activeInValidation = (boardData.initiatives || []).filter(init => init.validation === 'in-validation');
+    const pipelineInValidation = (boardData.bullpen || []).filter(init => init.validation === 'in-validation');
+    const allInValidation = [...activeInValidation, ...pipelineInValidation];
+    
+    // Sort by priority (active initiatives first, then pipeline)
+    const sortedInitiatives = allInValidation.sort((a, b) => {
+        // Pipeline items go to bottom
+        if (a.priority === 'pipeline' && b.priority !== 'pipeline') return 1;
+        if (b.priority === 'pipeline' && a.priority !== 'pipeline') return -1;
+        if (a.priority === 'pipeline' && b.priority === 'pipeline') {
+            return a.title.localeCompare(b.title); // Alphabetical for pipeline
+        }
+        
+        // Active initiatives by priority number (lower = higher priority)
+        return a.priority - b.priority;
+    });
+    
+    // Identify high priority items needing attention
+    const highPriorityInValidation = activeInValidation.filter(init => {
+        const row = getRowColFromSlot(init.priority).row;
+        return row <= 4; // Critical (1-2) or High (3-4) priority rows
+    });
+    
+    title.textContent = 'Initiatives In Validation';
+    content.innerHTML = 
+        '<div class="space-y-6">' +
+            // Header Section
+            '<div>' +
+                '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
+                        '<path d="m9.5 14.5 5-5"/>' +
+                    '</svg>' +
+                    'Validation Pipeline Overview - ' + allInValidation.length + ' Initiatives In Validation' +
+                '</h3>' +
+                
+                // Summary stats
+                '<div class="grid grid-cols-2 gap-4 mb-6">' +
+                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
+                        '<div class="text-2xl font-bold" style="color: var(--accent-orange);">' + activeInValidation.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">Active on Board</div>' +
+                    '</div>' +
+                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
+                        '<div class="text-2xl font-bold" style="color: var(--text-secondary);">' + pipelineInValidation.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">In Pipeline</div>' +
+                    '</div>' +
+                '</div>' +
+                
+                // High priority alert
+                (highPriorityInValidation.length > 0 ? 
+                   '<div class="mb-6 p-3 rounded text-sm" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid var(--accent-orange); color: var(--accent-orange);"><strong>Priority Alert:</strong> ' + highPriorityInValidation.length + ' high-priority initiatives need expedited validation to prevent delivery delays</div>' : 
+                   ''
+               ) +
                
-               // Initiatives List - Full Width
+               // Initiatives List
                '<div style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid var(--accent-orange);" class="rounded-lg p-4">' +
                    '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-orange);">' +
                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -3380,154 +3425,189 @@ function showInValidationModal() {
                        'Initiatives Currently Being Validated' +
                    '</h4>' +
                    '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
-                       inValidationInitiatives.map(init => `
-                           <div class="bento-pipeline-item" 
-                                onclick="closeModal(); setTimeout(() => showInitiativeModal(boardData.initiatives.find(i => i.id === ${init.id})), 100);"
-                                style="position: relative; cursor: pointer;">
-                               <div class="bento-pipeline-item-header">
-                                   <div class="bento-pipeline-item-title">
-                                       ${init.title}
-                                       <span class="bento-type-badge bento-type-${init.type}">${init.type.toUpperCase()}</span>
-                                   </div>
-                                   <div class="flex items-center gap-2">
-                                       ${getRowColFromSlot(init.priority).row <= 4 && init.priority !== 'bullpen' ? 
-                                           '<span class="text-xs px-2 py-1 rounded" style="background: #dc2626; color: white;">High Priority</span>' : 
-                                           ''
-                                       }
+                       sortedInitiatives.map(init => {
+                           const isPipeline = init.priority === 'pipeline';
+                           const isHighPriority = !isPipeline && getRowColFromSlot(init.priority).row <= 4;
+                           
+                           return `
+                               <div class="bento-pipeline-item" 
+                                    onclick="closeModal(); setTimeout(() => showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(i => i.id === ' + init.id + ')' : 'boardData.initiatives.find(i => i.id === ' + init.id + ')'}), 100);"
+                                    style="position: relative; cursor: pointer; ${isPipeline ? 'opacity: 0.7; border-left: 3px solid var(--text-tertiary);' : ''} ${isHighPriority ? 'border-left: 3px solid var(--accent-orange);' : ''}">
+                                   <div class="bento-pipeline-item-header">
+                                       <div class="bento-pipeline-item-title">
+                                           ${init.title}
+                                           <span class="bento-type-badge bento-type-${init.type}">${init.type.toUpperCase()}</span>
+                                           ${isPipeline ? '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-tertiary);">PIPELINE</span>' : ''}
+                                       </div>
+                                       <div class="flex items-center gap-2">
+                                           ${isHighPriority ? 
+                                               '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-orange); color: white;">HIGH PRIORITY</span>' : 
+                                               (isPipeline ? '' : '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>')
+                                           }
+                                       </div>
                                    </div>
                                </div>
-                           </div>
-                       `).join('') +
+                           `;
+                       }).join('') +
                    '</div>' +
                '</div>' +
-           '</div>' +
-           
-           // Action Items Section
-           '<div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid var(--accent-blue);" class="p-4 rounded-lg">' +
-               '<h5 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-blue);">' +
-                   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                       '<path d="M9 12l2 2 4-4"/>' +
-                       '<path d="M21 12c.552 0 1-.448 1-1V5l-8-3-8 3v6c0 .552.448 1 1 1z"/>' +
-                   '</svg>' +
-                   'Next Actions' +
-               '</h5>' +
-               '<div class="grid grid-cols-3 gap-4 text-sm" style="color: var(--text-secondary);">' +
-                   '<div class="space-y-2">' +
-                       '<div>• Review validation criteria</div>' +
-                       '<div>• Complete stakeholder feedback</div>' +
-                   '</div>' +
-                   '<div class="space-y-2">' +
-                       '<div>• Finalize business case</div>' +
-                       '<div>• Document success metrics</div>' +
-                   '</div>' +
-                   '<div class="space-y-2">' +
-                       '<div>• Schedule validation review</div>' +
-                       '<div>• Update initiative status</div>' +
+               
+               // Next Actions section
+               '<div class="mt-6 p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-blue);">' +
+                   '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-blue);">' +
+                       '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                           '<circle cx="12" cy="12" r="10"/>' +
+                           '<polyline points="12,6 12,12 16,14"/>' +
+                       '</svg>' +
+                       'Next Actions' +
+                   '</h4>' +
+                   '<div class="grid grid-cols-2 gap-4 text-sm">' +
+                       '<div>' +
+                           '<ul class="space-y-1" style="color: var(--text-secondary);">' +
+                               '<li>• Review validation criteria</li>' +
+                               '<li>• Complete stakeholder feedback</li>' +
+                               '<li>• Finalize business case</li>' +
+                           '</ul>' +
+                       '</div>' +
+                       '<div>' +
+                           '<ul class="space-y-1" style="color: var(--text-secondary);">' +
+                               '<li>• Document success metrics</li>' +
+                               '<li>• Schedule validation review</li>' +
+                               '<li>• Update initiative status</li>' +
+                           '</ul>' +
+                       '</div>' +
                    '</div>' +
                '</div>' +
-               (highPriorityInValidation.length > 0 ? 
-                   '<div class="mt-3 p-3 rounded text-sm" style="background: #fbbf24; color: #92400e;"><strong>Priority Alert:</strong> ' + highPriorityInValidation.length + ' high-priority initiatives need expedited validation to prevent delivery delays</div>' : 
-                   ''
-               ) +
            '</div>' +
        '</div>';
    
    modal.classList.add('show');
 }
-      
-      function showNotValidatedModal() {
-   const modal = document.getElementById('detail-modal');
-   const title = document.getElementById('modal-title');
-   const content = document.getElementById('modal-content');
-   
-   const notValidatedInitiatives = boardData.initiatives
-       .filter(init => init.validation === 'not-validated')
-       .sort((a, b) => {
-           // Sort by priority order (lower number = higher priority)
-           if (a.priority === "bullpen" && b.priority === "bullpen") return 0;
-           if (a.priority === "bullpen") return 1;
-           if (b.priority === "bullpen") return -1;
-           return a.priority - b.priority;
-       });
-   
-   const highPriorityNotValidated = notValidatedInitiatives.filter(init => {
-       if (init.priority === "bullpen") return false;
-       return getRowColFromSlot(init.priority).row <= 4;
-   });
-   
-   title.textContent = 'Not Validated Initiatives';
-   content.innerHTML = 
-       '<div class="space-y-6">' +
-           // Header Section
-           '<div>' +
-               '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                   '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                       '<path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/>' +
-                   '</svg>' +
-                   'Validation Pipeline Overview - ' + notValidatedInitiatives.length + ' Initiatives Requiring Validation' +
-               '</h3>' +
+
+function showNotValidatedModal() {
+    const modal = document.getElementById('detail-modal');
+    const title = document.getElementById('modal-title');
+    const content = document.getElementById('modal-content');
+    
+    // Get all not validated initiatives (active + pipeline)
+    const activeNotValidated = (boardData.initiatives || []).filter(init => init.validation === 'not-validated');
+    const pipelineNotValidated = (boardData.bullpen || []).filter(init => init.validation === 'not-validated');
+    const allNotValidated = [...activeNotValidated, ...pipelineNotValidated];
+    
+    // Sort by priority (active initiatives first, then pipeline)
+    const sortedInitiatives = allNotValidated.sort((a, b) => {
+        // Pipeline items go to bottom
+        if (a.priority === 'pipeline' && b.priority !== 'pipeline') return 1;
+        if (b.priority === 'pipeline' && a.priority !== 'pipeline') return -1;
+        if (a.priority === 'pipeline' && b.priority === 'pipeline') {
+            return a.title.localeCompare(b.title); // Alphabetical for pipeline
+        }
+        
+        // Active initiatives by priority number (lower = higher priority)
+        return a.priority - b.priority;
+    });
+    
+    // Identify high priority items needing attention
+    const highPriorityNotValidated = activeNotValidated.filter(init => {
+        const row = getRowColFromSlot(init.priority).row;
+        return row <= 4; // Critical (1-2) or High (3-4) priority rows
+    });
+    
+    title.textContent = 'Not Validated Initiatives';
+    content.innerHTML = 
+        '<div class="space-y-6">' +
+            // Header Section
+            '<div>' +
+                '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
+                        '<path d="m9.5 14.5 5-5"/><path d="m9.5 9.5 5 5"/>' +
+                    '</svg>' +
+                    'Validation Required - ' + allNotValidated.length + ' Initiatives Need Validation' +
+                '</h3>' +
+                
+                // Summary stats
+                '<div class="grid grid-cols-2 gap-4 mb-6">' +
+                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
+                        '<div class="text-2xl font-bold" style="color: var(--accent-red);">' + activeNotValidated.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">Active on Board</div>' +
+                    '</div>' +
+                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
+                        '<div class="text-2xl font-bold" style="color: var(--text-secondary);">' + pipelineNotValidated.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">In Pipeline</div>' +
+                    '</div>' +
+                '</div>' +
+                
+                // High priority alert
+                (highPriorityNotValidated.length > 0 ? 
+                   '<div class="mb-6 p-3 rounded text-sm" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border: 1px solid var(--accent-red); color: var(--accent-red);"><strong>Critical Alert:</strong> ' + highPriorityNotValidated.length + ' high-priority initiatives require immediate validation to prevent roadmap delays</div>' : 
+                   ''
+               ) +
                
-               // Initiatives List - Full Width (toned down red)
+               // Initiatives List
                '<div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.04) 100%); border: 1px solid rgba(239, 68, 68, 0.3);" class="rounded-lg p-4">' +
                    '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: #dc2626;">' +
                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
                            '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
-                           '<path d="m9.5 14.5 5-5"/>' +
-                           '<path d="m9.5 9.5 5 5"/>' +
+                           '<path d="m9.5 14.5 5-5"/><path d="m9.5 9.5 5 5"/>' +
                        '</svg>' +
-                       'Initiatives Needing Validation' +
+                       'Initiatives Requiring Validation' +
                    '</h4>' +
                    '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
-                       notValidatedInitiatives.map(init => `
-                           <div class="bento-pipeline-item" 
-                                onclick="closeModal(); setTimeout(() => showInitiativeModal(boardData.initiatives.find(i => i.id === ${init.id})), 100);"
-                                style="position: relative; cursor: pointer;">
-                               <div class="bento-pipeline-item-header">
-                                   <div class="bento-pipeline-item-title">
-                                       ${init.title}
-                                       <span class="bento-type-badge bento-type-${init.type}">${init.type.toUpperCase()}</span>
-                                   </div>
-                                   <div class="flex items-center gap-2">
-                                       ${getRowColFromSlot(init.priority).row <= 4 && init.priority !== 'bullpen' ? 
-                                           '<span class="text-xs px-2 py-1 rounded" style="background: #dc2626; color: white;">High Priority</span>' : 
-                                           ''
-                                       }
+                       sortedInitiatives.map(init => {
+                           const isPipeline = init.priority === 'pipeline';
+                           const isHighPriority = !isPipeline && getRowColFromSlot(init.priority).row <= 4;
+                           
+                           return `
+                               <div class="bento-pipeline-item" 
+                                    onclick="closeModal(); setTimeout(() => showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(i => i.id === ' + init.id + ')' : 'boardData.initiatives.find(i => i.id === ' + init.id + ')'}), 100);"
+                                    style="position: relative; cursor: pointer; ${isPipeline ? 'opacity: 0.7; border-left: 3px solid var(--text-tertiary);' : ''} ${isHighPriority ? 'border-left: 3px solid var(--accent-red);' : ''}">
+                                   <div class="bento-pipeline-item-header">
+                                       <div class="bento-pipeline-item-title">
+                                           ${init.title}
+                                           <span class="bento-type-badge bento-type-${init.type}">${init.type.toUpperCase()}</span>
+                                           ${isPipeline ? '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-tertiary);">PIPELINE</span>' : ''}
+                                       </div>
+                                       <div class="flex items-center gap-2">
+                                           ${isHighPriority ? 
+                                               '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">CRITICAL</span>' : 
+                                               (isPipeline ? '' : '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>')
+                                           }
+                                       </div>
                                    </div>
                                </div>
-                           </div>
-                       `).join('') +
+                           `;
+                       }).join('') +
                    '</div>' +
                '</div>' +
-           '</div>' +
-           
-           // Actions Section (styled like blue with toned down red accents)
-           '<div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid var(--accent-blue);" class="p-4 rounded-lg">' +
-               '<h5 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-blue);">' +
-                   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                       '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>' +
-                       '<path d="M12 9v4"/>' +
-                       '<path d="M12 17h.01"/>' +
-                   '</svg>' +
-                   'Urgent Actions Required' +
-               '</h5>' +
-               '<div class="grid grid-cols-3 gap-4 text-sm" style="color: var(--text-secondary);">' +
-                   '<div class="space-y-2">' +
-                       '<div>• Start validation process</div>' +
-                       '<div>• Gather stakeholder input</div>' +
-                   '</div>' +
-                   '<div class="space-y-2">' +
-                       '<div>• Define success criteria</div>' +
-                       '<div>• Assess market opportunity</div>' +
-                   '</div>' +
-                   '<div class="space-y-2">' +
-                       '<div>• Create business case</div>' +
-                       '<div>• Schedule review meetings</div>' +
+               
+               // Urgent Actions section
+               '<div class="mt-6 p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-blue);">' +
+                   '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-blue);">' +
+                       '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                           '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>' +
+                           '<path d="M12 9v4"/>' +
+                           '<path d="M12 17h.01"/>' +
+                       '</svg>' +
+                       'Urgent Actions Required' +
+                   '</h4>' +
+                   '<div class="grid grid-cols-2 gap-4 text-sm">' +
+                       '<div>' +
+                           '<ul class="space-y-1" style="color: var(--text-secondary);">' +
+                               '<li>• Start validation process</li>' +
+                               '<li>• Gather stakeholder input</li>' +
+                               '<li>• Define success criteria</li>' +
+                           '</ul>' +
+                       '</div>' +
+                       '<div>' +
+                           '<ul class="space-y-1" style="color: var(--text-secondary);">' +
+                               '<li>• Assess market opportunity</li>' +
+                               '<li>• Create business case</li>' +
+                               '<li>• Schedule review meetings</li>' +
+                           '</ul>' +
+                       '</div>' +
                    '</div>' +
                '</div>' +
-               (highPriorityNotValidated.length > 0 ? 
-                   '<div class="mt-3 p-3 rounded text-sm" style="background: #fca5a5; color: #7f1d1d;"><strong>CRITICAL ALERT:</strong> ' + highPriorityNotValidated.length + ' high-priority initiatives lack validation and may significantly impact delivery timelines and organizational objectives</div>' : 
-                   ''
-               ) +
            '</div>' +
        '</div>';
    
@@ -3790,11 +3870,27 @@ function calculateVelocityTrend() {
     return { arrow: '➡️', trend: 'stable' };
 }
 
+// Updated validation helper function to work with live data
 function getValidationCounts() {
+    const activeInitiatives = boardData.initiatives || [];
+    const pipelineInitiatives = boardData.bullpen || [];
+    const allInitiatives = [...activeInitiatives, ...pipelineInitiatives];
+    
     return {
-        notValidated: boardData.initiatives.filter(init => init.validation === 'not-validated').length,
-        inValidation: boardData.initiatives.filter(init => init.validation === 'in-validation').length,
-        validated: boardData.initiatives.filter(init => init.validation === 'validated').length
+        notValidated: allInitiatives.filter(init => init.validation === 'not-validated').length,
+        inValidation: allInitiatives.filter(init => init.validation === 'in-validation').length,
+        validated: allInitiatives.filter(init => init.validation === 'validated').length,
+        // Separate counts for active vs pipeline
+        active: {
+            notValidated: activeInitiatives.filter(init => init.validation === 'not-validated').length,
+            inValidation: activeInitiatives.filter(init => init.validation === 'in-validation').length,
+            validated: activeInitiatives.filter(init => init.validation === 'validated').length
+        },
+        pipeline: {
+            notValidated: pipelineInitiatives.filter(init => init.validation === 'not-validated').length,
+            inValidation: pipelineInitiatives.filter(init => init.validation === 'in-validation').length,
+            validated: pipelineInitiatives.filter(init => init.validation === 'validated').length
+        }
     };
 }
 
