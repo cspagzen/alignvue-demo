@@ -7279,15 +7279,67 @@ function initSmartSync() {
     // Initial sync
     syncWithJira();
     
-    // Start auto-sync every 30 seconds
+    // Track user activity
+    let lastActivity = Date.now();
+    
+    const updateActivity = () => lastActivity = Date.now();
+    document.addEventListener('mousemove', updateActivity);
+    document.addEventListener('keypress', updateActivity);
+    document.addEventListener('click', updateActivity);
+    document.addEventListener('scroll', updateActivity);
+    
+    // Smart polling - only when recently active
     syncState.syncInterval = setInterval(() => {
-        if (syncState.isActive && !syncState.isPaused) {
+        const isRecentlyActive = Date.now() - lastActivity < 120000; // Active in last 2 minutes
+        
+        if (syncState.isActive && !syncState.isPaused && isRecentlyActive) {
+            console.log('Auto-syncing due to recent user activity');
             syncWithJira();
         }
-    }, 30000);
+    }, 180000); // Check every 3 minutes, sync only if active in last 2 minutes
     
-    // Pause sync during user interactions
+    // Setup pause handlers
     setupSyncPauseHandlers();
+    
+    // Add manual sync button
+    addManualSyncButton();
+}
+
+function addManualSyncButton() {
+    // Remove any existing manual sync button
+    const existingButton = document.getElementById('manual-sync-btn');
+    if (existingButton) existingButton.remove();
+    
+    const syncButton = document.createElement('button');
+    syncButton.id = 'manual-sync-btn';
+    syncButton.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+            <path d="M3 21v-5h5"/>
+        </svg>
+        Sync
+    `;
+    
+    syncButton.style.cssText = `
+        position: fixed; top: 50px; right: 10px;
+        background: var(--accent-blue); color: white; border: none;
+        padding: 8px 12px; border-radius: 4px; cursor: pointer;
+        display: flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 500; z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        opacity: 0.7; transition: opacity 0.2s;
+    `;
+    
+    syncButton.addEventListener('mouseenter', () => syncButton.style.opacity = '1');
+    syncButton.addEventListener('mouseleave', () => syncButton.style.opacity = '0.7');
+    syncButton.addEventListener('click', () => {
+        console.log('Manual sync triggered');
+        syncWithJira();
+    });
+    
+    document.body.appendChild(syncButton);
 }
 
 // Enhanced sync function with change detection
