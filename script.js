@@ -1,4 +1,3 @@
-
         let currentZoom = 1;
         let selectedInitiativeId = null;
         let draggedInitiative = null;
@@ -1745,24 +1744,14 @@ teamCard.innerHTML =
         }
 
         function isAlignedWithOKRs(initiative) {
-    // Manually specify misaligned initiatives for demo
-    const misalignedInitiativeIds = [2, 13, 17]; // RMC Call Queue (high priority), Backup Strategy (low priority), Compliance Automation (low priority)
-    
-    if (misalignedInitiativeIds.includes(initiative.id)) {
-        return false;
+    // Only check initiatives that are actively on the board (not pipeline)
+    if (initiative.priority === "pipeline") {
+        return true; // Don't count pipeline items in alignment calculations
     }
     
-    const okrKeywords = [
-        'user', 'customer', 'onboarding', 'experience', 'engagement', 'mobile', // User growth KR
-        'uptime', 'reliability', 'incident', 'monitoring', 'backup', 'disaster', 'security', 'performance', // System uptime KR
-        'product', 'capability', 'feature', 'api', 'platform', 'analytics', 'recommendation', 'pricing' // New capabilities KR
-    ];
-    
-    const searchText = (initiative.title + ' ' + 
-    (initiative.canvas ? initiative.canvas.outcome || '' : '') + ' ' + 
-    (initiative.canvas ? initiative.canvas.keyResult || '' : '')).toLowerCase();
-    
-    return okrKeywords.some(keyword => searchText.includes(keyword));
+    // Check if initiative has an OKR mapping from Jira
+    // If canvas.keyResult is "No OKR", it means no OKR was found in Jira linking
+    return initiative.canvas && initiative.canvas.keyResult && initiative.canvas.keyResult !== "No OKR";
 }
   
        
@@ -1781,6 +1770,8 @@ teamCard.innerHTML =
     updateValidationCard();
     updateMendozaCard();
 }
+
+
         
 function updatePipelineCard() {
     const content = document.getElementById('pipeline-content');
@@ -1854,8 +1845,9 @@ function updateOKRCard() {
     const content = document.getElementById('okr-content');
     const alignmentPercentage = calculateOKRAlignment();
     
-    // Calculate misaligned initiatives count
-    const misalignedCount = boardData.initiatives.filter(init => !isAlignedWithOKRs(init)).length;
+    // Calculate misaligned initiatives count (only active board initiatives)
+    const activeBoardInitiatives = boardData.initiatives.filter(init => init.priority !== "pipeline");
+    const misalignedCount = activeBoardInitiatives.filter(init => !isAlignedWithOKRs(init)).length;
     
     // Color logic
     let color;
@@ -1872,18 +1864,48 @@ function updateOKRCard() {
             <div class="text-sm font-bold" style="color: var(--text-secondary);">Aligned Initiatives</div>
             <div class="kpi-current-value" style="color: ${color};">${alignmentPercentage}%</div>
             <div class="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1" 
-                 onclick="event.stopPropagation(); showMisalignedInitiativesModal()"
-                 title="View initiatives needing review">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                    <path d="M12 9v4"/>
-                    <path d="M12 17h.01"/>
+                 onclick="event.stopPropagation(); showOKRAlignmentModal()"
+                 title="View OKR alignment analysis">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                    <polyline points="10,17 15,12 10,7"/>
+                    <line x1="15" y1="12" x2="3" y2="12"/>
                 </svg>
-                <span class="text-sm font-bold"" style="color: var(--accent-orange);">${misalignedCount} initiatives need review</span>
+                <span style="color: var(--text-tertiary); font-size: 0.75rem;">${misalignedCount} need review</span>
             </div>
         </div>
     `;
+}
+
+// Parse OKR data from Jira to get objectives and key results
+function parseOKRData() {
+    if (!boardData.okrs || !boardData.okrs.issues) {
+        return { objectives: [], keyResults: [] };
+    }
     
+    const objectives = [];
+    const keyResults = [];
+    
+    boardData.okrs.issues.forEach(issue => {
+        // Epic = Objective, Task/Story = Key Result
+        if (issue.fields.issuetype.name === 'Epic') {
+            objectives.push({
+                key: issue.key,
+                summary: issue.fields.summary,
+                id: issue.id
+            });
+        } else if (issue.fields.parent) {
+            // This is a child task/story = Key Result
+            keyResults.push({
+                key: issue.key,
+                summary: issue.fields.summary,
+                parentKey: issue.fields.parent.key,
+                parentId: issue.fields.parent.id
+            });
+        }
+    });
+    
+    return { objectives, keyResults };
 }
 
 // Modal for showing only misaligned initiatives
@@ -3609,8 +3631,15 @@ function getTeamsWorkingOnMixed() {
 //Calculation and Analysis Functions
 
 function calculateOKRAlignment() {
-    const alignedCount = boardData.initiatives.filter(init => isAlignedWithOKRs(init)).length;
-    return Math.round((alignedCount / boardData.initiatives.length) * 100);
+    // Only consider initiatives actively on the board (exclude pipeline)
+    const activeBoardInitiatives = boardData.initiatives.filter(init => init.priority !== "pipeline");
+    
+    if (activeBoardInitiatives.length === 0) {
+        return 100; // If no active initiatives, show 100%
+    }
+    
+    const alignedCount = activeBoardInitiatives.filter(init => isAlignedWithOKRs(init)).length;
+    return Math.round((alignedCount / activeBoardInitiatives.length) * 100);
 }
 
 function calculateOKRProgress() {
@@ -5288,133 +5317,152 @@ function showOKRAlignmentModal() {
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
     
-    const misalignedInitiatives = boardData.initiatives.filter(init => !isAlignedWithOKRs(init));
+    // Parse OKR data from Jira
+    const { objectives, keyResults } = parseOKRData();
+    
+    // Only consider active board initiatives (exclude pipeline)
+    const activeBoardInitiatives = boardData.initiatives.filter(init => init.priority !== "pipeline");
+    const misalignedInitiatives = activeBoardInitiatives.filter(init => !isAlignedWithOKRs(init));
+    
     const highPriorityMisaligned = misalignedInitiatives.filter(init => {
-        if (init.priority === "bullpen") return false;
-        return getRowColFromSlot(init.priority).row <= 4;
+        return getRowColFromSlot(init.priority).row <= 4; // High priority rows 1-4
     });
     
     title.textContent = 'OKR Alignment Analysis';
+    
+    // Build OKRs display from Jira data
+    let okrsDisplayHTML = '';
+    
+    if (objectives.length === 0) {
+        // Fallback if no OKRs found in Jira
+        okrsDisplayHTML = `
+            <div class="p-6 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                <div class="text-center" style="color: var(--text-secondary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 opacity-50">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M16 12h-4v-4"/>
+                        <path d="M12 16V8"/>
+                    </svg>
+                    <p>No OKRs found in Jira OKR project.<br>Please set up objectives and key results in Jira.</p>
+                </div>
+            </div>
+        `;
+    } else {
+        // Display actual OKRs from Jira
+        okrsDisplayHTML = objectives.map(objective => {
+            const relatedKeyResults = keyResults.filter(kr => kr.parentKey === objective.key);
+            
+            return `
+                <div class="p-6 rounded-lg mb-4" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <div class="grid gap-6" style="grid-template-columns: 1fr 2fr;">
+                        <div>
+                            <div class="text-base font-bold mb-3" style="color: var(--text-primary);">Objective:</div>
+                            <p class="text-base font-medium leading-relaxed" style="color: var(--text-secondary);">${objective.summary}</p>
+                            <div class="text-xs mt-2 opacity-75" style="color: var(--text-tertiary);">${objective.key}</div>
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold mb-3" style="color: var(--text-primary);">Key Results:</div>
+                            <div class="space-y-3">
+                                ${relatedKeyResults.length === 0 ? 
+                                    '<div class="text-sm" style="color: var(--text-tertiary);">No key results defined for this objective.</div>' :
+                                    relatedKeyResults.map((kr, index) => {
+                                        const colors = ['var(--accent-green)', 'var(--accent-blue)', 'var(--accent-purple)', 'var(--accent-orange)'];
+                                        const color = colors[index % colors.length];
+                                        return `
+                                            <div class="flex items-start gap-3 p-3 rounded-md" style="background: ${color}20; border-left: 4px solid ${color};">
+                                                <div>
+                                                    <div class="text-sm font-semibold mb-1" style="color: var(--text-primary);">${kr.key}</div>
+                                                    <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">${kr.summary}</p>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
     content.innerHTML = 
         '<div class="space-y-6">' +
-            // Top Section - Current OKRs (Full Width)
+            // Header Section
             '<div>' +
                 '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
                     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
                         '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>' +
                     '</svg>' +
-                    'Current OKRs' +
+                    'Current OKRs from Jira' +
                 '</h3>' +
-                
-                // Objective and Key Results in horizontal layout
-                '<div class="p-6 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                    '<div class="grid gap-6" style="grid-template-columns: 1fr 2fr;">' +
-                        // Objective Column
-                        '<div>' +
-                            '<div class="text-base font-bold mb-3" style="color: var(--text-primary);">Objective:</div>' +
-                            '<p class="text-base font-medium leading-relaxed" style="color: var(--text-secondary);">Accelerate Product-Market Fit and Scale Operations</p>' +
-                        '</div>' +
-                        
-                        // Key Results Column
-                        '<div>' +
-                            '<div class="text-sm font-bold mb-3" style="color: var(--text-primary);">Key Results:</div>' +
-                            '<div class="space-y-3">' +
-                                '<div class="flex items-start gap-3 p-3 rounded-md" style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid var(--accent-green);">' +
-                                    '<div>' +
-                                        '<div class="text-sm font-semibold mb-1" style="color: var(--text-primary);">User Growth</div>' +
-                                        '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">Increase monthly active users by 40% through improved onboarding and user experience</p>' +
-                                    '</div>' +
-                                '</div>' +
-                                '<div class="flex items-start gap-3 p-3 rounded-md" style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--accent-blue);">' +
-                                    '<div>' +
-                                        '<div class="text-sm font-semibold mb-1" style="color: var(--text-primary);">System Reliability</div>' +
-                                        '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">Achieve 95% system uptime and reduce critical incident response time by 75%</p>' +
-                                    '</div>' +
-                                '</div>' +
-                                '<div class="flex items-start gap-3 p-3 rounded-md" style="background: rgba(139, 92, 246, 0.1); border-left: 4px solid var(--accent-purple);">' +
-                                    '<div>' +
-                                        '<div class="text-sm font-semibold mb-1" style="color: var(--text-primary);">Product Innovation</div>' +
-                                        '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">Launch 3 new strategic product capabilities that drive measurable customer value</p>' +
-                                    '</div>' +
-                                '</div>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
+                okrsDisplayHTML +
             '</div>' +
             
-            // Bottom Section - Analysis (Full Width)
+            // Summary stats
             '<div>' +
                 '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
                     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
                         '<path d="M11 13v4"/><path d="M15 5v4"/><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="7" y="13" width="9" height="4" rx="1"/><rect x="7" y="5" width="12" height="4" rx="1"/>' +
                     '</svg>' +
-                    'Alignment Analysis' +
+                    'Portfolio Alignment Analysis' +
                 '</h3>' +
-                
-                '<div class="grid gap-4" style="grid-template-columns: 1fr 2fr 1fr;">' +
-                    // Portfolio Alignment Status
-'<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-    '<div class="text-center">' +
-        '<div class="text-base font-bold mb-2" style="color: var(--text-secondary);">Portfolio Alignment</div>' +
-        '<div class="text-4xl font-bold mb-2" style="color: var(--accent-green);">' + calculateOKRAlignment() + '%</div>' +
-        '<div class="text-xs mb-2" style="color: var(--text-tertiary);">of initiatives aligned to current OKRs</div>' +
-        '<div class="text-center">' +
-            '<div class="text-lg font-bold" style="color: var(--accent-green);">' + boardData.initiatives.filter(init => isAlignedWithOKRs(init)).length + '/' + boardData.initiatives.length + '</div>' +
-            '<div class="text-xs" style="color: var(--text-tertiary);">aligned</div>' +
-        '</div>' +
-    '</div>' +
-'</div>' +
-                    
-                    // Misaligned Initiatives - Center column - Pipeline-style items
-                    '<div style="background: var(--status-warning-bg); border: 1px solid var(--accent-orange);" class="rounded-lg p-4">' +
-                        '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-orange);">' +
-                            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>' +
-                            '</svg>' +
-                            'Potentially Misaligned Initiatives (' + misalignedInitiatives.length + ')' +
-                        '</h4>' +
-                        '<div class="space-y-2 max-h-48 overflow-y-auto">' +
-                            misalignedInitiatives.map(init => `
-                                <div class="bento-pipeline-item" 
-                                     onclick="closeModal(); setTimeout(() => showInitiativeModal(boardData.initiatives.find(i => i.id === ${init.id})), 100);"
-                                     style="position: relative; cursor: pointer;">
-                                    <div class="bento-pipeline-item-header">
-                                        <div class="bento-pipeline-item-title">
-                                            ${init.title}
-                                            <span class="bento-type-badge bento-type-${init.type}">${init.type.toUpperCase()}</span>
-                                        </div>
+                '<div class="grid gap-4 mb-6" style="grid-template-columns: 1fr 1fr 1fr;">' +
+                    '<div class="p-4 rounded-lg text-center" style="background: var(--status-success-bg); border: 1px solid var(--accent-green);">' +
+                        '<div class="text-2xl font-bold" style="color: var(--accent-green);">' + calculateOKRAlignment() + '%</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">Aligned</div>' +
+                    '</div>' +
+                    '<div class="p-4 rounded-lg text-center" style="background: var(--status-warning-bg); border: 1px solid var(--accent-orange);">' +
+                        '<div class="text-2xl font-bold" style="color: var(--accent-orange);">' + misalignedInitiatives.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">Need Review</div>' +
+                    '</div>' +
+                    '<div class="p-4 rounded-lg text-center" style="background: var(--status-error-bg); border: 1px solid var(--accent-red);">' +
+                        '<div class="text-2xl font-bold" style="color: var(--accent-red);">' + highPriorityMisaligned.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">High Priority</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            
+            // Initiatives needing review (only if there are any)
+            (misalignedInitiatives.length > 0 ? 
+                '<div style="background: var(--status-warning-bg); border: 1px solid var(--accent-orange);" class="rounded-lg p-4">' +
+                    '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-orange);">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                            '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 1.73-3Z"/>' +
+                            '<path d="M12 9v4"/>' +
+                            '<path d="M12 17h.01"/>' +
+                        '</svg>' +
+                        'Initiatives Without OKR Mapping (' + misalignedInitiatives.length + ')' +
+                    '</h4>' +
+                    '<div class="text-sm mb-3" style="color: var(--text-secondary);">These initiatives need OKR alignment review or mapping in Jira</div>' +
+                    '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
+                        misalignedInitiatives.map(init => `
+                            <div class="bento-pipeline-item" 
+                                 onclick="closeModal(); setTimeout(() => showInitiativeModal(boardData.initiatives.find(i => i.id === ${init.id})), 100);"
+                                 style="position: relative; cursor: pointer;">
+                                <div class="bento-pipeline-item-header">
+                                    <div class="bento-pipeline-item-title">
+                                        ${init.title}
+                                        <span class="bento-type-badge bento-type-${init.type}">${init.type.toUpperCase()}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 1.73-3Z"/>
+                                            <path d="M12 9v4"/>
+                                            <path d="M12 17h.01"/>
+                                        </svg>
+                                        <span class="text-xs" style="color: var(--accent-orange);">Priority ${init.priority}</span>
+                                        ${getRowColFromSlot(init.priority).row <= 4 ? 
+                                            '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">HIGH PRIORITY</span>' : 
+                                            ''
+                                        }
                                     </div>
                                 </div>
-                            `).join('') +
-                        '</div>' +
+                            </div>
+                        `).join('') +
                     '</div>' +
-                    
-                    /// Recommendation - Right column
-(highPriorityMisaligned.length > 0 ? 
-    '<div style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);" class="p-4 rounded-lg h-full flex flex-col">' +
-        '<h5 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-blue);">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                '<path d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/><path d="M12 17h.01"/>' +
-            '</svg>' +
-            'Recommendation' +
-        '</h5>' +
-        '<p class="text-sm leading-relaxed mb-3" style="color: var(--text-secondary);">' + highPriorityMisaligned.length + ' high-priority initiatives may need OKR alignment review or deprioritization.</p>' +
-        '<div class="mt-auto">' +
-            '<div class="bento-pipeline-item" style="min-height: 60px; padding: 8px; margin-bottom: 0; cursor: pointer;" onclick="closeModal(); setTimeout(() => showInitiativeModal(boardData.initiatives.find(i => i.id === ' + highPriorityMisaligned[0].id + ')), 100);">' +
-                '<div class="bento-pipeline-item-header">' +
-                    '<div class="bento-pipeline-item-title" style="font-size: 11px;">' +
-                        highPriorityMisaligned[0].title +
-                        '<span class="bento-type-badge bento-type-' + highPriorityMisaligned[0].type + '" style="font-size: 7px; padding: 1px 3px;">' + highPriorityMisaligned[0].type.toUpperCase() + '</span>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-        '</div>' +
-    '</div>' : 
-    '<div></div>' // Empty div to maintain grid structure
-) +
-                '</div>' +
-            '</div>' +
+                '</div>' : ''
+            ) +
         '</div>';
     
     modal.classList.add('show');
@@ -7024,13 +7072,14 @@ function updateBoardWithLiveData(newData) {
     // Update the global boardData object
     boardData.initiatives = newData.initiatives || [];
     boardData.bullpen = newData.bullpen || [];
+    boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data
     
     // Keep existing teams data (don't replace)
     if (newData.teams) {
         boardData.teams = { ...boardData.teams, ...newData.teams };
     }
     
-    console.log(`Updated with ${boardData.initiatives.length} initiatives and ${boardData.bullpen.length} bullpen items`);
+    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, and ${boardData.okrs.issues ? boardData.okrs.issues.length : 0} OKR items`);
     
     // Regenerate the UI with new data
     try {
@@ -7040,6 +7089,11 @@ function updateBoardWithLiveData(newData) {
         // Update pipeline if the function exists
         if (typeof updatePipelineCard === 'function') {
             updatePipelineCard();
+        }
+        
+        // Update OKR card
+        if (typeof updateOKRCard === 'function') {
+            updateOKRCard();
         }
         
         // Refresh search index with new data
