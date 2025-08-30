@@ -5439,15 +5439,15 @@ function showOKRAlignmentModal() {
                     'Portfolio Alignment Analysis' +
                 '</h3>' +
                 '<div class="grid gap-4 mb-6" style="grid-template-columns: 1fr 1fr 1fr;">' +
-                    '<div class="p-4 rounded-lg text-center" style="background: var(--status-success-bg); border: 1px solid ' + alignmentColor + ';">' +
+                    '<div class="p-4 rounded-lg text-center" style="background: ' + alignmentColor + '20; border: 1px solid ' + alignmentColor + ';">' +
                         '<div class="text-2xl font-bold" style="color: ' + alignmentColor + ';">' + alignmentPercentage + '%</div>' +
                         '<div class="text-sm" style="color: var(--text-secondary);">Aligned</div>' +
                     '</div>' +
-                    '<div class="p-4 rounded-lg text-center" style="background: var(--status-warning-bg); border: 1px solid var(--accent-orange);">' +
+                    '<div class="p-4 rounded-lg text-center" style="background: var(--accent-orange)20; border: 1px solid var(--accent-orange);">' +
                         '<div class="text-2xl font-bold" style="color: var(--accent-orange);">' + misalignedInitiatives.length + '</div>' +
                         '<div class="text-sm" style="color: var(--text-secondary);">Need Review</div>' +
                     '</div>' +
-                    '<div class="p-4 rounded-lg text-center" style="background: var(--status-error-bg); border: 1px solid var(--accent-red);">' +
+                    '<div class="p-4 rounded-lg text-center" style="background: var(--accent-red)20; border: 1px solid var(--accent-red);">' +
                         '<div class="text-2xl font-bold" style="color: var(--accent-red);">' + highPriorityMisaligned.length + '</div>' +
                         '<div class="text-sm" style="color: var(--text-secondary);">High Priority</div>' +
                     '</div>' +
@@ -5498,7 +5498,7 @@ function showOKRAlignmentModal() {
     
     modal.classList.add('show');
 }
-      
+
 function showTeamHealthModal(healthLevel) {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
