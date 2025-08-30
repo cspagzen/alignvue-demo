@@ -646,84 +646,24 @@ function showRiskScoreInfoModal() {
     const content = document.getElementById('modal-content');
     
     // Store the element that opened the modal for focus restoration
-    modal.dataset.previousFocus = document.activeElement ? document.activeElement.dataset.initiativeId || 'unknown' : 'unknown';
+    modal.dataset.previousFocus = document.activeElement ? document.activeElement.dataset.initiativeId || document.activeElement.dataset.teamName || 'unknown' : 'unknown';
     
-    title.textContent = initiative.title;
+    title.innerHTML = initiative.title + '<span class="ml-2 text-xs font-normal opacity-75" style="color: var(--text-secondary);">Initiative Details</span>';
+    
     content.innerHTML = 
         '<div class="space-y-6">' +
-            // Initiative Overview Section
-            '<div>' +
-                '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                        '<path d="m3 8 4-4 4 4"/>' +
-                        '<path d="M7 4v16"/>' +
-                        '<path d="M11 12h4"/>' +
-                        '<path d="M11 16h7"/>' +
-                        '<path d="M11 20h10"/>' +
-                    '</svg>' +
-                    'Initiative Overview' +
-                '</h3>' +
-                
-                '<div class="grid gap-4" style="grid-template-columns: 1fr 1fr 1fr;">' +
-                    // Type & Validation
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="text-center">' +
-                            '<div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Type</div>' +
-                            '<div class="mb-2">' +
-                                '<span class="bento-type-badge bento-type-' + initiative.type + '">' + 
-                                    (initiative.type === 'ktlo' ? 'KTLO/TECH' : initiative.type.toUpperCase()) + 
-                                '</span>' +
-                            '</div>' +
-                            '<div class="text-xs" style="color: var(--text-tertiary);">Initiative Classification</div>' +
-                        '</div>' +
-                    '</div>' +
-                    
-                    // Progress
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="text-center">' +
-                            '<div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Progress</div>' +
-                            '<div class="text-3xl font-bold mb-2" style="color: ' + (initiative.progress >= 70 ? 'var(--accent-green)' : initiative.progress >= 40 ? 'var(--accent-orange)' : 'var(--accent-red)') + ';">' + initiative.progress + '%</div>' +
-                            '<div class="progress-bar-container" style="width: 100%; height: 6px; background: var(--bg-quaternary); border-radius: 3px; overflow: hidden; margin: 0 auto;">' +
-                                '<div class="progress-bar ' + getProgressClass(initiative.progress) + '" style="width: ' + initiative.progress + '%; height: 100%; border-radius: 3px;"></div>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    
-                    // Validation Status
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="text-center">' +
-                            '<div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Validation</div>' +
-                            '<div class="flex justify-center mb-2">' + 
-                                getValidationIndicator(initiative.validation).replace('absolute top-1 right-1', 'inline-block').replace('width="20" height="20"', 'width="32" height="32"') + 
-                            '</div>' +
-                            '<div class="text-xs capitalize" style="color: var(--text-tertiary);">' + initiative.validation.replace('-', ' ') + '</div>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-            
-            // Main Content - Two Columns
-            '<div class="grid gap-6" style="grid-template-columns: 1fr 1fr;">' +
-                // Left Column - Opportunity Canvas
+            '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">' +
+                // Left Column - Strategic Overview
                 '<div>' +
                     '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
                         '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                            '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>' +
-                            '<polyline points="14,2 14,8 20,8"/>' +
-                            '<line x1="16" y1="13" x2="8" y2="13"/>' +
-                            '<line x1="16" y1="17" x2="8" y2="17"/>' +
-                            '<polyline points="10,9 9,9 8,9"/>' +
+                            '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>' +
+                            '<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>' +
                         '</svg>' +
-                        'Opportunity Canvas' +
+                        'Strategic Overview' +
                     '</h3>' +
                     
                     '<div class="space-y-4">' +
-                        // Outcome
-                        '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-blue);">' +
-                            '<div class="text-sm font-bold mb-2" style="color: var(--accent-blue);">Outcome</div>' +
-                            '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.outcome : 'N/A') + '</p>' +
-                        '</div>' +
-                        
                         // Problem & Solution
                         '<div class="grid gap-3" style="grid-template-columns: 1fr 1fr;">' +
                             '<div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
@@ -776,7 +716,7 @@ function showRiskScoreInfoModal() {
                     '</h3>' +
                     
                     '<div class="space-y-4">' +
-                        // Jira Analytics
+                        // Jira Analytics with View in Jira button
                         '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-green);">' +
                             '<div class="text-sm font-bold mb-3 flex items-center gap-2" style="color: var(--accent-green);">' +
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -794,18 +734,23 @@ function showRiskScoreInfoModal() {
                                     '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.key : 'N/A') + '</div>' +
                                 '</div>' +
                                 '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Velocity</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.velocity : 'N/A') + '</div>' +
-                                '</div>' +
-                                '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Stories</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.completed + '/' + initiative.jira.stories : 'N/A') + '</div>' +
-                                '</div>' +
-                                '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Blocked</div>' +
-                                    '<div class="text-sm font-bold" style="color: ' + (initiative.jira && initiative.jira.blocked > 5 ? 'var(--accent-red)' : 'var(--text-primary)') + ';">' + (initiative.jira ? initiative.jira.blocked : 'N/A') + '</div>' +
+                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Status</div>' +
+                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.status : 'N/A') + '</div>' +
                                 '</div>' +
                             '</div>' +
+                            // Add the View in Jira button
+                            (initiative.jira && initiative.jira.key ? 
+                                '<div class="mt-3 pt-3 border-t" style="border-color: var(--border-primary);">' +
+                                    '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="w-full px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2" style="background: #0052CC; color: white;" onmouseover="this.style.background=\'#003d99\'" onmouseout="this.style.background=\'#0052CC\'">' +
+                                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                            '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>' +
+                                            '<polyline points="15,3 21,3 21,9"/>' +
+                                            '<line x1="10" x2="21" y1="14" y2="3"/>' +
+                                        '</svg>' +
+                                        'View Epic in Jira' +
+                                    '</button>' +
+                                '</div>' 
+                                : '') +
                         '</div>' +
                         
                         // Teams Section
@@ -863,6 +808,13 @@ function showRiskScoreInfoModal() {
     }, 100);
     
     announceToScreenReader(`Opened details for ${initiative.title} initiative`);
+}
+
+// Add this function anywhere in your script.js file
+function openJiraEpic(epicKey) {
+    // Replace 'your-domain' with your actual Jira domain
+    const jiraUrl = `https://alignvue.atlassian.net/browse/${epicKey}`;
+    window.open(jiraUrl, '_blank', 'noopener,noreferrer');
 }
 
         // Updated team modal function with new health dimensions and status levels
