@@ -3865,9 +3865,7 @@ function getReallocationOpportunities() {
         // Enhanced pipeline drag and drop with Jira integration
 function enablePipelineDragDrop(item) {
     // Find initiative in pipeline (NOT bullpen)
-    const initiative = boardData.pipeline ? 
-        boardData.pipeline.find(init => init && init.id == item.dataset.initiativeId) :
-        boardData.bullpen.find(init => init && init.id == item.dataset.initiativeId);
+    const initiative = boardData.bullpen.find(init => init && init.id == item.dataset.initiativeId);
     
     if (!initiative) {
         console.log('Initiative not found for drag:', item.dataset.initiativeId);
@@ -3878,7 +3876,6 @@ function enablePipelineDragDrop(item) {
     
     item.addEventListener('dragstart', function(e) {
         draggedInitiative = initiative;
-        draggedInitiative.sourceLocation = 'pipeline'; // Track source
         item.classList.add('dragging');
         
         // Pause sync during drag
@@ -7184,9 +7181,7 @@ function setupMatrixDropZones() {
             const targetSlot = parseInt(slot.dataset.slot);
             
             // Handle different drag scenarios
-            if (draggedInitiative.sourceLocation === 'pipeline') {
-                handlePipelineToMatrix(draggedInitiative, targetSlot);
-            } else if (draggedInitiative.priority === "bullpen") {
+            if (draggedInitiative.priority === "bullpen") {
                 // Existing bullpen logic (fallback)
                 handleBullpenToMatrix(draggedInitiative, targetSlot);
             } else {
@@ -7588,7 +7583,7 @@ function hasDataChanged(newData) {
     
     // Quick checks for changes - FIXED to check pipeline instead of bullpen
     if (newData.initiatives.length !== oldData.initiatives.length) return true;
-    if ((newData.pipeline || []).length !== (oldData.pipeline || []).length) return true;
+    if (newData.bullpen.length !== oldData.bullpen.length) return true;
     
     // Deep check initiative changes (priority, teams, progress, validation)
     for (let i = 0; i < newData.initiatives.length; i++) {
@@ -7889,10 +7884,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initSmartSync();
 });
 */
-
-// Initialize pipeline array for Jira sync
-        if (!boardData.pipeline) {
-            boardData.pipeline = [];
-        }
 
         init();
