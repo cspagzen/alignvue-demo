@@ -7427,8 +7427,8 @@ function queueJiraUpdate(initiative, changes) {
         timestamp: Date.now()
     });
     
-    // Process immediately for responsive UI
-    setTimeout(processPendingUpdates, 100);
+    // Process with a delay to avoid race conditions
+    setTimeout(processPendingUpdates, 500); // Increased from 100ms to 500ms
 }
 
 // Process pending updates to Jira
@@ -7438,13 +7438,18 @@ async function processPendingUpdates() {
     const updates = [...syncState.updateQueue];
     syncState.updateQueue = [];
     
+    // Process updates sequentially (not in parallel)
     for (const update of updates) {
         try {
+            console.log(`Processing update for ${update.initiative.jira?.key}: priority ${update.changes.priority}`);
             await writeToJira(update.initiative, update.changes);
+            
+            // Wait between updates to avoid conflicts
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
         } catch (error) {
-            console.error('Failed to write to Jira:', error);
-            // Re-queue failed updates
-            syncState.updateQueue.push(update);
+            console.error(`Failed to update ${update.initiative.jira?.key}:`, error);
+            // Don't re-queue on swap conflicts - let the next sync fix it
         }
     }
 }
