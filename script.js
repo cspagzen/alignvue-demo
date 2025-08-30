@@ -3861,7 +3861,7 @@ function getReallocationOpportunities() {
         
         // Enhanced pipeline drag and drop with Jira integration
 function enablePipelineDragDrop(item) {
-    const initiative = boardData.bullpen.find(init => init && init.id === item.dataset.initiativeId);
+    const initiative = boardData.bullpen.find(init => init && init.id == item.dataset.initiativeId);
     
     if (!initiative) {
         console.log('Initiative not found for drag:', item.dataset.initiativeId);
