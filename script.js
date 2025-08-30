@@ -7067,19 +7067,22 @@ function initEssentialKeyboard() {
 
 // Add this function to your script.js file (before the sync functions)
 function updateBoardWithLiveData(newData) {
+    console.log('=== UPDATE BOARD DEBUG ===');
     console.log('Updating boardData with live data from Jira...');
+    console.log('New data includes OKRs:', !!newData.okrs);
+    console.log('OKR issues count:', newData.okrs?.issues?.length || 0);
     
     // Update the global boardData object
     boardData.initiatives = newData.initiatives || [];
     boardData.bullpen = newData.bullpen || [];
-    boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data
+    boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data!
     
     // Keep existing teams data (don't replace)
     if (newData.teams) {
         boardData.teams = { ...boardData.teams, ...newData.teams };
     }
     
-    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, and ${boardData.okrs.issues ? boardData.okrs.issues.length : 0} OKR items`);
+    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, and ${boardData.okrs.issues.length} OKR items`);
     
     // Regenerate the UI with new data
     try {
@@ -7091,7 +7094,7 @@ function updateBoardWithLiveData(newData) {
             updatePipelineCard();
         }
         
-        // Update OKR card
+        // Update OKR card with new data
         if (typeof updateOKRCard === 'function') {
             updateOKRCard();
         }
@@ -7280,7 +7283,8 @@ function transformJiraData(initiativesResponse, okrsResponse) {
     return {
         initiatives: activeInitiatives,
         bullpen: pipelineInitiatives,
-        teams: boardData.teams
+        teams: boardData.teams,
+        okrs: okrsResponse
     };
 }
 
@@ -7316,32 +7320,22 @@ async function fetchJiraData() {
             method: 'POST',
             body: {
                 jql: 'project = OKR',
-                maxResults: 20,
-                fields: ['summary', 'issuetype', 'issuelinks', 'parent']
+                maxResults: 50,
+                fields: ['summary', 'issuetype', 'issuelinks', 'parent', 'key']
             }
         })
     });
 
     const okrs = await okrsResponse.json();
-
-    // Ensure boardData.teams exists
-    if (!window.boardData || !window.boardData.teams) {
-        console.warn('boardData.teams not found, creating default teams');
-        window.boardData = window.boardData || {};
-        window.boardData.teams = {
-            "Core Platform": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "User Experience": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Security": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Data Engineering": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Analytics": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Site Reliability": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Customer Support": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Business Operations": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Mobile Development": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Machine Learning": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" }
-        };
+    
+    console.log('=== OKR FETCH DEBUG ===');
+    console.log('OKRs Response Status:', okrsResponse.status);
+    console.log('OKRs Found:', okrs.issues ? okrs.issues.length : 0);
+    if (okrs.issues) {
+        console.log('Sample OKR:', okrs.issues[0]);
     }
-
+    
+    // Transform the data AND include OKRs
     return transformJiraData(initiatives, okrs);
 }
 
