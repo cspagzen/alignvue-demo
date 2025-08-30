@@ -716,17 +716,30 @@ function showRiskScoreInfoModal() {
                     '</h3>' +
                     
                     '<div class="space-y-4">' +
-                        // Jira Analytics with View in Jira button
+                        // Jira Analytics with compact View button
                         '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-green);">' +
-                            '<div class="text-sm font-bold mb-3 flex items-center gap-2" style="color: var(--accent-green);">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                    '<path d="M3 6h18"/>' +
-                                    '<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>' +
-                                    '<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>' +
-                                    '<line x1="10" x2="10" y1="11" y2="17"/>' +
-                                    '<line x1="14" x2="14" y1="11" y2="17"/>' +
-                                '</svg>' +
-                                'Jira Analytics' +
+                            '<div class="text-sm font-bold mb-3 flex items-center justify-between" style="color: var(--accent-green);">' +
+                                '<span class="flex items-center gap-2">' +
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                        '<path d="M3 6h18"/>' +
+                                        '<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>' +
+                                        '<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>' +
+                                        '<line x1="10" x2="10" y1="11" y2="17"/>' +
+                                        '<line x1="14" x2="14" y1="11" y2="17"/>' +
+                                    '</svg>' +
+                                    'Jira Analytics' +
+                                '</span>' +
+                                // Small inline button in the header
+                                (initiative.jira && initiative.jira.key ? 
+                                    '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1" style="background: #0052CC; color: white;" onmouseover="this.style.background=\'#003d99\'" onmouseout="this.style.background=\'#0052CC\'">' +
+                                        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                            '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>' +
+                                            '<polyline points="15,3 21,3 21,9"/>' +
+                                            '<line x1="10" x2="21" y1="14" y2="3"/>' +
+                                        '</svg>' +
+                                        'View' +
+                                    '</button>' 
+                                    : '') +
                             '</div>' +
                             '<div class="grid gap-3" style="grid-template-columns: 1fr 1fr;">' +
                                 '<div>' +
@@ -737,20 +750,15 @@ function showRiskScoreInfoModal() {
                                     '<div class="text-xs font-medium" style="color: var(--text-secondary);">Status</div>' +
                                     '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.status : 'N/A') + '</div>' +
                                 '</div>' +
+                                '<div>' +
+                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Assignee</div>' +
+                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.assignee : 'N/A') + '</div>' +
+                                '</div>' +
+                                '<div>' +
+                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Updated</div>' +
+                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? new Date(initiative.jira.updated).toLocaleDateString() : 'N/A') + '</div>' +
+                                '</div>' +
                             '</div>' +
-                            // Add the View in Jira button
-                            (initiative.jira && initiative.jira.key ? 
-                                '<div class="mt-3 pt-3 border-t" style="border-color: var(--border-primary);">' +
-                                    '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="w-full px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2" style="background: #0052CC; color: white;" onmouseover="this.style.background=\'#003d99\'" onmouseout="this.style.background=\'#0052CC\'">' +
-                                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                            '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>' +
-                                            '<polyline points="15,3 21,3 21,9"/>' +
-                                            '<line x1="10" x2="21" y1="14" y2="3"/>' +
-                                        '</svg>' +
-                                        'View Epic in Jira' +
-                                    '</button>' +
-                                '</div>' 
-                                : '') +
                         '</div>' +
                         
                         // Teams Section
@@ -812,7 +820,6 @@ function showRiskScoreInfoModal() {
 
 // Add this function anywhere in your script.js file
 function openJiraEpic(epicKey) {
-    // Replace 'your-domain' with your actual Jira domain
     const jiraUrl = `https://alignvue.atlassian.net/browse/${epicKey}`;
     window.open(jiraUrl, '_blank', 'noopener,noreferrer');
 }
