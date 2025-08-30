@@ -154,9 +154,7 @@ function shiftInitiativesDown(fromSlot) {
         if (draggedInitiative) {
            const targetSlot = getSlotFromRowCol(targetRow, targetCol);
             
-            if (draggedInitiative.sourceLocation === 'pipeline') {
-                handlePipelineToMatrix(draggedInitiative, targetSlot);
-            } else if (draggedInitiative.priority === "bullpen") {
+            if (draggedInitiative.priority === "bullpen") {
                 // Moving from bullpen to matrix
                 handleBullpenToMatrix(draggedInitiative, targetSlot);
             } else {
@@ -3864,7 +3862,6 @@ function getReallocationOpportunities() {
         
         // Enhanced pipeline drag and drop with Jira integration
 function enablePipelineDragDrop(item) {
-    // Find initiative in pipeline (NOT bullpen)
     const initiative = boardData.bullpen.find(init => init && init.id == item.dataset.initiativeId);
     
     if (!initiative) {
@@ -7231,59 +7228,54 @@ function transformJiraData(initiativesResponse, okrsResponse) {
 // Fetch data from Jira
 async function fetchJiraData() {
     try {
-        const response = await fetch('/api/jira', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                endpoint: '/rest/api/3/search',
+        const [initiativesResponse, okrsResponse] = await Promise.all([
+            fetch('/api/jira', {
                 method: 'POST',
-                body: {
-                    jql: 'project = STRAT AND issuetype = Epic',
-                    fields: [
-                        'summary', 'status', 'assignee', 'progress', 'issuelinks',
-                        'customfield_10091', // Matrix Position
-                        'customfield_10053', // Teams Assigned  
-                        'customfield_10054', // Validation Status
-                        'customfield_10055', // Canvas Outcome
-                        'customfield_10056', // TAM
-                        'customfield_10057', // SAM
-                        'customfield_10058', // SOM
-                        'customfield_10059', // Target Customer
-                        'customfield_10060', // Problem Statement
-                        'customfield_10061', // Solution Description
-                        'customfield_10062', // Big Picture Vision
-                        'customfield_10063', // Alternative Solutions
-                        'customfield_10064', // Impact
-                        'customfield_10065'  // Success Measures
-                    ],
-                    maxResults: 100
-                }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endpoint: '/rest/api/3/search',
+                    method: 'POST',
+                    body: {
+                        jql: 'project = STRAT AND issuetype = Epic',
+                        fields: [
+                            'summary', 'status', 'assignee', 'progress', 'issuelinks',
+                            'customfield_10051', 'customfield_10052', 'customfield_10053',
+                            'customfield_10054', 'customfield_10055', 'customfield_10056',
+                            'customfield_10057', 'customfield_10058', 'customfield_10059',
+                            'customfield_10060', 'customfield_10061', 'customfield_10062',
+                            'customfield_10063', 'customfield_10064', 'customfield_10065',
+                            'customfield_10091', 'project'
+                        ],
+                        maxResults: 100
+                    }
+                })
+            }),
+            fetch('/api/jira', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endpoint: '/rest/api/3/search',
+                    method: 'POST',
+                    body: {
+                        jql: 'project = OKR AND issuetype = Task',
+                        fields: ['summary', 'status', 'assignee', 'issuelinks'],
+                        maxResults: 100
+                    }
+                })
             })
-        });
+        ]);
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
-        const data = await response.json();
-        
-        // Transform initiatives
-        const initiatives = data.issues
-            .filter(issue => {
-                const matrixPosition = getFieldValue(issue, 'customfield_10091');
-                return matrixPosition > 0 && matrixPosition <= 36;
-            })
-            .map(issue => transformJiraIssue(issue))
-            .sort((a, b) => a.priority - b.priority);
+        if (!initiativesResponse.ok || !okrsResponse.ok) {
+            throw new Error(`HTTP ${initiativesResponse.status} or ${okrsResponse.status}`);
+        }
 
-        return {
-            initiatives: initiatives,
-            teams: boardData.teams,
-            bullpen: boardData.bullpen
-        };
+        const initiatives = await initiativesResponse.json();
+        const okrs = await okrsResponse.json();
+
+        return transformJiraData(initiatives, okrs);
         
     } catch (error) {
         console.error('Failed to fetch Jira data:', error);
-        
-        // REMOVE THIS FALLBACK - it's what's causing static data!
         throw error;
     }
 }
