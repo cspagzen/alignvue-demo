@@ -3367,27 +3367,22 @@ function showInValidationModal() {
     
     // Sort by priority (active initiatives first, then pipeline)
     const sortedInitiatives = allInValidation.sort((a, b) => {
-        // Pipeline items go to bottom
         if (a.priority === 'pipeline' && b.priority !== 'pipeline') return 1;
         if (b.priority === 'pipeline' && a.priority !== 'pipeline') return -1;
         if (a.priority === 'pipeline' && b.priority === 'pipeline') {
-            return a.title.localeCompare(b.title); // Alphabetical for pipeline
+            return a.title.localeCompare(b.title);
         }
-        
-        // Active initiatives by priority number (lower = higher priority)
         return a.priority - b.priority;
     });
     
-    // Identify high priority items needing attention
     const highPriorityInValidation = activeInValidation.filter(init => {
         const row = getRowColFromSlot(init.priority).row;
-        return row <= 4; // Critical (1-2) or High (3-4) priority rows
+        return row <= 4;
     });
     
     title.textContent = 'Initiatives In Validation';
     content.innerHTML = 
         '<div class="space-y-6">' +
-            // Header Section
             '<div>' +
                 '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
                     '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -3396,8 +3391,6 @@ function showInValidationModal() {
                     '</svg>' +
                     'Validation Pipeline Overview - ' + allInValidation.length + ' Initiatives In Validation' +
                 '</h3>' +
-                
-                // Summary stats
                 '<div class="grid grid-cols-2 gap-4 mb-6">' +
                     '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
                         '<div class="text-2xl font-bold" style="color: var(--accent-orange);">' + activeInValidation.length + '</div>' +
@@ -3408,14 +3401,10 @@ function showInValidationModal() {
                         '<div class="text-sm" style="color: var(--text-secondary);">In Pipeline</div>' +
                     '</div>' +
                 '</div>' +
-                
-                // High priority alert
                 (highPriorityInValidation.length > 0 ? 
                    '<div class="mb-6 p-3 rounded text-sm" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid var(--accent-orange); color: var(--accent-orange);"><strong>Priority Alert:</strong> ' + highPriorityInValidation.length + ' high-priority initiatives need expedited validation to prevent delivery delays</div>' : 
                    ''
                ) +
-               
-               // Initiatives List
                '<div style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid var(--accent-orange);" class="rounded-lg p-4">' +
                    '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-orange);">' +
                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -3431,7 +3420,7 @@ function showInValidationModal() {
                            
                            return `
                                <div class="bento-pipeline-item" 
-                                    onclick="closeModal(); setTimeout(() => showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(init => init.id === ' + init.id + ')' : 'boardData.initiatives.find(init => init.id === ' + init.id + ')'}), 100);"
+                                    onclick="showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(init => init.id === ' + init.id + ')' : 'boardData.initiatives.find(init => init.id === ' + init.id + ')'})"
                                     style="position: relative; cursor: pointer; ${isPipeline ? 'opacity: 0.7; border-left: 3px solid var(--text-tertiary);' : ''} ${isHighPriority ? 'border-left: 3px solid var(--accent-orange);' : ''}">
                                    <div class="bento-pipeline-item-header">
                                        <div class="bento-pipeline-item-title">
@@ -3451,33 +3440,6 @@ function showInValidationModal() {
                        }).join('') +
                    '</div>' +
                '</div>' +
-               
-               // Next Actions section
-               '<div class="mt-6 p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-blue);">' +
-                   '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-blue);">' +
-                       '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                           '<circle cx="12" cy="12" r="10"/>' +
-                           '<polyline points="12,6 12,12 16,14"/>' +
-                       '</svg>' +
-                       'Next Actions' +
-                   '</h4>' +
-                   '<div class="grid grid-cols-2 gap-4 text-sm">' +
-                       '<div>' +
-                           '<ul class="space-y-1" style="color: var(--text-secondary);">' +
-                               '<li>• Review validation criteria</li>' +
-                               '<li>• Complete stakeholder feedback</li>' +
-                               '<li>• Finalize business case</li>' +
-                           '</ul>' +
-                       '</div>' +
-                       '<div>' +
-                           '<ul class="space-y-1" style="color: var(--text-secondary);">' +
-                               '<li>• Document success metrics</li>' +
-                               '<li>• Schedule validation review</li>' +
-                               '<li>• Update initiative status</li>' +
-                           '</ul>' +
-                       '</div>' +
-                   '</div>' +
-               '</div>' +
            '</div>' +
        '</div>';
    
@@ -3489,34 +3451,27 @@ function showNotValidatedModal() {
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
     
-    // Get all not validated initiatives (active + pipeline)
     const activeNotValidated = (boardData.initiatives || []).filter(init => init.validation === 'not-validated');
     const pipelineNotValidated = (boardData.bullpen || []).filter(init => init.validation === 'not-validated');
     const allNotValidated = [...activeNotValidated, ...pipelineNotValidated];
     
-    // Sort by priority (active initiatives first, then pipeline)
     const sortedInitiatives = allNotValidated.sort((a, b) => {
-        // Pipeline items go to bottom
         if (a.priority === 'pipeline' && b.priority !== 'pipeline') return 1;
         if (b.priority === 'pipeline' && a.priority !== 'pipeline') return -1;
         if (a.priority === 'pipeline' && b.priority === 'pipeline') {
-            return a.title.localeCompare(b.title); // Alphabetical for pipeline
+            return a.title.localeCompare(b.title);
         }
-        
-        // Active initiatives by priority number (lower = higher priority)
         return a.priority - b.priority;
     });
     
-    // Identify high priority items needing attention
     const highPriorityNotValidated = activeNotValidated.filter(init => {
         const row = getRowColFromSlot(init.priority).row;
-        return row <= 4; // Critical (1-2) or High (3-4) priority rows
+        return row <= 4;
     });
     
     title.textContent = 'Not Validated Initiatives';
     content.innerHTML = 
         '<div class="space-y-6">' +
-            // Header Section
             '<div>' +
                 '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
                     '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -3525,8 +3480,6 @@ function showNotValidatedModal() {
                     '</svg>' +
                     'Validation Required - ' + allNotValidated.length + ' Initiatives Need Validation' +
                 '</h3>' +
-                
-                // Summary stats
                 '<div class="grid grid-cols-2 gap-4 mb-6">' +
                     '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
                         '<div class="text-2xl font-bold" style="color: var(--accent-red);">' + activeNotValidated.length + '</div>' +
@@ -3537,14 +3490,10 @@ function showNotValidatedModal() {
                         '<div class="text-sm" style="color: var(--text-secondary);">In Pipeline</div>' +
                     '</div>' +
                 '</div>' +
-                
-                // High priority alert
                 (highPriorityNotValidated.length > 0 ? 
                    '<div class="mb-6 p-3 rounded text-sm" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border: 1px solid var(--accent-red); color: var(--accent-red);"><strong>Critical Alert:</strong> ' + highPriorityNotValidated.length + ' high-priority initiatives require immediate validation to prevent roadmap delays</div>' : 
                    ''
                ) +
-               
-               // Initiatives List
                '<div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.04) 100%); border: 1px solid rgba(239, 68, 68, 0.3);" class="rounded-lg p-4">' +
                    '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: #dc2626;">' +
                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -3560,7 +3509,7 @@ function showNotValidatedModal() {
                            
                            return `
                                <div class="bento-pipeline-item" 
-                                    onclick="closeModal(); setTimeout(() => showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(init => init.id === ' + init.id + ')' : 'boardData.initiatives.find(init => init.id === ' + init.id + ')'}), 100);"
+                                    onclick="showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(init => init.id === ' + init.id + ')' : 'boardData.initiatives.find(init => init.id === ' + init.id + ')'})"
                                     style="position: relative; cursor: pointer; ${isPipeline ? 'opacity: 0.7; border-left: 3px solid var(--text-tertiary);' : ''} ${isHighPriority ? 'border-left: 3px solid var(--accent-red);' : ''}">
                                    <div class="bento-pipeline-item-header">
                                        <div class="bento-pipeline-item-title">
@@ -3580,39 +3529,12 @@ function showNotValidatedModal() {
                        }).join('') +
                    '</div>' +
                '</div>' +
-               
-               // Urgent Actions section
-               '<div class="mt-6 p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-blue);">' +
-                   '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-blue);">' +
-                       '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                           '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>' +
-                           '<path d="M12 9v4"/>' +
-                           '<path d="M12 17h.01"/>' +
-                       '</svg>' +
-                       'Urgent Actions Required' +
-                   '</h4>' +
-                   '<div class="grid grid-cols-2 gap-4 text-sm">' +
-                       '<div>' +
-                           '<ul class="space-y-1" style="color: var(--text-secondary);">' +
-                               '<li>• Start validation process</li>' +
-                               '<li>• Gather stakeholder input</li>' +
-                               '<li>• Define success criteria</li>' +
-                           '</ul>' +
-                       '</div>' +
-                       '<div>' +
-                           '<ul class="space-y-1" style="color: var(--text-secondary);">' +
-                               '<li>• Assess market opportunity</li>' +
-                               '<li>• Create business case</li>' +
-                               '<li>• Schedule review meetings</li>' +
-                           '</ul>' +
-                       '</div>' +
-                   '</div>' +
-               '</div>' +
            '</div>' +
        '</div>';
    
    modal.classList.add('show');
 }
+
 function updateMendozaCard() {
     const content = document.getElementById('mendoza-impact-content');
     
