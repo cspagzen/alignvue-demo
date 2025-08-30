@@ -7091,196 +7091,6 @@ function getFieldValue(issue, fieldId) {
     return fieldValue;
 }
 
-function handlePipelineToMatrix(initiative, targetSlot) {
-    console.log(`Moving ${initiative.title} from pipeline to slot ${targetSlot}`);
-    
-    // Remove from pipeline
-    if (boardData.pipeline) {
-        const pipelineIndex = boardData.pipeline.findIndex(item => item.id === initiative.id);
-        if (pipelineIndex !== -1) {
-            boardData.pipeline.splice(pipelineIndex, 1);
-        }
-    } else {
-        // Fallback to bullpen for compatibility
-        const bullpenIndex = boardData.bullpen.findIndex(item => item && item.id === initiative.id);
-        if (bullpenIndex !== -1) {
-            boardData.bullpen[bullpenIndex] = null;
-        }
-    }
-    
-    // Check slot 36 overflow BEFORE placing the new item
-    handleSlot36Overflow(targetSlot);
-    
-    // Shift items down from target slot
-    shiftInitiativesDown(targetSlot);
-    
-    // Update initiative properties
-    initiative.priority = targetSlot;
-    // Preserve current status unless it's "Pipeline"
-    if (initiative.status === "Pipeline") {
-        initiative.status = "To Do";
-    }
-    
-    // Add to board initiatives
-    boardData.initiatives.push(initiative);
-    
-    // Queue Jira update
-    if (typeof queueJiraUpdate === 'function') {
-        queueJiraUpdate(initiative, {
-            priority: targetSlot,
-            status: initiative.status
-        });
-    }
-    
-    // Refresh UI
-    setTimeout(() => {
-        generatePyramid();
-        if (typeof updatePipelineCard === 'function') {
-            updatePipelineCard();
-        }
-    }, 100);
-}
-
-
-
-// Initialize enhanced pipeline drag and drop
-function initializePipelineDragDrop() {
-    // Set up matrix drop zones (enhanced)
-    setupMatrixDropZones();
-    
-    // Set up pipeline drop zone (new)
-    setupPipelineDropZone();
-    
-    // Enable drag for existing pipeline items
-    document.querySelectorAll('[data-initiative-id]').forEach(item => {
-        if (item.closest('.pipeline-container, #pipeline-section')) {
-            enablePipelineDragDrop(item);
-        }
-    });
-}
-
-// Enhanced matrix drop zone handler for pipeline items
-function setupMatrixDropZones() {
-    document.querySelectorAll('.drop-zone, .pyramid-slot').forEach(slot => {
-        slot.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            slot.classList.add('drag-over');
-        });
-
-        slot.addEventListener('dragleave', function() {
-            slot.classList.remove('drag-over');
-        });
-
-        slot.addEventListener('drop', function(e) {
-            e.preventDefault();
-            slot.classList.remove('drag-over');
-            
-            if (!draggedInitiative) return;
-            
-            const targetSlot = parseInt(slot.dataset.slot);
-            
-            // Handle different drag scenarios
-            if (draggedInitiative.priority === "bullpen") {
-                // Existing bullpen logic (fallback)
-                handleBullpenToMatrix(draggedInitiative, targetSlot);
-            } else {
-                // Existing board-to-board logic
-                handleMatrixToMatrix(draggedInitiative, targetSlot);
-            }
-        });
-    });
-}
-
-// Enhanced slot 36 overflow handling
-function handleSlot36Overflow(newItemTargetSlot) {
-    if (newItemTargetSlot > 36) return; // No overflow needed
-    
-    // Find item currently in slot 36
-    const slot36Item = boardData.initiatives.find(init => init.priority === 36);
-    if (!slot36Item) return; // Slot 36 is empty
-    
-    console.log(`Slot 36 overflow: Moving ${slot36Item.title} to pipeline`);
-    
-    // Remove from board initiatives
-    const boardIndex = boardData.initiatives.findIndex(item => item.id === slot36Item.id);
-    if (boardIndex !== -1) {
-        boardData.initiatives.splice(boardIndex, 1);
-    }
-    
-    // Update properties for pipeline
-    slot36Item.priority = 0;
-    slot36Item.status = "Pipeline";
-    
-    // Add to pipeline
-    boardData.pipeline.push(slot36Item);
-    
-    // Queue Jira update for bumped item
-    queueJiraUpdate(slot36Item, {
-        priority: 0,
-        status: "Pipeline"
-    });
-}
-
-function setupPipelineDropZone() {
-    const pipelineContainer = document.querySelector('.pipeline-container, #pipeline-section');
-    if (!pipelineContainer) return;
-    
-    pipelineContainer.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        pipelineContainer.classList.add('pipeline-drag-over');
-    });
-
-    pipelineContainer.addEventListener('dragleave', function() {
-        pipelineContainer.classList.remove('pipeline-drag-over');
-    });
-
-    pipelineContainer.addEventListener('drop', function(e) {
-        e.preventDefault();
-        pipelineContainer.classList.remove('pipeline-drag-over');
-        
-        if (!draggedInitiative || draggedInitiative.sourceLocation === 'pipeline') return;
-        
-        handleMatrixToPipeline(draggedInitiative);
-    });
-}
-
-// New function: Handle matrix to pipeline moves  
-function handleMatrixToPipeline(initiative) {
-    console.log(`Moving ${initiative.title} from slot ${initiative.priority} to pipeline`);
-    
-    const oldSlot = initiative.priority;
-    
-    // Remove from board initiatives
-    const boardIndex = boardData.initiatives.findIndex(item => item.id === initiative.id);
-    if (boardIndex !== -1) {
-        boardData.initiatives.splice(boardIndex, 1);
-    }
-    
-    // Shift remaining items up to fill gap
-    shiftInitiativesUp(oldSlot);
-    
-    // Update properties for pipeline
-    initiative.priority = 0;
-    initiative.status = "Pipeline";
-    
-    // Add to pipeline
-    boardData.pipeline.push(initiative);
-    
-    // Queue Jira update
-    queueJiraUpdate(initiative, {
-        priority: 0,
-        status: "Pipeline"
-    });
-    
-    // Refresh UI
-    setTimeout(() => {
-        generatePyramid();
-        updatePipelineCard();
-    }, 100);
-}
-
 // Update formatMarketSize to handle proper field IDs
 function formatMarketSize(issue) {
     const tam = getFieldValue(issue, 'customfield_10056');
@@ -7487,25 +7297,33 @@ async function fetchJiraData() {
 
 // Initialize smart sync on page load
 function initSmartSync() {
-    console.log('Initializing smart sync with pipeline drag & drop...');
-    
-    setupSyncIndicator();
-    setupSyncPauseHandlers();
-    
-    // Initialize pipeline drag and drop
-    initializePipelineDragDrop();
-    
     // Initial sync
     syncWithJira();
     
-    // Set up auto-sync interval
+    // Track user activity
+    let lastActivity = Date.now();
+    
+    const updateActivity = () => lastActivity = Date.now();
+    document.addEventListener('mousemove', updateActivity);
+    document.addEventListener('keypress', updateActivity);
+    document.addEventListener('click', updateActivity);
+    document.addEventListener('scroll', updateActivity);
+    
+    // Smart polling - only when recently active
     syncState.syncInterval = setInterval(() => {
-        if (!syncState.isPaused) {
+        const isRecentlyActive = Date.now() - lastActivity < 120000; // Active in last 2 minutes
+        
+        if (syncState.isActive && !syncState.isPaused && isRecentlyActive) {
+            console.log('Auto-syncing due to recent user activity');
             syncWithJira();
         }
-    }, 30000);
+    }, 180000); // Check every 3 minutes, sync only if active in last 2 minutes
     
-    console.log('Smart sync initialized with 30-second interval');
+    // Setup pause handlers
+    setupSyncPauseHandlers();
+    
+    // Add manual sync button
+    addManualSyncButton();
 }
 
 function addManualSyncButton() {
