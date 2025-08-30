@@ -154,7 +154,7 @@ function shiftInitiativesDown(fromSlot) {
         if (draggedInitiative) {
            const targetSlot = getSlotFromRowCol(targetRow, targetCol);
             
-            if (draggedInitiative.priority === "bullpen") {
+            if (draggedInitiative.priority === "pipeline") {
                 // Moving from bullpen to matrix
                 handleBullpenToMatrix(draggedInitiative, targetSlot);
             } else {
