@@ -1860,18 +1860,18 @@ function updateOKRCard() {
     }
     
     content.innerHTML = `
-        <div class="h-full flex flex-col items-center justify-center text-center space-y-2 kpi-gauge-card">
+        <div class="h-full flex flex-col items-center justify-center text-center space-y-2 kpi-gauge-card cursor-pointer hover:opacity-80 transition-opacity"
+             onclick="event.stopPropagation(); showOKRAlignmentModal()"
+             title="View OKR alignment analysis">
             <div class="text-sm font-bold" style="color: var(--text-secondary);">Aligned Initiatives</div>
-            <div class="kpi-current-value" style="color: ${color};">${alignmentPercentage}%</div>
-            <div class="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1" 
-                 onclick="event.stopPropagation(); showOKRAlignmentModal()"
-                 title="View OKR alignment analysis">
+            <div class="text-3xl font-bold" style="color: ${color};">${alignmentPercentage}%</div>
+            <div class="flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                     <polyline points="10,17 15,12 10,7"/>
                     <line x1="15" y1="12" x2="3" y2="12"/>
                 </svg>
-                <span style="color: var(--text-tertiary); font-size: 0.75rem;">${misalignedCount} need review</span>
+                <span class="text-base font-medium" style="color: var(--text-tertiary);">${misalignedCount} need review</span>
             </div>
         </div>
     `;
@@ -5329,6 +5329,17 @@ function showOKRAlignmentModal() {
         return getRowColFromSlot(init.priority).row <= 4; // High priority rows 1-4
     });
     
+    // Color logic (same as card)
+    const alignmentPercentage = calculateOKRAlignment();
+    let alignmentColor;
+    if (alignmentPercentage >= 85) {
+        alignmentColor = 'var(--accent-green)';
+    } else if (alignmentPercentage >= 70) {
+        alignmentColor = 'var(--accent-orange)';
+    } else {
+        alignmentColor = 'var(--accent-red)';
+    }
+    
     title.textContent = 'OKR Alignment Analysis';
     
     // Build OKRs display from Jira data
@@ -5357,7 +5368,16 @@ function showOKRAlignmentModal() {
                 <div class="p-6 rounded-lg mb-4" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
                     <div class="grid gap-6" style="grid-template-columns: 1fr 2fr;">
                         <div>
-                            <div class="text-base font-bold mb-3" style="color: var(--text-primary);">Objective:</div>
+                            <div class="text-base font-bold mb-3 flex items-center justify-between" style="color: var(--text-primary);">
+                                <span>Objective:</span>
+                                <a href="https://alignvue.atlassian.net/browse/${objective.key}" target="_blank" title="Open in Jira" class="hover:opacity-75 transition-opacity">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0052CC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M15 3h6v6"/>
+                                        <path d="M10 14 21 3"/>
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                    </svg>
+                                </a>
+                            </div>
                             <p class="text-base font-medium leading-relaxed" style="color: var(--text-secondary);">${objective.summary}</p>
                             <div class="text-xs mt-2 opacity-75" style="color: var(--text-tertiary);">${objective.key}</div>
                         </div>
@@ -5371,8 +5391,17 @@ function showOKRAlignmentModal() {
                                         const color = colors[index % colors.length];
                                         return `
                                             <div class="flex items-start gap-3 p-3 rounded-md" style="background: ${color}20; border-left: 4px solid ${color};">
-                                                <div>
-                                                    <div class="text-sm font-semibold mb-1" style="color: var(--text-primary);">${kr.key}</div>
+                                                <div class="flex-1">
+                                                    <div class="text-sm font-semibold mb-1 flex items-center justify-between" style="color: var(--text-primary);">
+                                                        <span>${kr.key}</span>
+                                                        <a href="https://your-jira-domain.atlassian.net/browse/${kr.key}" target="_blank" title="Open in Jira" class="hover:opacity-75 transition-opacity">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0052CC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M15 3h6v6"/>
+                                                                <path d="M10 14 21 3"/>
+                                                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                                            </svg>
+                                                        </a>
+                                                    </div>
                                                     <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">${kr.summary}</p>
                                                 </div>
                                             </div>
@@ -5409,8 +5438,8 @@ function showOKRAlignmentModal() {
                     'Portfolio Alignment Analysis' +
                 '</h3>' +
                 '<div class="grid gap-4 mb-6" style="grid-template-columns: 1fr 1fr 1fr;">' +
-                    '<div class="p-4 rounded-lg text-center" style="background: var(--status-success-bg); border: 1px solid var(--accent-green);">' +
-                        '<div class="text-2xl font-bold" style="color: var(--accent-green);">' + calculateOKRAlignment() + '%</div>' +
+                    '<div class="p-4 rounded-lg text-center" style="background: var(--status-success-bg); border: 1px solid ' + alignmentColor + ';">' +
+                        '<div class="text-2xl font-bold" style="color: ' + alignmentColor + ';">' + alignmentPercentage + '%</div>' +
                         '<div class="text-sm" style="color: var(--text-secondary);">Aligned</div>' +
                     '</div>' +
                     '<div class="p-4 rounded-lg text-center" style="background: var(--status-warning-bg); border: 1px solid var(--accent-orange);">' +
@@ -5438,9 +5467,9 @@ function showOKRAlignmentModal() {
                     '<div class="text-sm mb-3" style="color: var(--text-secondary);">These initiatives need OKR alignment review or mapping in Jira (highest priority first)</div>' +
                     '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
                         misalignedInitiatives.map(init => `
-                            <div class="bento-pipeline-item" 
+                            <div class="bento-pipeline-item cursor-pointer hover:opacity-80 transition-opacity" 
                                  onclick="closeModal(); setTimeout(() => showInitiativeModal(boardData.initiatives.find(i => i.id === ${init.id})), 100);"
-                                 style="position: relative; cursor: pointer;">
+                                 style="position: relative;">
                                 <div class="bento-pipeline-item-header">
                                     <div class="bento-pipeline-item-title">
                                         ${init.title}
