@@ -5322,7 +5322,8 @@ function showOKRAlignmentModal() {
     
     // Only consider active board initiatives (exclude pipeline)
     const activeBoardInitiatives = boardData.initiatives.filter(init => init.priority !== "pipeline");
-    const misalignedInitiatives = activeBoardInitiatives.filter(init => !isAlignedWithOKRs(init));
+    const misalignedInitiatives = activeBoardInitiatives.filter(init => !isAlignedWithOKRs(init))
+        .sort((a, b) => a.priority - b.priority); // Sort by priority (lowest number = highest priority first)
     
     const highPriorityMisaligned = misalignedInitiatives.filter(init => {
         return getRowColFromSlot(init.priority).row <= 4; // High priority rows 1-4
@@ -5432,9 +5433,9 @@ function showOKRAlignmentModal() {
                             '<path d="M12 9v4"/>' +
                             '<path d="M12 17h.01"/>' +
                         '</svg>' +
-                        'Initiatives Without OKR Mapping (' + misalignedInitiatives.length + ')' +
+                        'Initiatives Without OKR Mapping (' + misalignedInitiatives.length + ') - Sorted by Priority' +
                     '</h4>' +
-                    '<div class="text-sm mb-3" style="color: var(--text-secondary);">These initiatives need OKR alignment review or mapping in Jira</div>' +
+                    '<div class="text-sm mb-3" style="color: var(--text-secondary);">These initiatives need OKR alignment review or mapping in Jira (highest priority first)</div>' +
                     '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
                         misalignedInitiatives.map(init => `
                             <div class="bento-pipeline-item" 
