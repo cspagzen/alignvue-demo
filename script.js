@@ -1,4 +1,5 @@
-let currentZoom = 1;
+
+        let currentZoom = 1;
         let selectedInitiativeId = null;
         let draggedInitiative = null;
 
@@ -153,7 +154,9 @@ function shiftInitiativesDown(fromSlot) {
         if (draggedInitiative) {
            const targetSlot = getSlotFromRowCol(targetRow, targetCol);
             
-            if (draggedInitiative.priority === "bullpen") {
+            if (draggedInitiative.sourceLocation === 'pipeline') {
+                handlePipelineToMatrix(draggedInitiative, targetSlot);
+            } else if (draggedInitiative.priority === "bullpen") {
                 // Moving from bullpen to matrix
                 handleBullpenToMatrix(draggedInitiative, targetSlot);
             } else {
@@ -180,12 +183,13 @@ function handleBullpenToMatrix(initiative, targetSlot) {
     
     // Place initiative at target slot
     initiative.priority = targetSlot;
+    queueJiraUpdate(initiative, { priority: targetSlot });
     boardData.initiatives.push(initiative);
     
     // Refresh the pipeline display after moving item
-setTimeout(() => {
-    updatePipelineCard();
-}, 100);
+    setTimeout(() => {
+        updatePipelineCard();
+    }, 100);
 }
 
 function handleMatrixToMatrix(initiative, targetSlot) {
@@ -224,6 +228,7 @@ function handleMatrixToMatrix(initiative, targetSlot) {
     
     // Place dragged initiative at target slot
     initiative.priority = targetSlot;
+    queueJiraUpdate(initiative, { priority: targetSlot });
 }
       
 function handleAtRiskCardClick(initiativeId) {
@@ -260,7 +265,7 @@ function showAtRiskAnalysisModal(initiative) {
                         </div>
                         <div>
                             <div class="font-bold text-lg" style="color: ${riskLevel.color};">${riskLevel.label}</div>
-                            <div class="text-sm" style="color: var(--text-secondary);">Priority ${initiative.priority} â€¢ ${initiative.type.toUpperCase()}</div>
+                            <div class="text-sm" style="color: var(--text-secondary);">Priority ${initiative.priority} • ${initiative.type.toUpperCase()}</div>
                         </div>
                     </div>
                     <div class="text-right">
@@ -643,84 +648,24 @@ function showRiskScoreInfoModal() {
     const content = document.getElementById('modal-content');
     
     // Store the element that opened the modal for focus restoration
-    modal.dataset.previousFocus = document.activeElement ? document.activeElement.dataset.initiativeId || 'unknown' : 'unknown';
+    modal.dataset.previousFocus = document.activeElement ? document.activeElement.dataset.initiativeId || document.activeElement.dataset.teamName || 'unknown' : 'unknown';
     
-    title.textContent = initiative.title;
+    title.innerHTML = initiative.title + '<span class="ml-2 text-xs font-normal opacity-75" style="color: var(--text-secondary);">Initiative Details</span>';
+    
     content.innerHTML = 
         '<div class="space-y-6">' +
-            // Initiative Overview Section
-            '<div>' +
-                '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                        '<path d="m3 8 4-4 4 4"/>' +
-                        '<path d="M7 4v16"/>' +
-                        '<path d="M11 12h4"/>' +
-                        '<path d="M11 16h7"/>' +
-                        '<path d="M11 20h10"/>' +
-                    '</svg>' +
-                    'Initiative Overview' +
-                '</h3>' +
-                
-                '<div class="grid gap-4" style="grid-template-columns: 1fr 1fr 1fr;">' +
-                    // Type & Validation
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="text-center">' +
-                            '<div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Type</div>' +
-                            '<div class="mb-2">' +
-                                '<span class="bento-type-badge bento-type-' + initiative.type + '">' + 
-                                    (initiative.type === 'ktlo' ? 'KTLO/TECH' : initiative.type.toUpperCase()) + 
-                                '</span>' +
-                            '</div>' +
-                            '<div class="text-xs" style="color: var(--text-tertiary);">Initiative Classification</div>' +
-                        '</div>' +
-                    '</div>' +
-                    
-                    // Progress
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="text-center">' +
-                            '<div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Progress</div>' +
-                            '<div class="text-3xl font-bold mb-2" style="color: ' + (initiative.progress >= 70 ? 'var(--accent-green)' : initiative.progress >= 40 ? 'var(--accent-orange)' : 'var(--accent-red)') + ';">' + initiative.progress + '%</div>' +
-                            '<div class="progress-bar-container" style="width: 100%; height: 6px; background: var(--bg-quaternary); border-radius: 3px; overflow: hidden; margin: 0 auto;">' +
-                                '<div class="progress-bar ' + getProgressClass(initiative.progress) + '" style="width: ' + initiative.progress + '%; height: 100%; border-radius: 3px;"></div>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    
-                    // Validation Status
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="text-center">' +
-                            '<div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Validation</div>' +
-                            '<div class="flex justify-center mb-2">' + 
-                                getValidationIndicator(initiative.validation).replace('absolute top-1 right-1', 'inline-block').replace('width="20" height="20"', 'width="32" height="32"') + 
-                            '</div>' +
-                            '<div class="text-xs capitalize" style="color: var(--text-tertiary);">' + initiative.validation.replace('-', ' ') + '</div>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-            
-            // Main Content - Two Columns
-            '<div class="grid gap-6" style="grid-template-columns: 1fr 1fr;">' +
-                // Left Column - Opportunity Canvas
+            '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">' +
+                // Left Column - Strategic Overview
                 '<div>' +
                     '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
                         '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                            '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>' +
-                            '<polyline points="14,2 14,8 20,8"/>' +
-                            '<line x1="16" y1="13" x2="8" y2="13"/>' +
-                            '<line x1="16" y1="17" x2="8" y2="17"/>' +
-                            '<polyline points="10,9 9,9 8,9"/>' +
+                            '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>' +
+                            '<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>' +
                         '</svg>' +
-                        'Opportunity Canvas' +
+                        'Strategic Overview' +
                     '</h3>' +
                     
                     '<div class="space-y-4">' +
-                        // Outcome
-                        '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-blue);">' +
-                            '<div class="text-sm font-bold mb-2" style="color: var(--accent-blue);">Outcome</div>' +
-                            '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.outcome : 'N/A') + '</p>' +
-                        '</div>' +
-                        
                         // Problem & Solution
                         '<div class="grid gap-3" style="grid-template-columns: 1fr 1fr;">' +
                             '<div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
@@ -773,17 +718,30 @@ function showRiskScoreInfoModal() {
                     '</h3>' +
                     
                     '<div class="space-y-4">' +
-                        // Jira Analytics
+                        // Jira Analytics with compact View button
                         '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-green);">' +
-                            '<div class="text-sm font-bold mb-3 flex items-center gap-2" style="color: var(--accent-green);">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                    '<path d="M3 6h18"/>' +
-                                    '<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>' +
-                                    '<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>' +
-                                    '<line x1="10" x2="10" y1="11" y2="17"/>' +
-                                    '<line x1="14" x2="14" y1="11" y2="17"/>' +
-                                '</svg>' +
-                                'Jira Analytics' +
+                            '<div class="text-sm font-bold mb-3 flex items-center justify-between" style="color: var(--accent-green);">' +
+                                '<span class="flex items-center gap-2">' +
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                        '<path d="M3 6h18"/>' +
+                                        '<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>' +
+                                        '<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>' +
+                                        '<line x1="10" x2="10" y1="11" y2="17"/>' +
+                                        '<line x1="14" x2="14" y1="11" y2="17"/>' +
+                                    '</svg>' +
+                                    'Jira Analytics' +
+                                '</span>' +
+                                // Small inline button in the header
+                                (initiative.jira && initiative.jira.key ? 
+                                    '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1" style="background: #0052CC; color: white;" onmouseover="this.style.background=\'#003d99\'" onmouseout="this.style.background=\'#0052CC\'">' +
+                                        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                            '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>' +
+                                            '<polyline points="15,3 21,3 21,9"/>' +
+                                            '<line x1="10" x2="21" y1="14" y2="3"/>' +
+                                        '</svg>' +
+                                        'View' +
+                                    '</button>' 
+                                    : '') +
                             '</div>' +
                             '<div class="grid gap-3" style="grid-template-columns: 1fr 1fr;">' +
                                 '<div>' +
@@ -791,16 +749,16 @@ function showRiskScoreInfoModal() {
                                     '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.key : 'N/A') + '</div>' +
                                 '</div>' +
                                 '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Velocity</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.velocity : 'N/A') + '</div>' +
+                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Status</div>' +
+                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.status : 'N/A') + '</div>' +
                                 '</div>' +
                                 '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Stories</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.completed + '/' + initiative.jira.stories : 'N/A') + '</div>' +
+                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Assignee</div>' +
+                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.assignee : 'N/A') + '</div>' +
                                 '</div>' +
                                 '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Blocked</div>' +
-                                    '<div class="text-sm font-bold" style="color: ' + (initiative.jira && initiative.jira.blocked > 5 ? 'var(--accent-red)' : 'var(--text-primary)') + ';">' + (initiative.jira ? initiative.jira.blocked : 'N/A') + '</div>' +
+                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Updated</div>' +
+                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? new Date(initiative.jira.updated).toLocaleDateString() : 'N/A') + '</div>' +
                                 '</div>' +
                             '</div>' +
                         '</div>' +
@@ -826,7 +784,7 @@ function showRiskScoreInfoModal() {
                                                '<span class="flex-shrink-0">' + healthIcon + '</span>' +
                                                '<span>' + teamName + '</span>' +
                                            '</span>' +
-                                           '<span class="text-xs opacity-75">View Details â†’</span>' +
+                                           '<span class="text-xs opacity-75">View Details →</span>' +
                                            '</button>';
                                 }).join('') +
                             '</div>' +
@@ -860,6 +818,12 @@ function showRiskScoreInfoModal() {
     }, 100);
     
     announceToScreenReader(`Opened details for ${initiative.title} initiative`);
+}
+
+// Add this function anywhere in your script.js file
+function openJiraEpic(epicKey) {
+    const jiraUrl = `https://alignvue.atlassian.net/browse/${epicKey}`;
+    window.open(jiraUrl, '_blank', 'noopener,noreferrer');
 }
 
         // Updated team modal function with new health dimensions and status levels
@@ -1299,29 +1263,63 @@ function closeAccountModal() {
     announceToScreenReader('Account modal closed');
 }
 
-        function highlightInitiativeAndTeam(initiativeId) {
+function highlightInitiativeAndTeam(initiativeId) {
+    console.log("FUNCTION CALLED WITH ID:", initiativeId);
     clearHighlights();
     selectedInitiativeId = initiativeId;
     
     const initiative = boardData.initiatives.find(init => init.id === initiativeId);
     if (!initiative) return;
     
+    // DEBUG: Log the teams for this initiative
+    console.log(`=== HOVER DEBUG for ${initiative.title} (ID: ${initiativeId}) ===`);
+    console.log('Initiative teams:', initiative.teams);
+    console.log('Initiative teams type:', typeof initiative.teams);
+    console.log('Initiative teams length:', initiative.teams ? initiative.teams.length : 'null');
+    
     // Highlight the initiative card
     document.querySelectorAll('.initiative-card').forEach(card => {
         if (parseInt(card.dataset.initiativeId) === initiativeId) {
             card.classList.add('highlighted');
+            console.log(`Highlighted initiative card: ${card.dataset.initiativeId}`);
         }
     });
     
+    // Debug which other initiatives share teams
+    if (initiative.teams && Array.isArray(initiative.teams)) {
+        initiative.teams.forEach((teamName, index) => {
+            console.log(`Checking team ${index}: "${teamName}" (type: ${typeof teamName})`);
+            
+            // Find which OTHER initiatives also have this team
+            boardData.initiatives.forEach(otherInit => {
+                if (otherInit.id !== initiativeId && otherInit.teams && otherInit.teams.includes(teamName)) {
+                    console.log(`  -> ${otherInit.title} ALSO has team "${teamName}"`);
+                    console.log(`     Other init teams:`, otherInit.teams);
+                }
+            });
+        });
+    } else {
+        console.log('Teams is not an array or is null:', initiative.teams);
+    }
+    
     // Only highlight team cards on the same row as the initiative
     initiative.teams.forEach(teamName => {
+        console.log(`Looking for team cards with team: "${teamName}" and initiativeId: ${initiativeId}`);
+        
         document.querySelectorAll('.team-health-card').forEach(card => {
-            if (card.dataset.teamName === teamName && 
-                parseInt(card.dataset.initiativeId) === initiativeId) {
+            const cardTeamName = card.dataset.teamName;
+            const cardInitiativeId = parseInt(card.dataset.initiativeId);
+            
+            console.log(`  Checking card: team="${cardTeamName}", initId=${cardInitiativeId}`);
+            
+            if (cardTeamName === teamName && cardInitiativeId === initiativeId) {
                 card.classList.add('highlighted');
+                console.log(`  -> Highlighted team card: ${cardTeamName} for initiative ${cardInitiativeId}`);
             }
         });
     });
+    
+    console.log('=== END HOVER DEBUG ===');
 }
 
         function highlightTeamAndInitiatives(teamName) {
@@ -1418,6 +1416,7 @@ function closeAccountModal() {
     const card = document.createElement('div');
     card.className = 'initiative-card ' + getTypeColor(initiative.type) + ' text-white';
     card.dataset.initiativeId = initiative.id;
+    card.id = 'initiative-card-${initiative.id}';
     card.style.position = 'relative';
     
     // Add ARIA attributes
@@ -1665,10 +1664,10 @@ const getHealthStatusIndicator = (teamData) => {
     if (teamData.autonomy === 'at-risk') atRiskCount++;
     
     // Updated status mapping
-    if (atRiskCount === 0) return { text: 'HEALTHY', icon: 'âœ“', color: 'text-green-700' };
-    if (atRiskCount <= 2) return { text: 'LOW RISK', icon: 'âš ', color: 'text-amber-700' };
-    if (atRiskCount <= 4) return { text: 'HIGH RISK', icon: 'âš âš ', color: 'text-orange-700' };
-    return { text: 'CRITICAL', icon: 'ðŸ”¥', color: 'text-red-700' };
+    if (atRiskCount === 0) return { text: 'HEALTHY', icon: '✓', color: 'text-green-700' };
+    if (atRiskCount <= 2) return { text: 'LOW RISK', icon: '⚠', color: 'text-amber-700' };
+    if (atRiskCount <= 4) return { text: 'HIGH RISK', icon: '⚠⚠', color: 'text-orange-700' };
+    return { text: 'CRITICAL', icon: '🔥', color: 'text-red-700' };
 };
 
 const healthStatus = getHealthStatusIndicator(teamData);
@@ -2098,7 +2097,7 @@ function showMendozaAnalysisModal() {
                         '<div class="space-y-2">' +
                             appropriateWork.map(item => `
                                 <div class="flex justify-between items-center text-sm">
-                                    <span style="color: var(--text-primary);">â€¢ ${item.team}: ${item.activity}</span>
+                                    <span style="color: var(--text-primary);">• ${item.team}: ${item.activity}</span>
                                     <span style="color: var(--text-tertiary);">(${item.hours} hrs)</span>
                                 </div>
                             `).join('') +
@@ -2118,7 +2117,7 @@ function showMendozaAnalysisModal() {
                             '<div class="space-y-2">' +
                                 borderlineWork.map(item => `
                                     <div class="flex justify-between items-center text-sm">
-                                        <span style="color: var(--text-primary);">â€¢ ${item.team}: ${item.activity}</span>
+                                        <span style="color: var(--text-primary);">• ${item.team}: ${item.activity}</span>
                                         <span style="color: var(--text-tertiary);">(${item.hours} hrs)</span>
                                     </div>
                                 `).join('') +
@@ -2141,7 +2140,7 @@ function showMendozaAnalysisModal() {
                             '<div class="space-y-2 mb-3">' +
                                 considerPromotion.map(item => `
                                     <div class="flex justify-between items-center text-sm">
-                                        <span style="color: var(--text-primary);">â€¢ ${item.team}: ${item.activity}</span>
+                                        <span style="color: var(--text-primary);">• ${item.team}: ${item.activity}</span>
                                         <span style="color: var(--text-tertiary);">(${item.hours} hrs)</span>
                                     </div>
                                 `).join('') +
@@ -2212,19 +2211,19 @@ function showTeamAllocationModal(allocationType) {
                             <div>
                                 <div class="font-medium" style="color: var(--text-primary);">${teamName}</div>
                                 <div class="text-sm" style="color: var(--text-secondary);">
-                                    ${boardData.teams[teamName] ? `${boardData.teams[teamName].jira.velocity} velocity â€¢ ${boardData.teams[teamName].jira.utilization}% utilization` : 'Team details'}
+                                    ${boardData.teams[teamName] ? `${boardData.teams[teamName].jira.velocity} velocity • ${boardData.teams[teamName].jira.utilization}% utilization` : 'Team details'}
                                 </div>
                             </div>
                         </div>
                         <div class="text-xs px-3 py-1 rounded" style="background: ${headerColor}; color: white;">
-                            View Details â†’
+                            View Details →
                         </div>
                     </div>
                 `).join('') +
             '</div>' +
             
             '<div class="text-center pt-4 border-t" style="border-color: var(--border-primary);">' +
-                '<button onclick="showMendozaAnalysisModal()" class="px-4 py-2 rounded-md text-sm font-medium" style="background: var(--accent-blue); color: white;">â† Back to Impact Analysis</button>' +
+                '<button onclick="showMendozaAnalysisModal()" class="px-4 py-2 rounded-md text-sm font-medium" style="background: var(--accent-blue); color: white;">← Back to Impact Analysis</button>' +
             '</div>' +
         '</div>';
     
@@ -3394,16 +3393,16 @@ function showInValidationModal() {
                '</h5>' +
                '<div class="grid grid-cols-3 gap-4 text-sm" style="color: var(--text-secondary);">' +
                    '<div class="space-y-2">' +
-                       '<div>â€¢ Review validation criteria</div>' +
-                       '<div>â€¢ Complete stakeholder feedback</div>' +
+                       '<div>• Review validation criteria</div>' +
+                       '<div>• Complete stakeholder feedback</div>' +
                    '</div>' +
                    '<div class="space-y-2">' +
-                       '<div>â€¢ Finalize business case</div>' +
-                       '<div>â€¢ Document success metrics</div>' +
+                       '<div>• Finalize business case</div>' +
+                       '<div>• Document success metrics</div>' +
                    '</div>' +
                    '<div class="space-y-2">' +
-                       '<div>â€¢ Schedule validation review</div>' +
-                       '<div>â€¢ Update initiative status</div>' +
+                       '<div>• Schedule validation review</div>' +
+                       '<div>• Update initiative status</div>' +
                    '</div>' +
                '</div>' +
                (highPriorityInValidation.length > 0 ? 
@@ -3493,16 +3492,16 @@ function showInValidationModal() {
                '</h5>' +
                '<div class="grid grid-cols-3 gap-4 text-sm" style="color: var(--text-secondary);">' +
                    '<div class="space-y-2">' +
-                       '<div>â€¢ Start validation process</div>' +
-                       '<div>â€¢ Gather stakeholder input</div>' +
+                       '<div>• Start validation process</div>' +
+                       '<div>• Gather stakeholder input</div>' +
                    '</div>' +
                    '<div class="space-y-2">' +
-                       '<div>â€¢ Define success criteria</div>' +
-                       '<div>â€¢ Assess market opportunity</div>' +
+                       '<div>• Define success criteria</div>' +
+                       '<div>• Assess market opportunity</div>' +
                    '</div>' +
                    '<div class="space-y-2">' +
-                       '<div>â€¢ Create business case</div>' +
-                       '<div>â€¢ Schedule review meetings</div>' +
+                       '<div>• Create business case</div>' +
+                       '<div>• Schedule review meetings</div>' +
                    '</div>' +
                '</div>' +
                (highPriorityNotValidated.length > 0 ? 
@@ -3577,7 +3576,7 @@ function updateMendozaCard() {
                 </div>
             ` : `
                 <div class="text-xs" style="color: var(--accent-green);">
-                    âœ“ Optimal Allocation
+                    ✓ Optimal Allocation
                 </div>
             `}
         </div>
@@ -3759,9 +3758,9 @@ function calculateVelocityTrend() {
     // Simplified trend calculation - in real implementation, you'd compare with historical data
     const avgVelocity = Object.values(boardData.teams).reduce((sum, team) => sum + team.jira.velocity, 0) / Object.keys(boardData.teams).length;
     
-    if (avgVelocity > 15) return { arrow: 'â†—ï¸', trend: 'up' };
-    if (avgVelocity < 10) return { arrow: 'â†˜ï¸', trend: 'down' };
-    return { arrow: 'âž¡ï¸', trend: 'stable' };
+    if (avgVelocity > 15) return { arrow: '↗️', trend: 'up' };
+    if (avgVelocity < 10) return { arrow: '↘️', trend: 'down' };
+    return { arrow: '➡️', trend: 'stable' };
 }
 
 function getValidationCounts() {
@@ -3863,26 +3862,47 @@ function getReallocationOpportunities() {
 }
         
         
-        //Pipeline Drag and Drop
-        function enablePipelineDragDrop(item) {
-    const initiative = boardData.bullpen.find(init => init && init.id == item.dataset.initiativeId);
-    if (!initiative) return;
+        // Enhanced pipeline drag and drop with Jira integration
+function enablePipelineDragDrop(item) {
+    // Find initiative in pipeline (NOT bullpen)
+    const initiative = boardData.pipeline ? 
+        boardData.pipeline.find(init => init && init.id == item.dataset.initiativeId) :
+        boardData.bullpen.find(init => init && init.id == item.dataset.initiativeId);
     
-    // Make the item draggable
+    if (!initiative) {
+        console.log('Initiative not found for drag:', item.dataset.initiativeId);
+        return;
+    }
+    
     item.draggable = true;
     
     item.addEventListener('dragstart', function(e) {
         draggedInitiative = initiative;
+        draggedInitiative.sourceLocation = 'pipeline'; // Track source
         item.classList.add('dragging');
+        
+        // Pause sync during drag
+        if (typeof syncState !== 'undefined') {
+            syncState.isPaused = true;
+        }
+        
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/html', item.outerHTML);
     });
 
     item.addEventListener('dragend', function() {
         item.classList.remove('dragging');
+        
+        // Resume sync after brief delay
+        setTimeout(() => {
+            if (typeof syncState !== 'undefined') {
+                syncState.isPaused = false;
+            }
+        }, 2000);
+        
         draggedInitiative = null;
     });
-}  
+}
       
 function calculateFocusScore() {
     const totalTeams = Object.keys(boardData.teams).length;
@@ -4810,7 +4830,7 @@ function createFilterChip(displayName, section, filterType, filterValue) {
     chip.innerHTML = `
         <span>${displayName}</span>
         <div class="filter-chip-remove" onclick="removeFilterChip('${section}', '${filterType}', '${filterValue}')" title="Remove filter">
-            Ã—
+            ×
         </div>
     `;
     
@@ -6248,8 +6268,8 @@ function showSearchSuggestions(query) {
                         <span class="text-xs px-2 py-1 rounded font-medium ${typeColor}">${typeLabel}</span>
                         <span class="font-medium">${highlightMatch(match.title, query)}</span>
                     </div>
-                    ${match.type === 'initiative' ? `<div class="text-xs text-gray-500 mt-1">Progress: ${match.data.progress}% â€¢ ${match.data.validation.replace('-', ' ')}</div>` : ''}
-                    ${match.type === 'team' ? `<div class="text-xs text-gray-500 mt-1">Capacity: ${match.data.capacity} â€¢ Utilization: ${match.data.jira.utilization}%</div>` : ''}
+                    ${match.type === 'initiative' ? `<div class="text-xs text-gray-500 mt-1">Progress: ${match.data.progress}% • ${match.data.validation.replace('-', ' ')}</div>` : ''}
+                    ${match.type === 'team' ? `<div class="text-xs text-gray-500 mt-1">Capacity: ${match.data.capacity} • Utilization: ${match.data.jira.utilization}%</div>` : ''}
                 </div>
             `;
         }).join('')}
@@ -6844,36 +6864,40 @@ function expandSidebarForSearch() {
 }
         
 // Fix search expansion
+// Fix search expansion
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         const searchInput = document.getElementById('global-search');
         if (searchInput) {
             searchInput.addEventListener('focus', function() {
-    const sidebar = document.getElementById('sidebar-nav');
-    const mainContent = document.getElementById('main-content');
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    
-    if (sidebar && !sidebar.classList.contains('expanded')) {
-        // Update global state
-        sidebarExpanded = true;
-        
-        sidebar.classList.add('expanded');
-        mainContent.classList.add('sidebar-expanded');
-        document.getElementById('sidebar-overlay').classList.add('active');
-        
-        // Update caret to close state
-        if (sidebarToggle) {
-            sidebarToggle.innerHTML = `
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/>
-                </svg>
-            `;
-        }
-    }
-});
+                const sidebar = document.getElementById('sidebar-nav');
+                const mainContent = document.getElementById('main-content');
+                const sidebarToggle = document.getElementById('sidebar-toggle');
+                
+                if (sidebar && !sidebar.classList.contains('expanded')) {
+                    // Update global state
+                    sidebarExpanded = true;
+                    
+                    sidebar.classList.add('expanded');
+                    mainContent.classList.add('sidebar-expanded');
+                    document.getElementById('sidebar-overlay').classList.add('active');
+                    
+                    // Update caret to close state
+                    if (sidebarToggle) {
+                        sidebarToggle.innerHTML = `
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/>
+                            </svg>
+                        `;
+                    }
+                }
+            });
         }
     }, 1000);
-});  
+    
+    // Initialize smart sync
+    initSmartSync();
+});
       
 // Handle window resize for chip bar responsiveness
 function handleChipBarResize() {
@@ -6992,5 +7016,883 @@ function initEssentialKeyboard() {
             }
         }
     });
-}      
+} 
+
+
+// =============================================================================
+// JIRA INTEGRATION AND SMART SYNC SYSTEM
+// =============================================================================
+
+function updateBoardWithLiveData(newData) {
+    try {
+        // Update board initiatives
+        boardData.initiatives = newData.initiatives;
+        
+        // NEW: Update pipeline items (replacing bullpen)
+        boardData.pipeline = newData.pipeline || [];
+        
+        // Keep bullpen empty for now (legacy compatibility)
+        boardData.bullpen = newData.bullpen || [];
+        
+        // Regenerate all UI components
+        generatePyramid();
+        generateTeamHealthMatrix();
+        
+        // Update pipeline display
+        if (typeof updatePipelineCard === 'function') {
+            updatePipelineCard();
+        }
+        
+        // Refresh search index
+        if (typeof buildSearchIndex === 'function') {
+            buildSearchIndex();
+        }
+        
+    } catch (error) {
+        console.error('Error updating UI with live data:', error);
+    }
+}
+
+// Smart Bidirectional Sync State
+let syncState = {
+    isActive: true,
+    isPaused: false,
+    lastSyncData: null,
+    lastSyncTime: null,
+    syncInterval: null,
+    updateQueue: []
+};
+
+// Helper function for extracting text from Jira doc format
+function extractTextFromDoc(docField) {
+    if (!docField || !docField.content) return null;
+    
+    let text = '';
+    function extractText(content) {
+        content.forEach(item => {
+            if (item.type === 'text') {
+                text += item.text;
+            } else if (item.content) {
+                extractText(item.content);
+            }
+        });
+    }
+    
+    extractText(docField.content);
+    return text.trim() || null;
+}
+
+// Make sure getFieldValue handles the object format properly
+function getFieldValue(issue, fieldId) {
+    const fieldValue = issue.fields[fieldId];
+    if (!fieldValue) return null;
+    
+    if (typeof fieldValue === 'object') {
+        if (fieldValue.value) return fieldValue.value;
+        if (Array.isArray(fieldValue)) return fieldValue.map(item => item.value || item);
+    }
+    return fieldValue;
+}
+
+function handlePipelineToMatrix(initiative, targetSlot) {
+    console.log(`Moving ${initiative.title} from pipeline to slot ${targetSlot}`);
+    
+    // Remove from pipeline
+    if (boardData.pipeline) {
+        const pipelineIndex = boardData.pipeline.findIndex(item => item.id === initiative.id);
+        if (pipelineIndex !== -1) {
+            boardData.pipeline.splice(pipelineIndex, 1);
+        }
+    } else {
+        // Fallback to bullpen for compatibility
+        const bullpenIndex = boardData.bullpen.findIndex(item => item && item.id === initiative.id);
+        if (bullpenIndex !== -1) {
+            boardData.bullpen[bullpenIndex] = null;
+        }
+    }
+    
+    // Check slot 36 overflow BEFORE placing the new item
+    handleSlot36Overflow(targetSlot);
+    
+    // Shift items down from target slot
+    shiftInitiativesDown(targetSlot);
+    
+    // Update initiative properties
+    initiative.priority = targetSlot;
+    // Preserve current status unless it's "Pipeline"
+    if (initiative.status === "Pipeline") {
+        initiative.status = "To Do";
+    }
+    
+    // Add to board initiatives
+    boardData.initiatives.push(initiative);
+    
+    // Queue Jira update
+    if (typeof queueJiraUpdate === 'function') {
+        queueJiraUpdate(initiative, {
+            priority: targetSlot,
+            status: initiative.status
+        });
+    }
+    
+    // Refresh UI
+    setTimeout(() => {
+        generatePyramid();
+        if (typeof updatePipelineCard === 'function') {
+            updatePipelineCard();
+        }
+    }, 100);
+}
+
+
+
+// Initialize enhanced pipeline drag and drop
+function initializePipelineDragDrop() {
+    // Set up matrix drop zones (enhanced)
+    setupMatrixDropZones();
+    
+    // Set up pipeline drop zone (new)
+    setupPipelineDropZone();
+    
+    // Enable drag for existing pipeline items
+    document.querySelectorAll('[data-initiative-id]').forEach(item => {
+        if (item.closest('.pipeline-container, #pipeline-section')) {
+            enablePipelineDragDrop(item);
+        }
+    });
+}
+
+// Enhanced matrix drop zone handler for pipeline items
+function setupMatrixDropZones() {
+    document.querySelectorAll('.drop-zone, .pyramid-slot').forEach(slot => {
+        slot.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            slot.classList.add('drag-over');
+        });
+
+        slot.addEventListener('dragleave', function() {
+            slot.classList.remove('drag-over');
+        });
+
+        slot.addEventListener('drop', function(e) {
+            e.preventDefault();
+            slot.classList.remove('drag-over');
+            
+            if (!draggedInitiative) return;
+            
+            const targetSlot = parseInt(slot.dataset.slot);
+            
+            // Handle different drag scenarios
+            if (draggedInitiative.sourceLocation === 'pipeline') {
+                handlePipelineToMatrix(draggedInitiative, targetSlot);
+            } else if (draggedInitiative.priority === "bullpen") {
+                // Existing bullpen logic (fallback)
+                handleBullpenToMatrix(draggedInitiative, targetSlot);
+            } else {
+                // Existing board-to-board logic
+                handleMatrixToMatrix(draggedInitiative, targetSlot);
+            }
+        });
+    });
+}
+
+// Enhanced slot 36 overflow handling
+function handleSlot36Overflow(newItemTargetSlot) {
+    if (newItemTargetSlot > 36) return; // No overflow needed
+    
+    // Find item currently in slot 36
+    const slot36Item = boardData.initiatives.find(init => init.priority === 36);
+    if (!slot36Item) return; // Slot 36 is empty
+    
+    console.log(`Slot 36 overflow: Moving ${slot36Item.title} to pipeline`);
+    
+    // Remove from board initiatives
+    const boardIndex = boardData.initiatives.findIndex(item => item.id === slot36Item.id);
+    if (boardIndex !== -1) {
+        boardData.initiatives.splice(boardIndex, 1);
+    }
+    
+    // Update properties for pipeline
+    slot36Item.priority = 0;
+    slot36Item.status = "Pipeline";
+    
+    // Add to pipeline
+    boardData.pipeline.push(slot36Item);
+    
+    // Queue Jira update for bumped item
+    queueJiraUpdate(slot36Item, {
+        priority: 0,
+        status: "Pipeline"
+    });
+}
+
+function setupPipelineDropZone() {
+    const pipelineContainer = document.querySelector('.pipeline-container, #pipeline-section');
+    if (!pipelineContainer) return;
+    
+    pipelineContainer.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        pipelineContainer.classList.add('pipeline-drag-over');
+    });
+
+    pipelineContainer.addEventListener('dragleave', function() {
+        pipelineContainer.classList.remove('pipeline-drag-over');
+    });
+
+    pipelineContainer.addEventListener('drop', function(e) {
+        e.preventDefault();
+        pipelineContainer.classList.remove('pipeline-drag-over');
+        
+        if (!draggedInitiative || draggedInitiative.sourceLocation === 'pipeline') return;
+        
+        handleMatrixToPipeline(draggedInitiative);
+    });
+}
+
+// New function: Handle matrix to pipeline moves  
+function handleMatrixToPipeline(initiative) {
+    console.log(`Moving ${initiative.title} from slot ${initiative.priority} to pipeline`);
+    
+    const oldSlot = initiative.priority;
+    
+    // Remove from board initiatives
+    const boardIndex = boardData.initiatives.findIndex(item => item.id === initiative.id);
+    if (boardIndex !== -1) {
+        boardData.initiatives.splice(boardIndex, 1);
+    }
+    
+    // Shift remaining items up to fill gap
+    shiftInitiativesUp(oldSlot);
+    
+    // Update properties for pipeline
+    initiative.priority = 0;
+    initiative.status = "Pipeline";
+    
+    // Add to pipeline
+    boardData.pipeline.push(initiative);
+    
+    // Queue Jira update
+    queueJiraUpdate(initiative, {
+        priority: 0,
+        status: "Pipeline"
+    });
+    
+    // Refresh UI
+    setTimeout(() => {
+        generatePyramid();
+        updatePipelineCard();
+    }, 100);
+}
+
+// Update formatMarketSize to handle proper field IDs
+function formatMarketSize(issue) {
+    const tam = getFieldValue(issue, 'customfield_10056');
+    const sam = getFieldValue(issue, 'customfield_10057'); 
+    const som = getFieldValue(issue, 'customfield_10058');
+    
+    if (tam || sam || som) {
+        const parts = [];
+        if (tam) parts.push(`TAM: $${tam}M`);
+        if (sam) parts.push(`SAM: $${sam}M`);
+        if (som) parts.push(`SOM: $${som}M`);
+        return parts.join(', ');
+    }
+    return 'Market size TBD';
+}
+
+// Find OKR alignment function
+function findOKRAlignment(issue, okrIssues) {
+    if (!issue.fields.issuelinks || issue.fields.issuelinks.length === 0) {
+        return null;
+    }
+    
+    for (const link of issue.fields.issuelinks) {
+        const linkedIssue = link.outwardIssue || link.inwardIssue;
+        if (linkedIssue && linkedIssue.key.startsWith('OKR-')) {
+            const okrTask = okrIssues.find(okr => okr.key === linkedIssue.key);
+            if (okrTask) {
+                return okrTask.fields.summary;
+            }
+        }
+    }
+    
+    return null;
+}
+
+// Transform Jira data to board format
+function transformJiraData(initiativesResponse, okrsResponse) {
+    console.log('Transforming Jira data...');
+    
+    const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
+        const project = issue.fields.project.key;
+        const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
+        
+        const matrixSlot = getFieldValue(issue, 'customfield_10091');
+        const validationStatus = getFieldValue(issue, 'customfield_10052');
+        const teamsAssigned = getFieldValue(issue, 'customfield_10053');
+        const initiativeType = getFieldValue(issue, 'customfield_10051');
+        
+        // Handle numeric Matrix Position
+        let priority;
+        if (matrixSlot === 0 || matrixSlot === null || matrixSlot === undefined) {
+            priority = 'pipeline';
+        } else if (typeof matrixSlot === 'number' && matrixSlot >= 1 && matrixSlot <= 36) {
+            priority = matrixSlot;
+        } else {
+            priority = 'pipeline';
+        }
+        
+        // Process teams correctly - handle Jira select field format AND split concatenated teams
+        let processedTeams;
+        if (Array.isArray(teamsAssigned)) {
+            processedTeams = teamsAssigned.map(team => {
+                let teamValue;
+                if (typeof team === 'object' && team.value) {
+                    teamValue = team.value;
+                } else {
+                    teamValue = team;
+                }
+                
+                // Split concatenated teams (semicolon separated)
+                if (teamValue && teamValue.includes(';')) {
+                    return teamValue.split(';').map(t => t.trim());
+                }
+                return teamValue;
+            }).flat(); // Flatten in case we split any teams
+        } else if (teamsAssigned && typeof teamsAssigned === 'object' && teamsAssigned.value) {
+            const teamValue = teamsAssigned.value;
+            if (teamValue.includes(';')) {
+                processedTeams = teamValue.split(';').map(t => t.trim());
+            } else {
+                processedTeams = [teamValue];
+            }
+        } else if (teamsAssigned) {
+            if (teamsAssigned.includes(';')) {
+                processedTeams = teamsAssigned.split(';').map(t => t.trim());
+            } else {
+                processedTeams = [teamsAssigned];
+            }
+        } else {
+            processedTeams = ['Core Platform'];
+        }
+        
+        // Remove any empty strings
+        processedTeams = processedTeams.filter(team => team && team.trim());
+        
+        return {
+            id: parseInt(issue.id),
+            title: issue.fields.summary,
+            type: initiativeType || typeMapping[project] || 'strategic',
+            validation: validationStatus || 'not-validated',
+            priority: priority,
+            teams: processedTeams,
+            progress: Math.floor(Math.random() * 80) + 10,
+            jira: {
+                key: issue.key,
+                stories: Math.floor(Math.random() * 30) + 10,
+                completed: Math.floor(Math.random() * 15) + 5,
+                inProgress: Math.floor(Math.random() * 10) + 3,
+                blocked: Math.floor(Math.random() * 5),
+                velocity: Math.floor(Math.random() * 15) + 5
+            },
+            canvas: {
+                outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Outcome to be defined',
+                measures: extractTextFromDoc(getFieldValue(issue, 'customfield_10055')) || 'Success measures TBD',
+                keyResult: findOKRAlignment(issue, okrsResponse.issues) || 'No OKR',
+                marketSize: formatMarketSize(issue),
+                customer: getFieldValue(issue, 'customfield_10059') || 'Customer segment TBD',
+                problem: extractTextFromDoc(getFieldValue(issue, 'customfield_10060')) || 'Problem statement needed',
+                solution: extractTextFromDoc(getFieldValue(issue, 'customfield_10061')) || 'Solution to be defined',
+                bigPicture: extractTextFromDoc(getFieldValue(issue, 'customfield_10062')) || 'Vision to be articulated',
+                alternatives: extractTextFromDoc(getFieldValue(issue, 'customfield_10063')) || 'Alternatives to be researched'
+            }
+        };
+    });
+
+    const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
+    const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
+    
+    console.log(`Active on board: ${activeInitiatives.length}, Pipeline: ${pipelineInitiatives.length}`);
+
+    return {
+        initiatives: activeInitiatives,
+        bullpen: pipelineInitiatives,
+        teams: boardData.teams
+    };
+}
+
+// Fetch data from Jira
+async function fetchJiraData() {
+    try {
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: 'project = STRAT AND issuetype = Epic',
+                    fields: [
+                        'summary', 'status', 'assignee', 'progress', 'issuelinks',
+                        'customfield_10091', // Matrix Position
+                        'customfield_10053', // Teams Assigned  
+                        'customfield_10054', // Validation Status
+                        'customfield_10055', // Canvas Outcome
+                        'customfield_10056', // TAM
+                        'customfield_10057', // SAM
+                        'customfield_10058', // SOM
+                        'customfield_10059', // Target Customer
+                        'customfield_10060', // Problem Statement
+                        'customfield_10061', // Solution Description
+                        'customfield_10062', // Big Picture Vision
+                        'customfield_10063', // Alternative Solutions
+                        'customfield_10064', // Impact
+                        'customfield_10065'  // Success Measures
+                    ],
+                    maxResults: 100
+                }
+            })
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        
+        // Separate pipeline items from board items
+        const boardInitiatives = [];
+        const pipelineItems = [];
+        
+        data.issues.forEach(issue => {
+            const matrixPosition = getFieldValue(issue, 'customfield_10091');
+            const initiative = transformJiraIssue(issue);
+            
+            if (matrixPosition === 0 || issue.fields.status.name === 'Pipeline') {
+                // This is a pipeline item
+                pipelineItems.push(initiative);
+            } else if (matrixPosition > 0 && matrixPosition <= 36) {
+                // This is a board item
+                boardInitiatives.push(initiative);
+            }
+        });
+
+        return {
+            initiatives: boardInitiatives,
+            pipeline: pipelineItems,  // NEW: Pipeline array
+            teams: boardData.teams,   // Keep existing teams
+            bullpen: [] // Clear bullpen, use pipeline instead
+        };
+        
+    } catch (error) {
+        console.error('Failed to fetch Jira data:', error);
+        throw error;
+    }
+}
+
+// Initialize smart sync on page load
+function initSmartSync() {
+    console.log('Initializing smart sync with pipeline drag & drop...');
+    
+    setupSyncIndicator();
+    setupSyncPauseHandlers();
+    
+    // Initialize pipeline drag and drop
+    initializePipelineDragDrop();
+    
+    // Initial sync
+    syncWithJira();
+    
+    // Set up auto-sync interval
+    syncState.syncInterval = setInterval(() => {
+        if (!syncState.isPaused) {
+            syncWithJira();
+        }
+    }, 30000);
+    
+    console.log('Smart sync initialized with 30-second interval');
+}
+
+function addManualSyncButton() {
+    // Remove any existing manual sync button
+    const existingButton = document.getElementById('manual-sync-btn');
+    if (existingButton) existingButton.remove();
+    
+    const syncButton = document.createElement('button');
+    syncButton.id = 'manual-sync-btn';
+    syncButton.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+            <path d="M3 21v-5h5"/>
+        </svg>
+        Sync
+    `;
+    
+    syncButton.style.cssText = `
+        position: fixed; top: 50px; right: 10px;
+        background: var(--accent-blue); color: white; border: none;
+        padding: 8px 12px; border-radius: 4px; cursor: pointer;
+        display: flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 500; z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        opacity: 0.7; transition: opacity 0.2s;
+    `;
+    
+    syncButton.addEventListener('mouseenter', () => syncButton.style.opacity = '1');
+    syncButton.addEventListener('mouseleave', () => syncButton.style.opacity = '0.7');
+    syncButton.addEventListener('click', () => {
+        console.log('Manual sync triggered');
+        syncWithJira();
+    });
+    
+    document.body.appendChild(syncButton);
+}
+
+// Enhanced sync function with change detection
+async function syncWithJira() {
+    if (syncState.isPaused) return;
+    
+    try {
+        showSyncIndicator('syncing');
+        
+        // Get current data from Jira
+        const newData = await fetchJiraData();
+        
+        // Check if data actually changed
+        if (hasDataChanged(newData)) {
+            updateBoardWithLiveData(newData);
+            syncState.lastSyncData = newData;
+            syncState.lastSyncTime = Date.now();
+            
+            showSyncIndicator('success');
+        } else {
+            showSyncIndicator('no-change');
+        }
+        
+        // Process any pending updates to Jira
+        await processPendingUpdates();
+        
+    } catch (error) {
+        console.error('Smart sync failed:', error);
+        showSyncIndicator('error');
+    }
+}
+
+// Detect if data has actually changed
+function hasDataChanged(newData) {
+    if (!syncState.lastSyncData) return true;
+    
+    const oldData = syncState.lastSyncData;
+    
+    // Quick checks for changes - FIXED to check pipeline instead of bullpen
+    if (newData.initiatives.length !== oldData.initiatives.length) return true;
+    if ((newData.pipeline || []).length !== (oldData.pipeline || []).length) return true;
+    
+    // Deep check initiative changes (priority, teams, progress, validation)
+    for (let i = 0; i < newData.initiatives.length; i++) {
+        const newInit = newData.initiatives[i];
+        const oldInit = oldData.initiatives.find(init => init.id === newInit.id);
+        
+        if (!oldInit) return true;
+        
+        // Check key fields that matter for the UI
+        if (newInit.priority !== oldInit.priority) return true;
+        if (newInit.progress !== oldInit.progress) return true;
+        if (newInit.validation !== oldInit.validation) return true;
+        if (JSON.stringify(newInit.teams) !== JSON.stringify(oldInit.teams)) return true;
+    }
+    
+    return false;
+}
+
+// Pause sync during user interactions
+function setupSyncPauseHandlers() {
+    let pauseTimeout;
+    
+    // Pause during drag operations
+    document.addEventListener('dragstart', () => {
+        syncState.isPaused = true;
+        clearTimeout(pauseTimeout);
+    });
+    
+    document.addEventListener('dragend', () => {
+        // Resume sync 2 seconds after drag ends
+        pauseTimeout = setTimeout(() => {
+            syncState.isPaused = false;
+        }, 2000);
+    });
+    
+    // Pause during modal interactions
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.modal-content')) {
+            syncState.isPaused = true;
+            clearTimeout(pauseTimeout);
+            
+            // Resume 5 seconds after modal interaction
+            pauseTimeout = setTimeout(() => {
+                syncState.isPaused = false;
+            }, 5000);
+        }
+    });
+}
+
+// Queue updates to write back to Jira
+// Delayed batch update system
+let pendingMoveTimeout = null;
+
+function queueJiraUpdate(initiative, changes) {
+    console.log(`Queueing Jira update for ${initiative.title}:`, changes);
+    
+    // Add to existing drag update queue system
+    if (!window.dragUpdateQueue) {
+        window.dragUpdateQueue = [];
+    }
+    
+    window.dragUpdateQueue.push({
+        initiative: initiative,
+        changes: changes
+    });
+    
+    // Clear existing timeout and set new one
+    clearTimeout(window.dragUpdateTimeout);
+    window.dragUpdateTimeout = setTimeout(async () => {
+        await processDragUpdates();
+    }, 7000); // Use existing 7-second delay
+}
+
+async function batchSyncAllPositions() {
+    console.log('Starting batch sync of all positions to Jira...');
+    showSyncIndicator('syncing');
+    
+    try {
+        // Get current state of all initiatives with Jira keys
+        const allUpdates = [];
+        
+        boardData.initiatives.forEach(init => {
+            if (init.jira?.key && typeof init.priority === 'number') {
+                allUpdates.push({
+                    key: init.jira.key,
+                    position: init.priority,
+                    title: init.title
+                });
+            }
+        });
+        
+        console.log(`Batch syncing ${allUpdates.length} initiatives to Jira...`);
+        
+        // Send updates sequentially with delays to avoid conflicts
+        for (const update of allUpdates) {
+            try {
+                console.log(`Updating ${update.key} to position ${update.position}`);
+                
+                await writeToJira(
+                    { jira: { key: update.key } }, 
+                    { priority: update.position }
+                );
+                
+                // Small delay between updates
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+            } catch (error) {
+                console.error(`Failed to update ${update.key} (${update.title}):`, error);
+            }
+        }
+        
+        console.log('Batch sync completed successfully');
+        showSyncIndicator('success');
+        
+    } catch (error) {
+        console.error('Batch sync failed:', error);
+        showSyncIndicator('error');
+    }
+}
+
+// Process all queued drag updates
+async function processDragUpdates() {
+    if (!window.dragUpdateQueue || window.dragUpdateQueue.length === 0) return;
+    
+    console.log('Processing batch Jira updates:', window.dragUpdateQueue.length);
+    
+    for (const update of window.dragUpdateQueue) {
+        try {
+            await writeToJira(update.initiative, update.changes);
+        } catch (error) {
+            console.error('Failed to update Jira for:', update.initiative.title, error);
+        }
+    }
+    
+    // Clear the queue
+    window.dragUpdateQueue = [];
+}
+
+async function processPendingUpdates() {
+    // This function is no longer needed since we're using batch updates
+    // Keep it empty or remove it entirely to avoid conflicts
+    console.log('processPendingUpdates called - using batch sync instead');
+}
+
+//Write changes back to Jira
+async function writeToJira(initiative, changes) {
+    console.log('=== WRITING TO JIRA ===');
+    console.log('Initiative Key:', initiative.jira?.key);
+    console.log('Changes:', changes);
+    
+    const fields = {};
+    
+    // Map changes to Jira custom fields
+    if (changes.priority !== undefined) {
+        // IMPORTANT: Make sure the value is a number, not string
+        fields.customfield_10091 = Number(changes.priority);
+        console.log('Setting Matrix Position to:', Number(changes.priority));
+    }
+    
+    try {
+        const requestBody = {
+            endpoint: `/rest/api/3/issue/${initiative.jira.key}`,
+            method: 'PUT',
+            body: {
+                fields: fields
+            }
+        };
+        
+        console.log('Request:', JSON.stringify(requestBody, null, 2));
+        
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        console.log('Response status:', response.status);
+        
+        // Handle empty responses properly
+        let responseText = '';
+        try {
+            responseText = await response.text();
+        } catch (e) {
+            console.log('No response body');
+        }
+        
+        if (!response.ok) {
+            console.error('❌ Jira update failed:', response.status, responseText);
+            throw new Error(`HTTP ${response.status}: ${responseText || 'No response body'}`);
+        } else {
+            console.log('✅ Jira update successful');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error in writeToJira:', error);
+        throw error;
+    }
+}
+
+// Subtle sync indicator
+function showSyncIndicator(type) {
+    let indicator = document.getElementById('sync-indicator');
+    
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'sync-indicator';
+        indicator.style.cssText = `
+            position: fixed; top: 10px; right: 10px; 
+            padding: 6px 12px; border-radius: 4px; 
+            font-size: 12px; z-index: 9999;
+            transition: all 0.3s ease;
+        `;
+        document.body.appendChild(indicator);
+    }
+    
+    // Clear any existing timeout
+    clearTimeout(indicator.timeout);
+    
+    switch (type) {
+        case 'syncing':
+            indicator.style.background = 'rgba(59, 130, 246, 0.9)';
+            indicator.style.color = 'white';
+            indicator.textContent = '⟳ Syncing...';
+            break;
+        case 'success':
+            indicator.style.background = 'rgba(34, 197, 94, 0.9)';
+            indicator.style.color = 'white';
+            indicator.textContent = '✓ Updated';
+            break;
+        case 'no-change':
+            indicator.style.background = 'rgba(107, 114, 128, 0.7)';
+            indicator.style.color = 'white';
+            indicator.textContent = '○ Current';
+            break;
+        case 'error':
+            indicator.style.background = 'rgba(239, 68, 68, 0.9)';
+            indicator.style.color = 'white';
+            indicator.textContent = '✗ Error';
+            break;
+    }
+    
+    // Fade out after 3 seconds
+    indicator.timeout = setTimeout(() => {
+        indicator.style.opacity = '0';
+        setTimeout(() => {
+            if (indicator.style.opacity === '0') {
+                indicator.style.display = 'none';
+            }
+        }, 300);
+    }, 3000);
+    
+    // Show indicator
+    indicator.style.display = 'block';
+    indicator.style.opacity = '1';
+}
+
+// =============================================================================
+// MODIFY EXISTING FUNCTIONS - Add these lines to your existing functions
+// =============================================================================
+
+// FIND your existing handleMatrixToMatrix function and ADD this line:
+// queueJiraUpdate(initiative, { priority: targetSlot });
+
+// FIND your existing handleBullpenToMatrix function and ADD this line:  
+// queueJiraUpdate(initiative, { priority: targetSlot });
+
+// FIND your existing DOMContentLoaded event listener and ADD this line:
+// initSmartSync();
+
+// Example of how to modify existing functions:
+/*
+function handleMatrixToMatrix(initiative, targetSlot) {
+    const oldPriority = initiative.priority;
+    initiative.priority = targetSlot;
+    
+    // ADD THIS LINE:
+    queueJiraUpdate(initiative, { priority: targetSlot });
+    
+    // Continue with existing logic...
+}
+
+function handleBullpenToMatrix(initiative, targetSlot) {
+    initiative.priority = targetSlot;
+    
+    // ADD THIS LINE:
+    queueJiraUpdate(initiative, { priority: targetSlot });
+    
+    // Continue with existing logic...
+}
+
+// In your DOMContentLoaded event listener, ADD:
+document.addEventListener('DOMContentLoaded', () => {
+    // Your existing initialization code...
+    
+    // ADD THIS LINE:
+    initSmartSync();
+});
+*/
+
+// Initialize pipeline array for Jira sync
+        if (!boardData.pipeline) {
+            boardData.pipeline = [];
+        }
+
         init();
