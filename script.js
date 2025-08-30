@@ -7265,33 +7265,30 @@ async function fetchJiraData() {
         
         const data = await response.json();
         
-        // Separate pipeline items from board items
-        const boardInitiatives = [];
-        const pipelineItems = [];
-        
-        data.issues.forEach(issue => {
-            const matrixPosition = getFieldValue(issue, 'customfield_10091');
-            const initiative = transformJiraIssue(issue);
-            
-            if (matrixPosition === 0 || issue.fields.status.name === 'Pipeline') {
-                // This is a pipeline item
-                pipelineItems.push(initiative);
-            } else if (matrixPosition > 0 && matrixPosition <= 36) {
-                // This is a board item
-                boardInitiatives.push(initiative);
-            }
-        });
+        // Transform initiatives
+        const initiatives = data.issues
+            .filter(issue => {
+                const matrixPosition = getFieldValue(issue, 'customfield_10091');
+                return matrixPosition > 0 && matrixPosition <= 36;
+            })
+            .map(issue => transformJiraIssue(issue))
+            .sort((a, b) => a.priority - b.priority);
 
         return {
-            initiatives: boardInitiatives,
-            pipeline: pipelineItems,  // NEW: Pipeline array
-            teams: boardData.teams,   // Keep existing teams
-            bullpen: [] // Clear bullpen, use pipeline instead
+            initiatives: initiatives,
+            teams: boardData.teams,
+            bullpen: boardData.bullpen
         };
         
     } catch (error) {
         console.error('Failed to fetch Jira data:', error);
-        throw error;
+        
+        // Fallback to existing data
+        return {
+            initiatives: boardData.initiatives,
+            teams: boardData.teams,
+            bullpen: boardData.bullpen
+        };
     }
 }
 
