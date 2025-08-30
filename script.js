@@ -3431,7 +3431,7 @@ function showInValidationModal() {
                            
                            return `
                                <div class="bento-pipeline-item" 
-                                    onclick="closeModal(); setTimeout(() => showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(i => i.id === ' + init.id + ')' : 'boardData.initiatives.find(i => i.id === ' + init.id + ')'}), 100);"
+                                    onclick="closeModal(); setTimeout(() => showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(init => init.id === ' + init.id + ')' : 'boardData.initiatives.find(init => init.id === ' + init.id + ')'}), 100);"
                                     style="position: relative; cursor: pointer; ${isPipeline ? 'opacity: 0.7; border-left: 3px solid var(--text-tertiary);' : ''} ${isHighPriority ? 'border-left: 3px solid var(--accent-orange);' : ''}">
                                    <div class="bento-pipeline-item-header">
                                        <div class="bento-pipeline-item-title">
@@ -3560,7 +3560,7 @@ function showNotValidatedModal() {
                            
                            return `
                                <div class="bento-pipeline-item" 
-                                    onclick="closeModal(); setTimeout(() => showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(i => i.id === ' + init.id + ')' : 'boardData.initiatives.find(i => i.id === ' + init.id + ')'}), 100);"
+                                    onclick="closeModal(); setTimeout(() => showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(init => init.id === ' + init.id + ')' : 'boardData.initiatives.find(init => init.id === ' + init.id + ')'}), 100);"
                                     style="position: relative; cursor: pointer; ${isPipeline ? 'opacity: 0.7; border-left: 3px solid var(--text-tertiary);' : ''} ${isHighPriority ? 'border-left: 3px solid var(--accent-red);' : ''}">
                                    <div class="bento-pipeline-item-header">
                                        <div class="bento-pipeline-item-title">
@@ -3613,7 +3613,6 @@ function showNotValidatedModal() {
    
    modal.classList.add('show');
 }
-
 function updateMendozaCard() {
     const content = document.getElementById('mendoza-impact-content');
     
