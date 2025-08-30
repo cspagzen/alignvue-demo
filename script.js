@@ -5468,13 +5468,13 @@ function showOKRAlignmentModal() {
                     '<div class="text-sm mb-3" style="color: var(--text-secondary);">These initiatives need OKR alignment review or mapping in Jira (highest priority first)</div>' +
                     '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
                         misalignedInitiatives.map(init => `
-                            <div class="bento-list-item cursor-pointer hover:opacity-80 transition-opacity" 
-                                 onclick="event.preventDefault(); event.stopPropagation(); closeModal(); setTimeout(() => { console.log('Opening initiative modal for:', '${init.title}'); if (typeof showInitiativeModal === 'function') { const initiative = boardData.initiatives.find(i => i.id === ${init.id}); if (initiative) { showInitiativeModal(initiative); } else { console.error('Initiative not found:', ${init.id}); } } else { console.error('showInitiativeModal function not found'); } }, 300);"
-                                 style="position: relative; user-select: none; -webkit-user-select: none; cursor: pointer !important; padding: 0.375rem 0.5rem; margin-bottom: 0.25rem; border-radius: 0.5rem; background: rgba(30, 27, 75, 0.6); border: 1px solid rgba(99, 102, 241, 0.2); min-height: 2.5rem; display: flex; flex-direction: column; justify-content: center;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                                    <div style="font-size: clamp(0.7rem, 0.9vw, 0.8rem); font-weight: 600; color: var(--text-primary); line-height: 1.1; flex: 1; margin-right: 0.75rem; display: flex; align-items: center; gap: 0.375rem;">
+                            <div class="bento-pipeline-item" 
+                                 onclick="closeModal(); setTimeout(() => showInitiativeModal(${JSON.stringify(init).replace(/"/g, '&quot;')}), 200);"
+                                 style="position: relative; cursor: pointer;">
+                                <div class="bento-pipeline-item-header">
+                                    <div class="bento-pipeline-item-title">
                                         ${init.title}
-                                        <span class="bento-type-badge bento-type-${init.type}" style="font-size: 0.6rem; font-weight: 600; padding: 0.125rem 0.375rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.025em;">${init.type.toUpperCase()}</span>
+                                        <span class="bento-type-badge bento-type-${init.type}">${init.type.toUpperCase()}</span>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         ${getRowColFromSlot(init.priority).row <= 4 ? 
