@@ -7420,69 +7420,72 @@ function setupSyncPauseHandlers() {
 }
 
 // Queue updates to write back to Jira
+// Delayed batch update system
+let pendingMoveTimeout = null;
+
 function queueJiraUpdate(initiative, changes) {
-    syncState.updateQueue.push({
-        initiative: initiative,
-        changes: changes,
-        timestamp: Date.now()
-    });
+    // Clear any existing timeout to reset the delay
+    clearTimeout(pendingMoveTimeout);
     
-    // Process with a delay to avoid race conditions
-    setTimeout(processPendingUpdates, 500); // Increased from 100ms to 500ms
+    console.log(`Queuing update for ${initiative.jira?.key}, will batch sync in 7 seconds...`);
+    
+    // Set a new timeout for 7 seconds from now
+    pendingMoveTimeout = setTimeout(() => {
+        batchSyncAllPositions();
+    }, 7000);
 }
 
-// Process pending updates to Jira
-async function processPendingUpdates() {
-    if (syncState.updateQueue.length === 0) return;
+async function batchSyncAllPositions() {
+    console.log('Starting batch sync of all positions to Jira...');
+    showSyncIndicator('syncing');
     
-    const updates = [...syncState.updateQueue];
-    syncState.updateQueue = [];
-    
-    // Group updates by position to detect swaps
-    const positionMap = new Map();
-    updates.forEach(update => {
-        const pos = update.changes.priority;
-        if (!positionMap.has(pos)) {
-            positionMap.set(pos, []);
-        }
-        positionMap.get(pos).push(update);
-    });
-    
-    // Handle swaps specially
-    for (const [position, updatesForPosition] of positionMap) {
-        if (updatesForPosition.length > 1) {
-            console.log(`Detected swap conflict at position ${position}, using temporary positions`);
-            
-            // Step 1: Move conflicting items to temporary positions (1000+)
-            for (let i = 0; i < updatesForPosition.length; i++) {
-                const tempPosition = 1000 + i;
-                try {
-                    await writeToJira(updatesForPosition[i].initiative, { priority: tempPosition });
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                } catch (error) {
-                    console.error(`Failed to move to temp position:`, error);
-                }
+    try {
+        // Get current state of all initiatives with Jira keys
+        const allUpdates = [];
+        
+        boardData.initiatives.forEach(init => {
+            if (init.jira?.key && typeof init.priority === 'number') {
+                allUpdates.push({
+                    key: init.jira.key,
+                    position: init.priority,
+                    title: init.title
+                });
             }
-            
-            // Step 2: Move to final positions
-            for (const update of updatesForPosition) {
-                try {
-                    await writeToJira(update.initiative, update.changes);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                } catch (error) {
-                    console.error(`Failed to move to final position:`, error);
-                }
-            }
-        } else {
-            // No conflict, process normally
+        });
+        
+        console.log(`Batch syncing ${allUpdates.length} initiatives to Jira...`);
+        
+        // Send updates sequentially with delays to avoid conflicts
+        for (const update of allUpdates) {
             try {
-                await writeToJira(updatesForPosition[0].initiative, updatesForPosition[0].changes);
+                console.log(`Updating ${update.key} to position ${update.position}`);
+                
+                await writeToJira(
+                    { jira: { key: update.key } }, 
+                    { priority: update.position }
+                );
+                
+                // Small delay between updates
                 await new Promise(resolve => setTimeout(resolve, 500));
+                
             } catch (error) {
-                console.error(`Failed single update:`, error);
+                console.error(`Failed to update ${update.key} (${update.title}):`, error);
             }
         }
+        
+        console.log('Batch sync completed successfully');
+        showSyncIndicator('success');
+        
+    } catch (error) {
+        console.error('Batch sync failed:', error);
+        showSyncIndicator('error');
     }
+}
+
+async function processPendingUpdates() {
+    // This function is no longer needed since we're using batch updates
+    // Keep it empty or remove it entirely to avoid conflicts
+    console.log('processPendingUpdates called - using batch sync instead');
 }
 
 //Write changes back to Jira
