@@ -1864,7 +1864,7 @@ function updateOKRCard() {
              onclick="event.stopPropagation(); showOKRAlignmentModal()"
              title="View OKR alignment analysis">
             <div class="text-sm font-bold" style="color: var(--text-secondary);">Aligned Initiatives</div>
-            <div class="text-3xl font-bold" style="color: ${color};">${alignmentPercentage}%</div>
+            <div class="text-5xl font-bold" style="color: ${color};">${alignmentPercentage}%</div>
             <div class="flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
@@ -1876,6 +1876,7 @@ function updateOKRCard() {
         </div>
     `;
 }
+
 
 // Parse OKR data from Jira to get objectives and key results
 function parseOKRData() {
@@ -5394,7 +5395,7 @@ function showOKRAlignmentModal() {
                                                 <div class="flex-1">
                                                     <div class="text-sm font-semibold mb-1 flex items-center justify-between" style="color: var(--text-primary);">
                                                         <span>${kr.key}</span>
-                                                        <a href="https://your-jira-domain.atlassian.net/browse/${kr.key}" target="_blank" title="Open in Jira" class="hover:opacity-75 transition-opacity">
+                                                        <a href="https://alignvue.atlassian.net/browse/${kr.key}" target="_blank" title="Open in Jira" class="hover:opacity-75 transition-opacity">
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0052CC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                                 <path d="M15 3h6v6"/>
                                                                 <path d="M10 14 21 3"/>
