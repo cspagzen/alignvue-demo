@@ -7283,12 +7283,8 @@ async function fetchJiraData() {
     } catch (error) {
         console.error('Failed to fetch Jira data:', error);
         
-        // Fallback to existing data
-        return {
-            initiatives: boardData.initiatives,
-            teams: boardData.teams,
-            bullpen: boardData.bullpen
-        };
+        // REMOVE THIS FALLBACK - it's what's causing static data!
+        throw error;
     }
 }
 
