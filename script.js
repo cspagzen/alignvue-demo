@@ -154,7 +154,9 @@ function shiftInitiativesDown(fromSlot) {
         if (draggedInitiative) {
            const targetSlot = getSlotFromRowCol(targetRow, targetCol);
             
-            if (draggedInitiative.priority === "bullpen") {
+            if (draggedInitiative.sourceLocation === 'pipeline') {
+                handlePipelineToMatrix(draggedInitiative, targetSlot);
+            } else if (draggedInitiative.priority === "bullpen") {
                 // Moving from bullpen to matrix
                 handleBullpenToMatrix(draggedInitiative, targetSlot);
             } else {
@@ -3862,9 +3864,15 @@ function getReallocationOpportunities() {
         
         // Enhanced pipeline drag and drop with Jira integration
 function enablePipelineDragDrop(item) {
-    // Find initiative in pipeline instead of bullpen
-    const initiative = boardData.pipeline.find(init => init && init.id == item.dataset.initiativeId);
-    if (!initiative) return;
+    // Find initiative in pipeline (NOT bullpen)
+    const initiative = boardData.pipeline ? 
+        boardData.pipeline.find(init => init && init.id == item.dataset.initiativeId) :
+        boardData.bullpen.find(init => init && init.id == item.dataset.initiativeId);
+    
+    if (!initiative) {
+        console.log('Initiative not found for drag:', item.dataset.initiativeId);
+        return;
+    }
     
     item.draggable = true;
     
@@ -3874,7 +3882,9 @@ function enablePipelineDragDrop(item) {
         item.classList.add('dragging');
         
         // Pause sync during drag
-        syncState.isPaused = true;
+        if (typeof syncState !== 'undefined') {
+            syncState.isPaused = true;
+        }
         
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/html', item.outerHTML);
@@ -3885,7 +3895,9 @@ function enablePipelineDragDrop(item) {
         
         // Resume sync after brief delay
         setTimeout(() => {
-            syncState.isPaused = false;
+            if (typeof syncState !== 'undefined') {
+                syncState.isPaused = false;
+            }
         }, 2000);
         
         draggedInitiative = null;
@@ -7016,9 +7028,11 @@ function updateBoardWithLiveData(newData) {
         // Update board initiatives
         boardData.initiatives = newData.initiatives;
         
-        // Update pipeline items (replacing bullpen)
-        boardData.pipeline = newData.pipeline;
-        boardData.bullpen = []; // Clear bullpen
+        // NEW: Update pipeline items (replacing bullpen)
+        boardData.pipeline = newData.pipeline || [];
+        
+        // Keep bullpen empty for now (legacy compatibility)
+        boardData.bullpen = newData.bullpen || [];
         
         // Regenerate all UI components
         generatePyramid();
@@ -7084,9 +7098,17 @@ function handlePipelineToMatrix(initiative, targetSlot) {
     console.log(`Moving ${initiative.title} from pipeline to slot ${targetSlot}`);
     
     // Remove from pipeline
-    const pipelineIndex = boardData.pipeline.findIndex(item => item.id === initiative.id);
-    if (pipelineIndex !== -1) {
-        boardData.pipeline.splice(pipelineIndex, 1);
+    if (boardData.pipeline) {
+        const pipelineIndex = boardData.pipeline.findIndex(item => item.id === initiative.id);
+        if (pipelineIndex !== -1) {
+            boardData.pipeline.splice(pipelineIndex, 1);
+        }
+    } else {
+        // Fallback to bullpen for compatibility
+        const bullpenIndex = boardData.bullpen.findIndex(item => item && item.id === initiative.id);
+        if (bullpenIndex !== -1) {
+            boardData.bullpen[bullpenIndex] = null;
+        }
     }
     
     // Check slot 36 overflow BEFORE placing the new item
@@ -7106,15 +7128,19 @@ function handlePipelineToMatrix(initiative, targetSlot) {
     boardData.initiatives.push(initiative);
     
     // Queue Jira update
-    queueJiraUpdate(initiative, {
-        priority: targetSlot,
-        status: initiative.status
-    });
+    if (typeof queueJiraUpdate === 'function') {
+        queueJiraUpdate(initiative, {
+            priority: targetSlot,
+            status: initiative.status
+        });
+    }
     
     // Refresh UI
     setTimeout(() => {
         generatePyramid();
-        updatePipelineCard();
+        if (typeof updatePipelineCard === 'function') {
+            updatePipelineCard();
+        }
     }, 100);
 }
 
@@ -7160,7 +7186,10 @@ function setupMatrixDropZones() {
             // Handle different drag scenarios
             if (draggedInitiative.sourceLocation === 'pipeline') {
                 handlePipelineToMatrix(draggedInitiative, targetSlot);
-            } else if (draggedInitiative.priority !== "bullpen") {
+            } else if (draggedInitiative.priority === "bullpen") {
+                // Existing bullpen logic (fallback)
+                handleBullpenToMatrix(draggedInitiative, targetSlot);
+            } else {
                 // Existing board-to-board logic
                 handleMatrixToMatrix(draggedInitiative, targetSlot);
             }
@@ -7450,7 +7479,7 @@ async function fetchJiraData() {
 
         return {
             initiatives: boardInitiatives,
-            pipeline: pipelineItems,  // New pipeline array
+            pipeline: pipelineItems,  // NEW: Pipeline array
             teams: boardData.teams,   // Keep existing teams
             bullpen: [] // Clear bullpen, use pipeline instead
         };
@@ -7557,9 +7586,9 @@ function hasDataChanged(newData) {
     
     const oldData = syncState.lastSyncData;
     
-    // Quick checks for changes
+    // Quick checks for changes - FIXED to check pipeline instead of bullpen
     if (newData.initiatives.length !== oldData.initiatives.length) return true;
-    if (newData.bullpen.length !== oldData.bullpen.length) return true;
+    if ((newData.pipeline || []).length !== (oldData.pipeline || []).length) return true;
     
     // Deep check initiative changes (priority, teams, progress, validation)
     for (let i = 0; i < newData.initiatives.length; i++) {
@@ -7860,4 +7889,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initSmartSync();
 });
 */
+
+// Initialize pipeline array for Jira sync
+        if (!boardData.pipeline) {
+            boardData.pipeline = [];
+        }
+
         init();
