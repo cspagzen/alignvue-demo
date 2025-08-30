@@ -7438,18 +7438,49 @@ async function processPendingUpdates() {
     const updates = [...syncState.updateQueue];
     syncState.updateQueue = [];
     
-    // Process updates sequentially (not in parallel)
-    for (const update of updates) {
-        try {
-            console.log(`Processing update for ${update.initiative.jira?.key}: priority ${update.changes.priority}`);
-            await writeToJira(update.initiative, update.changes);
+    // Group updates by position to detect swaps
+    const positionMap = new Map();
+    updates.forEach(update => {
+        const pos = update.changes.priority;
+        if (!positionMap.has(pos)) {
+            positionMap.set(pos, []);
+        }
+        positionMap.get(pos).push(update);
+    });
+    
+    // Handle swaps specially
+    for (const [position, updatesForPosition] of positionMap) {
+        if (updatesForPosition.length > 1) {
+            console.log(`Detected swap conflict at position ${position}, using temporary positions`);
             
-            // Wait between updates to avoid conflicts
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Step 1: Move conflicting items to temporary positions (1000+)
+            for (let i = 0; i < updatesForPosition.length; i++) {
+                const tempPosition = 1000 + i;
+                try {
+                    await writeToJira(updatesForPosition[i].initiative, { priority: tempPosition });
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (error) {
+                    console.error(`Failed to move to temp position:`, error);
+                }
+            }
             
-        } catch (error) {
-            console.error(`Failed to update ${update.initiative.jira?.key}:`, error);
-            // Don't re-queue on swap conflicts - let the next sync fix it
+            // Step 2: Move to final positions
+            for (const update of updatesForPosition) {
+                try {
+                    await writeToJira(update.initiative, update.changes);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (error) {
+                    console.error(`Failed to move to final position:`, error);
+                }
+            }
+        } else {
+            // No conflict, process normally
+            try {
+                await writeToJira(updatesForPosition[0].initiative, updatesForPosition[0].changes);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (error) {
+                console.error(`Failed single update:`, error);
+            }
         }
     }
 }
