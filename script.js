@@ -5498,7 +5498,6 @@ function showOKRAlignmentModal() {
     
     modal.classList.add('show');
 }
-
 function showTeamHealthModal(healthLevel) {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
