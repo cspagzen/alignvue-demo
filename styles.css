@@ -3164,3 +3164,19 @@ input[type="number"] {
     border: 1px solid #7f1d1d;
 }
 
+.pipeline-drag-over {
+    background-color: var(--status-info-bg) !important;
+    border: 2px solid var(--accent-blue) !important;
+    transform: scale(1.02);
+    transition: all 0.3s ease;
+}
+
+.pipeline-container {
+    transition: all 0.3s ease;
+}
+
+.dragging {
+    opacity: 0.7;
+    transform: rotate(2deg);
+    z-index: 1000;
+}

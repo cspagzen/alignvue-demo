@@ -3860,26 +3860,37 @@ function getReallocationOpportunities() {
 }
         
         
-        //Pipeline Drag and Drop
-        function enablePipelineDragDrop(item) {
-    const initiative = boardData.bullpen.find(init => init && init.id == item.dataset.initiativeId);
+        // Enhanced pipeline drag and drop with Jira integration
+function enablePipelineDragDrop(item) {
+    // Find initiative in pipeline instead of bullpen
+    const initiative = boardData.pipeline.find(init => init && init.id == item.dataset.initiativeId);
     if (!initiative) return;
     
-    // Make the item draggable
     item.draggable = true;
     
     item.addEventListener('dragstart', function(e) {
         draggedInitiative = initiative;
+        draggedInitiative.sourceLocation = 'pipeline'; // Track source
         item.classList.add('dragging');
+        
+        // Pause sync during drag
+        syncState.isPaused = true;
+        
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/html', item.outerHTML);
     });
 
     item.addEventListener('dragend', function() {
         item.classList.remove('dragging');
+        
+        // Resume sync after brief delay
+        setTimeout(() => {
+            syncState.isPaused = false;
+        }, 2000);
+        
         draggedInitiative = null;
     });
-}  
+}
       
 function calculateFocusScore() {
     const totalTeams = Object.keys(boardData.teams).length;
@@ -6995,32 +7006,30 @@ function initEssentialKeyboard() {
     });
 } 
 
-// Add this function to your script.js file (before the sync functions)
+
+// =============================================================================
+// JIRA INTEGRATION AND SMART SYNC SYSTEM
+// =============================================================================
+
 function updateBoardWithLiveData(newData) {
-    console.log('Updating boardData with live data from Jira...');
-    
-    // Update the global boardData object
-    boardData.initiatives = newData.initiatives || [];
-    boardData.bullpen = newData.bullpen || [];
-    
-    // Keep existing teams data (don't replace)
-    if (newData.teams) {
-        boardData.teams = { ...boardData.teams, ...newData.teams };
-    }
-    
-    console.log(`Updated with ${boardData.initiatives.length} initiatives and ${boardData.bullpen.length} bullpen items`);
-    
-    // Regenerate the UI with new data
     try {
+        // Update board initiatives
+        boardData.initiatives = newData.initiatives;
+        
+        // Update pipeline items (replacing bullpen)
+        boardData.pipeline = newData.pipeline;
+        boardData.bullpen = []; // Clear bullpen
+        
+        // Regenerate all UI components
         generatePyramid();
         generateTeamHealthMatrix();
         
-        // Update pipeline if the function exists
+        // Update pipeline display
         if (typeof updatePipelineCard === 'function') {
             updatePipelineCard();
         }
         
-        // Refresh search index with new data
+        // Refresh search index
         if (typeof buildSearchIndex === 'function') {
             buildSearchIndex();
         }
@@ -7029,11 +7038,6 @@ function updateBoardWithLiveData(newData) {
         console.error('Error updating UI with live data:', error);
     }
 }
-
-// =============================================================================
-// JIRA INTEGRATION AND SMART SYNC SYSTEM
-// Add this entire block to the end of your script.js file
-// =============================================================================
 
 // Smart Bidirectional Sync State
 let syncState = {
@@ -7074,6 +7078,183 @@ function getFieldValue(issue, fieldId) {
         if (Array.isArray(fieldValue)) return fieldValue.map(item => item.value || item);
     }
     return fieldValue;
+}
+
+function handlePipelineToMatrix(initiative, targetSlot) {
+    console.log(`Moving ${initiative.title} from pipeline to slot ${targetSlot}`);
+    
+    // Remove from pipeline
+    const pipelineIndex = boardData.pipeline.findIndex(item => item.id === initiative.id);
+    if (pipelineIndex !== -1) {
+        boardData.pipeline.splice(pipelineIndex, 1);
+    }
+    
+    // Check slot 36 overflow BEFORE placing the new item
+    handleSlot36Overflow(targetSlot);
+    
+    // Shift items down from target slot
+    shiftInitiativesDown(targetSlot);
+    
+    // Update initiative properties
+    initiative.priority = targetSlot;
+    // Preserve current status unless it's "Pipeline"
+    if (initiative.status === "Pipeline") {
+        initiative.status = "To Do";
+    }
+    
+    // Add to board initiatives
+    boardData.initiatives.push(initiative);
+    
+    // Queue Jira update
+    queueJiraUpdate(initiative, {
+        priority: targetSlot,
+        status: initiative.status
+    });
+    
+    // Refresh UI
+    setTimeout(() => {
+        generatePyramid();
+        updatePipelineCard();
+    }, 100);
+}
+
+
+
+// Initialize enhanced pipeline drag and drop
+function initializePipelineDragDrop() {
+    // Set up matrix drop zones (enhanced)
+    setupMatrixDropZones();
+    
+    // Set up pipeline drop zone (new)
+    setupPipelineDropZone();
+    
+    // Enable drag for existing pipeline items
+    document.querySelectorAll('[data-initiative-id]').forEach(item => {
+        if (item.closest('.pipeline-container, #pipeline-section')) {
+            enablePipelineDragDrop(item);
+        }
+    });
+}
+
+// Enhanced matrix drop zone handler for pipeline items
+function setupMatrixDropZones() {
+    document.querySelectorAll('.drop-zone, .pyramid-slot').forEach(slot => {
+        slot.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            slot.classList.add('drag-over');
+        });
+
+        slot.addEventListener('dragleave', function() {
+            slot.classList.remove('drag-over');
+        });
+
+        slot.addEventListener('drop', function(e) {
+            e.preventDefault();
+            slot.classList.remove('drag-over');
+            
+            if (!draggedInitiative) return;
+            
+            const targetSlot = parseInt(slot.dataset.slot);
+            
+            // Handle different drag scenarios
+            if (draggedInitiative.sourceLocation === 'pipeline') {
+                handlePipelineToMatrix(draggedInitiative, targetSlot);
+            } else if (draggedInitiative.priority !== "bullpen") {
+                // Existing board-to-board logic
+                handleMatrixToMatrix(draggedInitiative, targetSlot);
+            }
+        });
+    });
+}
+
+// Enhanced slot 36 overflow handling
+function handleSlot36Overflow(newItemTargetSlot) {
+    if (newItemTargetSlot > 36) return; // No overflow needed
+    
+    // Find item currently in slot 36
+    const slot36Item = boardData.initiatives.find(init => init.priority === 36);
+    if (!slot36Item) return; // Slot 36 is empty
+    
+    console.log(`Slot 36 overflow: Moving ${slot36Item.title} to pipeline`);
+    
+    // Remove from board initiatives
+    const boardIndex = boardData.initiatives.findIndex(item => item.id === slot36Item.id);
+    if (boardIndex !== -1) {
+        boardData.initiatives.splice(boardIndex, 1);
+    }
+    
+    // Update properties for pipeline
+    slot36Item.priority = 0;
+    slot36Item.status = "Pipeline";
+    
+    // Add to pipeline
+    boardData.pipeline.push(slot36Item);
+    
+    // Queue Jira update for bumped item
+    queueJiraUpdate(slot36Item, {
+        priority: 0,
+        status: "Pipeline"
+    });
+}
+
+function setupPipelineDropZone() {
+    const pipelineContainer = document.querySelector('.pipeline-container, #pipeline-section');
+    if (!pipelineContainer) return;
+    
+    pipelineContainer.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        pipelineContainer.classList.add('pipeline-drag-over');
+    });
+
+    pipelineContainer.addEventListener('dragleave', function() {
+        pipelineContainer.classList.remove('pipeline-drag-over');
+    });
+
+    pipelineContainer.addEventListener('drop', function(e) {
+        e.preventDefault();
+        pipelineContainer.classList.remove('pipeline-drag-over');
+        
+        if (!draggedInitiative || draggedInitiative.sourceLocation === 'pipeline') return;
+        
+        handleMatrixToPipeline(draggedInitiative);
+    });
+}
+
+// New function: Handle matrix to pipeline moves  
+function handleMatrixToPipeline(initiative) {
+    console.log(`Moving ${initiative.title} from slot ${initiative.priority} to pipeline`);
+    
+    const oldSlot = initiative.priority;
+    
+    // Remove from board initiatives
+    const boardIndex = boardData.initiatives.findIndex(item => item.id === initiative.id);
+    if (boardIndex !== -1) {
+        boardData.initiatives.splice(boardIndex, 1);
+    }
+    
+    // Shift remaining items up to fill gap
+    shiftInitiativesUp(oldSlot);
+    
+    // Update properties for pipeline
+    initiative.priority = 0;
+    initiative.status = "Pipeline";
+    
+    // Add to pipeline
+    boardData.pipeline.push(initiative);
+    
+    // Queue Jira update
+    queueJiraUpdate(initiative, {
+        priority: 0,
+        status: "Pipeline"
+    });
+    
+    // Refresh UI
+    setTimeout(() => {
+        generatePyramid();
+        updatePipelineCard();
+    }, 100);
 }
 
 // Update formatMarketSize to handle proper field IDs
@@ -7215,94 +7396,92 @@ function transformJiraData(initiativesResponse, okrsResponse) {
 
 // Fetch data from Jira
 async function fetchJiraData() {
-    // Get initiatives via proxy
-    const initiativesResponse = await fetch('/api/jira', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: '/rest/api/3/search',
+    try {
+        const response = await fetch('/api/jira', {
             method: 'POST',
-            body: {
-                jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
-                fields: ["*all"]
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: 'project = STRAT AND issuetype = Epic',
+                    fields: [
+                        'summary', 'status', 'assignee', 'progress', 'issuelinks',
+                        'customfield_10091', // Matrix Position
+                        'customfield_10053', // Teams Assigned  
+                        'customfield_10054', // Validation Status
+                        'customfield_10055', // Canvas Outcome
+                        'customfield_10056', // TAM
+                        'customfield_10057', // SAM
+                        'customfield_10058', // SOM
+                        'customfield_10059', // Target Customer
+                        'customfield_10060', // Problem Statement
+                        'customfield_10061', // Solution Description
+                        'customfield_10062', // Big Picture Vision
+                        'customfield_10063', // Alternative Solutions
+                        'customfield_10064', // Impact
+                        'customfield_10065'  // Success Measures
+                    ],
+                    maxResults: 100
+                }
+            })
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        
+        // Separate pipeline items from board items
+        const boardInitiatives = [];
+        const pipelineItems = [];
+        
+        data.issues.forEach(issue => {
+            const matrixPosition = getFieldValue(issue, 'customfield_10091');
+            const initiative = transformJiraIssue(issue);
+            
+            if (matrixPosition === 0 || issue.fields.status.name === 'Pipeline') {
+                // This is a pipeline item
+                pipelineItems.push(initiative);
+            } else if (matrixPosition > 0 && matrixPosition <= 36) {
+                // This is a board item
+                boardInitiatives.push(initiative);
             }
-        })
-    });
+        });
 
-    if (!initiativesResponse.ok) {
-        const error = await initiativesResponse.json();
-        throw new Error(error.error || `HTTP ${initiativesResponse.status}`);
-    }
-
-    const initiatives = await initiativesResponse.json();
-
-    // Get OKRs via proxy
-    const okrsResponse = await fetch('/api/jira', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: '/rest/api/3/search',
-            method: 'POST',
-            body: {
-                jql: 'project = OKR',
-                maxResults: 20,
-                fields: ['summary', 'issuetype', 'issuelinks', 'parent']
-            }
-        })
-    });
-
-    const okrs = await okrsResponse.json();
-
-    // Ensure boardData.teams exists
-    if (!window.boardData || !window.boardData.teams) {
-        console.warn('boardData.teams not found, creating default teams');
-        window.boardData = window.boardData || {};
-        window.boardData.teams = {
-            "Core Platform": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "User Experience": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Security": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Data Engineering": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Analytics": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Site Reliability": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Customer Support": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Business Operations": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Mobile Development": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
-            "Machine Learning": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" }
+        return {
+            initiatives: boardInitiatives,
+            pipeline: pipelineItems,  // New pipeline array
+            teams: boardData.teams,   // Keep existing teams
+            bullpen: [] // Clear bullpen, use pipeline instead
         };
+        
+    } catch (error) {
+        console.error('Failed to fetch Jira data:', error);
+        throw error;
     }
-
-    return transformJiraData(initiatives, okrs);
 }
 
 // Initialize smart sync on page load
 function initSmartSync() {
+    console.log('Initializing smart sync with pipeline drag & drop...');
+    
+    setupSyncIndicator();
+    setupSyncPauseHandlers();
+    
+    // Initialize pipeline drag and drop
+    initializePipelineDragDrop();
+    
     // Initial sync
     syncWithJira();
     
-    // Track user activity
-    let lastActivity = Date.now();
-    
-    const updateActivity = () => lastActivity = Date.now();
-    document.addEventListener('mousemove', updateActivity);
-    document.addEventListener('keypress', updateActivity);
-    document.addEventListener('click', updateActivity);
-    document.addEventListener('scroll', updateActivity);
-    
-    // Smart polling - only when recently active
+    // Set up auto-sync interval
     syncState.syncInterval = setInterval(() => {
-        const isRecentlyActive = Date.now() - lastActivity < 120000; // Active in last 2 minutes
-        
-        if (syncState.isActive && !syncState.isPaused && isRecentlyActive) {
-            console.log('Auto-syncing due to recent user activity');
+        if (!syncState.isPaused) {
             syncWithJira();
         }
-    }, 180000); // Check every 3 minutes, sync only if active in last 2 minutes
+    }, 30000);
     
-    // Setup pause handlers
-    setupSyncPauseHandlers();
-    
-    // Add manual sync button
-    addManualSyncButton();
+    console.log('Smart sync initialized with 30-second interval');
 }
 
 function addManualSyncButton() {
@@ -7435,15 +7614,23 @@ function setupSyncPauseHandlers() {
 let pendingMoveTimeout = null;
 
 function queueJiraUpdate(initiative, changes) {
-    // Clear any existing timeout to reset the delay
-    clearTimeout(pendingMoveTimeout);
+    console.log(`Queueing Jira update for ${initiative.title}:`, changes);
     
-    console.log(`Queuing update for ${initiative.jira?.key}, will batch sync in 7 seconds...`);
+    // Add to existing drag update queue system
+    if (!window.dragUpdateQueue) {
+        window.dragUpdateQueue = [];
+    }
     
-    // Set a new timeout for 7 seconds from now
-    pendingMoveTimeout = setTimeout(() => {
-        batchSyncAllPositions();
-    }, 7000);
+    window.dragUpdateQueue.push({
+        initiative: initiative,
+        changes: changes
+    });
+    
+    // Clear existing timeout and set new one
+    clearTimeout(window.dragUpdateTimeout);
+    window.dragUpdateTimeout = setTimeout(async () => {
+        await processDragUpdates();
+    }, 7000); // Use existing 7-second delay
 }
 
 async function batchSyncAllPositions() {
@@ -7491,6 +7678,24 @@ async function batchSyncAllPositions() {
         console.error('Batch sync failed:', error);
         showSyncIndicator('error');
     }
+}
+
+// Process all queued drag updates
+async function processDragUpdates() {
+    if (!window.dragUpdateQueue || window.dragUpdateQueue.length === 0) return;
+    
+    console.log('Processing batch Jira updates:', window.dragUpdateQueue.length);
+    
+    for (const update of window.dragUpdateQueue) {
+        try {
+            await writeToJira(update.initiative, update.changes);
+        } catch (error) {
+            console.error('Failed to update Jira for:', update.initiative.title, error);
+        }
+    }
+    
+    // Clear the queue
+    window.dragUpdateQueue = [];
 }
 
 async function processPendingUpdates() {
