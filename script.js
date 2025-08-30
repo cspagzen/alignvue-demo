@@ -7015,29 +7015,35 @@ function initEssentialKeyboard() {
 
 // =============================================================================
 // JIRA INTEGRATION AND SMART SYNC SYSTEM
+// Add this entire block to the end of your script.js file
 // =============================================================================
 
+// Add this function to your script.js file (before the sync functions)
 function updateBoardWithLiveData(newData) {
+    console.log('Updating boardData with live data from Jira...');
+    
+    // Update the global boardData object
+    boardData.initiatives = newData.initiatives || [];
+    boardData.bullpen = newData.bullpen || [];
+    
+    // Keep existing teams data (don't replace)
+    if (newData.teams) {
+        boardData.teams = { ...boardData.teams, ...newData.teams };
+    }
+    
+    console.log(`Updated with ${boardData.initiatives.length} initiatives and ${boardData.bullpen.length} bullpen items`);
+    
+    // Regenerate the UI with new data
     try {
-        // Update board initiatives
-        boardData.initiatives = newData.initiatives;
-        
-        // NEW: Update pipeline items (replacing bullpen)
-        boardData.pipeline = newData.pipeline || [];
-        
-        // Keep bullpen empty for now (legacy compatibility)
-        boardData.bullpen = newData.bullpen || [];
-        
-        // Regenerate all UI components
         generatePyramid();
         generateTeamHealthMatrix();
         
-        // Update pipeline display
+        // Update pipeline if the function exists
         if (typeof updatePipelineCard === 'function') {
             updatePipelineCard();
         }
         
-        // Refresh search index
+        // Refresh search index with new data
         if (typeof buildSearchIndex === 'function') {
             buildSearchIndex();
         }
@@ -7227,57 +7233,63 @@ function transformJiraData(initiativesResponse, okrsResponse) {
 
 // Fetch data from Jira
 async function fetchJiraData() {
-    try {
-        const [initiativesResponse, okrsResponse] = await Promise.all([
-            fetch('/api/jira', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    endpoint: '/rest/api/3/search',
-                    method: 'POST',
-                    body: {
-                        jql: 'project = STRAT AND issuetype = Epic',
-                        fields: [
-                            'summary', 'status', 'assignee', 'progress', 'issuelinks',
-                            'customfield_10051', 'customfield_10052', 'customfield_10053',
-                            'customfield_10054', 'customfield_10055', 'customfield_10056',
-                            'customfield_10057', 'customfield_10058', 'customfield_10059',
-                            'customfield_10060', 'customfield_10061', 'customfield_10062',
-                            'customfield_10063', 'customfield_10064', 'customfield_10065',
-                            'customfield_10091', 'project'
-                        ],
-                        maxResults: 100
-                    }
-                })
-            }),
-            fetch('/api/jira', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    endpoint: '/rest/api/3/search',
-                    method: 'POST',
-                    body: {
-                        jql: 'project = OKR AND issuetype = Task',
-                        fields: ['summary', 'status', 'assignee', 'issuelinks'],
-                        maxResults: 100
-                    }
-                })
-            })
-        ]);
+    // Get initiatives via proxy
+    const initiativesResponse = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/search',
+            method: 'POST',
+            body: {
+                jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
+                fields: ["*all"]
+            }
+        })
+    });
 
-        if (!initiativesResponse.ok || !okrsResponse.ok) {
-            throw new Error(`HTTP ${initiativesResponse.status} or ${okrsResponse.status}`);
-        }
-
-        const initiatives = await initiativesResponse.json();
-        const okrs = await okrsResponse.json();
-
-        return transformJiraData(initiatives, okrs);
-        
-    } catch (error) {
-        console.error('Failed to fetch Jira data:', error);
-        throw error;
+    if (!initiativesResponse.ok) {
+        const error = await initiativesResponse.json();
+        throw new Error(error.error || `HTTP ${initiativesResponse.status}`);
     }
+
+    const initiatives = await initiativesResponse.json();
+
+    // Get OKRs via proxy
+    const okrsResponse = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/search',
+            method: 'POST',
+            body: {
+                jql: 'project = OKR',
+                maxResults: 20,
+                fields: ['summary', 'issuetype', 'issuelinks', 'parent']
+            }
+        })
+    });
+
+    const okrs = await okrsResponse.json();
+
+    // Ensure boardData.teams exists
+    if (!window.boardData || !window.boardData.teams) {
+        console.warn('boardData.teams not found, creating default teams');
+        window.boardData = window.boardData || {};
+        window.boardData.teams = {
+            "Core Platform": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "User Experience": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Security": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Data Engineering": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Analytics": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Site Reliability": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Customer Support": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Business Operations": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Mobile Development": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" },
+            "Machine Learning": { capacity: "healthy", skillset: "healthy", vision: "healthy", support: "healthy", teamwork: "healthy", autonomy: "healthy" }
+        };
+    }
+
+    return transformJiraData(initiatives, okrs);
 }
 
 // Initialize smart sync on page load
@@ -7285,67 +7297,15 @@ function initSmartSync() {
     // Initial sync
     syncWithJira();
     
-    // Track user activity
-    let lastActivity = Date.now();
-    
-    const updateActivity = () => lastActivity = Date.now();
-    document.addEventListener('mousemove', updateActivity);
-    document.addEventListener('keypress', updateActivity);
-    document.addEventListener('click', updateActivity);
-    document.addEventListener('scroll', updateActivity);
-    
-    // Smart polling - only when recently active
+    // Start auto-sync every 30 seconds
     syncState.syncInterval = setInterval(() => {
-        const isRecentlyActive = Date.now() - lastActivity < 120000; // Active in last 2 minutes
-        
-        if (syncState.isActive && !syncState.isPaused && isRecentlyActive) {
-            console.log('Auto-syncing due to recent user activity');
+        if (syncState.isActive && !syncState.isPaused) {
             syncWithJira();
         }
-    }, 180000); // Check every 3 minutes, sync only if active in last 2 minutes
+    }, 30000);
     
-    // Setup pause handlers
+    // Pause sync during user interactions
     setupSyncPauseHandlers();
-    
-    // Add manual sync button
-    addManualSyncButton();
-}
-
-function addManualSyncButton() {
-    // Remove any existing manual sync button
-    const existingButton = document.getElementById('manual-sync-btn');
-    if (existingButton) existingButton.remove();
-    
-    const syncButton = document.createElement('button');
-    syncButton.id = 'manual-sync-btn';
-    syncButton.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-            <path d="M21 3v5h-5"/>
-            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-            <path d="M3 21v-5h5"/>
-        </svg>
-        Sync
-    `;
-    
-    syncButton.style.cssText = `
-        position: fixed; top: 50px; right: 10px;
-        background: var(--accent-blue); color: white; border: none;
-        padding: 8px 12px; border-radius: 4px; cursor: pointer;
-        display: flex; align-items: center; gap: 6px;
-        font-size: 12px; font-weight: 500; z-index: 1000;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        opacity: 0.7; transition: opacity 0.2s;
-    `;
-    
-    syncButton.addEventListener('mouseenter', () => syncButton.style.opacity = '1');
-    syncButton.addEventListener('mouseleave', () => syncButton.style.opacity = '0.7');
-    syncButton.addEventListener('click', () => {
-        console.log('Manual sync triggered');
-        syncWithJira();
-    });
-    
-    document.body.appendChild(syncButton);
 }
 
 // Enhanced sync function with change detection
@@ -7384,7 +7344,7 @@ function hasDataChanged(newData) {
     
     const oldData = syncState.lastSyncData;
     
-    // Quick checks for changes - FIXED to check pipeline instead of bullpen
+    // Quick checks for changes
     if (newData.initiatives.length !== oldData.initiatives.length) return true;
     if (newData.bullpen.length !== oldData.bullpen.length) return true;
     
@@ -7437,155 +7397,61 @@ function setupSyncPauseHandlers() {
 }
 
 // Queue updates to write back to Jira
-// Delayed batch update system
-let pendingMoveTimeout = null;
-
 function queueJiraUpdate(initiative, changes) {
-    console.log(`Queueing Jira update for ${initiative.title}:`, changes);
-    
-    // Add to existing drag update queue system
-    if (!window.dragUpdateQueue) {
-        window.dragUpdateQueue = [];
-    }
-    
-    window.dragUpdateQueue.push({
+    syncState.updateQueue.push({
         initiative: initiative,
-        changes: changes
+        changes: changes,
+        timestamp: Date.now()
     });
     
-    // Clear existing timeout and set new one
-    clearTimeout(window.dragUpdateTimeout);
-    window.dragUpdateTimeout = setTimeout(async () => {
-        await processDragUpdates();
-    }, 7000); // Use existing 7-second delay
+    // Process immediately for responsive UI
+    setTimeout(processPendingUpdates, 100);
 }
 
-async function batchSyncAllPositions() {
-    console.log('Starting batch sync of all positions to Jira...');
-    showSyncIndicator('syncing');
+// Process pending updates to Jira
+async function processPendingUpdates() {
+    if (syncState.updateQueue.length === 0) return;
     
-    try {
-        // Get current state of all initiatives with Jira keys
-        const allUpdates = [];
-        
-        boardData.initiatives.forEach(init => {
-            if (init.jira?.key && typeof init.priority === 'number') {
-                allUpdates.push({
-                    key: init.jira.key,
-                    position: init.priority,
-                    title: init.title
-                });
-            }
-        });
-        
-        console.log(`Batch syncing ${allUpdates.length} initiatives to Jira...`);
-        
-        // Send updates sequentially with delays to avoid conflicts
-        for (const update of allUpdates) {
-            try {
-                console.log(`Updating ${update.key} to position ${update.position}`);
-                
-                await writeToJira(
-                    { jira: { key: update.key } }, 
-                    { priority: update.position }
-                );
-                
-                // Small delay between updates
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-            } catch (error) {
-                console.error(`Failed to update ${update.key} (${update.title}):`, error);
-            }
-        }
-        
-        console.log('Batch sync completed successfully');
-        showSyncIndicator('success');
-        
-    } catch (error) {
-        console.error('Batch sync failed:', error);
-        showSyncIndicator('error');
-    }
-}
-
-// Process all queued drag updates
-async function processDragUpdates() {
-    if (!window.dragUpdateQueue || window.dragUpdateQueue.length === 0) return;
+    const updates = [...syncState.updateQueue];
+    syncState.updateQueue = [];
     
-    console.log('Processing batch Jira updates:', window.dragUpdateQueue.length);
-    
-    for (const update of window.dragUpdateQueue) {
+    for (const update of updates) {
         try {
             await writeToJira(update.initiative, update.changes);
         } catch (error) {
-            console.error('Failed to update Jira for:', update.initiative.title, error);
+            console.error('Failed to write to Jira:', error);
+            // Re-queue failed updates
+            syncState.updateQueue.push(update);
         }
     }
-    
-    // Clear the queue
-    window.dragUpdateQueue = [];
 }
 
-async function processPendingUpdates() {
-    // This function is no longer needed since we're using batch updates
-    // Keep it empty or remove it entirely to avoid conflicts
-    console.log('processPendingUpdates called - using batch sync instead');
-}
-
-//Write changes back to Jira
+// Write changes back to Jira
 async function writeToJira(initiative, changes) {
-    console.log('=== WRITING TO JIRA ===');
-    console.log('Initiative Key:', initiative.jira?.key);
-    console.log('Changes:', changes);
-    
     const fields = {};
     
     // Map changes to Jira custom fields
     if (changes.priority !== undefined) {
-        // IMPORTANT: Make sure the value is a number, not string
-        fields.customfield_10091 = Number(changes.priority);
-        console.log('Setting Matrix Position to:', Number(changes.priority));
+        fields['customfield_10091'] = changes.priority; // Matrix Position
     }
     
-    try {
-        const requestBody = {
+    if (changes.teams !== undefined) {
+        fields['customfield_10053'] = changes.teams.map(team => ({value: team}));
+    }
+    
+    if (changes.validation !== undefined) {
+        fields['customfield_10052'] = {value: changes.validation};
+    }
+    
+    await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
             endpoint: `/rest/api/3/issue/${initiative.jira.key}`,
             method: 'PUT',
-            body: {
-                fields: fields
-            }
-        };
-        
-        console.log('Request:', JSON.stringify(requestBody, null, 2));
-        
-        const response = await fetch('/api/jira', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-        });
-        
-        console.log('Response status:', response.status);
-        
-        // Handle empty responses properly
-        let responseText = '';
-        try {
-            responseText = await response.text();
-        } catch (e) {
-            console.log('No response body');
-        }
-        
-        if (!response.ok) {
-            console.error('❌ Jira update failed:', response.status, responseText);
-            throw new Error(`HTTP ${response.status}: ${responseText || 'No response body'}`);
-        } else {
-            console.log('✅ Jira update successful');
-        }
-        
-    } catch (error) {
-        console.error('❌ Error in writeToJira:', error);
-        throw error;
-    }
+            body: { fields }
+        })
+    });
 }
 
 // Subtle sync indicator
@@ -7644,48 +7510,5 @@ function showSyncIndicator(type) {
     indicator.style.display = 'block';
     indicator.style.opacity = '1';
 }
-
-// =============================================================================
-// MODIFY EXISTING FUNCTIONS - Add these lines to your existing functions
-// =============================================================================
-
-// FIND your existing handleMatrixToMatrix function and ADD this line:
-// queueJiraUpdate(initiative, { priority: targetSlot });
-
-// FIND your existing handleBullpenToMatrix function and ADD this line:  
-// queueJiraUpdate(initiative, { priority: targetSlot });
-
-// FIND your existing DOMContentLoaded event listener and ADD this line:
-// initSmartSync();
-
-// Example of how to modify existing functions:
-/*
-function handleMatrixToMatrix(initiative, targetSlot) {
-    const oldPriority = initiative.priority;
-    initiative.priority = targetSlot;
-    
-    // ADD THIS LINE:
-    queueJiraUpdate(initiative, { priority: targetSlot });
-    
-    // Continue with existing logic...
-}
-
-function handleBullpenToMatrix(initiative, targetSlot) {
-    initiative.priority = targetSlot;
-    
-    // ADD THIS LINE:
-    queueJiraUpdate(initiative, { priority: targetSlot });
-    
-    // Continue with existing logic...
-}
-
-// In your DOMContentLoaded event listener, ADD:
-document.addEventListener('DOMContentLoaded', () => {
-    // Your existing initialization code...
-    
-    // ADD THIS LINE:
-    initSmartSync();
-});
-*/
 
         init();
