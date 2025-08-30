@@ -7449,50 +7449,55 @@ async function processPendingUpdates() {
     }
 }
 
-// Write changes back to Jira
+//Write changes back to Jira
 async function writeToJira(initiative, changes) {
     console.log('=== WRITING TO JIRA ===');
     console.log('Initiative Key:', initiative.jira?.key);
-    console.log('Initiative Type:', initiative.type);
     console.log('Changes:', changes);
     
     const fields = {};
     
     // Map changes to Jira custom fields
     if (changes.priority !== undefined) {
-        const fieldId = 'customfield_10091';
-        fields[fieldId] = changes.priority; // Matrix Position
-        console.log('Setting Matrix Position to:', changes.priority);
+        // IMPORTANT: Make sure the value is a number, not string
+        fields.customfield_10091 = Number(changes.priority);
+        console.log('Setting Matrix Position to:', Number(changes.priority));
     }
-    
-    console.log('API Call Details:');
-    console.log('- Endpoint:', `/rest/api/3/issue/${initiative.jira.key}`);
-    console.log('- Fields:', fields);
     
     try {
         const requestBody = {
             endpoint: `/rest/api/3/issue/${initiative.jira.key}`,
             method: 'PUT',
-            body: { fields }
+            body: {
+                fields: fields
+            }
         };
         
-        console.log('Full request body:', JSON.stringify(requestBody, null, 2));
+        console.log('Request:', JSON.stringify(requestBody, null, 2));
         
         const response = await fetch('/api/jira', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(requestBody)
         });
         
         console.log('Response status:', response.status);
         
+        // Handle empty responses properly
+        let responseText = '';
+        try {
+            responseText = await response.text();
+        } catch (e) {
+            console.log('No response body');
+        }
+        
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ Jira update failed:', errorText);
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
+            console.error('❌ Jira update failed:', response.status, responseText);
+            throw new Error(`HTTP ${response.status}: ${responseText || 'No response body'}`);
         } else {
-            const responseText = await response.text();
-            console.log('✅ Jira update successful:', responseText);
+            console.log('✅ Jira update successful');
         }
         
     } catch (error) {
