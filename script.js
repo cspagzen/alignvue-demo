@@ -5469,24 +5469,24 @@ function showOKRAlignmentModal() {
                     '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
                         misalignedInitiatives.map(init => `
                             <div class="bento-pipeline-item cursor-pointer hover:opacity-80 transition-opacity" 
-                                 onclick="closeModal(); setTimeout(() => showInitiativeModal(boardData.initiatives.find(i => i.id === ${init.id})), 100);"
-                                 style="position: relative;">
+                                 onclick="event.preventDefault(); event.stopPropagation(); closeModal(); setTimeout(() => { console.log('Opening initiative modal for:', '${init.title}'); if (typeof showInitiativeModal === 'function') { const initiative = boardData.initiatives.find(i => i.id === ${init.id}); if (initiative) { showInitiativeModal(initiative); } else { console.error('Initiative not found:', ${init.id}); } } else { console.error('showInitiativeModal function not found'); } }, 300);"
+                                 style="position: relative; user-select: none; -webkit-user-select: none;">
                                 <div class="bento-pipeline-item-header">
                                     <div class="bento-pipeline-item-title">
                                         ${init.title}
                                         <span class="bento-type-badge bento-type-${init.type}">${init.type.toUpperCase()}</span>
                                     </div>
                                     <div class="flex items-center gap-2">
+                                        ${getRowColFromSlot(init.priority).row <= 4 ? 
+                                            '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">HIGH PRIORITY</span>' : 
+                                            ''
+                                        }
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 1.73-3Z"/>
                                             <path d="M12 9v4"/>
                                             <path d="M12 17h.01"/>
                                         </svg>
                                         <span class="text-xs" style="color: var(--accent-orange);">Priority ${init.priority}</span>
-                                        ${getRowColFromSlot(init.priority).row <= 4 ? 
-                                            '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">HIGH PRIORITY</span>' : 
-                                            ''
-                                        }
                                     </div>
                                 </div>
                             </div>
