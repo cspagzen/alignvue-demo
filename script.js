@@ -3421,7 +3421,7 @@ async function fetchCompletedInitiativesFromJira() {
         sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
         const formattedDate = sixtyDaysAgo.toISOString().split('T')[0];
         
-        // Use quotes around the date and fix the JQL syntax
+        // CORRECTED: Use STRAT instead of SRAT
         const response = await fetch('/api/jira', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3429,7 +3429,7 @@ async function fetchCompletedInitiativesFromJira() {
                 endpoint: '/rest/api/3/search',
                 method: 'POST',
                 body: {
-                    jql: `project IN (SRAT, EMRG, KTLO) AND issuetype = Epic AND status = "Done" AND resolved >= "${formattedDate}" ORDER BY resolved DESC`,
+                    jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND status = "Done" AND resolved >= "${formattedDate}" ORDER BY resolved DESC`,
                     fields: [
                         "summary", 
                         "project", 
@@ -3467,13 +3467,8 @@ function transformJiraCompletedInitiatives(jiraIssues) {
     return jiraIssues.map(issue => {
         // Determine initiative type based on project
         let type = 'ktlo'; // default
-        if (issue.fields.project.key === 'SRAT') type = 'strategic';
+        if (issue.fields.project.key === 'STRAT') type = 'strategic';
         else if (issue.fields.project.key === 'EMRG') type = 'emergent';
-        
-        // Get teams from labels or assignee
-        const teams = issue.fields.labels?.length > 0 ? 
-            issue.fields.labels : 
-            [issue.fields.assignee?.displayName || 'Unassigned'];
             
         return {
             id: parseInt(issue.id),
@@ -3481,31 +3476,24 @@ function transformJiraCompletedInitiatives(jiraIssues) {
             type: type,
             validation: 'validated', // Completed items are assumed validated
             completedDate: issue.fields.resolved?.split('T')[0] || new Date().toISOString().split('T')[0],
-            teams: teams,
             progress: 100,
             jira: {
-                key: issue.key,
-                stories: issue.fields.subtasks?.length || 0,
-                completed: issue.fields.subtasks?.length || 0,
-                inProgress: 0,
-                blocked: 0,
-                velocity: 0
+                key: issue.key
             },
             canvas: {
-                outcome: issue.fields.description?.substring(0, 100) || 'Initiative completed successfully',
-                measures: 'Initiative delivered and closed',
-                keyResult: 'Delivery milestone achieved',
-                marketSize: 'N/A - Initiative completed',
-                customer: 'Stakeholders and end users',
-                problem: 'Requirements fulfilled through delivery',
-                solution: issue.fields.summary,
-                bigPicture: `${issue.fields.summary} has been successfully completed and delivered.`,
-                alternatives: 'N/A - Initiative completed'
+                outcome: extractTextFromDoc(issue.fields.customfield_10059) || getFieldValue(issue, 'customfield_10059') || '',
+                measures: extractTextFromDoc(issue.fields.customfield_10060) || getFieldValue(issue, 'customfield_10060') || '',
+                keyResult: findOKRAlignment(issue, boardData.okrs?.issues || []) || 'No OKR alignment found',
+                marketSize: formatMarketSize(issue) || '',
+                customer: extractTextFromDoc(issue.fields.customfield_10062) || getFieldValue(issue, 'customfield_10062') || '',
+                problem: extractTextFromDoc(issue.fields.customfield_10063) || getFieldValue(issue, 'customfield_10063') || '',
+                solution: extractTextFromDoc(issue.fields.customfield_10064) || getFieldValue(issue, 'customfield_10064') || '',
+                bigPicture: extractTextFromDoc(issue.fields.customfield_10065) || getFieldValue(issue, 'customfield_10065') || '',
+                alternatives: extractTextFromDoc(issue.fields.customfield_10066) || getFieldValue(issue, 'customfield_10066') || ''
             }
         };
     });
 }
-
 // Function to update boardData with completed initiatives from Jira
 async function updateCompletedInitiativesFromJira() {
     try {
