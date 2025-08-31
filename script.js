@@ -3538,15 +3538,12 @@ function updateValidationCard() {
         <!-- In Validation - Left -->
         <div class="validation-metric-card cursor-pointer hover:scale-105 transition-all duration-200" onclick="showInValidationModal()">
             <div class="kpi-current-value" style="color: #f59e0b;">${totalInValidation}</div>
-            <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Active Initiatives<br>In Validation</div>
-            ${pipelineInValidation > 0 ? `<div class="text-xs opacity-75" style="color: var(--text-tertiary);">+${pipelineInValidation} pipeline</div>` : ''}
-        </div>
+            <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Initiatives<br>In Validation</div>
         
         <!-- Not Validated - Right -->
         <div class="validation-metric-card cursor-pointer hover:scale-105 transition-all duration-200" onclick="showNotValidatedModal()">
             <div class="kpi-current-value" style="color: #ef4444;">${totalNotValidated}</div>
-            <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Active Initiatives<br>Not Validated</div>
-            ${pipelineNotValidated > 0 ? `<div class="text-xs opacity-75" style="color: var(--text-tertiary);">+${pipelineNotValidated} pipeline</div>` : ''}
+            <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Initiatives<br>Not Validated</div>
         </div>
     </div>
     `;
