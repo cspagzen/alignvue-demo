@@ -3421,7 +3421,7 @@ async function fetchCompletedInitiativesFromJira() {
         sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
         const formattedDate = sixtyDaysAgo.toISOString().split('T')[0];
         
-        // Simplified JQL query to avoid syntax errors
+        // Use quotes around the date and fix the JQL syntax
         const response = await fetch('/api/jira', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3429,7 +3429,7 @@ async function fetchCompletedInitiativesFromJira() {
                 endpoint: '/rest/api/3/search',
                 method: 'POST',
                 body: {
-                    jql: `project IN (SRAT, EMRG, KTLO) AND issuetype = Epic AND status = Done AND resolved >= ${formattedDate} ORDER BY resolved DESC`,
+                    jql: `project IN (SRAT, EMRG, KTLO) AND issuetype = Epic AND status = "Done" AND resolved >= "${formattedDate}" ORDER BY resolved DESC`,
                     fields: [
                         "summary", 
                         "project", 
@@ -3446,6 +3446,8 @@ async function fetchCompletedInitiativesFromJira() {
 
         if (!response.ok) {
             console.error(`Jira API error: ${response.status}`);
+            const errorText = await response.text();
+            console.error('Error details:', errorText);
             return [];
         }
 
@@ -7381,7 +7383,7 @@ function updateBoardWithLiveData(newData) {
         boardData.teams = { ...boardData.teams, ...newData.teams };
     }
     
-    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, ${boardData.okrs.issues.length} OKR items, and ${boardData.recentlyCompleted.length} completed items`); // Update this log
+    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, ${(boardData.okrs && boardData.okrs.issues ? boardData.okrs.issues.length : 0)} OKR items, and ${boardData.recentlyCompleted.length} completed items`);
     
     // Regenerate the UI with new data
     try {
