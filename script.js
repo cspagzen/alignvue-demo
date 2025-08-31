@@ -1217,6 +1217,8 @@ teamForm.addEventListener('submit', handleTeamSubmit);
 
         function closeModal() {
     const modal = document.getElementById('detail-modal');
+    
+    // Remove show class and set aria-hidden
     modal.classList.remove('show');
     modal.setAttribute('aria-hidden', 'true');
     
@@ -1233,6 +1235,30 @@ teamForm.addEventListener('submit', handleTeamSubmit);
     }
     
     announceToScreenReader('Modal closed');
+}
+
+function setupModalCloseHandlers() {
+    const modal = document.getElementById('detail-modal');
+    
+    // Close button click
+    const closeButton = modal.querySelector('.modal-close, [data-close="modal"]');
+    if (closeButton) {
+        closeButton.addEventListener('click', closeModal);
+    }
+    
+    // Click outside modal to close
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+    
+    // Escape key to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            closeModal();
+        }
+    });
 }
         
         function showAccountModal() {
@@ -3278,13 +3304,9 @@ function getRecentlyCompletedInitiatives() {
 function updateCompletedCard() {
     const content = document.getElementById('completed-content');
     
-    const recentlyCompleted = getRecentlyCompletedInitiatives();
-    const completedCount = recentlyCompleted.length;
-    
-    // Update the card title to show the dynamic count
+    // Keep the title static as "Recently Completed"
     const cardHeader = document.querySelector('.completed-card .bento-card-header h3');
     if (cardHeader) {
-        // Keep the title static as "Recently Completed"
         cardHeader.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m16 16 2 2 4-4"/>
@@ -3296,6 +3318,9 @@ function updateCompletedCard() {
             Recently Completed
         `;
     }
+
+    const recentlyCompleted = getRecentlyCompletedInitiatives();
+    const completedCount = recentlyCompleted.length;
     
     if (completedCount === 0) {
         content.innerHTML = `
@@ -3310,24 +3335,34 @@ function updateCompletedCard() {
         return;
     }
     
-    // Sort by completion date (most recent first)
-    const sortedCompleted = recentlyCompleted.sort((a, b) => 
-        new Date(b.completedDate) - new Date(a.completedDate)
-    );
+    // Calculate counts by type
+    const strategicCount = recentlyCompleted.filter(i => i.type === 'strategic').length;
+    const emergentCount = recentlyCompleted.filter(i => i.type === 'emergent').length;
+    const ktloCount = recentlyCompleted.filter(i => i.type === 'ktlo').length;
     
-    // Simple card with big number on left, text on right - like other metric cards
+    // Simple card with big number on left, text on right, plus type counts
     content.innerHTML = `
-        <div class="h-full flex items-center justify-center cursor-pointer" onclick="showCompletedInitiativesModal()">
-            <div class="flex items-center gap-4">
-                <div class="bento-large-metric" style="color: var(--accent-green);">${completedCount}</div>
-                <div class="flex flex-col">
-                    <div class="text-sm font-medium" style="color: var(--text-primary);">Initiatives Completed</div>
-                    <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
+        <div class="h-full flex flex-col">
+            <div class="flex items-center justify-center cursor-pointer flex-1" onclick="showCompletedInitiativesModal()">
+                <div class="flex items-center gap-4">
+                    <div class="bento-large-metric" style="color: var(--accent-green);">${completedCount}</div>
+                    <div class="flex flex-col">
+                        <div class="text-sm font-medium" style="color: var(--text-primary);">Initiatives Completed</div>
+                        <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
+                    </div>
                 </div>
+            </div>
+            
+            <!-- Type counts at bottom -->
+            <div class="flex justify-between text-xs pt-2 border-t border-gray-700" style="color: var(--text-tertiary);">
+                <span>${strategicCount} Strategic</span>
+                <span>${emergentCount} Emergent</span>
+                <span>${ktloCount} KTLO</span>
             </div>
         </div>
     `;
 }
+
 
 // Modal to show all completed initiatives in last 60 days
 function showCompletedInitiativesModal() {
@@ -3421,7 +3456,6 @@ async function fetchCompletedInitiativesFromJira() {
         sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
         const formattedDate = sixtyDaysAgo.toISOString().split('T')[0];
         
-        // CORRECTED: Use STRAT instead of SRAT
         const response = await fetch('/api/jira', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3437,7 +3471,18 @@ async function fetchCompletedInitiativesFromJira() {
                         "status", 
                         "resolved", 
                         "description",
-                        "key"
+                        "key",
+                        "customfield_10059", // outcome
+                        "customfield_10060", // measures  
+                        "customfield_10062", // customer
+                        "customfield_10063", // problem
+                        "customfield_10064", // solution
+                        "customfield_10065", // big picture
+                        "customfield_10066", // alternatives
+                        "customfield_10056", // TAM
+                        "customfield_10057", // SAM
+                        "customfield_10058", // SOM
+                        "issuelinks"         // for OKR alignment
                     ],
                     maxResults: 50
                 }
@@ -3463,27 +3508,25 @@ async function fetchCompletedInitiativesFromJira() {
 }
 
 // Function to transform Jira completed initiatives to our data format
-function transformJiraCompletedInitiatives(jiraIssues) {
-    return jiraIssues.map(issue => {
-        // Determine initiative type based on project
-        let type = 'ktlo'; // default
-        if (issue.fields.project.key === 'STRAT') type = 'strategic';
-        else if (issue.fields.project.key === 'EMRG') type = 'emergent';
-            
+function transformJiraData(initiativesResponse, okrsResponse) {
+    console.log('Transforming Jira data...');
+    
+    const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
+        const project = issue.fields.project.key;
+        const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
+        
+        const matrixSlot = getFieldValue(issue, 'customfield_10091');
+        const validationStatus = getFieldValue(issue, 'customfield_10052');
+        const teamsAssigned = getFieldValue(issue, 'customfield_10053');
+        
+        // ... rest of your existing transformation logic ...
+        
         return {
-            id: parseInt(issue.id),
-            title: issue.fields.summary,
-            type: type,
-            validation: 'validated', // Completed items are assumed validated
-            completedDate: issue.fields.resolved?.split('T')[0] || new Date().toISOString().split('T')[0],
-            progress: 100,
-            jira: {
-                key: issue.key
-            },
+            // ... your existing initiative object ...
             canvas: {
                 outcome: extractTextFromDoc(issue.fields.customfield_10059) || getFieldValue(issue, 'customfield_10059') || '',
                 measures: extractTextFromDoc(issue.fields.customfield_10060) || getFieldValue(issue, 'customfield_10060') || '',
-                keyResult: findOKRAlignment(issue, boardData.okrs?.issues || []) || 'No OKR alignment found',
+                keyResult: findOKRAlignment(issue, okrsResponse || []) || 'No OKR',
                 marketSize: formatMarketSize(issue) || '',
                 customer: extractTextFromDoc(issue.fields.customfield_10062) || getFieldValue(issue, 'customfield_10062') || '',
                 problem: extractTextFromDoc(issue.fields.customfield_10063) || getFieldValue(issue, 'customfield_10063') || '',
@@ -3493,7 +3536,21 @@ function transformJiraCompletedInitiatives(jiraIssues) {
             }
         };
     });
+
+    const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
+    const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
+    
+    console.log(`Active on board: ${activeInitiatives.length}, Pipeline: ${pipelineInitiatives.length}`);
+
+    // FIX: Return OKR data as an object with issues array, not just the array
+    return {
+        initiatives: activeInitiatives,
+        bullpen: pipelineInitiatives,
+        teams: boardData.teams,
+        okrs: { issues: okrsResponse || [] }  // FIX: Wrap in object with issues property
+    };
 }
+
 // Function to update boardData with completed initiatives from Jira
 async function updateCompletedInitiativesFromJira() {
     try {
@@ -8002,6 +8059,30 @@ function showSyncIndicator(type) {
     // Show indicator
     indicator.style.display = 'block';
     indicator.style.opacity = '1';
+}
+
+function setupModalCloseHandlers() {
+    const modal = document.getElementById('detail-modal');
+    
+    // Close button click
+    const closeButton = modal.querySelector('.modal-close, [data-close="modal"]');
+    if (closeButton) {
+        closeButton.addEventListener('click', closeModal);
+    }
+    
+    // Click outside modal to close
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+    
+    // Escape key to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            closeModal();
+        }
+    });
 }
 
         init();
