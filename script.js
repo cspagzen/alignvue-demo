@@ -3258,22 +3258,264 @@ function generateConfidenceTrendLine(color) {
     };
 }
 
+// Function to get completed initiatives from the last 60 days
+function getRecentlyCompletedInitiatives() {
+    const currentDate = new Date();
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(currentDate.getDate() - 60);
+    
+    // Filter boardData to get completed initiatives from last 60 days
+    const recentlyCompleted = (boardData.recentlyCompleted || []).filter(initiative => {
+        if (!initiative.completedDate) return false;
+        const completedDate = new Date(initiative.completedDate);
+        return completedDate >= sixtyDaysAgo;
+    });
+    
+    return recentlyCompleted;
+}
+
+// Update the Recently Completed card display
 function updateCompletedCard() {
     const content = document.getElementById('completed-content');
     
-    content.innerHTML = boardData.recentlyCompleted.slice(-2).map(initiative => `
-        <div class="bento-pipeline-item validation-${initiative.validation}" 
-             data-initiative-id="${initiative.id}"
-             onclick="showInitiativeModal(boardData.recentlyCompleted.find(init => init.id === ${initiative.id}))"
-             style="position: relative;">
-            <div class="bento-pipeline-item-header">
-                <div class="bento-pipeline-item-title">
-                    ${initiative.title}
+    const recentlyCompleted = getRecentlyCompletedInitiatives();
+    const completedCount = recentlyCompleted.length;
+    
+    // Update the card title to show the dynamic count
+    const cardHeader = document.querySelector('.completed-card .bento-card-header h3');
+    if (cardHeader) {
+        // Keep the title static as "Recently Completed"
+        cardHeader.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m16 16 2 2 4-4"/>
+                <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                <path d="m7.5 4.27 9 5.15"/>
+                <polyline points="3.29 7 12 12 20.71 7"/>
+                <line x1="12" x2="12" y1="22" y2="12"/>
+            </svg>
+            Recently Completed
+        `;
+    }
+    
+    if (completedCount === 0) {
+        content.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-2">
+                    <path d="m16 16 2 2 4-4"/>
+                    <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                </svg>
+                <div class="text-sm" style="color: var(--text-secondary);">No initiatives completed in the last 60 days</div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort by completion date (most recent first)
+    const sortedCompleted = recentlyCompleted.sort((a, b) => 
+        new Date(b.completedDate) - new Date(a.completedDate)
+    );
+    
+    // Simple card with big number on left, text on right - like other metric cards
+    content.innerHTML = `
+        <div class="h-full flex items-center justify-center cursor-pointer" onclick="showCompletedInitiativesModal()">
+            <div class="flex items-center gap-4">
+                <div class="bento-large-metric" style="color: var(--accent-green);">${completedCount}</div>
+                <div class="flex flex-col">
+                    <div class="text-sm font-medium" style="color: var(--text-primary);">Initiatives Completed</div>
+                    <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
 }
+
+// Modal to show all completed initiatives in last 60 days
+function showCompletedInitiativesModal() {
+    const modal = document.getElementById('detail-modal');
+    const title = document.getElementById('modal-title');
+    const content = document.getElementById('modal-content');
+    
+    const recentlyCompleted = getRecentlyCompletedInitiatives();
+    
+    // Sort by completion date (most recent first)
+    const sortedCompleted = recentlyCompleted.sort((a, b) => 
+        new Date(b.completedDate) - new Date(a.completedDate)
+    );
+    
+    title.textContent = `${recentlyCompleted.length} Initiatives Completed in Last 60 Days`;
+    
+    content.innerHTML = `
+        <div class="space-y-4">
+            <div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%); border: 1px solid var(--accent-green);">
+                <div class="flex items-center gap-3 mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m16 16 2 2 4-4"/>
+                        <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                    </svg>
+                    <div>
+                        <div class="font-bold text-lg" style="color: var(--accent-green);">${recentlyCompleted.length} Initiatives Successfully Delivered</div>
+                        <div class="text-sm" style="color: var(--text-secondary);">Completed in the last 60 days (${new Date(new Date().setDate(new Date().getDate() - 60)).toLocaleDateString()} - ${new Date().toLocaleDateString()})</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">
+                ${sortedCompleted.map(initiative => {
+                    const completedDate = new Date(initiative.completedDate);
+                    const formattedDate = completedDate.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                    });
+                    
+                    return `
+                        <div class="bento-pipeline-item" 
+                             onclick="closeModal(); setTimeout(() => showInitiativeModal(boardData.recentlyCompleted.find(init => init.id === ${initiative.id})), 100);"
+                             style="position: relative; cursor: pointer; border-left: 3px solid var(--accent-green);">
+                            <div class="bento-pipeline-item-header">
+                                <div class="bento-pipeline-item-title">
+                                    ${initiative.title}
+                                    <span class="bento-type-badge bento-type-${initiative.type}">${initiative.type.toUpperCase()}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m9 12 2 2 4-4"/>
+                                        <circle cx="12" cy="12" r="9"/>
+                                    </svg>
+                                    <span class="text-xs" style="color: var(--accent-green);">
+                                        Completed ${formattedDate}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            
+            ${recentlyCompleted.length > 0 ? `
+                <div class="mt-4 p-3 rounded-lg" style="background: var(--bg-quaternary); border: 1px solid var(--glass-border);">
+                    <div class="text-sm" style="color: var(--text-secondary);">
+                        <strong>Delivery Summary:</strong> 
+                        ${recentlyCompleted.filter(i => i.type === 'strategic').length} Strategic, 
+                        ${recentlyCompleted.filter(i => i.type === 'emergent').length} Emergent, 
+                        ${recentlyCompleted.filter(i => i.type === 'ktlo').length} KTLO initiatives completed.
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+}
+
+// JIRA Integration Functions for Recently Completed Initiatives
+
+// Function to fetch completed initiatives from Jira
+async function fetchCompletedInitiativesFromJira() {
+    try {
+        console.log('=== FETCHING COMPLETED INITIATIVES FROM JIRA ===');
+        
+        // Calculate 60 days ago date in JIRA format (YYYY-MM-DD)
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        const formattedDate = sixtyDaysAgo.toISOString().split('T')[0];
+        
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: `project IN (SRAT, EMRG, KTLO) AND issuetype = Epic AND status = "Done" AND cf[10091] is EMPTY AND resolved >= "${formattedDate}" ORDER BY resolved DESC`,
+                    fields: ["*all"],
+                    maxResults: 50
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Completed initiatives from Jira:', data.total);
+        
+        return data.issues || [];
+        
+    } catch (error) {
+        console.error('Error fetching completed initiatives from Jira:', error);
+        return [];
+    }
+}
+
+// Function to transform Jira completed initiatives to our data format
+function transformJiraCompletedInitiatives(jiraIssues) {
+    return jiraIssues.map(issue => {
+        // Determine initiative type based on project
+        let type = 'ktlo'; // default
+        if (issue.fields.project.key === 'SRAT') type = 'strategic';
+        else if (issue.fields.project.key === 'EMRG') type = 'emergent';
+        
+        // Get teams from labels or assignee
+        const teams = issue.fields.labels?.length > 0 ? 
+            issue.fields.labels : 
+            [issue.fields.assignee?.displayName || 'Unassigned'];
+            
+        return {
+            id: parseInt(issue.id),
+            title: issue.fields.summary,
+            type: type,
+            validation: 'validated', // Completed items are assumed validated
+            completedDate: issue.fields.resolved?.split('T')[0] || new Date().toISOString().split('T')[0],
+            teams: teams,
+            progress: 100,
+            jira: {
+                key: issue.key,
+                stories: issue.fields.subtasks?.length || 0,
+                completed: issue.fields.subtasks?.length || 0,
+                inProgress: 0,
+                blocked: 0,
+                velocity: 0
+            },
+            canvas: {
+                outcome: issue.fields.description?.substring(0, 100) || 'Initiative completed successfully',
+                measures: 'Initiative delivered and closed',
+                keyResult: 'Delivery milestone achieved',
+                marketSize: 'N/A - Initiative completed',
+                customer: 'Stakeholders and end users',
+                problem: 'Requirements fulfilled through delivery',
+                solution: issue.fields.summary,
+                bigPicture: `${issue.fields.summary} has been successfully completed and delivered.`,
+                alternatives: 'N/A - Initiative completed'
+            }
+        };
+    });
+}
+
+// Function to update boardData with completed initiatives from Jira
+async function updateCompletedInitiativesFromJira() {
+    try {
+        const jiraCompletedIssues = await fetchCompletedInitiativesFromJira();
+        const transformedCompleted = transformJiraCompletedInitiatives(jiraCompletedIssues);
+        
+        // Update the boardData with real Jira data
+        boardData.recentlyCompleted = transformedCompleted;
+        
+        console.log(`Updated boardData with ${transformedCompleted.length} completed initiatives from Jira`);
+        
+        // Update the UI
+        updateCompletedCard();
+        
+    } catch (error) {
+        console.error('Error updating completed initiatives from Jira:', error);
+        // Fall back to existing static data if Jira fetch fails
+        updateCompletedCard();
+    }
+}
+
 
 // Updated Validation Pipeline functions to work with live JIRA data
 
@@ -7113,7 +7355,6 @@ function initEssentialKeyboard() {
 // Add this entire block to the end of your script.js file
 // =============================================================================
 
-// Add this function to your script.js file (before the sync functions)
 function updateBoardWithLiveData(newData) {
     console.log('=== UPDATE BOARD DEBUG ===');
     console.log('Updating boardData with live data from Jira...');
@@ -7123,14 +7364,15 @@ function updateBoardWithLiveData(newData) {
     // Update the global boardData object
     boardData.initiatives = newData.initiatives || [];
     boardData.bullpen = newData.bullpen || [];
-    boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data!
+    boardData.okrs = newData.okrs || { issues: [] };
+    boardData.recentlyCompleted = newData.recentlyCompleted || []; // ADD THIS LINE
     
     // Keep existing teams data (don't replace)
     if (newData.teams) {
         boardData.teams = { ...boardData.teams, ...newData.teams };
     }
     
-    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, and ${boardData.okrs.issues.length} OKR items`);
+    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, ${boardData.okrs.issues.length} OKR items, and ${boardData.recentlyCompleted.length} completed items`); // Update this log
     
     // Regenerate the UI with new data
     try {
@@ -7145,6 +7387,11 @@ function updateBoardWithLiveData(newData) {
         // Update OKR card with new data
         if (typeof updateOKRCard === 'function') {
             updateOKRCard();
+        }
+        
+        // Update completed card with new data
+        if (typeof updateCompletedCard === 'function') {
+            updateCompletedCard();
         }
         
         // Refresh search index with new data
@@ -7376,15 +7623,22 @@ async function fetchJiraData() {
 
     const okrs = await okrsResponse.json();
     
+    // ADD THIS: Get completed initiatives for the Recently Completed card
+    const completedInitiatives = await fetchCompletedInitiativesFromJiraUpdated();
+    const transformedCompleted = transformJiraCompletedInitiatives(completedInitiatives);
+    
     console.log('=== OKR FETCH DEBUG ===');
     console.log('OKRs Response Status:', okrsResponse.status);
     console.log('OKRs Found:', okrs.issues ? okrs.issues.length : 0);
-    if (okrs.issues) {
-        console.log('Sample OKR:', okrs.issues[0]);
-    }
+    console.log('Completed Initiatives Found:', transformedCompleted.length); // Add this log
+
+    const transformedData = transformJiraData(initiatives, okrs.issues || []);
     
-    // Transform the data AND include OKRs
-    return transformJiraData(initiatives, okrs);
+    // ADD THIS: Include completed initiatives in the returned data
+    return {
+        ...transformedData,
+        recentlyCompleted: transformedCompleted  // Add this line
+    };
 }
 
 // Initialize smart sync on page load
