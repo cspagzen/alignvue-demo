@@ -3260,19 +3260,58 @@ function generateConfidenceTrendLine(color) {
 
 function updateCompletedCard() {
     const content = document.getElementById('completed-content');
+    const completed = boardData.recentlyCompleted || [];
+    const strategicCount = completed.filter(i => i.type === 'strategic').length;
+    const emergentCount = completed.filter(i => i.type === 'emergent').length;
+    const ktloCount = completed.filter(i => i.type === 'ktlo').length;
     
-    content.innerHTML = boardData.recentlyCompleted.slice(-2).map(initiative => `
-        <div class="bento-pipeline-item validation-${initiative.validation}" 
-             data-initiative-id="${initiative.id}"
-             onclick="showInitiativeModal(boardData.recentlyCompleted.find(init => init.id === ${initiative.id}))"
-             style="position: relative;">
-            <div class="bento-pipeline-item-header">
-                <div class="bento-pipeline-item-title">
-                    ${initiative.title}
+    content.innerHTML = `
+        <div class="h-full flex flex-col cursor-pointer" onclick="showCompletedInitiativesModal()">
+            <div class="flex items-center justify-center flex-1">
+                <div class="flex items-center gap-4">
+                    <div class="bento-large-metric" style="color: var(--accent-green);">${completed.length}</div>
+                    <div class="flex flex-col">
+                        <div class="text-sm font-medium" style="color: var(--text-primary);">Initiatives Completed</div>
+                        <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
+                    </div>
                 </div>
             </div>
+            <div class="flex justify-between text-xs pt-2 border-t border-gray-700" style="color: var(--text-tertiary);">
+                <span>${strategicCount} Strategic</span>
+                <span>${emergentCount} Emergent</span>
+                <span>${ktloCount} KTLO</span>
+            </div>
         </div>
-    `).join('');
+    `;
+}
+
+function showCompletedInitiativesModal() {
+    const modal = document.getElementById('detail-modal');
+    const title = document.getElementById('modal-title');
+    const content = document.getElementById('modal-content');
+    
+    const completed = boardData.recentlyCompleted || [];
+    title.textContent = `${completed.length} Initiatives Completed in Last 60 Days`;
+    
+    content.innerHTML = `
+        <div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">
+            ${completed.map(initiative => `
+                <div class="bento-pipeline-item" style="border-left: 3px solid var(--accent-green);">
+                    <div class="bento-pipeline-item-header">
+                        <div class="bento-pipeline-item-title">
+                            ${initiative.title}
+                            <span class="bento-type-badge bento-type-${initiative.type}">${initiative.type.toUpperCase()}</span>
+                        </div>
+                        <div class="text-xs" style="color: var(--accent-green);">
+                            Completed ${new Date(initiative.completedDate).toLocaleDateString()}
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    modal.classList.add('show');
 }
 
 // Updated Validation Pipeline functions to work with live JIRA data
@@ -7123,14 +7162,15 @@ function updateBoardWithLiveData(newData) {
     // Update the global boardData object
     boardData.initiatives = newData.initiatives || [];
     boardData.bullpen = newData.bullpen || [];
-    boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data!
+    boardData.okrs = newData.okrs || { issues: [] };
+    boardData.recentlyCompleted = newData.recentlyCompleted || boardData.recentlyCompleted || [];
     
     // Keep existing teams data (don't replace)
     if (newData.teams) {
         boardData.teams = { ...boardData.teams, ...newData.teams };
     }
     
-    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, and ${boardData.okrs.issues.length} OKR items`);
+    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, ${(boardData.okrs && boardData.okrs.issues ? boardData.okrs.issues.length : 0)} OKR items, and ${boardData.recentlyCompleted.length} completed items`);
     
     // Regenerate the UI with new data
     try {
@@ -7145,6 +7185,11 @@ function updateBoardWithLiveData(newData) {
         // Update OKR card with new data
         if (typeof updateOKRCard === 'function') {
             updateOKRCard();
+        }
+        
+        // Update completed card with new data
+        if (typeof updateCompletedCard === 'function') {
+            updateCompletedCard();
         }
         
         // Refresh search index with new data
@@ -7244,81 +7289,56 @@ function transformJiraData(initiativesResponse, okrsResponse) {
         const matrixSlot = getFieldValue(issue, 'customfield_10091');
         const validationStatus = getFieldValue(issue, 'customfield_10052');
         const teamsAssigned = getFieldValue(issue, 'customfield_10053');
-        const initiativeType = getFieldValue(issue, 'customfield_10051');
         
-        // Handle numeric Matrix Position
-        let priority;
-        if (matrixSlot === 0 || matrixSlot === null || matrixSlot === undefined) {
-            priority = 'pipeline';
-        } else if (typeof matrixSlot === 'number' && matrixSlot >= 1 && matrixSlot <= 36) {
-            priority = matrixSlot;
-        } else {
-            priority = 'pipeline';
-        }
+        // Handle Matrix Position field (Pipeline vs Board placement)
+        const priority = matrixSlot && matrixSlot !== 'none' ? matrixSlot : 'pipeline';
         
-        // Process teams correctly - handle Jira select field format AND split concatenated teams
-        let processedTeams;
-        if (Array.isArray(teamsAssigned)) {
-            processedTeams = teamsAssigned.map(team => {
-                let teamValue;
-                if (typeof team === 'object' && team.value) {
-                    teamValue = team.value;
-                } else {
-                    teamValue = team;
-                }
-                
-                // Split concatenated teams (semicolon separated)
-                if (teamValue && teamValue.includes(';')) {
-                    return teamValue.split(';').map(t => t.trim());
-                }
-                return teamValue;
-            }).flat(); // Flatten in case we split any teams
-        } else if (teamsAssigned && typeof teamsAssigned === 'object' && teamsAssigned.value) {
-            const teamValue = teamsAssigned.value;
-            if (teamValue.includes(';')) {
-                processedTeams = teamValue.split(';').map(t => t.trim());
-            } else {
-                processedTeams = [teamValue];
-            }
+        // Handle validation status field
+        const validation = validationStatus || 'not-validated';
+        
+        // Handle teams field - convert from array of objects to array of strings
+        let teams = ['Unassigned'];
+        if (teamsAssigned && Array.isArray(teamsAssigned)) {
+            teams = teamsAssigned.map(team => team.value || team);
         } else if (teamsAssigned) {
-            if (teamsAssigned.includes(';')) {
-                processedTeams = teamsAssigned.split(';').map(t => t.trim());
-            } else {
-                processedTeams = [teamsAssigned];
-            }
-        } else {
-            processedTeams = ['Core Platform'];
+            teams = [teamsAssigned];
         }
         
-        // Remove any empty strings
-        processedTeams = processedTeams.filter(team => team && team.trim());
+        // Calculate progress from Jira story points or subtasks
+        const subtasks = issue.fields.subtasks || [];
+        const totalStories = subtasks.length || 1;
+        const completedStories = subtasks.filter(st => st.fields?.status?.name === 'Done').length;
+        const inProgressStories = subtasks.filter(st => st.fields?.status?.name === 'In Progress').length;
+        const blockedStories = subtasks.filter(st => st.fields?.status?.name === 'Blocked').length;
+        
+        const progress = totalStories > 0 ? Math.round((completedStories / totalStories) * 100) : 0;
         
         return {
             id: parseInt(issue.id),
             title: issue.fields.summary,
-            type: initiativeType || typeMapping[project] || 'strategic',
-            validation: validationStatus || 'not-validated',
+            type: typeMapping[project] || 'ktlo',
+            validation: validation,
             priority: priority,
-            teams: processedTeams,
-            progress: Math.floor(Math.random() * 80) + 10,
+            teams: teams,
+            progress: progress,
             jira: {
                 key: issue.key,
-                stories: Math.floor(Math.random() * 30) + 10,
-                completed: Math.floor(Math.random() * 15) + 5,
-                inProgress: Math.floor(Math.random() * 10) + 3,
-                blocked: Math.floor(Math.random() * 5),
-                velocity: Math.floor(Math.random() * 15) + 5
+                stories: totalStories,
+                completed: completedStories,
+                inProgress: inProgressStories,
+                blocked: blockedStories,
+                velocity: Math.round(completedStories / 4) // Approximate velocity
             },
             canvas: {
-                outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Outcome to be defined',
-                measures: extractTextFromDoc(getFieldValue(issue, 'customfield_10055')) || 'Success measures TBD',
-                keyResult: findOKRAlignment(issue, okrsResponse.issues) || 'No OKR',
-                marketSize: formatMarketSize(issue),
-                customer: getFieldValue(issue, 'customfield_10059') || 'Customer segment TBD',
-                problem: extractTextFromDoc(getFieldValue(issue, 'customfield_10060')) || 'Problem statement needed',
-                solution: extractTextFromDoc(getFieldValue(issue, 'customfield_10061')) || 'Solution to be defined',
-                bigPicture: extractTextFromDoc(getFieldValue(issue, 'customfield_10062')) || 'Vision to be articulated',
-                alternatives: extractTextFromDoc(getFieldValue(issue, 'customfield_10063')) || 'Alternatives to be researched'
+                outcome: extractTextFromDoc(issue.fields.customfield_10059) || getFieldValue(issue, 'customfield_10059') || '',
+                measures: extractTextFromDoc(issue.fields.customfield_10060) || getFieldValue(issue, 'customfield_10060') || '',
+                keyResult: findOKRAlignment(issue, okrsResponse || []) || 'No OKR',
+                marketSize: formatMarketSize(issue) || '',
+                customer: extractTextFromDoc(issue.fields.customfield_10062) || getFieldValue(issue, 'customfield_10062') || '',
+                problem: extractTextFromDoc(issue.fields.customfield_10063) || getFieldValue(issue, 'customfield_10063') || '',
+                solution: extractTextFromDoc(issue.fields.customfield_10064) || getFieldValue(issue, 'customfield_10064') || '',
+                bigPicture: extractTextFromDoc(issue.fields.customfield_10065) || getFieldValue(issue, 'customfield_10065') || '',
+                alternatives: extractTextFromDoc(issue.fields.customfield_10066) || getFieldValue(issue, 'customfield_10066') || ''
             }
         };
     });
@@ -7376,15 +7396,44 @@ async function fetchJiraData() {
 
     const okrs = await okrsResponse.json();
     
+    // GET COMPLETED INITIATIVES
+    const completedResponse = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/search',
+            method: 'POST',
+            body: {
+                jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND status = "Done" AND resolved >= -60d ORDER BY resolved DESC`,
+                fields: ["summary", "project", "resolved", "key"],
+                maxResults: 50
+            }
+        })
+    });
+    
+    const completed = await completedResponse.json();
+    const transformedCompleted = (completed.issues || []).map(issue => ({
+        id: parseInt(issue.id),
+        title: issue.fields.summary,
+        type: issue.fields.project.key === 'STRAT' ? 'strategic' : issue.fields.project.key === 'EMRG' ? 'emergent' : 'ktlo',
+        completedDate: issue.fields.resolved?.split('T')[0],
+        jira: { key: issue.key }
+    }));
+    
     console.log('=== OKR FETCH DEBUG ===');
     console.log('OKRs Response Status:', okrsResponse.status);
     console.log('OKRs Found:', okrs.issues ? okrs.issues.length : 0);
+    console.log('Completed Initiatives Found:', transformedCompleted.length);
     if (okrs.issues) {
         console.log('Sample OKR:', okrs.issues[0]);
     }
     
-    // Transform the data AND include OKRs
-    return transformJiraData(initiatives, okrs);
+    // Transform the data AND include OKRs AND completed
+    const transformedData = transformJiraData(initiatives, okrs);
+    return {
+        ...transformedData,
+        recentlyCompleted: transformedCompleted
+    };
 }
 
 // Initialize smart sync on page load
