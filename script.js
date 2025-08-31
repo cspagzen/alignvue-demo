@@ -7624,7 +7624,7 @@ async function fetchJiraData() {
     const okrs = await okrsResponse.json();
     
     // ADD THIS: Get completed initiatives for the Recently Completed card
-    const completedInitiatives = await fetchCompletedInitiativesFromJiraUpdated();
+    const completedInitiatives = await fetchCompletedInitiativesFromJira();
     const transformedCompleted = transformJiraCompletedInitiatives(completedInitiatives);
     
     console.log('=== OKR FETCH DEBUG ===');
