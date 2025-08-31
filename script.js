@@ -3421,6 +3421,7 @@ async function fetchCompletedInitiativesFromJira() {
         sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
         const formattedDate = sixtyDaysAgo.toISOString().split('T')[0];
         
+        // Simplified JQL query to avoid syntax errors
         const response = await fetch('/api/jira', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3428,20 +3429,28 @@ async function fetchCompletedInitiativesFromJira() {
                 endpoint: '/rest/api/3/search',
                 method: 'POST',
                 body: {
-                    jql: `project IN (SRAT, EMRG, KTLO) AND issuetype = Epic AND status = "Done" AND cf[10091] is EMPTY AND resolved >= "${formattedDate}" ORDER BY resolved DESC`,
-                    fields: ["*all"],
+                    jql: `project IN (SRAT, EMRG, KTLO) AND issuetype = Epic AND status = Done AND resolved >= ${formattedDate} ORDER BY resolved DESC`,
+                    fields: [
+                        "summary", 
+                        "project", 
+                        "issuetype", 
+                        "status", 
+                        "resolved", 
+                        "description",
+                        "key"
+                    ],
                     maxResults: 50
                 }
             })
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || `HTTP ${response.status}`);
+            console.error(`Jira API error: ${response.status}`);
+            return [];
         }
 
         const data = await response.json();
-        console.log('Completed initiatives from Jira:', data.total);
+        console.log(`Found ${data.total || 0} completed initiatives from Jira`);
         
         return data.issues || [];
         
@@ -7463,6 +7472,11 @@ function formatMarketSize(issue) {
 
 // Find OKR alignment function
 function findOKRAlignment(issue, okrIssues) {
+    // Add safety check
+    if (!okrIssues || !Array.isArray(okrIssues)) {
+        return null;
+    }
+    
     if (!issue.fields.issuelinks || issue.fields.issuelinks.length === 0) {
         return null;
     }
@@ -7624,21 +7638,30 @@ async function fetchJiraData() {
     const okrs = await okrsResponse.json();
     
     // ADD THIS: Get completed initiatives for the Recently Completed card
-    const completedInitiatives = await fetchCompletedInitiativesFromJira();
-    const transformedCompleted = transformJiraCompletedInitiatives(completedInitiatives);
-    
-    console.log('=== OKR FETCH DEBUG ===');
-    console.log('OKRs Response Status:', okrsResponse.status);
-    console.log('OKRs Found:', okrs.issues ? okrs.issues.length : 0);
-    console.log('Completed Initiatives Found:', transformedCompleted.length); // Add this log
+    // Get completed initiatives for the Recently Completed card
+let completedInitiatives = [];
+let transformedCompleted = [];
 
-    const transformedData = transformJiraData(initiatives, okrs.issues || []);
-    
-    // ADD THIS: Include completed initiatives in the returned data
-    return {
-        ...transformedData,
-        recentlyCompleted: transformedCompleted  // Add this line
-    };
+try {
+    completedInitiatives = await fetchCompletedInitiativesFromJira();
+    transformedCompleted = transformJiraCompletedInitiatives(completedInitiatives);
+    console.log('Completed Initiatives Found:', transformedCompleted.length);
+} catch (error) {
+    console.error('Error fetching completed initiatives:', error);
+    transformedCompleted = [];
+}
+
+console.log('=== OKR FETCH DEBUG ===');
+console.log('OKRs Response Status:', okrsResponse.status);
+console.log('OKRs Found:', okrs.issues ? okrs.issues.length : 0);
+
+// Fix the transformJiraData call - make sure okrs.issues exists
+const transformedData = transformJiraData(initiatives, okrs.issues || []);
+
+return {
+    ...transformedData,
+    recentlyCompleted: transformedCompleted
+};
 }
 
 // Initialize smart sync on page load
