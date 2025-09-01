@@ -3515,7 +3515,26 @@ function showRecentlyCompletedModal() {
 
 //test
 
-
+function debugOKRData() {
+    console.log('=== OKR DEBUG ===');
+    console.log('boardData.okrs:', boardData.okrs);
+    if (boardData.okrs && boardData.okrs.issues) {
+        console.log('OKR issues count:', boardData.okrs.issues.length);
+        console.log('Sample OKR issue:', boardData.okrs.issues[0]);
+        
+        // Check the structure
+        boardData.okrs.issues.forEach((issue, index) => {
+            if (index < 3) { // Only log first 3 for brevity
+                console.log(`OKR ${index}:`, {
+                    key: issue.key,
+                    type: issue.fields?.issuetype?.name,
+                    summary: issue.fields?.summary,
+                    hasParent: !!issue.fields?.parent
+                });
+            }
+        });
+    }
+}
 
 // Updated Validation Pipeline functions to work with live JIRA data
 
