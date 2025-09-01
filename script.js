@@ -3330,7 +3330,7 @@ async function fetchCompletedInitiativesFromJira() {
                 method: 'POST',
                 body: {
                     // SIMPLIFIED: Just check if completion date exists (not empty)
-                    jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND cf[10124] IS NOT EMPTY ORDER BY cf[10124] DESC`,
+                    jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND customfield_10124 IS NOT EMPTY ORDER BY customfield_10124 DESC`,
                     fields: [
                         "summary", "project", "resolved", "key",
                         "customfield_10051", // initiative type
@@ -7502,6 +7502,7 @@ function updateBoardWithLiveData(newData) {
     boardData.bullpen = newData.bullpen || [];
     boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data!
     boardData.recentlyCompleted = newData.recentlyCompleted || [];
+    
     
     // Keep existing teams data (don't replace)
     if (newData.teams) {
