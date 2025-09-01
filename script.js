@@ -1766,7 +1766,7 @@ teamCard.innerHTML =
     updateResourceCard();
     updateDeliveryConfidenceCard();
     updateCriticalTeamStatusCard();
-    updateCompletedCard();
+    updateRecentlyCompletedCard();
     updateValidationCard();
     updateMendozaCard();
 }
@@ -3369,7 +3369,7 @@ function getTypeBreakdown(initiatives) {
 
 // Update Recently Completed Card
 function updateRecentlyCompletedCard() {
-    const content = document.getElementById('recently-completed-content');
+    const content = document.getElementById('completed-content');
     if (!content) return;
     
     // Get completed initiatives from last 60 days for the card
@@ -7354,6 +7354,7 @@ function updateBoardWithLiveData(newData) {
     boardData.initiatives = newData.initiatives || [];
     boardData.bullpen = newData.bullpen || [];
     boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data!
+    boardData.recentlyCompleted = newData.recentlyCompleted || [];
     
     // Keep existing teams data (don't replace)
     if (newData.teams) {
