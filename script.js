@@ -3385,49 +3385,82 @@ function getCompletedInitiativesInDays(completedInitiatives, days) {
         return isValid && isAfterCutoff;
     });
 }
-// Function to get type breakdown with counts and colors
+// REPLACE your getTypeBreakdown() function with this:
+
 function getTypeBreakdown(initiatives) {
     const breakdown = {
         strategic: { count: 0, color: 'var(--accent-blue)' },
         emergent: { count: 0, color: 'var(--accent-orange)' },
-        ktlo: { count: 0, color: 'var(--accent-purple)' }
+        ktlo: { count: 0, color: 'var(--accent-purple)' }  // Make sure this exists
     };
     
     initiatives.forEach(init => {
+        // Debug logging to see what types we're getting
+        console.log(`Initiative: ${init.title}, Type: "${init.type}"`);
+        
         if (breakdown[init.type]) {
             breakdown[init.type].count++;
+        } else {
+            console.warn(`Unknown type: "${init.type}" for initiative: ${init.title}`);
         }
     });
     
+    console.log('Final breakdown:', breakdown);
     return breakdown;
 }
 
 // Update Recently Completed Card
+// REPLACE your updateRecentlyCompletedCard() function with this:
+
 function updateRecentlyCompletedCard() {
     const content = document.getElementById('completed-content');
     if (!content) return;
     
-    // Get completed initiatives from last 60 days for the card
+    // Get completed initiatives - use empty array if undefined
     const completedInitiatives = boardData.recentlyCompleted || [];
+    
+    // If no data, show 0 and return
+    if (completedInitiatives.length === 0) {
+        content.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" 
+                 onclick="showRecentlyCompletedModal()" style="cursor: pointer;">
+                <div class="text-4xl font-bold mb-2" style="color: var(--accent-green);">0</div>
+                <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">Initiatives Completed</div>
+                <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
+                <div class="mt-3 pt-3 border-t border-gray-700 w-full text-xs" style="color: var(--text-secondary);">
+                    No initiatives completed
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Get last 60 days (matching modal middle box)
     const last60Days = getCompletedInitiativesInDays(completedInitiatives, 60);
-    const breakdown = getTypeBreakdown(last60Days);
     
-    const count = last60Days.length;
+    // Count by type (FIXED to include all 3 types)
+    const typeCounts = {
+        strategic: last60Days.filter(init => init.type === 'strategic').length,
+        emergent: last60Days.filter(init => init.type === 'emergent').length,
+        ktlo: last60Days.filter(init => init.type === 'ktlo').length
+    };
     
-    // Generate breakdown text with colors
-    const breakdownText = Object.entries(breakdown)
-        .filter(([type, data]) => data.count > 0)
-        .map(([type, data]) => `<span style="color: ${data.color};">${data.count} ${type.charAt(0).toUpperCase() + type.slice(1)}</span>`)
-        .join(' • ');
+    // Generate breakdown text with colors (only show types with count > 0)
+    const breakdownParts = [];
+    if (typeCounts.strategic > 0) breakdownParts.push(`<span style="color: var(--accent-blue);">${typeCounts.strategic} Strategic</span>`);
+    if (typeCounts.emergent > 0) breakdownParts.push(`<span style="color: var(--accent-orange);">${typeCounts.emergent} Emergent</span>`);
+    if (typeCounts.ktlo > 0) breakdownParts.push(`<span style="color: var(--accent-purple);">${typeCounts.ktlo} KTLO</span>`);
+    
+    const breakdownText = breakdownParts.join(' • ');
     
     content.innerHTML = `
         <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" 
              onclick="showRecentlyCompletedModal()" style="cursor: pointer;">
-            <div class="text-4xl font-bold mb-2" style="color: var(--accent-green);">${count}</div>
+            <div class="text-4xl font-bold mb-2" style="color: var(--accent-green);">${last60Days.length}</div>
             <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">Initiatives Completed</div>
             <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
             <div class="mt-3 pt-3 border-t border-gray-700 w-full text-xs" style="color: var(--text-secondary);">
-                ${breakdownText || 'No initiatives completed'}
+                ${breakdownText || 'No type breakdown available'}
             </div>
         </div>
     `;
