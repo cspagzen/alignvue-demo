@@ -3288,7 +3288,7 @@ function transformJiraCompletedInitiatives(jiraIssues) {
         const project = issue.fields.project.key;
         const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
         const initiativeType = getFieldValue(issue, 'customfield_10051') || typeMapping[project] || 'strategic';
-        const completionDate = issue.fields.resolved || getFieldValue(issue, 'customfield_10124');
+        const completionDate = getFieldValue(issue, 'customfield_10124') || issue.fields.resolved;
         
         return {
             id: parseInt(issue.id),
@@ -3330,7 +3330,7 @@ async function fetchCompletedInitiativesFromJira() {
                 method: 'POST',
                 body: {
                     // SIMPLIFIED: Just check if completion date exists (not empty)
-                    jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND customfield_10124 IS NOT EMPTY ORDER BY customfield_10124 DESC`,
+                    jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic ORDER BY resolved DESC`,
                     fields: [
                         "summary", "project", "resolved", "key",
                         "customfield_10051", // initiative type
