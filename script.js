@@ -3515,27 +3515,106 @@ function showRecentlyCompletedModal() {
 
 //test
 
-function debugOKRData() {
-    console.log('=== OKR DEBUG ===');
-    console.log('boardData.okrs:', boardData.okrs);
-    if (boardData.okrs && boardData.okrs.issues) {
-        console.log('OKR issues count:', boardData.okrs.issues.length);
-        console.log('Sample OKR issue:', boardData.okrs.issues[0]);
+function debugCompletedData() {
+    console.log('=== COMPLETED INITIATIVES DEBUG ===');
+    const completedInitiatives = boardData.recentlyCompleted || [];
+    console.log('Total completed initiatives:', completedInitiatives.length);
+    console.log('All completed initiatives:', completedInitiatives);
+    
+    if (completedInitiatives.length > 0) {
+        const last30Days = getCompletedInitiativesInDays(completedInitiatives, 30);
+        const last60Days = getCompletedInitiativesInDays(completedInitiatives, 60);
+        const last90Days = getCompletedInitiativesInDays(completedInitiatives, 90);
         
-        // Check the structure
-        boardData.okrs.issues.forEach((issue, index) => {
-            if (index < 3) { // Only log first 3 for brevity
-                console.log(`OKR ${index}:`, {
-                    key: issue.key,
-                    type: issue.fields?.issuetype?.name,
-                    summary: issue.fields?.summary,
-                    hasParent: !!issue.fields?.parent
+        console.log('Last 30 days:', last30Days.length);
+        console.log('Last 60 days:', last60Days.length); 
+        console.log('Last 90 days:', last90Days.length);
+        
+        // Check if completion dates are valid
+        completedInitiatives.forEach((init, index) => {
+            if (index < 5) { // Only log first 5
+                const completionDate = new Date(init.completionDate);
+                const now = new Date();
+                const daysAgo = Math.floor((now - completionDate) / (1000 * 60 * 60 * 24));
+                
+                console.log(`Initiative ${index}:`, {
+                    title: init.title,
+                    completionDate: init.completionDate,
+                    parsedDate: completionDate,
+                    daysAgo: daysAgo,
+                    isValid: !isNaN(completionDate.getTime())
                 });
             }
         });
     }
+    
+    return {
+        total: completedInitiatives.length,
+        last30: completedInitiatives.length > 0 ? getCompletedInitiativesInDays(completedInitiatives, 30).length : 0,
+        last60: completedInitiatives.length > 0 ? getCompletedInitiativesInDays(completedInitiatives, 60).length : 0,
+        last90: completedInitiatives.length > 0 ? getCompletedInitiativesInDays(completedInitiatives, 90).length : 0
+    };
 }
 
+// Debug function for OKR data
+function debugOKRData() {
+    console.log('=== OKR DEBUG ===');
+    console.log('boardData.okrs:', boardData.okrs);
+    console.log('Type of boardData.okrs:', typeof boardData.okrs);
+    
+    if (boardData.okrs) {
+        console.log('boardData.okrs.issues:', boardData.okrs.issues);
+        console.log('Type of boardData.okrs.issues:', typeof boardData.okrs.issues);
+        console.log('Is array?', Array.isArray(boardData.okrs.issues));
+        
+        if (boardData.okrs.issues && Array.isArray(boardData.okrs.issues)) {
+            console.log('OKR issues count:', boardData.okrs.issues.length);
+            if (boardData.okrs.issues.length > 0) {
+                console.log('Sample OKR issue:', boardData.okrs.issues[0]);
+                
+                // Check the structure
+                boardData.okrs.issues.forEach((issue, index) => {
+                    if (index < 3) { // Only log first 3 for brevity
+                        console.log(`OKR ${index}:`, {
+                            key: issue.key,
+                            type: issue.fields?.issuetype?.name,
+                            summary: issue.fields?.summary,
+                            hasParent: !!issue.fields?.parent
+                        });
+                    }
+                });
+            }
+        }
+    }
+}
+
+// Quick fix for the card showing 0 - let's check the exact filtering logic
+function testCompletedFiltering() {
+    const completedInitiatives = boardData.recentlyCompleted || [];
+    console.log('Raw completed data:', completedInitiatives);
+    
+    if (completedInitiatives.length === 0) {
+        console.log('❌ No completed initiatives in boardData.recentlyCompleted');
+        return;
+    }
+    
+    // Test the 60-day filtering that the card uses
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 60);
+    console.log('60-day cutoff date:', cutoffDate);
+    
+    const filtered = completedInitiatives.filter(init => {
+        console.log(`Testing ${init.title}:`, {
+            completionDate: init.completionDate,
+            parsedDate: new Date(init.completionDate),
+            isAfterCutoff: new Date(init.completionDate) >= cutoffDate
+        });
+        return new Date(init.completionDate) >= cutoffDate;
+    });
+    
+    console.log('Filtered result for 60 days:', filtered.length);
+    return filtered;
+}
 // Updated Validation Pipeline functions to work with live JIRA data
 
 function updateValidationCard() {
