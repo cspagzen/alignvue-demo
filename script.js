@@ -1766,7 +1766,18 @@ teamCard.innerHTML =
     updateResourceCard();
     updateDeliveryConfidenceCard();
     updateCriticalTeamStatusCard();
+    // Only update card if data is loaded, otherwise trigger data load
+if (boardData.recentlyCompleted) {
     updateRecentlyCompletedCard();
+} else {
+    console.log('Recently completed data not loaded yet, triggering sync...');
+    // Force update after data loads
+    setTimeout(() => {
+        if (boardData.recentlyCompleted) {
+            updateRecentlyCompletedCard();
+        }
+    }, 2000);
+}
     updateValidationCard();
     updateMendozaCard();
 }
