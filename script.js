@@ -3260,86 +3260,19 @@ function generateConfidenceTrendLine(color) {
 
 function updateCompletedCard() {
     const content = document.getElementById('completed-content');
-    const completed = boardData.recentlyCompleted || [];
-    const strategicCount = completed.filter(i => i.type === 'strategic').length;
-    const emergentCount = completed.filter(i => i.type === 'emergent').length;
-    const ktloCount = completed.filter(i => i.type === 'ktlo').length;
     
-    content.innerHTML = `
-        <div class="h-full flex flex-col cursor-pointer" onclick="showCompletedInitiativesModal()">
-            <div class="flex items-center justify-center flex-1">
-                <div class="flex items-center gap-4">
-                    <div class="bento-large-metric" style="color: var(--accent-green);">${completed.length}</div>
-                    <div class="flex flex-col">
-                        <div class="text-sm font-medium" style="color: var(--text-primary);">Initiatives Completed</div>
-                        <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
-                    </div>
+    content.innerHTML = boardData.recentlyCompleted.slice(-2).map(initiative => `
+        <div class="bento-pipeline-item validation-${initiative.validation}" 
+             data-initiative-id="${initiative.id}"
+             onclick="showInitiativeModal(boardData.recentlyCompleted.find(init => init.id === ${initiative.id}))"
+             style="position: relative;">
+            <div class="bento-pipeline-item-header">
+                <div class="bento-pipeline-item-title">
+                    ${initiative.title}
                 </div>
             </div>
-            <div class="flex justify-between text-xs pt-2 border-t border-gray-700" style="color: var(--text-tertiary);">
-                <span>${strategicCount} Strategic</span>
-                <span>${emergentCount} Emergent</span>
-                <span>${ktloCount} KTLO</span>
-            </div>
         </div>
-    `;
-}
-
-function buildSearchIndex() {
-    searchIndex = [];
-    
-    // Index initiatives
-    boardData.initiatives.forEach(initiative => {
-        searchIndex.push({
-            type: 'initiative',
-            id: initiative.id,
-            title: initiative.title,
-            searchText: `${initiative.title} ${initiative.type} ${initiative.validation} ${initiative.progress}% ${initiative.canvas?.outcome || ''} ${initiative.canvas?.problem || ''}`.toLowerCase(),  // Removed ${initiative.teams.join(' ')}
-            data: initiative,
-            priority: initiative.priority
-        });
-    });
-    
-    // Index bullpen initiatives
-    boardData.bullpen.forEach((initiative, index) => {
-        if (initiative) {
-            searchIndex.push({
-                type: 'initiative',
-                id: initiative.id,
-                title: initiative.title,
-                searchText: `${initiative.title} ${initiative.type} ${initiative.validation} ${initiative.progress}% ${initiative.canvas?.outcome || ''} ${initiative.canvas?.problem || ''} bullpen`.toLowerCase(),  // Removed ${initiative.teams.join(' ')}
-                data: initiative,
-                priority: 'bullpen'
-            });
-        }
-    });
-    
-    // Index teams
-    Object.keys(boardData.teams).forEach(teamName => {
-        const team = boardData.teams[teamName];
-        searchIndex.push({
-            type: 'team',
-            id: teamName,
-            title: teamName,
-            searchText: `${teamName} ${team.capacity} ${team.skillset} ${team.leadership} team`.toLowerCase(),
-            data: team,
-            teamName: teamName
-        });
-    });
-    
-    // Index completed initiatives - FIXED: removed teams.join()
-    if (boardData.recentlyCompleted) {
-        boardData.recentlyCompleted.forEach(initiative => {
-            searchIndex.push({
-                type: 'completed',
-                id: initiative.id,
-                title: initiative.title,
-                searchText: `${initiative.title} ${initiative.type} completed`.toLowerCase(),  // Removed teams.join()
-                data: initiative,
-                completedDate: initiative.completedDate
-            });
-        });
-    }
+    `).join('');
 }
 
 // Updated Validation Pipeline functions to work with live JIRA data
@@ -7190,15 +7123,14 @@ function updateBoardWithLiveData(newData) {
     // Update the global boardData object
     boardData.initiatives = newData.initiatives || [];
     boardData.bullpen = newData.bullpen || [];
-    boardData.okrs = newData.okrs || { issues: [] };
-    boardData.recentlyCompleted = newData.recentlyCompleted || boardData.recentlyCompleted || [];
+    boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data!
     
     // Keep existing teams data (don't replace)
     if (newData.teams) {
         boardData.teams = { ...boardData.teams, ...newData.teams };
     }
     
-    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, ${(boardData.okrs && boardData.okrs.issues ? boardData.okrs.issues.length : 0)} OKR items, and ${boardData.recentlyCompleted.length} completed items`);
+    console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, and ${boardData.okrs.issues.length} OKR items`);
     
     // Regenerate the UI with new data
     try {
@@ -7213,11 +7145,6 @@ function updateBoardWithLiveData(newData) {
         // Update OKR card with new data
         if (typeof updateOKRCard === 'function') {
             updateOKRCard();
-        }
-        
-        // Update completed card with new data
-        if (typeof updateCompletedCard === 'function') {
-            updateCompletedCard();
         }
         
         // Refresh search index with new data
@@ -7319,21 +7246,47 @@ function transformJiraData(initiativesResponse, okrsResponse) {
         const teamsAssigned = getFieldValue(issue, 'customfield_10053');
         const initiativeType = getFieldValue(issue, 'customfield_10051');
         
-        // Handle Matrix Position field (Pipeline vs Board placement)
-        let priority = 'pipeline';
-        if (matrixSlot && matrixSlot !== 'none' && typeof matrixSlot === 'number') {
+        // Handle numeric Matrix Position
+        let priority;
+        if (matrixSlot === 0 || matrixSlot === null || matrixSlot === undefined) {
+            priority = 'pipeline';
+        } else if (typeof matrixSlot === 'number' && matrixSlot >= 1 && matrixSlot <= 36) {
             priority = matrixSlot;
-        } else if (typeof matrixSlot === 'string' && matrixSlot !== 'none' && !isNaN(matrixSlot)) {
-            priority = parseInt(matrixSlot);
+        } else {
+            priority = 'pipeline';
         }
         
-        // Handle teams field
-        let processedTeams = ['Unassigned'];
-        if (teamsAssigned && Array.isArray(teamsAssigned)) {
-            processedTeams = teamsAssigned.map(team => team.value || team).filter(team => team);
-        } else if (teamsAssigned && typeof teamsAssigned === 'string') {
-            processedTeams = [teamsAssigned];
-        } else if (!teamsAssigned) {
+        // Process teams correctly - handle Jira select field format AND split concatenated teams
+        let processedTeams;
+        if (Array.isArray(teamsAssigned)) {
+            processedTeams = teamsAssigned.map(team => {
+                let teamValue;
+                if (typeof team === 'object' && team.value) {
+                    teamValue = team.value;
+                } else {
+                    teamValue = team;
+                }
+                
+                // Split concatenated teams (semicolon separated)
+                if (teamValue && teamValue.includes(';')) {
+                    return teamValue.split(';').map(t => t.trim());
+                }
+                return teamValue;
+            }).flat(); // Flatten in case we split any teams
+        } else if (teamsAssigned && typeof teamsAssigned === 'object' && teamsAssigned.value) {
+            const teamValue = teamsAssigned.value;
+            if (teamValue.includes(';')) {
+                processedTeams = teamValue.split(';').map(t => t.trim());
+            } else {
+                processedTeams = [teamValue];
+            }
+        } else if (teamsAssigned) {
+            if (teamsAssigned.includes(';')) {
+                processedTeams = teamsAssigned.split(';').map(t => t.trim());
+            } else {
+                processedTeams = [teamsAssigned];
+            }
+        } else {
             processedTeams = ['Core Platform'];
         }
         
@@ -7423,44 +7376,15 @@ async function fetchJiraData() {
 
     const okrs = await okrsResponse.json();
     
-    // GET COMPLETED INITIATIVES
-    const completedResponse = await fetch('/api/jira', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: '/rest/api/3/search',
-            method: 'POST',
-            body: {
-                jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND status = "Done" AND resolved >= -60d ORDER BY resolved DESC`,
-                fields: ["summary", "project", "resolved", "key"],
-                maxResults: 50
-            }
-        })
-    });
-    
-    const completed = await completedResponse.json();
-    const transformedCompleted = (completed.issues || []).map(issue => ({
-        id: parseInt(issue.id),
-        title: issue.fields.summary,
-        type: issue.fields.project.key === 'STRAT' ? 'strategic' : issue.fields.project.key === 'EMRG' ? 'emergent' : 'ktlo',
-        completedDate: issue.fields.resolved?.split('T')[0],
-        jira: { key: issue.key }
-    }));
-    
     console.log('=== OKR FETCH DEBUG ===');
     console.log('OKRs Response Status:', okrsResponse.status);
     console.log('OKRs Found:', okrs.issues ? okrs.issues.length : 0);
-    console.log('Completed Initiatives Found:', transformedCompleted.length);
     if (okrs.issues) {
         console.log('Sample OKR:', okrs.issues[0]);
     }
     
-    // Transform the data AND include OKRs AND completed
-    const transformedData = transformJiraData(initiatives, okrs);
-    return {
-        ...transformedData,
-        recentlyCompleted: transformedCompleted
-    };
+    // Transform the data AND include OKRs
+    return transformJiraData(initiatives, okrs);
 }
 
 // Initialize smart sync on page load
