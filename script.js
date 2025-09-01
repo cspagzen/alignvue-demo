@@ -3413,9 +3413,9 @@ function updateRecentlyCompletedCard() {
 
 // Show Recently Completed Modal
 function showRecentlyCompletedModal() {
-    const modal = document.getElementById('detail-modal'); // FIXED: Use correct modal ID
-    const title = document.getElementById('modal-title');   // FIXED: Use correct title ID
-    const content = document.getElementById('modal-content'); // FIXED: Use correct content ID
+    const modal = document.getElementById('detail-modal');
+    const title = document.getElementById('modal-title');
+    const content = document.getElementById('modal-content');
     
     const completedInitiatives = boardData.recentlyCompleted || [];
     
@@ -3507,8 +3507,31 @@ function showRecentlyCompletedModal() {
         </div>
     `;
     
+    // FIXED: Use the same modal show method as validation modals
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
+    modal.classList.add('show');
+}
+
+function debugOKRData() {
+    console.log('=== OKR DEBUG ===');
+    console.log('boardData.okrs:', boardData.okrs);
+    if (boardData.okrs && boardData.okrs.issues) {
+        console.log('OKR issues count:', boardData.okrs.issues.length);
+        console.log('Sample OKR issue:', boardData.okrs.issues[0]);
+        
+        // Check the structure
+        boardData.okrs.issues.forEach((issue, index) => {
+            if (index < 3) { // Only log first 3 for brevity
+                console.log(`OKR ${index}:`, {
+                    key: issue.key,
+                    type: issue.fields?.issuetype?.name,
+                    summary: issue.fields?.summary,
+                    hasParent: !!issue.fields?.parent
+                });
+            }
+        });
+    }
 }
 
 // Updated Validation Pipeline functions to work with live JIRA data
