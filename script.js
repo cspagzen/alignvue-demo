@@ -1880,16 +1880,31 @@ function updateOKRCard() {
 
 // Parse OKR data from Jira to get objectives and key results
 function parseOKRData() {
-    // Add safety checks for the data structure
-    if (!boardData || !boardData.okrs || !boardData.okrs.issues || !Array.isArray(boardData.okrs.issues)) {
-        console.log('No OKR data available:', boardData.okrs);
+    console.log('parseOKRData called, boardData.okrs:', boardData.okrs);
+    
+    // Handle case where boardData.okrs might be undefined
+    if (!boardData || !boardData.okrs) {
+        console.log('No boardData.okrs available');
+        return { objectives: [], keyResults: [] };
+    }
+    
+    // Handle both possible data structures
+    let okrIssues = [];
+    if (Array.isArray(boardData.okrs)) {
+        // boardData.okrs is directly an array
+        okrIssues = boardData.okrs;
+    } else if (boardData.okrs.issues && Array.isArray(boardData.okrs.issues)) {
+        // boardData.okrs.issues is the array
+        okrIssues = boardData.okrs.issues;
+    } else {
+        console.log('No valid OKR issues found');
         return { objectives: [], keyResults: [] };
     }
     
     const objectives = [];
     const keyResults = [];
     
-    boardData.okrs.issues.forEach(issue => {
+    okrIssues.forEach(issue => {
         // Safety check for issue structure
         if (!issue || !issue.fields || !issue.fields.issuetype) {
             console.log('Invalid issue structure:', issue);
@@ -3358,11 +3373,18 @@ function getCompletedInitiativesInDays(completedInitiatives, days) {
     cutoffDate.setDate(cutoffDate.getDate() - days);
     
     return completedInitiatives.filter(init => {
+        if (!init.completionDate) return false;
+        
         const completionDate = new Date(init.completionDate);
-        return completionDate >= cutoffDate;
+        const isValid = !isNaN(completionDate.getTime());
+        const isAfterCutoff = completionDate >= cutoffDate;
+        
+        // Debug logging (remove after fixing)
+        console.log(`Filtering ${init.title}: date=${init.completionDate}, parsed=${completionDate}, valid=${isValid}, afterCutoff=${isAfterCutoff}`);
+        
+        return isValid && isAfterCutoff;
     });
 }
-
 // Function to get type breakdown with counts and colors
 function getTypeBreakdown(initiatives) {
     const breakdown = {
@@ -3554,6 +3576,21 @@ function debugCompletedData() {
         last60: completedInitiatives.length > 0 ? getCompletedInitiativesInDays(completedInitiatives, 60).length : 0,
         last90: completedInitiatives.length > 0 ? getCompletedInitiativesInDays(completedInitiatives, 90).length : 0
     };
+}
+
+function testCardCalculation() {
+    const completedInitiatives = boardData.recentlyCompleted || [];
+    console.log('=== CARD CALCULATION TEST ===');
+    console.log('Raw completed initiatives:', completedInitiatives.length);
+    
+    if (completedInitiatives.length > 0) {
+        const last60Days = getCompletedInitiativesInDays(completedInitiatives, 60);
+        console.log('60-day filtered result:', last60Days.length);
+        console.log('Should show on card:', last60Days.length);
+        
+        // Force update the card to see if it works
+        updateRecentlyCompletedCard();
+    }
 }
 
 // Debug function for OKR data
