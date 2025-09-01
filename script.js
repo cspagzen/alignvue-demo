@@ -7499,30 +7499,29 @@ async function fetchJiraData() {
 
     const okrs = await okrsResponse.json();
     
-// GET COMPLETED INITIATIVES
-const completedResponse = await fetch('/api/jira', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        endpoint: '/rest/api/3/search',
+    // GET COMPLETED INITIATIVES
+    const completedResponse = await fetch('/api/jira', {
         method: 'POST',
-        body: {
-            jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND customfield_10124 IS NOT EMPTY ORDER BY customfield_10124 DESC`,
-            fields: ["summary", "project", "customfield_10124", "customfield_10053", "key"],
-            maxResults: 50
-        }
-    })
-});
-
-const completed = await completedResponse.json();
-const transformedCompleted = (completed.issues || []).map(issue => ({
-    id: parseInt(issue.id),
-    title: issue.fields.summary,
-    type: issue.fields.project.key === 'STRAT' ? 'strategic' : issue.fields.project.key === 'EMRG' ? 'emergent' : 'ktlo',
-    completedDate: issue.fields.customfield_10124,
-    teams: getFieldValue(issue, 'customfield_10053') || ['Core Platform'],
-    jira: { key: issue.key }
-}));
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/search',
+            method: 'POST',
+            body: {
+                jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND status = "Done" AND resolved >= -60d ORDER BY resolved DESC`,
+                fields: ["summary", "project", "resolved", "key"],
+                maxResults: 50
+            }
+        })
+    });
+    
+    const completed = await completedResponse.json();
+    const transformedCompleted = (completed.issues || []).map(issue => ({
+        id: parseInt(issue.id),
+        title: issue.fields.summary,
+        type: issue.fields.project.key === 'STRAT' ? 'strategic' : issue.fields.project.key === 'EMRG' ? 'emergent' : 'ktlo',
+        completedDate: issue.fields.resolved?.split('T')[0],
+        jira: { key: issue.key }
+    }));
     
     console.log('=== OKR FETCH DEBUG ===');
     console.log('OKRs Response Status:', okrsResponse.status);
