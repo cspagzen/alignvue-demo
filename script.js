@@ -3285,83 +3285,61 @@ function updateCompletedCard() {
     `;
 }
 
-function showCompletedInitiativesModal() {
-    const modal = document.getElementById('detail-modal');
-    const title = document.getElementById('modal-title');
-    const content = document.getElementById('modal-content');
+function buildSearchIndex() {
+    searchIndex = [];
     
-    const completed = boardData.recentlyCompleted || [];
-    const strategicCount = completed.filter(i => i.type === 'strategic').length;
-    const emergentCount = completed.filter(i => i.type === 'emergent').length;
-    const ktloCount = completed.filter(i => i.type === 'ktlo').length;
+    // Index initiatives
+    boardData.initiatives.forEach(initiative => {
+        searchIndex.push({
+            type: 'initiative',
+            id: initiative.id,
+            title: initiative.title,
+            searchText: `${initiative.title} ${initiative.type} ${initiative.validation} ${initiative.progress}% ${initiative.canvas?.outcome || ''} ${initiative.canvas?.problem || ''}`.toLowerCase(),  // Removed ${initiative.teams.join(' ')}
+            data: initiative,
+            priority: initiative.priority
+        });
+    });
     
-    title.textContent = `${completed.length} Initiatives Completed in Last 60 Days`;
+    // Index bullpen initiatives
+    boardData.bullpen.forEach((initiative, index) => {
+        if (initiative) {
+            searchIndex.push({
+                type: 'initiative',
+                id: initiative.id,
+                title: initiative.title,
+                searchText: `${initiative.title} ${initiative.type} ${initiative.validation} ${initiative.progress}% ${initiative.canvas?.outcome || ''} ${initiative.canvas?.problem || ''} bullpen`.toLowerCase(),  // Removed ${initiative.teams.join(' ')}
+                data: initiative,
+                priority: 'bullpen'
+            });
+        }
+    });
     
-    content.innerHTML = `
-        <div class="space-y-4">
-            <div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%); border: 1px solid var(--accent-green);">
-                <div class="flex items-center gap-3 mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m16 16 2 2 4-4"/>
-                        <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
-                    </svg>
-                    <div>
-                        <div class="font-bold text-lg" style="color: var(--accent-green);">${completed.length} Initiatives Successfully Delivered</div>
-                        <div class="text-sm" style="color: var(--text-secondary);">Completed in the last 60 days</div>
-                    </div>
-                </div>
-                <div class="flex justify-between text-sm">
-                    <span style="color: #06b6d4;">${strategicCount} Strategic</span>
-                    <span style="color: #ec4899;">${emergentCount} Emergent</span>
-                    <span style="color: #8b5cf6;">${ktloCount} KTLO</span>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">
-                ${completed.map(initiative => {
-                    let formattedDate = 'Date unavailable';
-                    if (initiative.completedDate) {
-                        try {
-                            const date = new Date(initiative.completedDate);
-                            if (!isNaN(date.getTime())) {
-                                formattedDate = date.toLocaleDateString('en-US', { 
-                                    month: 'short', 
-                                    day: 'numeric', 
-                                    year: 'numeric' 
-                                });
-                            }
-                        } catch (e) {
-                            console.error('Date parsing error:', e);
-                        }
-                    }
-                    
-                    return `
-                        <div class="bento-pipeline-item" 
-                             onclick="showInitiativeModal(boardData.recentlyCompleted.find(init => init.id === ${initiative.id}))"
-                             style="position: relative; cursor: pointer; border-left: 3px solid var(--accent-green);">
-                            <div class="bento-pipeline-item-header">
-                                <div class="bento-pipeline-item-title">
-                                    ${initiative.title}
-                                    <span class="bento-type-badge bento-type-${initiative.type}">${initiative.type.toUpperCase()}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="m9 12 2 2 4-4"/>
-                                        <circle cx="12" cy="12" r="9"/>
-                                    </svg>
-                                    <span class="text-xs" style="color: var(--accent-green);">
-                                        Completed ${formattedDate}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        </div>
-    `;
+    // Index teams
+    Object.keys(boardData.teams).forEach(teamName => {
+        const team = boardData.teams[teamName];
+        searchIndex.push({
+            type: 'team',
+            id: teamName,
+            title: teamName,
+            searchText: `${teamName} ${team.capacity} ${team.skillset} ${team.leadership} team`.toLowerCase(),
+            data: team,
+            teamName: teamName
+        });
+    });
     
-    modal.classList.add('show');
+    // Index completed initiatives - FIXED: removed teams.join()
+    if (boardData.recentlyCompleted) {
+        boardData.recentlyCompleted.forEach(initiative => {
+            searchIndex.push({
+                type: 'completed',
+                id: initiative.id,
+                title: initiative.title,
+                searchText: `${initiative.title} ${initiative.type} completed`.toLowerCase(),  // Removed teams.join()
+                data: initiative,
+                completedDate: initiative.completedDate
+            });
+        });
+    }
 }
 
 // Updated Validation Pipeline functions to work with live JIRA data
@@ -6283,60 +6261,6 @@ function initSearch() {
 
 function buildSearchIndex() {
     searchIndex = [];
-    
-    // Index initiatives
-    boardData.initiatives.forEach(initiative => {
-        searchIndex.push({
-            type: 'initiative',
-            id: initiative.id,
-            title: initiative.title,
-            searchText: `${initiative.title} ${initiative.type} ${initiative.validation} ${initiative.progress}% ${initiative.canvas?.outcome || ''} ${initiative.canvas?.problem || ''}`.toLowerCase(),  // Removed ${initiative.teams.join(' ')}
-            data: initiative,
-            priority: initiative.priority
-        });
-    });
-    
-    // Index bullpen initiatives
-    boardData.bullpen.forEach((initiative, index) => {
-        if (initiative) {
-            searchIndex.push({
-                type: 'initiative',
-                id: initiative.id,
-                title: initiative.title,
-                searchText: `${initiative.title} ${initiative.type} ${initiative.validation} ${initiative.progress}% ${initiative.canvas?.outcome || ''} ${initiative.canvas?.problem || ''} bullpen`.toLowerCase(),  // Removed ${initiative.teams.join(' ')}
-                data: initiative,
-                priority: 'bullpen'
-            });
-        }
-    });
-    
-    // Index teams
-    Object.keys(boardData.teams).forEach(teamName => {
-        const team = boardData.teams[teamName];
-        searchIndex.push({
-            type: 'team',
-            id: teamName,
-            title: teamName,
-            searchText: `${teamName} ${team.capacity} ${team.skillset} ${team.leadership} team`.toLowerCase(),
-            data: team,
-            teamName: teamName
-        });
-    });
-    
-    // Index completed initiatives - FIXED: removed teams.join()
-    if (boardData.recentlyCompleted) {
-        boardData.recentlyCompleted.forEach(initiative => {
-            searchIndex.push({
-                type: 'completed',
-                id: initiative.id,
-                title: initiative.title,
-                searchText: `${initiative.title} ${initiative.type} completed`.toLowerCase(),  // Removed teams.join()
-                data: initiative,
-                completedDate: initiative.completedDate
-            });
-        });
-    }
-}
     
     // Index initiatives
 boardData.initiatives.forEach(initiative => {
