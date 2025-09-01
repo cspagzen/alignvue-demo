@@ -3276,10 +3276,10 @@ function updateCompletedCard() {
                     </div>
                 </div>
             </div>
-            <div class="flex justify-between text-xs pt-2 border-t border-gray-700">
-                <span style="color: #06b6d4;">${strategicCount} Strategic</span>
-                <span style="color: #ec4899;">${emergentCount} Emergent</span>
-                <span style="color: #8b5cf6;">${ktloCount} KTLO</span>
+            <div class="flex justify-between text-xs pt-2 border-t border-gray-700" style="color: var(--text-tertiary);">
+                <span>${strategicCount} Strategic</span>
+                <span>${emergentCount} Emergent</span>
+                <span>${ktloCount} KTLO</span>
             </div>
         </div>
     `;
