@@ -6285,6 +6285,60 @@ function buildSearchIndex() {
     searchIndex = [];
     
     // Index initiatives
+    boardData.initiatives.forEach(initiative => {
+        searchIndex.push({
+            type: 'initiative',
+            id: initiative.id,
+            title: initiative.title,
+            searchText: `${initiative.title} ${initiative.type} ${initiative.validation} ${initiative.progress}% ${initiative.canvas?.outcome || ''} ${initiative.canvas?.problem || ''}`.toLowerCase(),  // Removed ${initiative.teams.join(' ')}
+            data: initiative,
+            priority: initiative.priority
+        });
+    });
+    
+    // Index bullpen initiatives
+    boardData.bullpen.forEach((initiative, index) => {
+        if (initiative) {
+            searchIndex.push({
+                type: 'initiative',
+                id: initiative.id,
+                title: initiative.title,
+                searchText: `${initiative.title} ${initiative.type} ${initiative.validation} ${initiative.progress}% ${initiative.canvas?.outcome || ''} ${initiative.canvas?.problem || ''} bullpen`.toLowerCase(),  // Removed ${initiative.teams.join(' ')}
+                data: initiative,
+                priority: 'bullpen'
+            });
+        }
+    });
+    
+    // Index teams
+    Object.keys(boardData.teams).forEach(teamName => {
+        const team = boardData.teams[teamName];
+        searchIndex.push({
+            type: 'team',
+            id: teamName,
+            title: teamName,
+            searchText: `${teamName} ${team.capacity} ${team.skillset} ${team.leadership} team`.toLowerCase(),
+            data: team,
+            teamName: teamName
+        });
+    });
+    
+    // Index completed initiatives - FIXED: removed teams.join()
+    if (boardData.recentlyCompleted) {
+        boardData.recentlyCompleted.forEach(initiative => {
+            searchIndex.push({
+                type: 'completed',
+                id: initiative.id,
+                title: initiative.title,
+                searchText: `${initiative.title} ${initiative.type} completed`.toLowerCase(),  // Removed teams.join()
+                data: initiative,
+                completedDate: initiative.completedDate
+            });
+        });
+    }
+}
+    
+    // Index initiatives
 boardData.initiatives.forEach(initiative => {
     searchIndex.push({
         type: 'initiative',
