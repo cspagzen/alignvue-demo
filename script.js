@@ -7497,8 +7497,9 @@ function updateBoardWithLiveData(newData) {
     // Update the global boardData object
     boardData.initiatives = newData.initiatives || [];
     boardData.bullpen = newData.bullpen || [];
-    boardData.okrs = newData.okrs || { issues: [] };
+    boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data!
     boardData.recentlyCompleted = newData.recentlyCompleted || [];
+    
     
     // Keep existing teams data (don't replace)
     if (newData.teams) {
@@ -7527,15 +7528,27 @@ function updateBoardWithLiveData(newData) {
             buildSearchIndex();
         }
         
-        // Update the Recently Completed card with fresh data
-        if (typeof updateRecentlyCompletedCard === 'function') {
-            updateRecentlyCompletedCard();
-        }
-        
     } catch (error) {
         console.error('Error updating UI with live data:', error);
     }
+
+// Update the Recently Completed card with fresh data
+if (typeof updateRecentlyCompletedCard === 'function') {
+    updateRecentlyCompletedCard();
 }
+}
+
+// Smart Bidirectional Sync State
+let syncState = {
+    isActive: true,
+    isPaused: false,
+    lastSyncData: null,
+    lastSyncTime: null,
+    syncInterval: null,
+    updateQueue: []
+    
+    
+};
 
 // Helper function for extracting text from Jira doc format
 function extractTextFromDoc(docField) {
