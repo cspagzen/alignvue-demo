@@ -3570,7 +3570,7 @@ completedInitiatives.forEach(init => {
                     <div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">
                         ${last90Days.map(init => `
                             <div class="bento-pipeline-item" 
-                                 onclick="showCompletedInitiativeDetails('${init.id}')"
+                                 onclick="closeModal(); setTimeout(() => showInitiativeModal(boardData.recentlyCompleted.find(i => i.id === ${init.id})), 100);"
                                  style="position: relative; cursor: pointer; border-left: 3px solid var(--accent-green);">
                                 <div class="bento-pipeline-item-header">
                                     <div class="bento-pipeline-item-title">
@@ -3608,6 +3608,8 @@ function showCompletedInitiativeDetails(initiativeId) {
         console.error('Initiative not found:', initiativeId);
         return;
     }
+    
+    
     
     // Close current modal and show initiative details
     closeModal();
