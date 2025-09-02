@@ -1767,7 +1767,7 @@ teamCard.innerHTML =
     updateDeliveryConfidenceCard();
     updateCriticalTeamStatusCard();
     // Only update card if data is loaded, otherwise trigger data load
-if (boardData.recentlyCompleted) {
+if (boardData.recentlyCompleted && boardData.recentlyCompleted.length > 0) {
     updateRecentlyCompletedCard();
 } else {
     console.log('Recently completed data not loaded yet, triggering sync...');
@@ -7791,7 +7791,7 @@ async function fetchJiraData() {
             endpoint: '/rest/api/3/search',
             method: 'POST',
             body: {
-                jql: 'project = OKR',
+                jql: 'project = OKRs',
                 maxResults: 50,
                 fields: ['summary', 'issuetype', 'issuelinks', 'parent', 'key']
             }
