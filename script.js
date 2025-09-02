@@ -3570,7 +3570,7 @@ completedInitiatives.forEach(init => {
                     <div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">
                         ${last90Days.map(init => `
                             <div class="bento-pipeline-item" 
-                                 onclick="closeModal(); setTimeout(() => showInitiativeModal(boardData.recentlyCompleted.find(i => i.id === ${init.id})), 100);"
+                                 onclick="showCompletedInitiativeDetails('${init.id}')"
                                  style="position: relative; cursor: pointer; border-left: 3px solid var(--accent-green);">
                                 <div class="bento-pipeline-item-header">
                                     <div class="bento-pipeline-item-title">
@@ -3599,23 +3599,6 @@ completedInitiatives.forEach(init => {
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
     modal.classList.add('show');
-}
-
-// Add this new function to handle completed initiative details
-function showCompletedInitiativeDetails(initiativeId) {
-    const initiative = boardData.recentlyCompleted.find(init => init.id == initiativeId);
-    if (!initiative) {
-        console.error('Initiative not found:', initiativeId);
-        return;
-    }
-    
-    
-    
-    // Close current modal and show initiative details
-    closeModal();
-    setTimeout(() => {
-        showInitiativeModal(initiative);
-    }, 100);
 }
 
 function debugCompletedData() {
@@ -6340,7 +6323,6 @@ function closeKPIDetailModal() {
 document.addEventListener('DOMContentLoaded', function() {
     const kpiDetailModal = document.getElementById('kpi-detail-modal');
     const kpiEditModal = document.getElementById('kpi-edit-modal');
-    const detailModal = document.getElementById('detail-modal');
     
     // KPI Detail Modal click outside to close
     if (kpiDetailModal) {
@@ -6356,15 +6338,6 @@ document.addEventListener('DOMContentLoaded', function() {
         kpiEditModal.addEventListener('click', function(e) {
             if (e.target.id === 'kpi-edit-modal') {
                 closeKPIEditModal();
-            }
-        });
-    }
-    
-    // Detail modal click outside to close
-    if (detailModal) {
-        detailModal.addEventListener('click', function(e) {
-            if (e.target.id === 'detail-modal') {
-                closeModal();
             }
         });
     }
@@ -7437,13 +7410,6 @@ function initEssentialKeyboard() {
             
             if (kpiEditModal && kpiEditModal.classList.contains('show')) {
                 closeKPIEditModal();
-                e.preventDefault();
-                e.stopPropagation();
-                return;
-            }
-            
-            if (detailModal && detailModal.classList.contains('show')) {
-                closeModal();
                 e.preventDefault();
                 e.stopPropagation();
                 return;
