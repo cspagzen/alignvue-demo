@@ -3416,17 +3416,24 @@ function getTypeBreakdown(initiatives) {
 }
 
 // Update Recently Completed Card
-// REPLACE your updateRecentlyCompletedCard() function with this:
-
 function updateRecentlyCompletedCard() {
+    console.log('=== UPDATE RECENTLY COMPLETED CARD DEBUG ===');
     const content = document.getElementById('completed-content');
-    if (!content) return;
+    
+    if (!content) {
+        console.log('❌ completed-content element not found');
+        return;
+    }
+    
+    console.log('✅ Content element found');
     
     // Get completed initiatives - use empty array if undefined
     const completedInitiatives = boardData.recentlyCompleted || [];
+    console.log('Raw completed initiatives:', completedInitiatives.length);
     
     // If no data, show 0 and return
     if (completedInitiatives.length === 0) {
+        console.log('No completed initiatives found, showing 0');
         content.innerHTML = `
             <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" 
                  onclick="showRecentlyCompletedModal()" style="cursor: pointer;">
@@ -3441,20 +3448,34 @@ function updateRecentlyCompletedCard() {
         return;
     }
     
-    // Get last 60 days (matching modal middle box)
-    const last60Days = completedInitiatives.filter(init => {
-    if (!init.completionDate) return false;
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 60);
-    return new Date(init.completionDate) >= cutoffDate;
-});
+    console.log('Sample completed initiative:', completedInitiatives[0]);
     
-    // Count by type (FIXED to include all 3 types)
+    // Get last 60 days with debug logging
+    const last60Days = completedInitiatives.filter(init => {
+        if (!init.completionDate) {
+            console.log(`❌ ${init.title}: No completion date`);
+            return false;
+        }
+        
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 60);
+        const completionDate = new Date(init.completionDate);
+        const isAfterCutoff = completionDate >= cutoffDate;
+        
+        console.log(`${isAfterCutoff ? '✅' : '❌'} ${init.title}: ${init.completionDate} -> ${isAfterCutoff}`);
+        return isAfterCutoff;
+    });
+    
+    console.log('60-day filtered result:', last60Days.length);
+    
+    // Count by type
     const typeCounts = {
         strategic: last60Days.filter(init => init.type === 'strategic').length,
         emergent: last60Days.filter(init => init.type === 'emergent').length,
         ktlo: last60Days.filter(init => init.type === 'ktlo').length
     };
+    
+    console.log('Type counts:', typeCounts);
     
     // Generate breakdown text with colors (only show types with count > 0)
     const breakdownParts = [];
@@ -3464,6 +3485,10 @@ function updateRecentlyCompletedCard() {
     
     const breakdownText = breakdownParts.join(' • ');
     
+    console.log('Final display count:', last60Days.length);
+    console.log('Breakdown text:', breakdownText);
+    
+    // Update the card HTML
     content.innerHTML = `
         <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" 
              onclick="showRecentlyCompletedModal()" style="cursor: pointer;">
@@ -3475,6 +3500,8 @@ function updateRecentlyCompletedCard() {
             </div>
         </div>
     `;
+    
+    console.log('✅ Card HTML updated');
 }
 
 // Show Recently Completed Modal
