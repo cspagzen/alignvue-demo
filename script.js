@@ -7755,7 +7755,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
         initiatives: activeInitiatives,
         bullpen: pipelineInitiatives,
         teams: boardData.teams,
-        okrs: { issues: okrsResponse || [] },
+        okrs: { issues: okrsResponse?.issues || [] },
         recentlyCompleted: completedInitiatives || []  // ADD this line
     };
 }
