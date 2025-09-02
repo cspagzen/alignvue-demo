@@ -1760,6 +1760,9 @@ teamCard.innerHTML =
     function generateBentoGrid() {
     console.log('=== GENERATE BENTO GRID CALLED ===');
     console.log('Time:', new Date().toISOString());
+    console.log('boardData.recentlyCompleted exists:', !!boardData?.recentlyCompleted);
+    console.log('boardData.recentlyCompleted length:', boardData?.recentlyCompleted?.length || 0);
+    console.log('boardData.recentlyCompleted:', boardData?.recentlyCompleted);
     
     updatePipelineCard();
     updateOKRCard();
