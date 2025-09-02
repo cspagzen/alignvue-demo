@@ -3429,6 +3429,13 @@ function updateRecentlyCompletedCard() {
     
     // Get completed initiatives - use empty array if undefined
     const completedInitiatives = boardData.recentlyCompleted || [];
+    
+    
+    // ADD THIS DEBUG BLOCK RIGHT HERE:
+console.log('=== CARD VS MODAL DEBUG ===');
+console.log('Card sees boardData.recentlyCompleted:', completedInitiatives.length);
+console.log('Card data:', completedInitiatives.map(init => ({title: init.title, type: init.type, date: init.completedDate})));
+    
     console.log('Raw completed initiatives:', completedInitiatives.length);
     
     // If no data, show 0 and return
@@ -3635,52 +3642,7 @@ function debugCompletedData() {
     };
 }
 
-function testCardCalculation() {
-    const completedInitiatives = boardData.recentlyCompleted || [];
-    console.log('=== CARD CALCULATION TEST ===');
-    console.log('Raw completed initiatives:', completedInitiatives.length);
-    
-    if (completedInitiatives.length > 0) {
-        const last60Days = getCompletedInitiativesInDays(completedInitiatives, 60);
-        console.log('60-day filtered result:', last60Days.length);
-        console.log('Should show on card:', last60Days.length);
-        
-        // Force update the card to see if it works
-        updateRecentlyCompletedCard();
-    }
-}
 
-// Debug function for OKR data
-function debugOKRData() {
-    console.log('=== OKR DEBUG ===');
-    console.log('boardData.okrs:', boardData.okrs);
-    console.log('Type of boardData.okrs:', typeof boardData.okrs);
-    
-    if (boardData.okrs) {
-        console.log('boardData.okrs.issues:', boardData.okrs.issues);
-        console.log('Type of boardData.okrs.issues:', typeof boardData.okrs.issues);
-        console.log('Is array?', Array.isArray(boardData.okrs.issues));
-        
-        if (boardData.okrs.issues && Array.isArray(boardData.okrs.issues)) {
-            console.log('OKR issues count:', boardData.okrs.issues.length);
-            if (boardData.okrs.issues.length > 0) {
-                console.log('Sample OKR issue:', boardData.okrs.issues[0]);
-                
-                // Check the structure
-                boardData.okrs.issues.forEach((issue, index) => {
-                    if (index < 3) { // Only log first 3 for brevity
-                        console.log(`OKR ${index}:`, {
-                            key: issue.key,
-                            type: issue.fields?.issuetype?.name,
-                            summary: issue.fields?.summary,
-                            hasParent: !!issue.fields?.parent
-                        });
-                    }
-                });
-            }
-        }
-    }
-}
 
 function updateValidationCard() {
     const content = document.getElementById('validation-pipeline-content');
