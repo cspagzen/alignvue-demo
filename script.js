@@ -3450,43 +3450,24 @@ function updateRecentlyCompletedCard() {
     
     console.log('Sample completed initiative:', completedInitiatives[0]);
     
-    // Get last 60 days with debug logging
-    const last60Days = completedInitiatives.filter(init => {
-        if (!init.completedDate) {
-            console.log(`❌ ${init.title}: No completion date`);
-            return false;
-        }
-        
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - 60);
-        const completedDate = new Date(init.completedDate);
-        const isAfterCutoff = completedDate >= cutoffDate;
-        
-        console.log(`${isAfterCutoff ? '✅' : '❌'} ${init.title}: ${init.completedDate} -> ${isAfterCutoff}`);
-        return isAfterCutoff;
-    });
-    
-    console.log('60-day filtered result:', last60Days.length);
-    
-    // Count by type
-    const typeCounts = {
-        strategic: last60Days.filter(init => init.type === 'strategic').length,
-        emergent: last60Days.filter(init => init.type === 'emergent').length,
-        ktlo: last60Days.filter(init => init.type === 'ktlo').length
-    };
+    // Use same functions as modal
+const last60Days = getCompletedInitiativesInDays(completedInitiatives, 60);
+const breakdown60 = getTypeBreakdown(last60Days);
+
+console.log('60-day filtered result:', last60Days.length);
+console.log('Type counts:', breakdown60);
     
     console.log('Type counts:', typeCounts);
     
-    // Generate breakdown text with colors (only show types with count > 0)
-    const breakdownParts = [];
-    if (typeCounts.strategic > 0) breakdownParts.push(`<span style="color: var(--accent-blue);">${typeCounts.strategic} Strategic</span>`);
-    if (typeCounts.emergent > 0) breakdownParts.push(`<span style="color: var(--accent-orange);">${typeCounts.emergent} Emergent</span>`);
-    if (typeCounts.ktlo > 0) breakdownParts.push(`<span style="color: var(--accent-purple);">${typeCounts.ktlo} KTLO</span>`);
-    
-    const breakdownText = breakdownParts.join(' • ');
-    
-    console.log('Final display count:', last60Days.length);
-    console.log('Breakdown text:', breakdownText);
+   // Use same function as modal  
+const generateBreakdownText = (breakdown) => {
+    return Object.entries(breakdown)
+        .filter(([type, data]) => data.count > 0)
+        .map(([type, data]) => `<span style="color: ${data.color};">${data.count} ${type.charAt(0).toUpperCase() + type.slice(1)}</span>`)
+        .join(' • ');
+};
+
+const breakdownText = generateBreakdownText(breakdown60);
     
     // Update the card HTML
     content.innerHTML = `
@@ -3612,8 +3593,6 @@ completedInitiatives.forEach(init => {
     modal.style.display = 'flex';
     modal.classList.add('show');
 }
-
-//test
 
 function debugCompletedData() {
     console.log('=== COMPLETED INITIATIVES DEBUG ===');
