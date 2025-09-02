@@ -3512,16 +3512,12 @@ function showRecentlyCompletedModal() {
     
     const completedInitiatives = boardData.recentlyCompleted || [];
     
-    const completedInitiatives = boardData.recentlyCompleted || [];
-
-// Add this debug block here:
+    // Add this debug block here:
 console.log('Modal completed initiatives:', completedInitiatives.length);
 completedInitiatives.forEach(init => {
     console.log(`${init.title}: type="${init.type}"`);
 });
 
-// Then the rest of the existing modal code continues...
-const last30Days = getCompletedInitiativesInDays(completedInitiatives, 30);
     
     // Get initiatives for different time periods
     const last30Days = getCompletedInitiativesInDays(completedInitiatives, 30);
