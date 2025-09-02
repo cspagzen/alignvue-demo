@@ -3570,7 +3570,7 @@ completedInitiatives.forEach(init => {
                     <div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">
                         ${last90Days.map(init => `
                             <div class="bento-pipeline-item" 
-                                 onclick="showCompletedInitiativeDetails('${init.id}')"
+                                 onclick="showInitiativeModal(boardData.recentlyCompleted.find(init => init.id === ${init.id}))"
                                  style="position: relative; cursor: pointer; border-left: 3px solid var(--accent-green);">
                                 <div class="bento-pipeline-item-header">
                                     <div class="bento-pipeline-item-title">
