@@ -3595,9 +3595,6 @@ completedInitiatives.forEach(init => {
         </div>
     `;
     
-    // FIXED: Use the same modal show method as validation modals
-    modal.classList.remove('hidden');
-    modal.style.display = 'flex';
     modal.classList.add('show');
 }
 
