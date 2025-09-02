@@ -3294,7 +3294,7 @@ function transformJiraCompletedInitiatives(jiraIssues) {
         const project = issue.fields.project.key;
         const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
         const initiativeType = getFieldValue(issue, 'customfield_10051') || typeMapping[project] || 'strategic';
-        const completedDate = issue.fields.resolved?.split('T')[0]; // Use resolved date, format as YYYY-MM-DD
+        const completedDate = getFieldValue(issue, 'customfield_10124');
         
         return {
             id: parseInt(issue.id),
