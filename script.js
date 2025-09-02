@@ -1758,6 +1758,9 @@ teamCard.innerHTML =
         //BENTO GRID CREATION FUNCTIONS
         
     function generateBentoGrid() {
+    console.log('=== GENERATE BENTO GRID CALLED ===');
+    console.log('Time:', new Date().toISOString());
+    
     updatePipelineCard();
     updateOKRCard();
     updateProgressCard();
