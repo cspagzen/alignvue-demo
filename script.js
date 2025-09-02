@@ -3457,7 +3457,7 @@ const breakdown60 = getTypeBreakdown(last60Days);
 console.log('60-day filtered result:', last60Days.length);
 console.log('Type counts:', breakdown60);
     
-    console.log('Type counts:', typeCounts);
+    console.log('Type counts:', breakdown60);
     
    // Use same function as modal  
 const generateBreakdownText = (breakdown) => {
