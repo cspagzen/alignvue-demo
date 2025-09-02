@@ -5801,7 +5801,14 @@ function showOKRAlignmentModal() {
     } else {
         // Display actual OKRs from Jira
         okrsDisplayHTML = objectives.map(objective => {
-            const relatedKeyResults = keyResults.filter(kr => kr.parentKey === objective.key);
+            const relatedKeyResults = keyResults
+    .filter(kr => kr.parentKey === objective.key)
+    .sort((a, b) => {
+        // Extract number from OKR-2, OKR-3, OKR-4 etc.
+        const numA = parseInt(a.key.split('-')[1]) || 0;
+        const numB = parseInt(b.key.split('-')[1]) || 0;
+        return numA - numB;
+    });
             
             return `
                 <div class="p-6 rounded-lg mb-4" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
