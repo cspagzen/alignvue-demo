@@ -3447,7 +3447,12 @@ function updateRecentlyCompletedCard() {
     }
     
     // Get last 60 days (matching modal middle box)
-    const last60Days = getCompletedInitiativesInDays(completedInitiatives, 60);
+    const last60Days = completedInitiatives.filter(init => {
+    if (!init.completionDate) return false;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 60);
+    return new Date(init.completionDate) >= cutoffDate;
+});
     
     // Count by type (FIXED to include all 3 types)
     const typeCounts = {
