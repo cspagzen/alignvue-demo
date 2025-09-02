@@ -3294,13 +3294,13 @@ function transformJiraCompletedInitiatives(jiraIssues) {
         const project = issue.fields.project.key;
         const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
         const initiativeType = getFieldValue(issue, 'customfield_10051') || typeMapping[project] || 'strategic';
-        const completionDate = getFieldValue(issue, 'customfield_10124') || issue.fields.resolved;
+        const completionDate = getFieldValue(issue, 'customfield_10124');
         
         return {
             id: parseInt(issue.id),
             title: issue.fields.summary,
             type: initiativeType,
-            completionDate: completionDate,
+            completedDate: completedDate,
             teams: ['Core Platform'], // Simplified for completed initiatives
             jira: {
                 key: issue.key
@@ -3381,12 +3381,12 @@ function getCompletedInitiativesInDays(completedInitiatives, days) {
     return completedInitiatives.filter(init => {
         if (!init.completedDate) return false;
         
-        const completionDate = new Date(init.completedDate);
-        const isValid = !isNaN(completionDate.getTime());
-        const isAfterCutoff = completionDate >= cutoffDate;
+        const completedDate = new Date(init.completedDate);
+        const isValid = !isNaN(completedDate.getTime());
+        const isAfterCutoff = completedDate >= cutoffDate;
         
         // Debug logging (remove after fixing)
-        console.log(`Filtering ${init.title}: date=${init.completedDate}, parsed=${completionDate}, valid=${isValid}, afterCutoff=${isAfterCutoff}`);
+        console.log(`Filtering ${init.title}: date=${init.completedDate}, parsed=${completedDate}, valid=${isValid}, afterCutoff=${isAfterCutoff}`);
         
         return isValid && isAfterCutoff;
     });
@@ -3459,8 +3459,8 @@ function updateRecentlyCompletedCard() {
         
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - 60);
-        const completionDate = new Date(init.completedDate);
-        const isAfterCutoff = completionDate >= cutoffDate;
+        const completedDate = new Date(init.completedDate);
+        const isAfterCutoff = completedDate >= cutoffDate;
         
         console.log(`${isAfterCutoff ? '✅' : '❌'} ${init.title}: ${init.completedDate} -> ${isAfterCutoff}`);
         return isAfterCutoff;
@@ -3626,16 +3626,16 @@ function debugCompletedData() {
         // Check if completion dates are valid
         completedInitiatives.forEach((init, index) => {
             if (index < 5) { // Only log first 5
-                const completionDate = new Date(init.completedDate);
+                const completedDate = new Date(init.completedDate);
                 const now = new Date();
-                const daysAgo = Math.floor((now - completionDate) / (1000 * 60 * 60 * 24));
+                const daysAgo = Math.floor((now - completedDate) / (1000 * 60 * 60 * 24));
                 
                 console.log(`Initiative ${index}:`, {
                     title: init.title,
-                    completionDate: init.completedDate,
-                    parsedDate: completionDate,
+                    completedDate: init.completedDate,
+                    parsedDate: completedDate,
                     daysAgo: daysAgo,
-                    isValid: !isNaN(completionDate.getTime())
+                    isValid: !isNaN(completedDate.getTime())
                 });
             }
         });
