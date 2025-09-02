@@ -3416,9 +3416,7 @@ function getTypeBreakdown(initiatives) {
 }
 
 // Update Recently Completed Card
-// REPLACE your updateRecentlyCompletedCard() function with this:
-
-async function updateRecentlyCompletedCard() {
+function updateRecentlyCompletedCard() {
     console.log('=== UPDATE RECENTLY COMPLETED CARD DEBUG ===');
     const content = document.getElementById('completed-content');
     
@@ -3429,19 +3427,9 @@ async function updateRecentlyCompletedCard() {
     
     console.log('✅ Content element found');
     
-    // FIXED: Fetch fresh data instead of using potentially stale boardData.recentlyCompleted
-    let completedInitiatives = [];
-    
-    try {
-        console.log('Fetching fresh completed initiatives for card...');
-        const rawCompleted = await fetchCompletedInitiativesFromJira();
-        completedInitiatives = transformJiraCompletedInitiatives(rawCompleted);
-        console.log('Fresh completed initiatives for card:', completedInitiatives.length);
-    } catch (error) {
-        console.error('Error fetching fresh completed data for card:', error);
-        // Fallback to boardData if fresh fetch fails
-        completedInitiatives = boardData.recentlyCompleted || [];
-    }
+    // Get completed initiatives - use empty array if undefined
+    const completedInitiatives = boardData.recentlyCompleted || [];
+    console.log('Raw completed initiatives:', completedInitiatives.length);
     
     // If no data, show 0 and return
     if (completedInitiatives.length === 0) {
