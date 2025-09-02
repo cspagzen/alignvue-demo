@@ -3379,14 +3379,14 @@ function getCompletedInitiativesInDays(completedInitiatives, days) {
     cutoffDate.setDate(cutoffDate.getDate() - days);
     
     return completedInitiatives.filter(init => {
-        if (!init.completionDate) return false;
+        if (!init.completedDate) return false;
         
-        const completionDate = new Date(init.completionDate);
+        const completionDate = new Date(init.completedDate);
         const isValid = !isNaN(completionDate.getTime());
         const isAfterCutoff = completionDate >= cutoffDate;
         
         // Debug logging (remove after fixing)
-        console.log(`Filtering ${init.title}: date=${init.completionDate}, parsed=${completionDate}, valid=${isValid}, afterCutoff=${isAfterCutoff}`);
+        console.log(`Filtering ${init.title}: date=${init.completedDate}, parsed=${completionDate}, valid=${isValid}, afterCutoff=${isAfterCutoff}`);
         
         return isValid && isAfterCutoff;
     });
@@ -3452,17 +3452,17 @@ function updateRecentlyCompletedCard() {
     
     // Get last 60 days with debug logging
     const last60Days = completedInitiatives.filter(init => {
-        if (!init.completionDate) {
+        if (!init.completedDate) {
             console.log(`❌ ${init.title}: No completion date`);
             return false;
         }
         
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - 60);
-        const completionDate = new Date(init.completionDate);
+        const completionDate = new Date(init.completedDate);
         const isAfterCutoff = completionDate >= cutoffDate;
         
-        console.log(`${isAfterCutoff ? '✅' : '❌'} ${init.title}: ${init.completionDate} -> ${isAfterCutoff}`);
+        console.log(`${isAfterCutoff ? '✅' : '❌'} ${init.title}: ${init.completedDate} -> ${isAfterCutoff}`);
         return isAfterCutoff;
     });
     
@@ -3584,7 +3584,7 @@ function showRecentlyCompletedModal() {
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs px-2 py-1 rounded" style="background: var(--accent-green); color: white;">
-                                            ${formatDate(init.completionDate)}
+                                            ${formatDate(init.completedDate)}
                                         </span>
                                     </div>
                                 </div>
@@ -3626,13 +3626,13 @@ function debugCompletedData() {
         // Check if completion dates are valid
         completedInitiatives.forEach((init, index) => {
             if (index < 5) { // Only log first 5
-                const completionDate = new Date(init.completionDate);
+                const completionDate = new Date(init.completedDate);
                 const now = new Date();
                 const daysAgo = Math.floor((now - completionDate) / (1000 * 60 * 60 * 24));
                 
                 console.log(`Initiative ${index}:`, {
                     title: init.title,
-                    completionDate: init.completionDate,
+                    completionDate: init.completedDate,
                     parsedDate: completionDate,
                     daysAgo: daysAgo,
                     isValid: !isNaN(completionDate.getTime())
@@ -3695,35 +3695,6 @@ function debugOKRData() {
         }
     }
 }
-
-// Quick fix for the card showing 0 - let's check the exact filtering logic
-function testCompletedFiltering() {
-    const completedInitiatives = boardData.recentlyCompleted || [];
-    console.log('Raw completed data:', completedInitiatives);
-    
-    if (completedInitiatives.length === 0) {
-        console.log('❌ No completed initiatives in boardData.recentlyCompleted');
-        return;
-    }
-    
-    // Test the 60-day filtering that the card uses
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 60);
-    console.log('60-day cutoff date:', cutoffDate);
-    
-    const filtered = completedInitiatives.filter(init => {
-        console.log(`Testing ${init.title}:`, {
-            completionDate: init.completionDate,
-            parsedDate: new Date(init.completionDate),
-            isAfterCutoff: new Date(init.completionDate) >= cutoffDate
-        });
-        return new Date(init.completionDate) >= cutoffDate;
-    });
-    
-    console.log('Filtered result for 60 days:', filtered.length);
-    return filtered;
-}
-// Updated Validation Pipeline functions to work with live JIRA data
 
 function updateValidationCard() {
     const content = document.getElementById('validation-pipeline-content');
