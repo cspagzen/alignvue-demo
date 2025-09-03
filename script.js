@@ -3733,7 +3733,7 @@ function mapJiraValidationStatus(jiraValidationValue) {
     }
 }
 
-// Updated "In Validation" modal with live Jira data
+// Updated "In Validation" modal with High Priority and Regular tabs
 function showInValidationModal() {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
@@ -3747,10 +3747,14 @@ function showInValidationModal() {
     const sortedActiveInitiatives = activeInValidation.sort((a, b) => a.priority - b.priority);
     const sortedPipelineInitiatives = pipelineInValidation.sort((a, b) => a.priority - b.priority);
     
-    // Get high priority initiatives (slots 1-20)
-    const highPriorityInValidation = activeInValidation.filter(init => {
+    // Separate high priority (slots 1-20) from regular
+    const highPriorityActive = activeInValidation.filter(init => {
         return typeof init.priority === 'number' && init.priority <= 20;
-    });
+    }).sort((a, b) => a.priority - b.priority);
+    
+    const regularActive = activeInValidation.filter(init => {
+        return typeof init.priority === 'number' && init.priority > 20;
+    }).sort((a, b) => a.priority - b.priority);
     
     title.textContent = 'Initiatives In Validation';
     content.innerHTML = 
@@ -3764,48 +3768,105 @@ function showInValidationModal() {
                     'Validation Pipeline - ' + (activeInValidation.length + pipelineInValidation.length) + ' Total Initiatives' +
                 '</h3>' +
                 
-                // Active initiatives list
-                (activeInValidation.length > 0 ? 
-                    '<div class="mb-4">' +
-                        '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--text-primary);">' +
-                            'Active Initiatives (' + activeInValidation.length + ')' +
-                        '</h4>' +
-                        '<div class="space-y-2">' +
-                            sortedActiveInitiatives.map(init => {
-                                const isHighPriority = typeof init.priority === 'number' && init.priority <= 20;
-                                return `
-                                   <div class="p-3 rounded-lg border cursor-pointer hover:bg-opacity-80 transition-all duration-200" 
-                                        style="background: var(--bg-tertiary); border-color: var(--border-primary);"
-                                        onclick="showInitiativeDetail(${init.id})">
-                                       <div class="flex items-center justify-between">
-                                           <div class="flex-1">
-                                               <div class="flex items-center gap-2 mb-1">
-                                                   <span class="font-medium" style="color: var(--text-primary);">${init.title}</span>
-                                                   <span class="text-xs px-2 py-1 rounded" style="background: var(--accent-${init.type === 'strategic' ? 'blue' : init.type === 'ktlo' ? 'green' : 'purple'}); color: white;">${init.type.toUpperCase()}</span>
-                                               </div>
-                                               <div class="text-sm" style="color: var(--text-secondary);">${init.teams.join(', ')}</div>
-                                               <div class="text-xs mt-1" style="color: var(--text-secondary);">Jira Key: ${init.jira?.key || 'N/A'}</div>
-                                           </div>
-                                           <div class="text-right">
-                                               ${isHighPriority ? 
-                                                   '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-orange); color: white;">HIGH PRIORITY</span>' : 
-                                                   '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>'
-                                               }
-                                           </div>
-                                       </div>
-                                   </div>
-                               `;
-                            }).join('') +
-                        '</div>' +
-                    '</div>' : ''
-                ) +
+                // Status breakdown with live data
+                '<div class="grid grid-cols-3 gap-4 mb-6">' +
+                    '<div class="text-center p-4 rounded-lg" style="background: var(--bg-tertiary);">' +
+                        '<div class="text-2xl font-bold mb-1" style="color: var(--accent-orange);">' + highPriorityActive.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">High Priority</div>' +
+                    '</div>' +
+                    '<div class="text-center p-4 rounded-lg" style="background: var(--bg-tertiary);">' +
+                        '<div class="text-2xl font-bold mb-1" style="color: var(--accent-blue);">' + regularActive.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">Regular</div>' +
+                    '</div>' +
+                    '<div class="text-center p-4 rounded-lg" style="background: var(--bg-tertiary);">' +
+                        '<div class="text-2xl font-bold mb-1" style="color: var(--text-secondary);">' + pipelineInValidation.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">Pipeline</div>' +
+                    '</div>' +
+                '</div>' +
+                
+                // Tab Navigation
+                '<div class="mb-4">' +
+                    '<div class="flex border-b" style="border-color: var(--border-primary);">' +
+                        `<button class="tab-button px-4 py-2 font-medium text-sm transition-all duration-200 ${highPriorityActive.length > 0 ? 'active' : ''}" 
+                                onclick="switchValidationTab('high-priority-in-validation')" 
+                                id="tab-high-priority-in-validation"
+                                style="border-bottom: 2px solid ${highPriorityActive.length > 0 ? 'var(--accent-orange)' : 'transparent'}; color: ${highPriorityActive.length > 0 ? 'var(--accent-orange)' : 'var(--text-secondary)'};">` +
+                            `High Priority (${highPriorityActive.length})` +
+                        '</button>' +
+                        `<button class="tab-button px-4 py-2 font-medium text-sm transition-all duration-200 ${highPriorityActive.length === 0 ? 'active' : ''}" 
+                                onclick="switchValidationTab('regular-in-validation')" 
+                                id="tab-regular-in-validation"
+                                style="border-bottom: 2px solid ${highPriorityActive.length === 0 ? 'var(--accent-blue)' : 'transparent'}; color: ${highPriorityActive.length === 0 ? 'var(--accent-blue)' : 'var(--text-secondary)'};">` +
+                            `Regular (${regularActive.length})` +
+                        '</button>' +
+                        `<button class="tab-button px-4 py-2 font-medium text-sm transition-all duration-200" 
+                                onclick="switchValidationTab('pipeline-in-validation')" 
+                                id="tab-pipeline-in-validation"
+                                style="border-bottom: 2px solid transparent; color: var(--text-secondary);">` +
+                            `Pipeline (${pipelineInValidation.length})` +
+                        '</button>' +
+                    '</div>' +
+                '</div>' +
+                
+                // Tab Content Container
+                '<div id="validation-tab-content">' +
+                    // High Priority Tab Content
+                    `<div id="high-priority-in-validation" class="tab-content ${highPriorityActive.length > 0 ? '' : 'hidden'}">` +
+                        (highPriorityActive.length > 0 ? 
+                            '<div class="mb-4 p-3 rounded-lg" style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--accent-orange);">' +
+                                '<div class="flex items-center gap-2 mb-2">' +
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="2">' +
+                                        '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>' +
+                                        '<path d="M12 9v4"/><path d="m12 17 .01 0"/>' +
+                                    '</svg>' +
+                                    '<span class="font-medium" style="color: var(--accent-orange);">High Priority Alert</span>' +
+                                '</div>' +
+                                '<div class="text-sm" style="color: var(--text-primary);">These initiatives need validation completion to maintain priority status.</div>' +
+                            '</div>' +
+                            '<div class="max-h-80 overflow-y-auto pr-2 space-y-2" style="scrollbar-width: thin; scrollbar-color: var(--accent-orange) var(--bg-quaternary);">' +
+                                highPriorityActive.map(init => createValidationListItem(init, 'HIGH PRIORITY', 'var(--accent-orange)')).join('') +
+                            '</div>' :
+                            '<div class="text-center py-8" style="color: var(--text-secondary);">' +
+                                '<div class="text-lg mb-2">No High Priority Initiatives</div>' +
+                                '<div class="text-sm">All high priority slots are validated or empty.</div>' +
+                            '</div>'
+                        ) +
+                    '</div>' +
+                    
+                    // Regular Tab Content
+                    `<div id="regular-in-validation" class="tab-content ${highPriorityActive.length === 0 ? '' : 'hidden'}">` +
+                        (regularActive.length > 0 ? 
+                            '<div class="max-h-80 overflow-y-auto pr-2 space-y-2" style="scrollbar-width: thin; scrollbar-color: var(--accent-blue) var(--bg-quaternary);">' +
+                                regularActive.map(init => createValidationListItem(init, `Slot ${init.priority}`, 'var(--accent-blue)')).join('') +
+                            '</div>' :
+                            '<div class="text-center py-8" style="color: var(--text-secondary);">' +
+                                '<div class="text-lg mb-2">No Regular Initiatives</div>' +
+                                '<div class="text-sm">All regular priority initiatives are validated.</div>' +
+                            '</div>'
+                        ) +
+                    '</div>' +
+                    
+                    // Pipeline Tab Content
+                    '<div id="pipeline-in-validation" class="tab-content hidden">' +
+                        (pipelineInValidation.length > 0 ? 
+                            '<div class="max-h-80 overflow-y-auto pr-2 space-y-2" style="scrollbar-width: thin; scrollbar-color: var(--text-secondary) var(--bg-quaternary);">' +
+                                sortedPipelineInitiatives.map(init => createValidationListItem(init, 'PIPELINE', 'var(--text-secondary)', true)).join('') +
+                            '</div>' :
+                            '<div class="text-center py-8" style="color: var(--text-secondary);">' +
+                                '<div class="text-lg mb-2">No Pipeline Initiatives</div>' +
+                                '<div class="text-sm">Pipeline is clear of in-validation items.</div>' +
+                            '</div>'
+                        ) +
+                    '</div>' +
+                '</div>' +
             '</div>' +
         '</div>';
    
     modal.classList.add('show');
+    ensureTabStyles();
 }
 
-// Updated "Not Validated" modal with live Jira data
+// Updated "Not Validated" modal with Urgent and Regular tabs
 function showNotValidatedModal() {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
@@ -3815,14 +3876,16 @@ function showNotValidatedModal() {
     const activeNotValidated = (boardData.initiatives || []).filter(init => init.validation === 'not-validated');
     const pipelineNotValidated = (boardData.bullpen || []).filter(init => init.validation === 'not-validated');
     
-    // Sort by priority
-    const sortedActiveInitiatives = activeNotValidated.sort((a, b) => a.priority - b.priority);
-    const sortedPipelineInitiatives = pipelineNotValidated.sort((a, b) => a.priority - b.priority);
-    
-    // Get high priority initiatives (slots 1-20)
-    const highPriorityNotValidated = activeNotValidated.filter(init => {
+    // Separate urgent (slots 1-20) from regular
+    const urgentActive = activeNotValidated.filter(init => {
         return typeof init.priority === 'number' && init.priority <= 20;
-    });
+    }).sort((a, b) => a.priority - b.priority);
+    
+    const regularActive = activeNotValidated.filter(init => {
+        return typeof init.priority === 'number' && init.priority > 20;
+    }).sort((a, b) => a.priority - b.priority);
+    
+    const sortedPipelineInitiatives = pipelineNotValidated.sort((a, b) => a.priority - b.priority);
     
     title.textContent = 'Not Validated Initiatives';
     content.innerHTML = 
@@ -3836,45 +3899,195 @@ function showNotValidatedModal() {
                     'Validation Required - ' + (activeNotValidated.length + pipelineNotValidated.length) + ' Total Initiatives' +
                 '</h3>' +
                 
-                // Active initiatives list
-                (activeNotValidated.length > 0 ? 
-                    '<div class="mb-4">' +
-                        '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--text-primary);">' +
-                            'Active Initiatives (' + activeNotValidated.length + ')' +
-                        '</h4>' +
-                        '<div class="space-y-2">' +
-                            sortedActiveInitiatives.map(init => {
-                                const isHighPriority = typeof init.priority === 'number' && init.priority <= 20;
-                                return `
-                                   <div class="p-3 rounded-lg border cursor-pointer hover:bg-opacity-80 transition-all duration-200" 
-                                        style="background: var(--bg-tertiary); border-color: var(--border-primary);"
-                                        onclick="showInitiativeDetail(${init.id})">
-                                       <div class="flex items-center justify-between">
-                                           <div class="flex-1">
-                                               <div class="flex items-center gap-2 mb-1">
-                                                   <span class="font-medium" style="color: var(--text-primary);">${init.title}</span>
-                                                   <span class="text-xs px-2 py-1 rounded" style="background: var(--accent-${init.type === 'strategic' ? 'blue' : init.type === 'ktlo' ? 'green' : 'purple'}); color: white;">${init.type.toUpperCase()}</span>
-                                               </div>
-                                               <div class="text-sm" style="color: var(--text-secondary);">${init.teams.join(', ')}</div>
-                                               <div class="text-xs mt-1" style="color: var(--text-secondary);">Jira Key: ${init.jira?.key || 'N/A'}</div>
-                                           </div>
-                                           <div class="text-right">
-                                               ${isHighPriority ? 
-                                                   '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">URGENT</span>' : 
-                                                   '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>'
-                                               }
-                                           </div>
-                                       </div>
-                                   </div>
-                               `;
-                            }).join('') +
-                        '</div>' +
-                    '</div>' : ''
-                ) +
+                // Status breakdown with live data
+                '<div class="grid grid-cols-3 gap-4 mb-6">' +
+                    '<div class="text-center p-4 rounded-lg" style="background: var(--bg-tertiary);">' +
+                        '<div class="text-2xl font-bold mb-1" style="color: var(--accent-red);">' + urgentActive.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">Urgent</div>' +
+                    '</div>' +
+                    '<div class="text-center p-4 rounded-lg" style="background: var(--bg-tertiary);">' +
+                        '<div class="text-2xl font-bold mb-1" style="color: var(--accent-blue);">' + regularActive.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">Regular</div>' +
+                    '</div>' +
+                    '<div class="text-center p-4 rounded-lg" style="background: var(--bg-tertiary);">' +
+                        '<div class="text-2xl font-bold mb-1" style="color: var(--text-secondary);">' + pipelineNotValidated.length + '</div>' +
+                        '<div class="text-sm" style="color: var(--text-secondary);">Pipeline</div>' +
+                    '</div>' +
+                '</div>' +
+                
+                // Tab Navigation
+                '<div class="mb-4">' +
+                    '<div class="flex border-b" style="border-color: var(--border-primary);">' +
+                        `<button class="tab-button px-4 py-2 font-medium text-sm transition-all duration-200 ${urgentActive.length > 0 ? 'active' : ''}" 
+                                onclick="switchValidationTab('urgent-not-validated')" 
+                                id="tab-urgent-not-validated"
+                                style="border-bottom: 2px solid ${urgentActive.length > 0 ? 'var(--accent-red)' : 'transparent'}; color: ${urgentActive.length > 0 ? 'var(--accent-red)' : 'var(--text-secondary)'};">` +
+                            `Urgent (${urgentActive.length})` +
+                        '</button>' +
+                        `<button class="tab-button px-4 py-2 font-medium text-sm transition-all duration-200 ${urgentActive.length === 0 ? 'active' : ''}" 
+                                onclick="switchValidationTab('regular-not-validated')" 
+                                id="tab-regular-not-validated"
+                                style="border-bottom: 2px solid ${urgentActive.length === 0 ? 'var(--accent-blue)' : 'transparent'}; color: ${urgentActive.length === 0 ? 'var(--accent-blue)' : 'var(--text-secondary)'};">` +
+                            `Regular (${regularActive.length})` +
+                        '</button>' +
+                        `<button class="tab-button px-4 py-2 font-medium text-sm transition-all duration-200" 
+                                onclick="switchValidationTab('pipeline-not-validated')" 
+                                id="tab-pipeline-not-validated"
+                                style="border-bottom: 2px solid transparent; color: var(--text-secondary);">` +
+                            `Pipeline (${pipelineNotValidated.length})` +
+                        '</button>' +
+                    '</div>' +
+                '</div>' +
+                
+                // Tab Content Container
+                '<div id="validation-tab-content">' +
+                    // Urgent Tab Content
+                    `<div id="urgent-not-validated" class="tab-content ${urgentActive.length > 0 ? '' : 'hidden'}">` +
+                        (urgentActive.length > 0 ? 
+                            '<div class="mb-4 p-3 rounded-lg" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red);">' +
+                                '<div class="flex items-center gap-2 mb-2">' +
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2">' +
+                                        '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="m12 16 .01 0"/>' +
+                                    '</svg>' +
+                                    '<span class="font-medium" style="color: var(--accent-red);">Urgent Validation Required</span>' +
+                                '</div>' +
+                                '<div class="text-sm" style="color: var(--text-primary);">These initiatives need immediate validation to proceed.</div>' +
+                            '</div>' +
+                            '<div class="max-h-80 overflow-y-auto pr-2 space-y-2" style="scrollbar-width: thin; scrollbar-color: var(--accent-red) var(--bg-quaternary);">' +
+                                urgentActive.map(init => createValidationListItem(init, 'URGENT', 'var(--accent-red)')).join('') +
+                            '</div>' :
+                            '<div class="text-center py-8" style="color: var(--text-secondary);">' +
+                                '<div class="text-lg mb-2">No Urgent Initiatives</div>' +
+                                '<div class="text-sm">All high priority slots are validated.</div>' +
+                            '</div>'
+                        ) +
+                    '</div>' +
+                    
+                    // Regular Tab Content
+                    `<div id="regular-not-validated" class="tab-content ${urgentActive.length === 0 ? '' : 'hidden'}">` +
+                        (regularActive.length > 0 ? 
+                            '<div class="max-h-80 overflow-y-auto pr-2 space-y-2" style="scrollbar-width: thin; scrollbar-color: var(--accent-blue) var(--bg-quaternary);">' +
+                                regularActive.map(init => createValidationListItem(init, `Slot ${init.priority}`, 'var(--accent-blue)')).join('') +
+                            '</div>' :
+                            '<div class="text-center py-8" style="color: var(--text-secondary);">' +
+                                '<div class="text-lg mb-2">No Regular Initiatives</div>' +
+                                '<div class="text-sm">All regular priority initiatives are validated.</div>' +
+                            '</div>'
+                        ) +
+                    '</div>' +
+                    
+                    // Pipeline Tab Content
+                    '<div id="pipeline-not-validated" class="tab-content hidden">' +
+                        (pipelineNotValidated.length > 0 ? 
+                            '<div class="max-h-80 overflow-y-auto pr-2 space-y-2" style="scrollbar-width: thin; scrollbar-color: var(--text-secondary) var(--bg-quaternary);">' +
+                                sortedPipelineInitiatives.map(init => createValidationListItem(init, 'PIPELINE', 'var(--text-secondary)', true)).join('') +
+                            '</div>' :
+                            '<div class="text-center py-8" style="color: var(--text-secondary);">' +
+                                '<div class="text-lg mb-2">No Pipeline Initiatives</div>' +
+                                '<div class="text-sm">Pipeline is clear of non-validated items.</div>' +
+                            '</div>'
+                        ) +
+                    '</div>' +
+                '</div>' +
             '</div>' +
         '</div>';
    
     modal.classList.add('show');
+    ensureTabStyles();
+}
+
+// Helper function to create consistent list items
+function createValidationListItem(init, badgeText, badgeColor, isPipeline = false) {
+    return `
+        <div class="p-3 rounded-lg border cursor-pointer hover:bg-opacity-80 hover:scale-[1.02] transition-all duration-200" 
+             style="background: ${isPipeline ? 'var(--bg-quaternary)' : 'var(--bg-tertiary)'}; border-color: var(--border-primary);"
+             onclick="closeModal(); showInitiativeDetail(${init.id});">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-medium" style="color: var(--text-primary);">${init.title}</span>
+                        <span class="text-xs px-2 py-1 rounded" style="background: var(--accent-${init.type === 'strategic' ? 'blue' : init.type === 'ktlo' ? 'green' : 'purple'}); color: white;">${init.type.toUpperCase()}</span>
+                    </div>
+                    <div class="text-sm" style="color: var(--text-secondary);">${init.teams.join(', ')}</div>
+                    <div class="text-xs mt-1" style="color: var(--text-secondary);">Jira Key: ${init.jira?.key || 'N/A'}</div>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs px-2 py-1 rounded" style="background: ${badgeColor}; color: white;">${badgeText}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Tab switching function
+function switchValidationTab(tabId) {
+    // Hide all tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Remove active state from all tabs
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.style.borderBottomColor = 'transparent';
+        button.style.color = 'var(--text-secondary)';
+    });
+    
+    // Show selected tab content
+    const selectedContent = document.getElementById(tabId);
+    if (selectedContent) {
+        selectedContent.classList.remove('hidden');
+    }
+    
+    // Update active tab appearance
+    const activeTabButton = document.getElementById('tab-' + tabId);
+    if (activeTabButton) {
+        let color = 'var(--accent-blue)'; // default
+        if (tabId.includes('urgent') || tabId.includes('high-priority')) {
+            color = tabId.includes('not-validated') ? 'var(--accent-red)' : 'var(--accent-orange)';
+        }
+        activeTabButton.style.borderBottomColor = color;
+        activeTabButton.style.color = color;
+    }
+}
+
+// Ensure tab styles are available
+function ensureTabStyles() {
+    if (!document.getElementById('validation-tab-styles')) {
+        const styleSheet = document.createElement('style');
+        styleSheet.id = 'validation-tab-styles';
+        styleSheet.textContent = `
+            /* Tab button hover effects */
+            .tab-button:hover {
+                background-color: rgba(255, 255, 255, 0.05);
+                cursor: pointer;
+            }
+            
+            /* Custom scrollbar styles for tabs */
+            .tab-content .max-h-80::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            .tab-content .max-h-80::-webkit-scrollbar-track {
+                background: var(--bg-quaternary);
+                border-radius: 3px;
+            }
+            
+            .tab-content .max-h-80::-webkit-scrollbar-thumb {
+                background: var(--accent-blue);
+                border-radius: 3px;
+            }
+            
+            .tab-content .max-h-80::-webkit-scrollbar-thumb:hover {
+                background: var(--accent-blue-hover, #4c7ce5);
+            }
+            
+            /* Hide scrollbar for Firefox */
+            .tab-content {
+                scrollbar-width: thin;
+            }
+        `;
+        document.head.appendChild(styleSheet);
+    }
 }
 
 function updateMendozaCard() {
