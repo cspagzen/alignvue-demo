@@ -239,6 +239,8 @@ function handleAtRiskCardClick(initiativeId) {
 }
 
 function showAtRiskAnalysisModal(initiative) {
+    console.log('📋 Opening at-risk analysis for:', initiative.title);
+    
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
@@ -262,7 +264,10 @@ function showAtRiskAnalysisModal(initiative) {
                         </div>
                         <div>
                             <div class="font-bold text-lg" style="color: ${riskLevel.color};">${riskLevel.label}</div>
-                            <div class="text-sm" style="color: var(--text-secondary);">Priority ${initiative.priority} • ${initiative.type.toUpperCase()}</div>
+                            <div class="text-sm" style="color: var(--text-secondary);">
+                                Priority ${initiative.priority} • ${initiative.type.toUpperCase()} • 
+                                ${initiative.validation ? initiative.validation.replace('-', ' ').toUpperCase() : 'VALIDATION TBD'}
+                            </div>
                         </div>
                     </div>
                     <div class="text-right">
@@ -274,98 +279,122 @@ function showAtRiskAnalysisModal(initiative) {
                     </div>
                 </div>
                 <div class="text-sm" style="color: var(--text-secondary);">
-                    ${riskLevel.description} ${riskAnalysis.primaryRiskFactors.length > 0 ? `Primary concerns: ${riskAnalysis.primaryRiskFactors.join(', ')}.` : ''}
+                    ${riskLevel.description}
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-6">
-                <!-- Left Column: Risk Factors -->
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-lg flex items-center gap-2" style="color: var(--text-primary);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                            <path d="M12 17h.01"/>
-                        </svg>
-                        Risk Factors
-                    </h3>
-
+            <!-- Risk Factors -->
+            <div class="space-y-4">
+                <h3 class="font-medium mb-3 flex items-center gap-2" style="color: var(--text-primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                        <path d="M12 9v4"/>
+                        <path d="M12 17h.01"/>
+                    </svg>
+                    Risk Factors Identified
+                </h3>
+                
+                <div class="space-y-3">
                     ${riskAnalysis.riskFactors.map(factor => `
-                        <div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${factor.color};">
+                        <div class="p-3 rounded-lg border" style="background: var(--bg-tertiary); border-color: ${factor.severity === 'high' ? 'var(--accent-red)' : factor.severity === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};">
                             <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded-full" style="background: ${factor.color};"></div>
-                                    <span class="font-medium text-sm" style="color: var(--text-primary);">${factor.name}</span>
-                                </div>
-                                <span class="text-xs font-bold px-2 py-1 rounded" style="background: ${factor.color}; color: white;">${factor.severity}</span>
+                                <span class="text-sm font-medium" style="color: var(--text-primary);">${factor.type}</span>
+                                <span class="text-xs px-2 py-1 rounded" style="background: ${factor.severity === 'high' ? 'var(--accent-red)' : factor.severity === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'}; color: white;">
+                                    +${factor.impact} pts
+                                </span>
                             </div>
-                            <div class="text-xs leading-relaxed" style="color: var(--text-secondary);">${factor.description}</div>
-                            <div class="text-xs mt-1" style="color: ${factor.color}; font-weight: 600;">Impact: ${factor.impact}</div>
+                            <p class="text-xs" style="color: var(--text-secondary);">${factor.description}</p>
                         </div>
                     `).join('')}
                 </div>
+            </div>
 
-                <!-- Right Column: Team Analysis & Actions -->
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-lg flex items-center gap-2" style="color: var(--text-primary);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                        Impacted Teams (${riskAnalysis.impactedTeams.length})
-                    </h3>
-
-                    <div class="space-y-2 max-h-32 overflow-y-auto">
-                        ${riskAnalysis.impactedTeams.map(team => `
-                            <div class="p-2 rounded cursor-pointer hover:bg-opacity-90 transition-all" 
-                                 style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);"
-                                 onclick="closeModal(); setTimeout(() => showTeamModal('${team.name}', boardData.teams['${team.name}']), 100);">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <div class="text-lg">${getHealthIcon(boardData.teams[team.name])}</div>
-                                        <span class="font-medium text-sm" style="color: var(--text-primary);">${team.name}</span>
-                                    </div>
-                                    <div class="text-xs" style="color: ${team.riskColor}; font-weight: 600;">${team.riskFactors.join(', ')}</div>
-                                </div>
+            <!-- Affected Teams -->
+            <div class="space-y-4">
+                <h3 class="font-medium mb-3 flex items-center gap-2" style="color: var(--text-primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Teams with Health Issues (${riskAnalysis.impactedTeams.length})
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${riskAnalysis.impactedTeams.map(teamAnalysis => `
+                        <div class="p-3 rounded-lg cursor-pointer transition-all hover:scale-105" 
+                             onclick="showTeamModal('${teamAnalysis.name}', boardData.teams['${teamAnalysis.name}'])"
+                             style="background: linear-gradient(135deg, ${teamAnalysis.healthColor}15, ${teamAnalysis.healthColor}05); border: 1px solid ${teamAnalysis.healthColor};">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium" style="color: var(--text-primary);">${teamAnalysis.name}</span>
+                                <span class="text-xs px-2 py-1 rounded" style="background: ${teamAnalysis.healthColor}; color: white;">
+                                    ${teamAnalysis.healthLevel.toUpperCase()}
+                                </span>
                             </div>
-                        `).join('')}
-                    </div>
-
-                    <!-- Recommended Actions -->
-                    <div class="mt-6">
-                        <h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-blue);">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M9 12l2 2 4-4"/>
-                                <circle cx="12" cy="12" r="10"/>
-                            </svg>
-                            Recommended Actions
-                        </h4>
-                        
-                        <div class="space-y-2">
-                            ${riskAnalysis.recommendations.map((rec, index) => `
-                                <div class="flex items-start gap-2 p-2 rounded" style="background: rgba(59, 130, 246, 0.05);">
-                                    <span class="text-xs font-bold px-1.5 py-0.5 rounded-full" style="background: var(--accent-blue); color: white; min-width: 20px; text-align: center;">${index + 1}</span>
-                                    <div class="text-xs leading-relaxed" style="color: var(--text-secondary);">${rec}</div>
-                                </div>
-                            `).join('')}
+                            <div class="text-xs" style="color: var(--text-secondary);">
+                                ${teamAnalysis.atRiskDimensions.length} dimensions at risk: ${teamAnalysis.atRiskDimensions.join(', ')}
+                            </div>
                         </div>
-                    </div>
+                    `).join('')}
                 </div>
             </div>
 
             <!-- Bottom Actions -->
-            <div class="pt-4 border-t" style="border-color: var(--border-primary);">
-                <button onclick="showInitiativeModal(boardData.initiatives.find(i => i.id === ${initiative.id}))" 
-                        class="w-full px-4 py-2 rounded font-medium transition-colors" 
+            <div class="pt-4 border-t flex gap-3" style="border-color: var(--border-primary);">
+                <button onclick="showInitiativeModal(${JSON.stringify(initiative)})" 
+                        class="flex-1 px-4 py-2 rounded font-medium transition-colors" 
                         style="background: var(--accent-primary); color: white;">
                     View Full Initiative Details
                 </button>
+                ${initiative.jira && initiative.jira.key ? `
+                <button onclick="openJiraEpic('${initiative.jira.key}')" 
+                        class="px-4 py-2 rounded font-medium transition-colors border" 
+                        style="border-color: var(--accent-blue); color: var(--accent-blue);">
+                    Open in Jira
+                </button>
+                ` : ''}
             </div>
         </div>
     `;
     
     modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+// Fallback modal if initiative not found
+function showAtRiskOverviewModal() {
+    const modal = document.getElementById('detail-modal');
+    const title = document.getElementById('modal-title');
+    const content = document.getElementById('modal-content');
+    
+    const allAtRiskInitiatives = getTopAtRiskInitiatives();
+    
+    title.textContent = 'At-Risk Initiatives Overview';
+    
+    content.innerHTML = `
+        <div class="space-y-4">
+            <div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border: 1px solid var(--accent-red);">
+                <p class="text-sm" style="color: var(--text-secondary);">
+                    Found ${allAtRiskInitiatives.length} high-priority initiatives with team health issues.
+                </p>
+            </div>
+            
+            <div class="space-y-3">
+                ${allAtRiskInitiatives.map(init => `
+                    <div class="p-3 rounded-lg border cursor-pointer hover:scale-105 transition-all" 
+                         onclick="handleAtRiskInitiativeClick(${init.id})"
+                         style="background: var(--bg-tertiary); border-color: var(--accent-red);">
+                        <div class="font-medium mb-1" style="color: var(--text-primary);">${init.title}</div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Priority ${init.priority} • ${init.teams.length} teams</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
 }
 
 function analyzeInitiativeRisk(initiative) {
@@ -2671,62 +2700,82 @@ function updateHealthCard() {
     };
 }
       
+// Updated At Risk Card with better click handling
 function updateAtRiskCard() {
     const content = document.getElementById('at-risk-content');
     const atRiskInitiatives = getTopAtRiskInitiatives().slice(0, 3);
     
+    console.log('🎯 At Risk Initiatives:', atRiskInitiatives.length);
+    atRiskInitiatives.forEach(init => {
+        console.log(`- ${init.title} (ID: ${init.id}, Priority: ${init.priority})`);
+    });
+    
     content.innerHTML = '<div class="flex gap-3 h-full">' + 
         atRiskInitiatives.map(initiative => {
             // Get the dynamic priority number from the initiative's position
-            const priorityText = initiative.priority === 'bullpen' ? 'Bullpen' : initiative.priority;
+            const priorityText = initiative.priority === 'bullpen' ? 
+                'Pipeline' : 
+                `Priority ${initiative.priority}`;
             
-            // Calculate risk level and get colors (simplified version for cards)
-            const riskScore = calculateSimpleRiskScore(initiative);
-            const riskColor = getRiskLevelColor(riskScore);
-            
-            return `
-                <div class="flex-1 min-w-0">
-                    <div class="initiative-card-mini ${getTypeColor(initiative.type)} text-white h-full cursor-pointer at-risk-card-item"
-                         onclick="handleAtRiskCardClick(${initiative.id})"
-                         data-initiative-id="${initiative.id}"
-                         data-risk-color="${riskColor}"
-                         style="padding: 0.75rem; border-radius: 8px; position: relative; min-height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
+            return `<div class="flex-1 cursor-pointer kpi-gauge-card hover:transform hover:scale-105 transition-all duration-200"
+                         onclick="handleAtRiskInitiativeClick(${initiative.id})"
+                         style="background: linear-gradient(145deg, rgba(220, 38, 38, 0.15) 0%, rgba(30, 27, 75, 0.95) 100%); 
+                                border: 2px solid var(--accent-red); 
+                                min-height: 80px; 
+                                padding: 8px;
+                                display: flex; 
+                                flex-direction: column; 
+                                justify-content: space-between;">
                         
-                        <!-- Header with title only -->
-                        <div class="mb-2">
-                            <div class="text-xs font-bold leading-tight" style="line-height: 1.2; max-height: 3em; overflow: hidden;">
-                                ${initiative.title}
+                        <div class="text-xs font-bold leading-tight mb-1" style="color: var(--text-primary);">${initiative.title}</div>
+                        
+                        <div class="mt-auto">
+                            <div class="text-xs mb-1" style="color: var(--text-secondary);">${priorityText}</div>
+                            <div class="flex flex-wrap gap-1">
+                                ${initiative.teams.slice(0, 2).map(teamName => {
+                                    const team = boardData.teams[teamName];
+                                    if (!team) return '';
+                                    const overallHealth = getTeamOverallHealth(team);
+                                    const healthColor = overallHealth === 'critical' ? '#ef4444' : 
+                                                      overallHealth === 'high-risk' ? '#f59e0b' : 
+                                                      '#10b981';
+                                    return `<span class="text-xs px-1 py-0.5 rounded" style="background: ${healthColor}20; color: ${healthColor}; font-weight: 600;">${teamName.split(' ')[0]}</span>`;
+                                }).join('')}
+                                ${initiative.teams.length > 2 ? `<span class="text-xs" style="color: var(--text-tertiary);">+${initiative.teams.length - 2}</span>` : ''}
                             </div>
                         </div>
-                        
-                        <!-- Priority text -->
-                        <div class="text-xs opacity-90 mb-2" style="font-weight: 500;">
-                            Priority: ${priorityText}
-                        </div>
-                        
-                        <!-- Type badge (styled like pipeline items) -->
-                        <div class="flex justify-start">
-                            <span class="bento-type-badge bento-type-${initiative.type}">
-                                ${initiative.type.toUpperCase()}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            `;
+                    </div>`;
         }).join('') + 
-    '</div>';
+        '</div>';
+}
+
+// New click handler that ensures we find the right initiative
+function handleAtRiskInitiativeClick(initiativeId) {
+    console.log('🔍 Looking for initiative ID:', initiativeId);
     
-    // Apply risk colors after DOM is created
-    setTimeout(() => {
-        document.querySelectorAll('.at-risk-card-item').forEach(card => {
-            const riskColor = card.dataset.riskColor;
-            if (riskColor) {
-                card.style.setProperty('border', `2px solid ${riskColor}`, 'important');
-                card.style.setProperty('border-left', `6px solid ${riskColor}`, 'important');
-                card.style.setProperty('box-shadow', `0 8px 25px ${riskColor}33, var(--shadow-lg)`, 'important');
-            }
-        });
-    }, 10);
+    // Search in initiatives first (main board)
+    let initiative = boardData.initiatives.find(init => init.id === initiativeId);
+    
+    // If not found, search in bullpen
+    if (!initiative) {
+        initiative = boardData.bullpen.find(init => init && init.id === initiativeId);
+    }
+    
+    // If still not found, search recently completed
+    if (!initiative) {
+        initiative = boardData.recentlyCompleted.find(init => init.id === initiativeId);
+    }
+    
+    console.log('✅ Found initiative:', initiative ? initiative.title : 'NOT FOUND');
+    
+    if (initiative) {
+        // Show the specialized at-risk analysis modal
+        showAtRiskAnalysisModal(initiative);
+    } else {
+        console.error('❌ Initiative not found with ID:', initiativeId);
+        // Fallback: show a generic error or at-risk overview
+        showAtRiskOverviewModal();
+    }
 }
 
 // Simplified risk calculation for cards (doesn't need full analysis object)
@@ -4109,22 +4158,41 @@ function getTeamHealthCounts() {
     };
 }
 
-// Updated function to check for at-risk teams in initiatives
 function getTopAtRiskInitiatives() {
-    return boardData.initiatives
+    console.log('🔍 Analyzing at-risk initiatives...');
+    
+    // Get all active initiatives (not bullpen)
+    const activeInitiatives = boardData.initiatives.filter(init => init.priority !== 'bullpen');
+    
+    console.log('📊 Active initiatives to analyze:', activeInitiatives.length);
+    
+    const atRiskInitiatives = activeInitiatives
         .filter(init => {
-            if (init.priority === "bullpen") return false;
+            // Only consider high priority initiatives (rows 1-5)
             const row = getRowColFromSlot(init.priority).row;
-            return row <= 5 && init.teams.some(teamName => {
+            const isHighPriority = row <= 5;
+            
+            if (!isHighPriority) return false;
+            
+            // Check if any teams are at risk
+            const hasAtRiskTeam = init.teams.some(teamName => {
                 const team = boardData.teams[teamName];
                 if (!team) return false;
                 
-                // Check if team is High Risk or Critical based on overall health
                 const overallHealth = getTeamOverallHealth(team);
                 return overallHealth === 'high-risk' || overallHealth === 'critical';
             });
+            
+            console.log(`- ${init.title}: High Priority? ${isHighPriority}, At-Risk Teams? ${hasAtRiskTeam}`);
+            return hasAtRiskTeam;
         })
-        .sort((a, b) => a.priority - b.priority);
+        .sort((a, b) => {
+            // Sort by priority (lower number = higher priority)
+            return a.priority - b.priority;
+        });
+    
+    console.log('🚨 Found', atRiskInitiatives.length, 'at-risk initiatives');
+    return atRiskInitiatives;
 }
 
 function calculateResourceAlerts() {
