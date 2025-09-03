@@ -401,7 +401,7 @@ function showAtRiskAnalysisModal(initiative) {
     modal.classList.add('show');
 }
 
-// Tab switching functionality for At-Risk modal
+// Tab switching functionality for At-Risk modal  
 function switchAtRiskTab(tabName) {
     // Remove active state from all tabs
     document.querySelectorAll('.at-risk-tab').forEach(tab => {
