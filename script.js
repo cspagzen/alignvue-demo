@@ -2,6 +2,62 @@
         let selectedInitiativeId = null;
         let draggedInitiative = null;
 
+// Completion data caching
+const COMPLETION_CACHE_KEY = 'jira_completion_cache';
+const CACHE_EXPIRY_KEY = 'jira_completion_cache_expiry';
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 30 minutes
+
+function cacheCompletionData(initiatives) {
+    const cacheData = initiatives.map(init => ({
+        id: init.id,
+        jiraKey: init.jira?.key,
+        progress: init.progress,
+        stories: init.jira?.stories,
+        completed: init.jira?.completed,
+        inProgress: init.jira?.inProgress,
+        blocked: init.jira?.blocked,
+        hasLiveData: init.jira?.hasLiveData
+    }));
+    
+    localStorage.setItem(COMPLETION_CACHE_KEY, JSON.stringify(cacheData));
+    localStorage.setItem(CACHE_EXPIRY_KEY, Date.now() + CACHE_DURATION);
+    console.log(`Cached completion data for ${cacheData.length} initiatives`);
+}
+
+function loadCachedCompletionData() {
+    const expiry = localStorage.getItem(CACHE_EXPIRY_KEY);
+    if (!expiry || Date.now() > parseInt(expiry)) {
+        return null;
+    }
+    
+    const cached = localStorage.getItem(COMPLETION_CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
+}
+
+function applyCachedCompletion(initiatives) {
+    const cachedData = loadCachedCompletionData();
+    if (!cachedData) return false;
+    
+    let appliedCount = 0;
+    cachedData.forEach(cached => {
+        if (!cached.jiraKey) return;
+        
+        const initiative = initiatives.find(init => init.jira?.key === cached.jiraKey);
+        if (initiative) {
+            initiative.progress = cached.progress;
+            initiative.jira.stories = cached.stories;
+            initiative.jira.completed = cached.completed;
+            initiative.jira.inProgress = cached.inProgress;
+            initiative.jira.blocked = cached.blocked;
+            initiative.jira.hasLiveData = cached.hasLiveData;
+            appliedCount++;
+        }
+    });
+    
+    console.log(`Applied cached completion data to ${appliedCount} initiatives`);
+    return appliedCount > 0;
+}
+
         function getRowGradientColor(row) {
             const colors = [
                 'linear-gradient(135deg, #10b981, #059669)',
@@ -461,7 +517,7 @@ function showAtRiskAnalysisModal(initiative) {
                                                     <span>${fullTeamData.support === 'at-risk' ? '⚠️' : '✅'}</span>
                                                 </div>
                                                 <div class="health-indicator ${fullTeamData.teamwork === 'at-risk' ? 'at-risk' : 'healthy'}">
-                                                    <span>Team Cohesion</span>
+                                                    <span>Teamwork</span>
                                                     <span>${fullTeamData.teamwork === 'at-risk' ? '⚠️' : '✅'}</span>
                                                 </div>
                                                 <div class="health-indicator ${fullTeamData.autonomy === 'at-risk' ? 'at-risk' : 'healthy'}">
@@ -7899,8 +7955,14 @@ function updateBoardWithLiveData(newData) {
     // Update the global boardData object
     boardData.initiatives = newData.initiatives || [];
     boardData.bullpen = newData.bullpen || [];
-    boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data!
+    boardData.okrs = newData.okrs || { issues: [] };
     boardData.recentlyCompleted = newData.recentlyCompleted || [];
+    
+    // NEW: Cache the live completion data for next page load
+    const initiativesWithLiveData = boardData.initiatives.filter(init => init.jira?.hasLiveData);
+    if (initiativesWithLiveData.length > 0) {
+        cacheCompletionData(boardData.initiatives);
+    }
     
     
     // Keep existing teams data (don't replace)
@@ -8137,6 +8199,10 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
 
     const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
     const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
+    
+    applyCachedCompletion(activeInitiatives);
+    
+    console.log(`Active on board: ${activeInitiatives.length}, Pipeline: ${pipelineInitiatives.length}`);
     
     // Log completion statistics
     const liveDataCount = activeInitiatives.filter(i => i.jira.hasLiveData).length;
