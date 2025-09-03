@@ -8384,21 +8384,15 @@ async function syncWithJira() {
     try {
         showSyncIndicator('syncing');
         
-        // Get current data from Jira (this includes the paginated child fetching)
+        // Get current data from Jira
         const newData = await fetchJiraData();
         
         // Check if data actually changed
         if (hasDataChanged(newData)) {
-            // Keep indicator active during UI updates
-            console.log('Data changed, updating UI with live completion data...');
-            
-            // Update the board data AND wait for UI to complete
-            await updateBoardWithLiveDataComplete(newData);
-            
+            updateBoardWithLiveData(newData);
             syncState.lastSyncData = newData;
             syncState.lastSyncTime = Date.now();
             
-            // Only hide indicator after UI is fully updated
             showSyncIndicator('success');
         } else {
             showSyncIndicator('no-change');
@@ -8412,7 +8406,6 @@ async function syncWithJira() {
         showSyncIndicator('error');
     }
 }
-
 
 // Detect if data has actually changed
 function hasDataChanged(newData) {
