@@ -2671,63 +2671,158 @@ function updateHealthCard() {
     };
 }
       
+// =============================================================================
+// AT-RISK CARDS: ADD JIRA KEY DISPLAY TO VERIFY LIVE DATA
+// This modifies the updateAtRiskCard function to show Jira keys
+// =============================================================================
+
 function updateAtRiskCard() {
     const content = document.getElementById('at-risk-content');
+    
+    // Get top at-risk initiatives using live Jira data
     const atRiskInitiatives = getTopAtRiskInitiatives().slice(0, 3);
     
+    if (atRiskInitiatives.length === 0) {
+        // No at-risk initiatives found
+        content.innerHTML = `
+            <div class="h-full flex items-center justify-center text-center">
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3">
+                        <path d="M22 11v1a10 10 0 1 1-9-10"/>
+                        <path d="m9 11 3 3L22 4"/>
+                    </svg>
+                    <div class="text-sm font-medium" style="color: var(--text-primary);">No At-Risk Initiatives</div>
+                    <div class="text-xs" style="color: var(--text-secondary);">All top initiatives are on track</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Render the at-risk initiative cards with Jira keys
     content.innerHTML = '<div class="flex gap-3 h-full">' + 
         atRiskInitiatives.map(initiative => {
             // Get the dynamic priority number from the initiative's position
-            const priorityText = initiative.priority === 'bullpen' ? 'Bullpen' : initiative.priority;
+            const priorityText = initiative.priority === 'bullpen' ? 
+                '•' : 
+                initiative.priority.toString();
             
-            // Calculate risk level and get colors (simplified version for cards)
+            // Calculate risk score using live team data
             const riskScore = calculateSimpleRiskScore(initiative);
             const riskColor = getRiskLevelColor(riskScore);
+            const priorityColor = getPriorityNumberColor(initiative.type);
+            
+            // Get team info for display
+            const teamCount = initiative.teams ? initiative.teams.length : 0;
+            const atRiskTeams = initiative.teams ? initiative.teams.filter(teamName => {
+                const team = boardData.teams[teamName];
+                if (!team) return false;
+                const overallHealth = getTeamOverallHealth(team);
+                return overallHealth === 'high-risk' || overallHealth === 'critical';
+            }).length : 0;
+            
+            // Get Jira key for verification - THIS IS THE KEY ADDITION
+            const jiraKey = initiative.jira?.key || 'NO-JIRA-KEY';
             
             return `
-                <div class="flex-1 min-w-0">
-                    <div class="initiative-card-mini ${getTypeColor(initiative.type)} text-white h-full cursor-pointer at-risk-card-item"
-                         onclick="handleAtRiskCardClick(${initiative.id})"
-                         data-initiative-id="${initiative.id}"
-                         data-risk-color="${riskColor}"
-                         style="padding: 0.75rem; border-radius: 8px; position: relative; min-height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
-                        
-                        <!-- Header with title only -->
-                        <div class="mb-2">
-                            <div class="text-xs font-bold leading-tight" style="line-height: 1.2; max-height: 3em; overflow: hidden;">
-                                ${initiative.title}
+                <div class="at-risk-initiative-card cursor-pointer" 
+                     onclick="handleAtRiskCardClick('${initiative.id}')"
+                     style="flex: 1; display: flex; flex-direction: column; padding: 12px; 
+                            background: linear-gradient(135deg, rgba(15, 15, 35, 0.9) 0%, rgba(20, 18, 45, 0.8) 100%); 
+                            border: 1px solid ${riskColor}; border-radius: 8px; 
+                            min-height: 120px; transition: all 0.2s ease;">
+                    
+                    <!-- Header with Priority, Risk Score, and Jira Key -->
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <div class="priority-number" 
+                                 style="background: ${priorityColor}; color: white; 
+                                        width: 20px; height: 20px; border-radius: 4px; 
+                                        display: flex; align-items: center; justify-content: center; 
+                                        font-size: 11px; font-weight: 700;">
+                                ${priorityText}
+                            </div>
+                            <div class="text-xs px-2 py-1 rounded-full" 
+                                 style="background: rgba(255,255,255,0.1); color: var(--text-tertiary);">
+                                ${initiative.type.toUpperCase()}
                             </div>
                         </div>
-                        
-                        <!-- Priority text -->
-                        <div class="text-xs opacity-90 mb-2" style="font-weight: 500;">
-                            Priority: ${priorityText}
+                        <div class="risk-score" 
+                             style="color: ${riskColor}; font-size: 18px; font-weight: 700; line-height: 1;">
+                            ${riskScore}/10
                         </div>
-                        
-                        <!-- Type badge (styled like pipeline items) -->
-                        <div class="flex justify-start">
-                            <span class="bento-type-badge bento-type-${initiative.type}">
-                                ${initiative.type.toUpperCase()}
-                            </span>
+                    </div>
+                    
+                    <!-- Jira Key Badge - PROOF OF LIVE DATA -->
+                    <div class="jira-key-badge mb-2" 
+                         style="align-self: flex-start; background: rgba(59, 130, 246, 0.2); 
+                                color: #3b82f6; font-size: 10px; font-weight: 600; 
+                                padding: 2px 6px; border-radius: 4px; font-family: monospace;">
+                        ${jiraKey}
+                    </div>
+                    
+                    <!-- Initiative Title -->
+                    <div class="initiative-title" 
+                         style="color: var(--text-primary); font-size: 13px; font-weight: 600; 
+                                line-height: 1.3; margin-bottom: 6px; flex: 1;">
+                        ${initiative.title}
+                    </div>
+                    
+                    <!-- Team and Progress Info -->
+                    <div class="initiative-meta" 
+                         style="display: flex; justify-content: space-between; align-items: center; 
+                                padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="color: var(--text-secondary); font-size: 11px;">
+                            ${atRiskTeams}/${teamCount} teams at-risk
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 11px;">
+                            ${initiative.progress || 0}% progress
                         </div>
                     </div>
                 </div>
             `;
-        }).join('') + 
-    '</div>';
+        }).join('') + '</div>';
     
-    // Apply risk colors after DOM is created
+    // Apply visual effects after rendering
     setTimeout(() => {
-        document.querySelectorAll('.at-risk-card-item').forEach(card => {
-            const riskColor = card.dataset.riskColor;
-            if (riskColor) {
-                card.style.setProperty('border', `2px solid ${riskColor}`, 'important');
-                card.style.setProperty('border-left', `6px solid ${riskColor}`, 'important');
-                card.style.setProperty('box-shadow', `0 8px 25px ${riskColor}33, var(--shadow-lg)`, 'important');
-            }
+        const cards = content.querySelectorAll('.at-risk-initiative-card');
+        cards.forEach((card, index) => {
+            const initiative = atRiskInitiatives[index];
+            if (!initiative) return;
+            
+            const riskScore = calculateSimpleRiskScore(initiative);
+            const riskColor = getRiskLevelColor(riskScore);
+            
+            // Add dynamic border and glow effects
+            card.style.setProperty('border', `2px solid ${riskColor}`, 'important');
+            card.style.setProperty('border-left', `6px solid ${riskColor}`, 'important');
+            card.style.setProperty('box-shadow', `0 8px 25px ${riskColor}33, var(--shadow-lg)`, 'important');
+            
+            // Add hover effects
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px) scale(1.02)';
+                card.style.boxShadow = `0 12px 35px ${riskColor}44, var(--shadow-lg)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+                card.style.boxShadow = `0 8px 25px ${riskColor}33, var(--shadow-lg)`;
+            });
         });
     }, 10);
 }
+
+// Console logging for debugging - add this to help verify live data
+console.log('=== AT-RISK DEBUG INFO ===');
+console.log('Current initiatives count:', boardData.initiatives?.length || 0);
+console.log('Sample initiative with Jira data:', boardData.initiatives?.[0]);
+console.log('Top at-risk initiatives:', getTopAtRiskInitiatives().slice(0, 3).map(init => ({
+    id: init.id,
+    title: init.title,
+    jiraKey: init.jira?.key,
+    priority: init.priority,
+    riskScore: calculateSimpleRiskScore(init)
+})));
 
 // Simplified risk calculation for cards (doesn't need full analysis object)
 function calculateSimpleRiskScore(initiative) {
