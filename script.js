@@ -8144,7 +8144,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
 
 // Fetch data from Jira
 async function fetchJiraData() {
-    console.log('Fetching Jira data with optimized batch child queries...');
+    console.log('Fetching Jira data with paginated batch child queries...');
     
     // Get all epics first
     const initiativesResponse = await fetch('/api/jira', {
@@ -8168,58 +8168,84 @@ async function fetchJiraData() {
     const initiatives = await initiativesResponse.json();
     console.log(`Found ${initiatives.issues.length} epics`);
 
-    // Get ALL child issues in a single batch query (this is the key optimization)
+    // Get ALL child issues with proper pagination
     if (initiatives.issues.length > 0) {
         const epicKeys = initiatives.issues.map(epic => epic.key);
-        const parentJQL = `parent IN (${epicKeys.join(',')})`;
+        const parentJQL = `parent IN ("${epicKeys.join('","')}")`;
         
-        console.log('Fetching all child issues in single batch query...');
+        console.log('Fetching all child issues with pagination...');
         
         try {
-            const allChildrenResponse = await fetch('/api/jira', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    endpoint: '/rest/api/3/search',
-                    method: 'POST',
-                    body: {
-                        jql: parentJQL,
-                        fields: ['parent', 'status', 'key'],
-                        maxResults: 2000 // Adjust based on your needs
-                    }
-                })
-            });
+            let allChildIssues = [];
+            let startAt = 0;
+            const maxResults = 100;
+            let hasMoreResults = true;
 
-            if (allChildrenResponse.ok) {
-                const allChildren = await allChildrenResponse.json();
-                console.log(`Fetched ${allChildren.issues.length} child issues in single query`);
-                
-                // Group children by parent epic key
-                const childrenByEpic = {};
-                allChildren.issues.forEach(child => {
-                    const parentKey = child.fields.parent.key;
+            // Paginate through all child issues
+            while (hasMoreResults) {
+                const childrenResponse = await fetch('/api/jira', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        endpoint: '/rest/api/3/search',
+                        method: 'POST',
+                        body: {
+                            jql: parentJQL,
+                            fields: ['parent', 'status', 'key', 'summary'],
+                            startAt: startAt,
+                            maxResults: maxResults
+                        }
+                    })
+                });
+
+                if (childrenResponse.ok) {
+                    const childrenBatch = await childrenResponse.json();
+                    allChildIssues = allChildIssues.concat(childrenBatch.issues);
+                    
+                    console.log(`Fetched batch: ${childrenBatch.issues.length} issues (total so far: ${allChildIssues.length})`);
+                    
+                    // Check if there are more results
+                    hasMoreResults = (startAt + maxResults) < childrenBatch.total;
+                    startAt += maxResults;
+                } else {
+                    console.log('Failed to fetch child issues batch:', childrenResponse.status);
+                    hasMoreResults = false;
+                }
+            }
+
+            console.log(`Fetched ${allChildIssues.length} total child issues`);
+
+            // Group children by parent epic key
+            const childrenByEpic = {};
+            allChildIssues.forEach(child => {
+                const parentKey = child.fields.parent?.key;
+                if (parentKey) {
                     if (!childrenByEpic[parentKey]) {
                         childrenByEpic[parentKey] = [];
                     }
                     childrenByEpic[parentKey].push(child);
-                });
+                }
+            });
 
-                // Assign children to their parent epics
-                initiatives.issues.forEach(epic => {
-                    epic.childIssues = childrenByEpic[epic.key] || [];
+            console.log(`Children grouped for ${Object.keys(childrenByEpic).length} epics`);
+
+            // Assign children to their parent epics
+            initiatives.issues.forEach(epic => {
+                epic.childIssues = childrenByEpic[epic.key] || [];
+                if (epic.childIssues.length > 0) {
                     console.log(`${epic.key}: ${epic.childIssues.length} child issues`);
-                });
-            }
+                }
+            });
+
         } catch (error) {
             console.log('Error fetching child issues:', error.message);
-            // Fall back to empty children arrays
             initiatives.issues.forEach(epic => {
                 epic.childIssues = [];
             });
         }
     }
 
-    // Continue with OKRs and other data...
+    // Continue with OKRs and completed initiatives...
     const okrsResponse = await fetch('/api/jira', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
