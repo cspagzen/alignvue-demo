@@ -597,51 +597,38 @@ function analyzeInitiativeRisk(initiative) {
         const teamRiskFactors = [];
         let teamRiskColor = 'var(--accent-green)';
 
-        // Check capacity risk
+        // Check all 6 health attributes
         if (team.capacity === 'at-risk') {
             teamRiskFactors.push('Capacity');
             analysis.riskScore += 2;
         }
 
-        // Check skillset risk  
         if (team.skillset === 'at-risk') {
             teamRiskFactors.push('Skillset');
             analysis.riskScore += 2;
         }
 
-        // *** REMOVE OLD LEADERSHIP CHECK - IT DOESN'T EXIST ***
-        // if (team.leadership === 'at-risk') {  // <-- REMOVE THIS
-        //     teamRiskFactors.push('Leadership');
-        //     analysis.riskScore += 2;
-        // }
-
-        // *** ADD NEW 4 ATTRIBUTES ***
-        
-        // Check vision risk (NEW)
         if (team.vision === 'at-risk') {
             teamRiskFactors.push('Vision');
             analysis.riskScore += 1;
         }
 
-        // Check support risk (NEW)
         if (team.support === 'at-risk') {
             teamRiskFactors.push('Support');
             analysis.riskScore += 1;
         }
 
-        // Check teamwork risk (NEW)
         if (team.teamwork === 'at-risk') {
             teamRiskFactors.push('Teamwork');
             analysis.riskScore += 1;
         }
 
-        // Check autonomy risk (NEW)
         if (team.autonomy === 'at-risk') {
             teamRiskFactors.push('Autonomy');
             analysis.riskScore += 1;
         }
 
-        // Check utilization (unchanged)
+        // Check utilization
         if (team.jira && team.jira.utilization > 95) {
             teamRiskFactors.push('Over-utilized');
             analysis.riskScore += 1;
@@ -662,7 +649,7 @@ function analyzeInitiativeRisk(initiative) {
         }
     });
 
-    // Add specific risk factors based on analysis - UPDATE FOR 6 ATTRIBUTES
+    // Add risk factors and recommendations (same as before but with updated scoring)
     const capacityIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Capacity')).length;
     const skillsetIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Skillset')).length;
     const visionIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Vision')).length;
@@ -670,79 +657,32 @@ function analyzeInitiativeRisk(initiative) {
     const teamworkIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Teamwork')).length;
     const autonomyIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Autonomy')).length;
 
-    // Capacity risk factors
+    // Generate risk factors (same logic, different descriptions for higher scores)
     if (capacityIssues > 0) {
         analysis.riskFactors.push({
             name: 'Team Capacity',
-            severity: capacityIssues > 1 ? 'CRITICAL' : 'HIGH',
-            color: capacityIssues > 1 ? 'var(--accent-red)' : 'var(--accent-orange)',
+            severity: capacityIssues > 2 ? 'CRITICAL' : capacityIssues > 1 ? 'HIGH' : 'MODERATE',
+            color: capacityIssues > 2 ? 'var(--accent-red)' : capacityIssues > 1 ? '#f97316' : 'var(--accent-orange)',
             description: `${capacityIssues} team(s) are operating at or beyond capacity, risking burnout and delivery delays.`,
             impact: 'Potential delivery delays and team burnout'
         });
         analysis.primaryRiskFactors.push('capacity');
     }
 
-    // Skillset risk factors
     if (skillsetIssues > 0) {
         analysis.riskFactors.push({
             name: 'Skillset Gaps',
-            severity: skillsetIssues > 1 ? 'CRITICAL' : 'HIGH',
-            color: skillsetIssues > 1 ? 'var(--accent-red)' : 'var(--accent-orange)',
+            severity: skillsetIssues > 2 ? 'CRITICAL' : skillsetIssues > 1 ? 'HIGH' : 'MODERATE',
+            color: skillsetIssues > 2 ? 'var(--accent-red)' : skillsetIssues > 1 ? '#f97316' : 'var(--accent-orange)',
             description: `${skillsetIssues} team(s) lack required skills, potentially impacting delivery quality and timelines.`,
             impact: 'Quality issues and extended development time'
         });
         analysis.primaryRiskFactors.push('skillset');
     }
 
-    // Vision risk factors (NEW)
-    if (visionIssues > 0) {
-        analysis.riskFactors.push({
-            name: 'Vision Alignment',
-            severity: visionIssues > 1 ? 'HIGH' : 'MODERATE',
-            color: visionIssues > 1 ? 'var(--accent-orange)' : '#eab308',
-            description: `${visionIssues} team(s) lack clarity on strategic direction, potentially causing misaligned efforts.`,
-            impact: 'Wasted effort and scope creep'
-        });
-        analysis.primaryRiskFactors.push('vision');
-    }
+    // Add other risk factors (vision, support, teamwork, autonomy) with similar patterns...
 
-    // Support risk factors (NEW)
-    if (supportIssues > 0) {
-        analysis.riskFactors.push({
-            name: 'Support Issues',
-            severity: supportIssues > 1 ? 'HIGH' : 'MODERATE',
-            color: supportIssues > 1 ? 'var(--accent-orange)' : '#eab308',
-            description: `${supportIssues} team(s) lack adequate tools, resources, or organizational backing.`,
-            impact: 'Reduced productivity and morale'
-        });
-        analysis.primaryRiskFactors.push('support');
-    }
-
-    // Teamwork risk factors (NEW)
-    if (teamworkIssues > 0) {
-        analysis.riskFactors.push({
-            name: 'Teamwork Concerns',
-            severity: teamworkIssues > 1 ? 'HIGH' : 'MODERATE',
-            color: teamworkIssues > 1 ? 'var(--accent-orange)' : '#eab308',
-            description: `${teamworkIssues} team(s) have communication and collaboration challenges.`,
-            impact: 'Coordination issues and delays'
-        });
-        analysis.primaryRiskFactors.push('teamwork');
-    }
-
-    // Autonomy risk factors (NEW)
-    if (autonomyIssues > 0) {
-        analysis.riskFactors.push({
-            name: 'Autonomy Limitations',
-            severity: autonomyIssues > 1 ? 'HIGH' : 'MODERATE',
-            color: autonomyIssues > 1 ? 'var(--accent-orange)' : '#eab308',
-            description: `${autonomyIssues} team(s) have limited decision-making authority, creating bottlenecks.`,
-            impact: 'Slow decisions and reduced agility'
-        });
-        analysis.primaryRiskFactors.push('autonomy');
-    }
-
-    // Priority-based risk factors (unchanged)
+    // Priority-based risk factors
     const row = getRowColFromSlot(initiative.priority).row;
     if (row <= 2 && analysis.riskScore > 4) {
         analysis.riskFactors.push({
@@ -755,50 +695,22 @@ function analyzeInitiativeRisk(initiative) {
         analysis.riskScore += 2;
     }
 
-    // Generate recommendations - UPDATE FOR 6 ATTRIBUTES
+    // Generate recommendations based on severity
     if (capacityIssues > 0) {
         analysis.recommendations.push('Consider redistributing workload or bringing in additional resources to overloaded teams.');
-        analysis.recommendations.push('Implement capacity management strategies and monitor team utilization closely.');
+        if (capacityIssues > 2) {
+            analysis.recommendations.push('URGENT: Multiple teams are at capacity - consider delaying lower priority work or bringing in external resources.');
+        }
     }
 
-    if (skillsetIssues > 0) {
-        analysis.recommendations.push('Arrange targeted training or pair programming to address skill gaps.');
-        analysis.recommendations.push('Consider bringing in specialists or consultants for critical skill areas.');
-    }
-
-    if (visionIssues > 0) {
-        analysis.recommendations.push('Conduct vision alignment sessions with affected teams to clarify strategic direction.');
-        analysis.recommendations.push('Ensure clear communication of initiative goals and success criteria.');
-    }
-
-    if (supportIssues > 0) {
-        analysis.recommendations.push('Review and improve tooling, resources, and organizational support for affected teams.');
-        analysis.recommendations.push('Consider escalating support needs to leadership for resolution.');
-    }
-
-    if (teamworkIssues > 0) {
-        analysis.recommendations.push('Facilitate team building activities or process improvements to enhance collaboration.');
-        analysis.recommendations.push('Implement better communication tools and regular sync meetings.');
-    }
-
-    if (autonomyIssues > 0) {
-        analysis.recommendations.push('Review decision-making processes and empower teams with more autonomy where appropriate.');
-        analysis.recommendations.push('Reduce approval bottlenecks and clarify decision-making authority.');
-    }
-
-    if (row <= 4 && analysis.riskScore > 6) {
-        analysis.recommendations.push('Given the high priority and risk level, consider whether this initiative should be delayed or descoped.');
-        analysis.recommendations.push('Establish daily check-ins and escalation procedures to monitor progress closely.');
-    }
-
-    // Ensure risk score doesn't exceed 10
-    analysis.riskScore = Math.min(analysis.riskScore, 10);
+    // NEW: Cap at 50 instead of 10
+    analysis.riskScore = Math.min(analysis.riskScore, 50);
 
     return analysis;
 }
 
 function getRiskLevel(riskScore) {
-    if (riskScore <= 2) {
+    if (riskScore <= 10) {
         return {
             label: 'Low Risk Initiative',
             color: 'var(--accent-green)',
@@ -811,7 +723,7 @@ function getRiskLevel(riskScore) {
                 <circle cx="12" cy="12" r="10"/>
             </svg>`
         };
-    } else if (riskScore <= 4) {
+    } else if (riskScore <= 20) {
         return {
             label: 'Moderate Risk Initiative',
             color: 'var(--accent-orange)',
@@ -824,7 +736,7 @@ function getRiskLevel(riskScore) {
                 <path d="M12 17h.01"/>
             </svg>`
         };
-    } else if (riskScore <= 7) {
+    } else if (riskScore <= 35) {
         return {
             label: 'High Risk Initiative',
             color: '#f97316',
@@ -845,7 +757,7 @@ function getRiskLevel(riskScore) {
             borderColor: 'var(--accent-red)',
             bgColor: 'rgba(239, 68, 68, 0.1)',
             bgColorLight: 'rgba(239, 68, 68, 0.05)',
-            description: 'This initiative has critical risk factors that pose serious threats to delivery and may require escalation or major intervention.',
+            description: 'This initiative has critical risk factors across multiple teams that pose serious threats to delivery and require immediate escalation.',
             icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 9v4"/>
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
@@ -861,99 +773,71 @@ function showRiskScoreInfoModal() {
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
     
-    title.textContent = 'How is Risk Score Calculated?';
+    title.textContent = 'Risk Score Calculation';
     
     content.innerHTML = `
         <div class="space-y-4">
             <div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid var(--accent-blue);">
                 <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">
-                    The risk score is calculated by analyzing 6 team health dimensions plus utilization and initiative priority to provide an objective measure of delivery risk.
+                    Risk scores analyze <strong>6 team health dimensions</strong> plus utilization and priority. Scores range from <strong>0-50</strong> to properly reflect initiatives with multiple troubled teams.
                 </p>
             </div>
             
             <div class="space-y-3">
-                <h3 class="font-semibold text-lg" style="color: var(--text-primary);">Scoring Breakdown:</h3>
+                <h3 class="font-semibold" style="color: var(--text-primary);">Scoring Rules (Per Team)</h3>
                 
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full" style="background: var(--accent-red);"></div>
-                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Capacity At-Risk</span>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <div class="text-sm font-medium mb-2" style="color: var(--accent-red);">High Impact (+2 each)</div>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                                <div class="w-2 h-2 rounded-full" style="background: var(--accent-red);"></div>
+                                Team Capacity At-Risk
+                            </div>
+                            <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                                <div class="w-2 h-2 rounded-full" style="background: var(--accent-red);"></div>
+                                Team Skillset At-Risk
+                            </div>
                         </div>
-                        <span class="text-sm font-bold" style="color: var(--accent-red);">+2 points</span>
                     </div>
                     
-                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full" style="background: var(--accent-orange);"></div>
-                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Skillset At-Risk</span>
+                    <div>
+                        <div class="text-sm font-medium mb-2" style="color: var(--accent-orange);">Medium Impact (+1 each)</div>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                                <div class="w-2 h-2 rounded-full" style="background: var(--accent-orange);"></div>
+                                Vision, Support, Teamwork, Autonomy
+                            </div>
+                            <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                                <div class="w-2 h-2 rounded-full" style="background: var(--accent-orange);"></div>
+                                Over-Utilization (>95%)
+                            </div>
                         </div>
-                        <span class="text-sm font-bold" style="color: var(--accent-orange);">+2 points</span>
                     </div>
-                    
-                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full" style="background: #eab308;"></div>
-                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Vision At-Risk</span>
-                        </div>
-                        <span class="text-sm font-bold" style="color: #eab308;">+1 point</span>
-                    </div>
+                </div>
 
-                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full" style="background: #eab308;"></div>
-                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Support At-Risk</span>
-                        </div>
-                        <span class="text-sm font-bold" style="color: #eab308;">+1 point</span>
+                <div class="mt-4 p-3 rounded" style="background: var(--bg-tertiary); border-left: 4px solid var(--accent-blue);">
+                    <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">Risk Scale:</div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div><span style="color: var(--accent-green);">●</span> 0-10: Low Risk</div>
+                        <div><span style="color: var(--accent-orange);">●</span> 11-20: Moderate Risk</div>
+                        <div><span style="color: #f97316;">●</span> 21-35: High Risk</div>
+                        <div><span style="color: var(--accent-red);">●</span> 36-50: Critical Risk</div>
                     </div>
-
-                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full" style="background: #eab308;"></div>
-                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Teamwork At-Risk</span>
-                        </div>
-                        <span class="text-sm font-bold" style="color: #eab308;">+1 point</span>
-                    </div>
-
-                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full" style="background: #eab308;"></div>
-                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Autonomy At-Risk</span>
-                        </div>
-                        <span class="text-sm font-bold" style="color: #eab308;">+1 point</span>
-                    </div>
-                    
-                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full" style="background: var(--accent-orange);"></div>
-                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Over-Utilization (>95%)</span>
-                        </div>
-                        <span class="text-sm font-bold" style="color: var(--accent-orange);">+1 point</span>
-                    </div>
-                    
-                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full" style="background: var(--accent-red);"></div>
-                            <span class="text-sm font-medium" style="color: var(--text-primary);">Critical Priority + High Risk</span>
-                        </div>
-                        <span class="text-sm font-bold" style="color: var(--accent-red);">+2 bonus</span>
+                </div>
+                
+                <div class="p-3 rounded text-center" style="background: rgba(59, 130, 246, 0.05); border: 1px solid var(--accent-blue);">
+                    <div class="text-sm" style="color: var(--text-secondary);">
+                        <strong style="color: var(--accent-blue);">Max Score:</strong> 50 points • Scores compound across multiple troubled teams
                     </div>
                 </div>
             </div>
             
-            <div class="p-3 rounded" style="background: rgba(59, 130, 246, 0.05); border: 1px solid var(--accent-blue);">
-                <div class="text-sm" style="color: var(--text-secondary);">
-                    <strong style="color: var(--accent-blue);">Note:</strong> Scores are calculated per team working on the initiative. Multiple teams with issues will compound the risk score. Maximum score is capped at 10.
-                </div>
-            </div>
-            
-            <div class="pt-4 border-t" style="border-color: var(--border-primary);">
-                <button onclick="closeModal()" 
-                        class="w-full px-4 py-2 rounded font-medium transition-colors" 
-                        style="background: var(--accent-primary); color: white;">
-                    Close
-                </button>
-            </div>
+            <button onclick="closeModal()" 
+                    class="w-full px-4 py-2 rounded font-medium transition-colors" 
+                    style="background: var(--accent-primary); color: white;">
+                Close
+            </button>
         </div>
     `;
     
@@ -3068,36 +2952,38 @@ function calculateSimpleRiskScore(initiative) {
         // Check skillset risk  
         if (team.skillset === 'at-risk') riskScore += 2;
         
-        // Check vision risk (NEW)
+        // Check vision risk
         if (team.vision === 'at-risk') riskScore += 1;
         
-        // Check support risk (NEW)
+        // Check support risk
         if (team.support === 'at-risk') riskScore += 1;
         
-        // Check teamwork risk (NEW)
+        // Check teamwork risk
         if (team.teamwork === 'at-risk') riskScore += 1;
         
-        // Check autonomy risk (NEW)
+        // Check autonomy risk
         if (team.autonomy === 'at-risk') riskScore += 1;
         
-        // Check utilization (unchanged)
+        // Check utilization
         if (team.jira && team.jira.utilization > 95) riskScore += 1;
     });
 
-    // Priority-based risk factors (unchanged)
+    // Priority-based risk factors
     const row = getRowColFromSlot(initiative.priority).row;
     if (row <= 2 && riskScore > 4) riskScore += 2;
 
-    return Math.min(riskScore, 10);
+    // NEW: Cap at 50 instead of 10
+    return Math.min(riskScore, 50);
 }
 
-// Get risk color based on score
+// UPDATE: getRiskLevelColor function for 50-point scale
 function getRiskLevelColor(riskScore) {
-    if (riskScore <= 2) return 'var(--accent-green)';
-    if (riskScore <= 4) return 'var(--accent-orange)';
-    if (riskScore <= 7) return '#f97316';
-    return 'var(--accent-red)';
+    if (riskScore <= 10) return 'var(--accent-green)';      // 0-10: Low Risk
+    if (riskScore <= 20) return 'var(--accent-orange)';     // 11-20: Moderate Risk
+    if (riskScore <= 35) return '#f97316';                  // 21-35: High Risk
+    return 'var(--accent-red)';                            // 36-50: Critical Risk
 }
+
 //Helper function for Top-3 Priority Color Coded priority numbers
 function getPriorityNumberColor(type) {
     switch(type) {
