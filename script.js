@@ -8370,15 +8370,7 @@ function addManualSyncButton() {
     syncButton.addEventListener('mouseenter', () => syncButton.style.opacity = '1');
     syncButton.addEventListener('mouseleave', () => syncButton.style.opacity = '0.7');
     syncButton.addEventListener('click', () => {
-        console.log('Manual sync triggered');
-        syncWithJira();
-    });
-    
-    document.body.appendChild(syncButton);
-}
-
-// Enhanced sync function with change detection
-async function syncWithJira() {
+  async function syncWithJira() {
     if (syncState.isPaused) return;
     
     try {
@@ -8389,7 +8381,12 @@ async function syncWithJira() {
         
         // Check if data actually changed
         if (hasDataChanged(newData)) {
+            // Use your existing function
             updateBoardWithLiveData(newData);
+            
+            // Add a delay to ensure UI updates complete before hiding indicator
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             syncState.lastSyncData = newData;
             syncState.lastSyncTime = Date.now();
             
@@ -8405,7 +8402,49 @@ async function syncWithJira() {
         console.error('Smart sync failed:', error);
         showSyncIndicator('error');
     }
+}      console.log('Manual sync triggered');
+        syncWithJira();
+    });
+    
+    document.body.appendChild(syncButton);
 }
+
+// Enhanced sync function with change detection
+async function syncWithJira() {
+    if (syncState.isPaused) return;
+    
+    try {
+        showSyncIndicator('syncing');
+        
+        // Get current data from Jira (this includes the paginated child fetching)
+        const newData = await fetchJiraData();
+        
+        // Check if data actually changed
+        if (hasDataChanged(newData)) {
+            // Keep indicator active during UI updates
+            console.log('Data changed, updating UI with live completion data...');
+            
+            // Update the board data AND wait for UI to complete
+            await updateBoardWithLiveDataComplete(newData);
+            
+            syncState.lastSyncData = newData;
+            syncState.lastSyncTime = Date.now();
+            
+            // Only hide indicator after UI is fully updated
+            showSyncIndicator('success');
+        } else {
+            showSyncIndicator('no-change');
+        }
+        
+        // Process any pending updates to Jira
+        await processPendingUpdates();
+        
+    } catch (error) {
+        console.error('Smart sync failed:', error);
+        showSyncIndicator('error');
+    }
+}
+
 
 // Detect if data has actually changed
 function hasDataChanged(newData) {
