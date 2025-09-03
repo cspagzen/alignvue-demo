@@ -3641,21 +3641,15 @@ function debugCompletedData() {
 
 
 
-// Updated updateValidationCard function to stack cards vertically
 function updateValidationCard() {
     const content = document.getElementById('validation-pipeline-content');
     
-    // Get all initiatives (active + pipeline) for comprehensive validation tracking
-    const allInitiatives = [...(boardData.initiatives || []), ...(boardData.bullpen || [])];
-    
-    // Count totals for the main numbers - focus on active initiatives primarily
+    // Count totals for the main numbers - ONLY active initiatives
     const activeInitiatives = boardData.initiatives || [];
     const totalInValidation = activeInitiatives.filter(init => init.validation === 'in-validation').length;
     const totalNotValidated = activeInitiatives.filter(init => init.validation === 'not-validated').length;
     
-    // Also count pipeline items for context
-    const pipelineInValidation = (boardData.bullpen || []).filter(init => init.validation === 'in-validation').length;
-    const pipelineNotValidated = (boardData.bullpen || []).filter(init => init.validation === 'not-validated').length;
+    // REMOVED: Pipeline counting completely
     
     content.innerHTML = `
     <div class="h-full flex flex-col items-center justify-center gap-3">
@@ -3663,14 +3657,12 @@ function updateValidationCard() {
         <div class="validation-metric-card cursor-pointer hover:scale-105 transition-all duration-200" onclick="showInValidationModal()">
             <div class="kpi-current-value" style="color: #f59e0b;">${totalInValidation}</div>
             <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Active Initiatives<br>In Validation</div>
-            ${pipelineInValidation > 0 ? `<div class="text-xs opacity-75" style="color: var(--text-tertiary);">+${pipelineInValidation} pipeline</div>` : ''}
         </div>
         
         <!-- Not Validated - Bottom -->
         <div class="validation-metric-card cursor-pointer hover:scale-105 transition-all duration-200" onclick="showNotValidatedModal()">
             <div class="kpi-current-value" style="color: #ef4444;">${totalNotValidated}</div>
             <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Active Initiatives<br>Not Validated</div>
-            ${pipelineNotValidated > 0 ? `<div class="text-xs opacity-75" style="color: var(--text-tertiary);">+${pipelineNotValidated} pipeline</div>` : ''}
         </div>
     </div>
     `;
@@ -3725,20 +3717,11 @@ function showInValidationModal() {
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
     
-    // Get all initiatives in validation (active + pipeline)
+    // ONLY get active initiatives in validation
     const activeInValidation = (boardData.initiatives || []).filter(init => init.validation === 'in-validation');
-    const pipelineInValidation = (boardData.bullpen || []).filter(init => init.validation === 'in-validation');
-    const allInValidation = [...activeInValidation, ...pipelineInValidation];
     
-    // Sort by priority (active initiatives first, then pipeline)
-    const sortedInitiatives = allInValidation.sort((a, b) => {
-        if (a.priority === 'pipeline' && b.priority !== 'pipeline') return 1;
-        if (b.priority === 'pipeline' && a.priority !== 'pipeline') return -1;
-        if (a.priority === 'pipeline' && b.priority === 'pipeline') {
-            return a.title.localeCompare(b.title);
-        }
-        return a.priority - b.priority;
-    });
+    // Sort by priority
+    const sortedInitiatives = activeInValidation.sort((a, b) => a.priority - b.priority);
     
     const highPriorityInValidation = activeInValidation.filter(init => {
         const row = getRowColFromSlot(init.priority).row;
@@ -3754,49 +3737,38 @@ function showInValidationModal() {
                         '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
                         '<path d="m9.5 14.5 5-5"/>' +
                     '</svg>' +
-                    'Validation Pipeline Overview - ' + allInValidation.length + ' Initiatives In Validation' +
+                    'Validation Pipeline - ' + activeInValidation.length + ' Active Initiatives' +
                 '</h3>' +
-                '<div class="grid grid-cols-2 gap-4 mb-6">' +
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="text-2xl font-bold" style="color: var(--accent-orange);">' + activeInValidation.length + '</div>' +
-                        '<div class="text-sm" style="color: var(--text-secondary);">Active on Board</div>' +
-                    '</div>' +
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="text-2xl font-bold" style="color: var(--text-secondary);">' + pipelineInValidation.length + '</div>' +
-                        '<div class="text-sm" style="color: var(--text-secondary);">In Pipeline</div>' +
-                    '</div>' +
-                '</div>' +
+                // REMOVED: Pipeline vs Active breakdown grid
                 (highPriorityInValidation.length > 0 ? 
-                   '<div class="mb-6 p-3 rounded text-sm" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid var(--accent-orange); color: var(--accent-orange);"><strong>Priority Alert:</strong> ' + highPriorityInValidation.length + ' high-priority initiatives need expedited validation to prevent delivery delays</div>' : 
+                   '<div class="mb-6 p-3 rounded text-sm" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid var(--accent-orange); color: var(--accent-orange);"><strong>High Priority Alert:</strong> ' + highPriorityInValidation.length + ' high-priority initiatives in validation may impact delivery timelines</div>' : 
                    ''
                ) +
-               '<div style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid var(--accent-orange);" class="rounded-lg p-4">' +
-                   '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-orange);">' +
+               '<div style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, rgba(251, 146, 60, 0.04) 100%); border: 1px solid rgba(251, 146, 60, 0.3);" class="rounded-lg p-4">' +
+                   '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: #d97706;">' +
                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
                            '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
                            '<path d="m9.5 14.5 5-5"/>' +
                        '</svg>' +
-                       'Initiatives Currently Being Validated' +
+                       'Active Initiatives In Validation' +
                    '</h4>' +
                    '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
                        sortedInitiatives.map(init => {
-                           const isPipeline = init.priority === 'pipeline';
-                           const isHighPriority = !isPipeline && getRowColFromSlot(init.priority).row <= 4;
+                           const isHighPriority = getRowColFromSlot(init.priority).row <= 4;
                            
                            return `
                                <div class="bento-pipeline-item" 
-                                    onclick="showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(init => init.id === ' + init.id + ')' : 'boardData.initiatives.find(init => init.id === ' + init.id + ')'})"
-                                    style="position: relative; cursor: pointer; ${isPipeline ? 'opacity: 0.7; border-left: 3px solid var(--text-tertiary);' : ''} ${isHighPriority ? 'border-left: 3px solid var(--accent-orange);' : ''}">
-                                   <div class="bento-pipeline-item-header">
-                                       <div class="bento-pipeline-item-title">
-                                           ${init.title}
-                                           <span class="bento-type-badge bento-type-${init.type}">${init.type.toUpperCase()}</span>
-                                           ${isPipeline ? '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-tertiary);">PIPELINE</span>' : ''}
+                                    onclick="showInitiativeModal(boardData.initiatives.find(i => i.id === ${init.id}))"
+                                    style="cursor: pointer;">
+                                   <div class="flex items-center justify-between">
+                                       <div class="flex-1">
+                                           <div class="text-sm font-medium" style="color: var(--text-primary);">${init.title}</div>
+                                           <div class="text-xs" style="color: var(--text-secondary);">Priority ${init.priority} • ${init.type.toUpperCase()}</div>
                                        </div>
                                        <div class="flex items-center gap-2">
                                            ${isHighPriority ? 
                                                '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-orange); color: white;">HIGH PRIORITY</span>' : 
-                                               (isPipeline ? '' : '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>')
+                                               '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>'
                                            }
                                        </div>
                                    </div>
@@ -3811,23 +3783,17 @@ function showInValidationModal() {
    modal.classList.add('show');
 }
 
+// Updated showNotValidatedModal() function - REMOVE pipeline counts and sections
 function showNotValidatedModal() {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
     
+    // ONLY get active not validated initiatives
     const activeNotValidated = (boardData.initiatives || []).filter(init => init.validation === 'not-validated');
-    const pipelineNotValidated = (boardData.bullpen || []).filter(init => init.validation === 'not-validated');
-    const allNotValidated = [...activeNotValidated, ...pipelineNotValidated];
     
-    const sortedInitiatives = allNotValidated.sort((a, b) => {
-        if (a.priority === 'pipeline' && b.priority !== 'pipeline') return 1;
-        if (b.priority === 'pipeline' && a.priority !== 'pipeline') return -1;
-        if (a.priority === 'pipeline' && b.priority === 'pipeline') {
-            return a.title.localeCompare(b.title);
-        }
-        return a.priority - b.priority;
-    });
+    // Sort by priority
+    const sortedInitiatives = activeNotValidated.sort((a, b) => a.priority - b.priority);
     
     const highPriorityNotValidated = activeNotValidated.filter(init => {
         const row = getRowColFromSlot(init.priority).row;
@@ -3843,18 +3809,9 @@ function showNotValidatedModal() {
                         '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
                         '<path d="m9.5 14.5 5-5"/><path d="m9.5 9.5 5 5"/>' +
                     '</svg>' +
-                    'Validation Required - ' + allNotValidated.length + ' Initiatives Need Validation' +
+                    'Validation Required - ' + activeNotValidated.length + ' Active Initiatives' +
                 '</h3>' +
-                '<div class="grid grid-cols-2 gap-4 mb-6">' +
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="text-2xl font-bold" style="color: var(--accent-red);">' + activeNotValidated.length + '</div>' +
-                        '<div class="text-sm" style="color: var(--text-secondary);">Active on Board</div>' +
-                    '</div>' +
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="text-2xl font-bold" style="color: var(--text-secondary);">' + pipelineNotValidated.length + '</div>' +
-                        '<div class="text-sm" style="color: var(--text-secondary);">In Pipeline</div>' +
-                    '</div>' +
-                '</div>' +
+                // REMOVED: Pipeline vs Active breakdown grid
                 (highPriorityNotValidated.length > 0 ? 
                    '<div class="mb-6 p-3 rounded text-sm" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border: 1px solid var(--accent-red); color: var(--accent-red);"><strong>Critical Alert:</strong> ' + highPriorityNotValidated.length + ' high-priority initiatives require immediate validation to prevent roadmap delays</div>' : 
                    ''
@@ -3865,27 +3822,25 @@ function showNotValidatedModal() {
                            '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
                            '<path d="m9.5 14.5 5-5"/><path d="m9.5 9.5 5 5"/>' +
                        '</svg>' +
-                       'Initiatives Requiring Validation' +
+                       'Active Initiatives Requiring Validation' +
                    '</h4>' +
                    '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
                        sortedInitiatives.map(init => {
-                           const isPipeline = init.priority === 'pipeline';
-                           const isHighPriority = !isPipeline && getRowColFromSlot(init.priority).row <= 4;
+                           const isHighPriority = getRowColFromSlot(init.priority).row <= 4;
                            
                            return `
                                <div class="bento-pipeline-item" 
-                                    onclick="showInitiativeModal(${isPipeline ? 'boardData.bullpen.find(init => init.id === ' + init.id + ')' : 'boardData.initiatives.find(init => init.id === ' + init.id + ')'})"
-                                    style="position: relative; cursor: pointer; ${isPipeline ? 'opacity: 0.7; border-left: 3px solid var(--text-tertiary);' : ''} ${isHighPriority ? 'border-left: 3px solid var(--accent-red);' : ''}">
-                                   <div class="bento-pipeline-item-header">
-                                       <div class="bento-pipeline-item-title">
-                                           ${init.title}
-                                           <span class="bento-type-badge bento-type-${init.type}">${init.type.toUpperCase()}</span>
-                                           ${isPipeline ? '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-tertiary);">PIPELINE</span>' : ''}
+                                    onclick="showInitiativeModal(boardData.initiatives.find(i => i.id === ${init.id}))"
+                                    style="cursor: pointer;">
+                                   <div class="flex items-center justify-between">
+                                       <div class="flex-1">
+                                           <div class="text-sm font-medium" style="color: var(--text-primary);">${init.title}</div>
+                                           <div class="text-xs" style="color: var(--text-secondary);">Priority ${init.priority} • ${init.type.toUpperCase()}</div>
                                        </div>
                                        <div class="flex items-center gap-2">
                                            ${isHighPriority ? 
-                                               '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">CRITICAL</span>' : 
-                                               (isPipeline ? '' : '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>')
+                                               '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">HIGH PRIORITY</span>' : 
+                                               '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>'
                                            }
                                        </div>
                                    </div>
@@ -3899,7 +3854,6 @@ function showNotValidatedModal() {
    
    modal.classList.add('show');
 }
-
 function updateMendozaCard() {
     const content = document.getElementById('mendoza-impact-content');
     
