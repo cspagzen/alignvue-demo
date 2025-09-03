@@ -461,7 +461,7 @@ function showAtRiskAnalysisModal(initiative) {
                                                     <span>${fullTeamData.support === 'at-risk' ? '⚠️' : '✅'}</span>
                                                 </div>
                                                 <div class="health-indicator ${fullTeamData.teamwork === 'at-risk' ? 'at-risk' : 'healthy'}">
-                                                    <span>Teamwork</span>
+                                                    <span>Team Cohesion</span>
                                                     <span>${fullTeamData.teamwork === 'at-risk' ? '⚠️' : '✅'}</span>
                                                 </div>
                                                 <div class="health-indicator ${fullTeamData.autonomy === 'at-risk' ? 'at-risk' : 'healthy'}">
