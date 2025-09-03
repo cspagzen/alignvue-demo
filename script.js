@@ -8280,36 +8280,19 @@ async function fetchJiraData() {
     const okrs = await okrsResponse.json();
     
     let completedInitiatives = [];
-    try {
-        const completedResponse = await fetch('/api/jira', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                endpoint: '/rest/api/3/search',
-                method: 'POST',
-                body: {
-                    jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND resolved >= -90d ORDER BY resolved DESC`,
-                    fields: [
-                        "summary", "project", "resolved", "key",
-                        "customfield_10051", "customfield_10124",
-                        "customfield_10059", "customfield_10060", "customfield_10062",
-                        "customfield_10063", "customfield_10064", "customfield_10065", "customfield_10066"
-                    ],
-                    maxResults: 100
-                }
-            })
-        });
+    let transformedCompleted = [];
 
-        if (completedResponse.ok) {
-            const completedData = await completedResponse.json();
-            completedInitiatives = completedData.issues;
-            console.log(`Found ${completedInitiatives.length} completed initiatives`);
-        }
+    try {
+        completedInitiatives = await fetchCompletedInitiativesFromJira();
+        transformedCompleted = transformJiraCompletedInitiatives(completedInitiatives);
+        console.log('Completed Initiatives Found:', transformedCompleted.length);
     } catch (error) {
-        console.log('Could not fetch completed initiatives:', error.message);
+        console.error('Error fetching completed initiatives:', error);
+        transformedCompleted = [];
     }
 
-    return transformJiraData(initiatives, okrs, completedInitiatives);
+    // CHANGE: Pass the completed initiatives instead of empty array
+    return transformJiraData(initiatives, okrs, transformedCompleted);
 }
 
 // Helper function to calculate completion from child issues
