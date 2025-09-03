@@ -3644,24 +3644,20 @@ function debugCompletedData() {
 function updateValidationCard() {
     const content = document.getElementById('validation-pipeline-content');
     
-    // Count totals for the main numbers - ONLY active initiatives
-    const activeInitiatives = boardData.initiatives || [];
-    const totalInValidation = activeInitiatives.filter(init => init.validation === 'in-validation').length;
-    const totalNotValidated = activeInitiatives.filter(init => init.validation === 'not-validated').length;
-    
-    // REMOVED: Pipeline counting completely
+    // Get live validation counts from Jira data
+    const validationCounts = getValidationCounts();
     
     content.innerHTML = `
     <div class="h-full flex flex-col items-center justify-center gap-3">
         <!-- In Validation - Top -->
         <div class="validation-metric-card cursor-pointer hover:scale-105 transition-all duration-200" onclick="showInValidationModal()">
-            <div class="kpi-current-value" style="color: #f59e0b;">${totalInValidation}</div>
+            <div class="kpi-current-value" style="color: #f59e0b;">${validationCounts.active.inValidation}</div>
             <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Active Initiatives<br>In Validation</div>
         </div>
         
         <!-- Not Validated - Bottom -->
         <div class="validation-metric-card cursor-pointer hover:scale-105 transition-all duration-200" onclick="showNotValidatedModal()">
-            <div class="kpi-current-value" style="color: #ef4444;">${totalNotValidated}</div>
+            <div class="kpi-current-value" style="color: #ef4444;">${validationCounts.active.notValidated}</div>
             <div class="text-xs font-medium text-center" style="color: var(--text-secondary);">Active Initiatives<br>Not Validated</div>
         </div>
     </div>
@@ -3702,6 +3698,9 @@ const validationCardStyles = `
 }
 `;
 
+
+
+
 // Function to inject validation card styles if not already present
 function ensureValidationCardStyles() {
     if (!document.getElementById('validation-card-styles')) {
@@ -3712,20 +3711,45 @@ function ensureValidationCardStyles() {
     }
 }
 
+// Helper function to map validation status from Jira to our format
+function mapJiraValidationStatus(jiraValidationValue) {
+    if (!jiraValidationValue) return 'not-validated';
+    
+    // Handle different possible Jira field formats
+    let statusValue = jiraValidationValue;
+    if (typeof jiraValidationValue === 'object' && jiraValidationValue.value) {
+        statusValue = jiraValidationValue.value;
+    }
+    
+    // Map Jira values to our validation states - EXACT matches only
+    switch (statusValue) {
+        case 'validated':
+            return 'validated';
+        case 'in-validation':
+            return 'in-validation';
+        case 'not-validated':
+        default:
+            return 'not-validated';
+    }
+}
+
+// Updated "In Validation" modal with live Jira data
 function showInValidationModal() {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
     
-    // ONLY get active initiatives in validation
+    // Get live data - ONLY active initiatives in validation
     const activeInValidation = (boardData.initiatives || []).filter(init => init.validation === 'in-validation');
+    const pipelineInValidation = (boardData.bullpen || []).filter(init => init.validation === 'in-validation');
     
     // Sort by priority
-    const sortedInitiatives = activeInValidation.sort((a, b) => a.priority - b.priority);
+    const sortedActiveInitiatives = activeInValidation.sort((a, b) => a.priority - b.priority);
+    const sortedPipelineInitiatives = pipelineInValidation.sort((a, b) => a.priority - b.priority);
     
+    // Get high priority initiatives (slots 1-20)
     const highPriorityInValidation = activeInValidation.filter(init => {
-        const row = getRowColFromSlot(init.priority).row;
-        return row <= 4;
+        return typeof init.priority === 'number' && init.priority <= 20;
     });
     
     title.textContent = 'Initiatives In Validation';
@@ -3737,67 +3761,67 @@ function showInValidationModal() {
                         '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
                         '<path d="m9.5 14.5 5-5"/>' +
                     '</svg>' +
-                    'Validation Pipeline - ' + activeInValidation.length + ' Active Initiatives' +
+                    'Validation Pipeline - ' + (activeInValidation.length + pipelineInValidation.length) + ' Total Initiatives' +
                 '</h3>' +
-                // REMOVED: Pipeline vs Active breakdown grid
-                (highPriorityInValidation.length > 0 ? 
-                   '<div class="mb-6 p-3 rounded text-sm" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid var(--accent-orange); color: var(--accent-orange);"><strong>High Priority Alert:</strong> ' + highPriorityInValidation.length + ' high-priority initiatives in validation may impact delivery timelines</div>' : 
-                   ''
-               ) +
-               '<div style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, rgba(251, 146, 60, 0.04) 100%); border: 1px solid rgba(251, 146, 60, 0.3);" class="rounded-lg p-4">' +
-                   '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: #d97706;">' +
-                       '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                           '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
-                           '<path d="m9.5 14.5 5-5"/>' +
-                       '</svg>' +
-                       'Active Initiatives In Validation' +
-                   '</h4>' +
-                   '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
-                       sortedInitiatives.map(init => {
-                           const isHighPriority = getRowColFromSlot(init.priority).row <= 4;
-                           
-                           return `
-                               <div class="bento-pipeline-item" 
-                                    onclick="showInitiativeModal(boardData.initiatives.find(i => i.id === ${init.id}))"
-                                    style="cursor: pointer;">
-                                   <div class="flex items-center justify-between">
-                                       <div class="flex-1">
-                                           <div class="text-sm font-medium" style="color: var(--text-primary);">${init.title}</div>
-                                           <div class="text-xs" style="color: var(--text-secondary);">Priority ${init.priority} • ${init.type.toUpperCase()}</div>
-                                       </div>
-                                       <div class="flex items-center gap-2">
-                                           ${isHighPriority ? 
-                                               '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-orange); color: white;">HIGH PRIORITY</span>' : 
-                                               '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>'
-                                           }
+                
+                // Active initiatives list
+                (activeInValidation.length > 0 ? 
+                    '<div class="mb-4">' +
+                        '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--text-primary);">' +
+                            'Active Initiatives (' + activeInValidation.length + ')' +
+                        '</h4>' +
+                        '<div class="space-y-2">' +
+                            sortedActiveInitiatives.map(init => {
+                                const isHighPriority = typeof init.priority === 'number' && init.priority <= 20;
+                                return `
+                                   <div class="p-3 rounded-lg border cursor-pointer hover:bg-opacity-80 transition-all duration-200" 
+                                        style="background: var(--bg-tertiary); border-color: var(--border-primary);"
+                                        onclick="showInitiativeDetail(${init.id})">
+                                       <div class="flex items-center justify-between">
+                                           <div class="flex-1">
+                                               <div class="flex items-center gap-2 mb-1">
+                                                   <span class="font-medium" style="color: var(--text-primary);">${init.title}</span>
+                                                   <span class="text-xs px-2 py-1 rounded" style="background: var(--accent-${init.type === 'strategic' ? 'blue' : init.type === 'ktlo' ? 'green' : 'purple'}); color: white;">${init.type.toUpperCase()}</span>
+                                               </div>
+                                               <div class="text-sm" style="color: var(--text-secondary);">${init.teams.join(', ')}</div>
+                                               <div class="text-xs mt-1" style="color: var(--text-secondary);">Jira Key: ${init.jira?.key || 'N/A'}</div>
+                                           </div>
+                                           <div class="text-right">
+                                               ${isHighPriority ? 
+                                                   '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-orange); color: white;">HIGH PRIORITY</span>' : 
+                                                   '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>'
+                                               }
+                                           </div>
                                        </div>
                                    </div>
-                               </div>
-                           `;
-                       }).join('') +
-                   '</div>' +
-               '</div>' +
-           '</div>' +
-       '</div>';
+                               `;
+                            }).join('') +
+                        '</div>' +
+                    '</div>' : ''
+                ) +
+            '</div>' +
+        '</div>';
    
-   modal.classList.add('show');
+    modal.classList.add('show');
 }
 
-// Updated showNotValidatedModal() function - REMOVE pipeline counts and sections
+// Updated "Not Validated" modal with live Jira data
 function showNotValidatedModal() {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
     
-    // ONLY get active not validated initiatives
+    // Get live data - ONLY initiatives not validated
     const activeNotValidated = (boardData.initiatives || []).filter(init => init.validation === 'not-validated');
+    const pipelineNotValidated = (boardData.bullpen || []).filter(init => init.validation === 'not-validated');
     
     // Sort by priority
-    const sortedInitiatives = activeNotValidated.sort((a, b) => a.priority - b.priority);
+    const sortedActiveInitiatives = activeNotValidated.sort((a, b) => a.priority - b.priority);
+    const sortedPipelineInitiatives = pipelineNotValidated.sort((a, b) => a.priority - b.priority);
     
+    // Get high priority initiatives (slots 1-20)
     const highPriorityNotValidated = activeNotValidated.filter(init => {
-        const row = getRowColFromSlot(init.priority).row;
-        return row <= 4;
+        return typeof init.priority === 'number' && init.priority <= 20;
     });
     
     title.textContent = 'Not Validated Initiatives';
@@ -3809,51 +3833,50 @@ function showNotValidatedModal() {
                         '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
                         '<path d="m9.5 14.5 5-5"/><path d="m9.5 9.5 5 5"/>' +
                     '</svg>' +
-                    'Validation Required - ' + activeNotValidated.length + ' Active Initiatives' +
+                    'Validation Required - ' + (activeNotValidated.length + pipelineNotValidated.length) + ' Total Initiatives' +
                 '</h3>' +
-                // REMOVED: Pipeline vs Active breakdown grid
-                (highPriorityNotValidated.length > 0 ? 
-                   '<div class="mb-6 p-3 rounded text-sm" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border: 1px solid var(--accent-red); color: var(--accent-red);"><strong>Critical Alert:</strong> ' + highPriorityNotValidated.length + ' high-priority initiatives require immediate validation to prevent roadmap delays</div>' : 
-                   ''
-               ) +
-               '<div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.04) 100%); border: 1px solid rgba(239, 68, 68, 0.3);" class="rounded-lg p-4">' +
-                   '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: #dc2626;">' +
-                       '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                           '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>' +
-                           '<path d="m9.5 14.5 5-5"/><path d="m9.5 9.5 5 5"/>' +
-                       '</svg>' +
-                       'Active Initiatives Requiring Validation' +
-                   '</h4>' +
-                   '<div class="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">' +
-                       sortedInitiatives.map(init => {
-                           const isHighPriority = getRowColFromSlot(init.priority).row <= 4;
-                           
-                           return `
-                               <div class="bento-pipeline-item" 
-                                    onclick="showInitiativeModal(boardData.initiatives.find(i => i.id === ${init.id}))"
-                                    style="cursor: pointer;">
-                                   <div class="flex items-center justify-between">
-                                       <div class="flex-1">
-                                           <div class="text-sm font-medium" style="color: var(--text-primary);">${init.title}</div>
-                                           <div class="text-xs" style="color: var(--text-secondary);">Priority ${init.priority} • ${init.type.toUpperCase()}</div>
-                                       </div>
-                                       <div class="flex items-center gap-2">
-                                           ${isHighPriority ? 
-                                               '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">HIGH PRIORITY</span>' : 
-                                               '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>'
-                                           }
+                
+                // Active initiatives list
+                (activeNotValidated.length > 0 ? 
+                    '<div class="mb-4">' +
+                        '<h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--text-primary);">' +
+                            'Active Initiatives (' + activeNotValidated.length + ')' +
+                        '</h4>' +
+                        '<div class="space-y-2">' +
+                            sortedActiveInitiatives.map(init => {
+                                const isHighPriority = typeof init.priority === 'number' && init.priority <= 20;
+                                return `
+                                   <div class="p-3 rounded-lg border cursor-pointer hover:bg-opacity-80 transition-all duration-200" 
+                                        style="background: var(--bg-tertiary); border-color: var(--border-primary);"
+                                        onclick="showInitiativeDetail(${init.id})">
+                                       <div class="flex items-center justify-between">
+                                           <div class="flex-1">
+                                               <div class="flex items-center gap-2 mb-1">
+                                                   <span class="font-medium" style="color: var(--text-primary);">${init.title}</span>
+                                                   <span class="text-xs px-2 py-1 rounded" style="background: var(--accent-${init.type === 'strategic' ? 'blue' : init.type === 'ktlo' ? 'green' : 'purple'}); color: white;">${init.type.toUpperCase()}</span>
+                                               </div>
+                                               <div class="text-sm" style="color: var(--text-secondary);">${init.teams.join(', ')}</div>
+                                               <div class="text-xs mt-1" style="color: var(--text-secondary);">Jira Key: ${init.jira?.key || 'N/A'}</div>
+                                           </div>
+                                           <div class="text-right">
+                                               ${isHighPriority ? 
+                                                   '<span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">URGENT</span>' : 
+                                                   '<span class="text-xs px-2 py-1 rounded" style="background: var(--bg-quaternary); color: var(--text-secondary);">Slot ' + init.priority + '</span>'
+                                               }
+                                           </div>
                                        </div>
                                    </div>
-                               </div>
-                           `;
-                       }).join('') +
-                   '</div>' +
-               '</div>' +
-           '</div>' +
-       '</div>';
+                               `;
+                            }).join('') +
+                        '</div>' +
+                    '</div>' : ''
+                ) +
+            '</div>' +
+        '</div>';
    
-   modal.classList.add('show');
+    modal.classList.add('show');
 }
+
 function updateMendozaCard() {
     const content = document.getElementById('mendoza-impact-content');
     
@@ -7463,6 +7486,12 @@ function updateBoardWithLiveData(newData) {
 if (typeof updateRecentlyCompletedCard === 'function') {
     updateRecentlyCompletedCard();
 }
+    
+    // Update validation cards with live Jira data
+    if (typeof updateValidationCard === 'function') {
+        updateValidationCard();
+    }
+    
 }
 
 // Smart Bidirectional Sync State
@@ -7607,7 +7636,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
             id: parseInt(issue.id),
             title: issue.fields.summary,
             type: initiativeType || typeMapping[project] || 'strategic',
-            validation: validationStatus || 'not-validated',
+            validation: mapJiraValidationStatus(validationStatus),
             priority: priority,
             teams: processedTeams,
             progress: Math.floor(Math.random() * 80) + 10,
