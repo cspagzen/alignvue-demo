@@ -3657,7 +3657,7 @@ function updateValidationCard() {
     const pipelineNotValidated = (boardData.bullpen || []).filter(init => init.validation === 'not-validated').length;
     
     content.innerHTML = `
-    <div class="h-full flex items-center justify-center gap-6">
+    <div class="h-full flex items-center justify-center gap-4">
         <!-- In Validation - Left -->
         <div class="validation-metric-card cursor-pointer hover:scale-105 transition-all duration-200" onclick="showInValidationModal()">
             <div class="kpi-current-value" style="color: #f59e0b;">${totalInValidation}</div>
