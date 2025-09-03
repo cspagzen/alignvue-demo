@@ -784,7 +784,7 @@ function showRiskScoreInfoModal() {
             </div>
             
             <div class="space-y-3">
-                <h3 class="font-semibold" style="color: var(--text-primary);">Scoring Rules (Per Team)</h3>
+                <h3 class="font-semibold" style="color: var(--text-primary);">Scoring Rules</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
@@ -792,11 +792,11 @@ function showRiskScoreInfoModal() {
                         <div class="space-y-1">
                             <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
                                 <div class="w-2 h-2 rounded-full" style="background: var(--accent-red);"></div>
-                                Team Capacity At-Risk
+                                Capacity, Skillset At-Risk
                             </div>
                             <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
                                 <div class="w-2 h-2 rounded-full" style="background: var(--accent-red);"></div>
-                                Team Skillset At-Risk
+                                High Priority Initiative
                             </div>
                         </div>
                     </div>
