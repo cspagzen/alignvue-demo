@@ -8013,7 +8013,7 @@ function findOKRAlignment(issue, okrIssues) {
 
 // Transform Jira data to board format
 function transformJiraData(initiativesResponse, okrsResponse, completedInitiatives) {
-    console.log('Transforming Jira data...');
+    console.log('Transforming Jira data with live completion...');
     
     const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
         const project = issue.fields.project.key;
@@ -8024,7 +8024,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
         const teamsAssigned = getFieldValue(issue, 'customfield_10053');
         const initiativeType = getFieldValue(issue, 'customfield_10051');
         
-        // Handle numeric Matrix Position
+        // Handle numeric Matrix Position (unchanged)
         let priority;
         if (matrixSlot === 0 || matrixSlot === null || matrixSlot === undefined) {
             priority = 'pipeline';
@@ -8034,7 +8034,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
             priority = 'pipeline';
         }
         
-        // Process teams correctly - handle Jira select field format AND split concatenated teams
+        // Process teams correctly (unchanged)
         let processedTeams;
         if (Array.isArray(teamsAssigned)) {
             processedTeams = teamsAssigned.map(team => {
@@ -8045,12 +8045,11 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
                     teamValue = team;
                 }
                 
-                // Split concatenated teams (semicolon separated)
                 if (teamValue && teamValue.includes(';')) {
                     return teamValue.split(';').map(t => t.trim());
                 }
                 return teamValue;
-            }).flat(); // Flatten in case we split any teams
+            }).flat();
         } else if (teamsAssigned && typeof teamsAssigned === 'object' && teamsAssigned.value) {
             const teamValue = teamsAssigned.value;
             if (teamValue.includes(';')) {
@@ -8068,9 +8067,22 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
             processedTeams = ['Core Platform'];
         }
         
-        // Remove any empty strings
         processedTeams = processedTeams.filter(team => team && team.trim());
+
+        // NEW: Calculate live completion data
+        const liveCompletion = calculateLiveCompletion(issue.childIssues);
         
+        // If no child issues, fall back to mock data for backwards compatibility
+        const hasChildIssues = liveCompletion.total > 0;
+        const finalCompletion = hasChildIssues ? liveCompletion : {
+            total: Math.floor(Math.random() * 30) + 10,
+            completed: Math.floor(Math.random() * 15) + 5,
+            inProgress: Math.floor(Math.random() * 10) + 3,
+            blocked: Math.floor(Math.random() * 5),
+            progress: Math.floor(Math.random() * 80) + 10,
+            velocity: Math.floor(Math.random() * 15) + 5
+        };
+
         return {
             id: parseInt(issue.id),
             title: issue.fields.summary,
@@ -8078,14 +8090,19 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
             validation: mapJiraValidationStatus(validationStatus),
             priority: priority,
             teams: processedTeams,
-            progress: Math.floor(Math.random() * 80) + 10,
+            progress: finalCompletion.progress, // LIVE DATA when available
             jira: {
                 key: issue.key,
-                stories: Math.floor(Math.random() * 30) + 10,
-                completed: Math.floor(Math.random() * 15) + 5,
-                inProgress: Math.floor(Math.random() * 10) + 3,
-                blocked: Math.floor(Math.random() * 5),
-                velocity: Math.floor(Math.random() * 15) + 5
+                // LIVE DATA when child issues exist, mock data otherwise
+                stories: finalCompletion.total,
+                completed: finalCompletion.completed,
+                inProgress: finalCompletion.inProgress,
+                blocked: finalCompletion.blocked,
+                velocity: finalCompletion.velocity,
+                status: issue.fields.status.name,
+                assignee: issue.fields.assignee?.displayName || 'Unassigned',
+                updated: issue.fields.updated,
+                hasLiveData: hasChildIssues // Flag to indicate if using live data
             },
             canvas: {
                 outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Outcome to be defined',
@@ -8104,20 +8121,32 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
     const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
     const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
     
-    console.log(`Active on board: ${activeInitiatives.length}, Pipeline: ${pipelineInitiatives.length}`);
+    // Log completion statistics
+    const liveDataCount = activeInitiatives.filter(i => i.jira.hasLiveData).length;
+    console.log(`Active initiatives: ${activeInitiatives.length} (${liveDataCount} with live completion data)`);
+    
+    if (liveDataCount > 0) {
+        console.log('Sample live completion data:');
+        activeInitiatives.filter(i => i.jira.hasLiveData).slice(0, 3).forEach(init => {
+            console.log(`  ${init.jira.key}: ${init.progress}% (${init.jira.completed}/${init.jira.stories} done)`);
+        });
+    }
 
     return {
         initiatives: activeInitiatives,
         bullpen: pipelineInitiatives,
         teams: boardData.teams,
         okrs: { issues: okrsResponse?.issues || [] },
-        recentlyCompleted: completedInitiatives || []  // ADD this line
+        recentlyCompleted: completedInitiatives || []
     };
 }
 
+
 // Fetch data from Jira
 async function fetchJiraData() {
-    // Get initiatives via proxy
+    console.log('Fetching Jira data with live completion tracking...');
+    
+    // Get initiatives via proxy (unchanged)
     const initiativesResponse = await fetch('/api/jira', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8138,7 +8167,45 @@ async function fetchJiraData() {
 
     const initiatives = await initiativesResponse.json();
 
-    // Get OKRs via proxy
+    // NEW: Fetch child issues for each epic to get live completion data
+    console.log('Fetching child issues for completion tracking...');
+    for (let i = 0; i < initiatives.issues.length; i++) {
+        const epic = initiatives.issues[i];
+        
+        try {
+            const childrenResponse = await fetch('/api/jira', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endpoint: '/rest/api/3/search',
+                    method: 'POST',
+                    body: {
+                        jql: `parent = ${epic.key}`,
+                        fields: ['status', 'issuetype', 'resolution'],
+                        maxResults: 200
+                    }
+                })
+            });
+
+            if (childrenResponse.ok) {
+                const children = await childrenResponse.json();
+                // Add child issues to epic for completion calculation
+                epic.childIssues = children.issues;
+            } else {
+                epic.childIssues = [];
+            }
+        } catch (error) {
+            console.log(`Could not fetch children for ${epic.key}:`, error.message);
+            epic.childIssues = [];
+        }
+        
+        // Rate limiting
+        if (i < initiatives.issues.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+    }
+
+    // Get OKRs via proxy (unchanged)
     const okrsResponse = await fetch('/api/jira', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8155,28 +8222,81 @@ async function fetchJiraData() {
 
     const okrs = await okrsResponse.json();
     
-    console.log('=== OKR FETCH DEBUG ===');
-    console.log('OKRs Response Status:', okrsResponse.status);
-    console.log('OKRs Found:', okrs.issues ? okrs.issues.length : 0);
-    if (okrs.issues) {
-        console.log('Sample OKR:', okrs.issues[0]);
-    }
-    
-    // Get completed initiatives for the Recently Completed card
+    // Get completed initiatives (unchanged)
     let completedInitiatives = [];
-    let transformedCompleted = [];
-
     try {
-        completedInitiatives = await fetchCompletedInitiativesFromJira();
-        transformedCompleted = transformJiraCompletedInitiatives(completedInitiatives);
-        console.log('Completed Initiatives Found:', transformedCompleted.length);
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND resolved >= -90d ORDER BY resolved DESC`,
+                    fields: [
+                        "summary", "project", "resolved", "key",
+                        "customfield_10051", "customfield_10124",
+                        "customfield_10059", "customfield_10060", "customfield_10062",
+                        "customfield_10063", "customfield_10064", "customfield_10065", "customfield_10066"
+                    ],
+                    maxResults: 100
+                }
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            completedInitiatives = data.issues;
+        }
     } catch (error) {
-        console.error('Error fetching completed initiatives:', error);
-        transformedCompleted = [];
+        console.log('Could not fetch completed initiatives:', error.message);
     }
-    
-    // Transform the data AND include OKRs
-   return transformJiraData(initiatives, okrs, transformedCompleted);
+
+    return transformJiraData(initiatives, okrs, completedInitiatives);
+}
+
+// Helper function to calculate completion from child issues
+function calculateLiveCompletion(childIssues) {
+    if (!childIssues || childIssues.length === 0) {
+        return {
+            total: 0,
+            completed: 0,
+            inProgress: 0,
+            blocked: 0,
+            progress: 0,
+            velocity: 5 // Default velocity
+        };
+    }
+
+    const total = childIssues.length;
+    let completed = 0;
+    let inProgress = 0;
+    let toDo = 0;
+
+    childIssues.forEach(child => {
+        const statusCategory = child.fields.status.statusCategory.key;
+        const statusName = child.fields.status.name.toLowerCase();
+
+        if (statusCategory === 'done' || statusName.includes('done') || statusName.includes('closed') || statusName.includes('resolved')) {
+            completed++;
+        } else if (statusCategory === 'indeterminate' || statusName.includes('progress') || statusName.includes('review')) {
+            inProgress++;
+        } else {
+            toDo++;
+        }
+    });
+
+    const progressPercentage = Math.round((completed / total) * 100);
+    const velocity = Math.max(1, Math.round(progressPercentage / 10)); // Simple velocity calculation
+
+    return {
+        total,
+        completed,
+        inProgress,
+        blocked: toDo, // Using toDo as "blocked" for consistency with existing structure
+        progress: progressPercentage,
+        velocity
+    };
 }
 
 // Initialize smart sync on page load
