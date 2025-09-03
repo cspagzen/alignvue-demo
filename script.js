@@ -2,47 +2,56 @@
         let selectedInitiativeId = null;
         let draggedInitiative = null;
 
-// Completion data caching
-const COMPLETION_CACHE_KEY = 'jira_completion_cache';
-const CACHE_EXPIRY_KEY = 'jira_completion_cache_expiry';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 30 minutes
+// Enhanced caching for all live data
+const LIVE_DATA_CACHE_KEY = 'jira_live_data_cache';
+const CACHE_EXPIRY_KEY = 'jira_cache_expiry';
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
-function cacheCompletionData(initiatives) {
-    const cacheData = initiatives.map(init => ({
-        id: init.id,
-        jiraKey: init.jira?.key,
-        progress: init.progress,
-        stories: init.jira?.stories,
-        completed: init.jira?.completed,
-        inProgress: init.jira?.inProgress,
-        blocked: init.jira?.blocked,
-        hasLiveData: init.jira?.hasLiveData
-    }));
+function cacheAllLiveData(boardData) {
+    const cacheData = {
+        initiatives: boardData.initiatives.map(init => ({
+            id: init.id,
+            jiraKey: init.jira?.key,
+            progress: init.progress,
+            stories: init.jira?.stories,
+            completed: init.jira?.completed,
+            inProgress: init.jira?.inProgress,
+            blocked: init.jira?.blocked,
+            hasLiveData: init.jira?.hasLiveData
+        })),
+        recentlyCompleted: boardData.recentlyCompleted || [],
+        okrs: boardData.okrs || { issues: [] },
+        timestamp: Date.now()
+    };
     
-    localStorage.setItem(COMPLETION_CACHE_KEY, JSON.stringify(cacheData));
+    localStorage.setItem(LIVE_DATA_CACHE_KEY, JSON.stringify(cacheData));
     localStorage.setItem(CACHE_EXPIRY_KEY, Date.now() + CACHE_DURATION);
-    console.log(`Cached completion data for ${cacheData.length} initiatives`);
+    console.log(`Cached all live data: ${cacheData.initiatives.length} initiatives, ${cacheData.recentlyCompleted.length} completed, ${cacheData.okrs.issues?.length || 0} OKRs`);
 }
 
-function loadCachedCompletionData() {
+function loadCachedLiveData() {
     const expiry = localStorage.getItem(CACHE_EXPIRY_KEY);
     if (!expiry || Date.now() > parseInt(expiry)) {
+        console.log('Cache expired or missing');
         return null;
     }
     
-    const cached = localStorage.getItem(COMPLETION_CACHE_KEY);
+    const cached = localStorage.getItem(LIVE_DATA_CACHE_KEY);
     return cached ? JSON.parse(cached) : null;
 }
 
-function applyCachedCompletion(initiatives) {
-    const cachedData = loadCachedCompletionData();
+function applyAllCachedData() {
+    const cachedData = loadCachedLiveData();
     if (!cachedData) return false;
     
-    let appliedCount = 0;
-    cachedData.forEach(cached => {
+    console.log('Applying cached live data to boardData...');
+    
+    // Apply cached initiative completion data
+    let appliedInitiatives = 0;
+    cachedData.initiatives.forEach(cached => {
         if (!cached.jiraKey) return;
         
-        const initiative = initiatives.find(init => init.jira?.key === cached.jiraKey);
+        const initiative = boardData.initiatives.find(init => init.jira?.key === cached.jiraKey);
         if (initiative) {
             initiative.progress = cached.progress;
             initiative.jira.stories = cached.stories;
@@ -50,12 +59,22 @@ function applyCachedCompletion(initiatives) {
             initiative.jira.inProgress = cached.inProgress;
             initiative.jira.blocked = cached.blocked;
             initiative.jira.hasLiveData = cached.hasLiveData;
-            appliedCount++;
+            appliedInitiatives++;
         }
     });
     
-    console.log(`Applied cached completion data to ${appliedCount} initiatives`);
-    return appliedCount > 0;
+    // Apply cached recently completed data
+    if (cachedData.recentlyCompleted && cachedData.recentlyCompleted.length > 0) {
+        boardData.recentlyCompleted = cachedData.recentlyCompleted;
+    }
+    
+    // Apply cached OKR data
+    if (cachedData.okrs && cachedData.okrs.issues) {
+        boardData.okrs = cachedData.okrs;
+    }
+    
+    console.log(`Applied cached data: ${appliedInitiatives} initiatives, ${boardData.recentlyCompleted.length} completed, ${boardData.okrs.issues?.length || 0} OKRs`);
+    return true;
 }
 
         function getRowGradientColor(row) {
@@ -6958,6 +6977,8 @@ function decrementKPIValue() {
     detailModal.setAttribute('role', 'dialog');
     detailModal.setAttribute('aria-modal', 'true');
     
+    // APPLY CACHED DATA BEFORE GENERATING UI
+    applyAllCachedData();
             
     generatePyramid();
     generateTeamHealthMatrix();
@@ -7958,12 +7979,8 @@ function updateBoardWithLiveData(newData) {
     boardData.okrs = newData.okrs || { issues: [] };
     boardData.recentlyCompleted = newData.recentlyCompleted || [];
     
-    // NEW: Cache the live completion data for next page load
-    const initiativesWithLiveData = boardData.initiatives.filter(init => init.jira?.hasLiveData);
-    if (initiativesWithLiveData.length > 0) {
-        cacheCompletionData(boardData.initiatives);
-    }
-    
+    // UPDATED: Cache ALL live data for next page load (not just completion data)
+    cacheAllLiveData(boardData);
     
     // Keep existing teams data (don't replace)
     if (newData.teams) {
@@ -7996,33 +8013,20 @@ function updateBoardWithLiveData(newData) {
         console.error('Error updating UI with live data:', error);
     }
 
-// Update the Recently Completed card with fresh data
-if (typeof updateRecentlyCompletedCard === 'function') {
-    updateRecentlyCompletedCard();
-}
-    
+    // Update the Recently Completed card with fresh data
+    if (typeof updateRecentlyCompletedCard === 'function') {
+        updateRecentlyCompletedCard();
+    }
+        
     // Update validation cards with live Jira data
     if (typeof updateValidationCard === 'function') {
         updateValidationCard();
     }
     
-  if (typeof updateAtRiskCard === 'function') {
+    if (typeof updateAtRiskCard === 'function') {
         updateAtRiskCard();
     }  
-    
 }
-
-// Smart Bidirectional Sync State
-let syncState = {
-    isActive: true,
-    isPaused: false,
-    lastSyncData: null,
-    lastSyncTime: null,
-    syncInterval: null,
-    updateQueue: []
-    
-    
-};
 
 // Helper function for extracting text from Jira doc format
 function extractTextFromDoc(docField) {
