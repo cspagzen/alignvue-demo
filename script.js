@@ -238,6 +238,11 @@ function handleAtRiskCardClick(initiativeId) {
     }
 }
 
+// =============================================================================
+// REDESIGN AT-RISK ANALYSIS MODAL: HORIZONTAL & SCANNABLE LAYOUT
+// Make the modal more compact and easier to scan
+// =============================================================================
+
 function showAtRiskAnalysisModal(initiative) {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
@@ -253,115 +258,190 @@ function showAtRiskAnalysisModal(initiative) {
     
     content.innerHTML = `
         <div class="space-y-6">
-            <!-- Risk Overview Header -->
-            <div class="p-4 rounded-lg" style="background: linear-gradient(135deg, ${riskLevel.bgColor} 0%, ${riskLevel.bgColorLight} 100%); border: 1px solid ${riskLevel.borderColor};">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: ${riskLevel.color}; color: white;">
-                            ${riskLevel.icon}
-                        </div>
-                        <div>
-                            <div class="font-bold text-lg" style="color: ${riskLevel.color};">${riskLevel.label}</div>
-                            <div class="text-sm" style="color: var(--text-secondary);">Priority ${initiative.priority} • ${initiative.type.toUpperCase()}</div>
-                        </div>
+            <!-- Risk Overview Header - Compact -->
+            <div class="flex items-center justify-between p-4 rounded-lg" style="background: linear-gradient(135deg, ${riskLevel.bgColor} 0%, ${riskLevel.bgColorLight} 100%); border: 1px solid ${riskLevel.borderColor};">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: ${riskLevel.color}; color: white;">
+                        ${riskLevel.icon}
                     </div>
-                    <div class="text-right">
-                        <div class="text-2xl font-bold" style="color: ${riskLevel.color};">${riskAnalysis.riskScore}/10</div>
-                        <div class="text-xs" style="color: var(--text-secondary);">Risk Score</div>
-                        <button onclick="showRiskScoreInfoModal()" class="text-xs underline mt-1 hover:opacity-75 transition-opacity" style="color: var(--accent-blue); background: none; border: none; padding: 0; cursor: pointer;">
-                            How is this calculated?
-                        </button>
+                    <div>
+                        <div class="font-bold text-lg" style="color: ${riskLevel.color};">${riskLevel.label}</div>
+                        <div class="text-sm" style="color: var(--text-secondary);">Priority ${initiative.priority} • ${initiative.type.toUpperCase()}</div>
                     </div>
                 </div>
-                <div class="text-sm" style="color: var(--text-secondary);">
-                    ${riskLevel.description} ${riskAnalysis.primaryRiskFactors.length > 0 ? `Primary concerns: ${riskAnalysis.primaryRiskFactors.join(', ')}.` : ''}
+                <div class="text-right">
+                    <div class="text-3xl font-bold" style="color: ${riskLevel.color};">${riskAnalysis.riskScore}/10</div>
+                    <button onclick="showRiskScoreInfoModal()" class="text-xs underline hover:opacity-75 transition-opacity" style="color: var(--accent-blue); background: none; border: none; padding: 0; cursor: pointer;">
+                        How calculated?
+                    </button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-6">
-                <!-- Left Column: Risk Factors -->
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-lg flex items-center gap-2" style="color: var(--text-primary);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                            <path d="M12 17h.01"/>
-                        </svg>
-                        Risk Factors
-                    </h3>
-
-                    ${riskAnalysis.riskFactors.map(factor => `
-                        <div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${factor.color};">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded-full" style="background: ${factor.color};"></div>
-                                    <span class="font-medium text-sm" style="color: var(--text-primary);">${factor.name}</span>
-                                </div>
-                                <span class="text-xs font-bold px-2 py-1 rounded" style="background: ${factor.color}; color: white;">${factor.severity}</span>
-                            </div>
-                            <div class="text-xs leading-relaxed" style="color: var(--text-secondary);">${factor.description}</div>
-                            <div class="text-xs mt-1" style="color: ${factor.color}; font-weight: 600;">Impact: ${factor.impact}</div>
-                        </div>
-                    `).join('')}
-                </div>
-
-                <!-- Right Column: Team Analysis & Actions -->
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-lg flex items-center gap-2" style="color: var(--text-primary);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                        Impacted Teams (${riskAnalysis.impactedTeams.length})
-                    </h3>
-
-                    <div class="space-y-2 max-h-32 overflow-y-auto">
-                        ${riskAnalysis.impactedTeams.map(team => `
-                            <div class="p-2 rounded cursor-pointer hover:bg-opacity-90 transition-all" 
-                                 style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);"
-                                 onclick="closeModal(); setTimeout(() => showTeamModal('${team.name}', boardData.teams['${team.name}']), 100);">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <div class="text-lg">${getHealthIcon(boardData.teams[team.name])}</div>
-                                        <span class="font-medium text-sm" style="color: var(--text-primary);">${team.name}</span>
+            <!-- Risk Factors Grid - Horizontal Layout -->
+            ${riskAnalysis.riskFactors.length > 0 ? `
+                <div>
+                    <h3 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Risk Factors</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        ${riskAnalysis.riskFactors.map(factor => `
+                            <div class="p-3 rounded-lg border" style="background: var(--bg-tertiary); border-color: ${factor.color};">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="font-semibold text-sm" style="color: var(--text-primary);">${factor.name}</div>
+                                    <div class="px-2 py-1 rounded text-xs font-bold" style="background: ${factor.color}; color: white;">
+                                        ${factor.severity}
                                     </div>
-                                    <div class="text-xs" style="color: ${team.riskColor}; font-weight: 600;">${team.riskFactors.join(', ')}</div>
+                                </div>
+                                <div class="text-xs" style="color: var(--text-secondary);">${factor.description}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Impacted Teams - Horizontal Cards -->
+            ${riskAnalysis.impactedTeams.length > 0 ? `
+                <div>
+                    <h3 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Impacted Teams</h3>
+                    <div class="flex flex-wrap gap-3">
+                        ${riskAnalysis.impactedTeams.map(team => `
+                            <div class="flex-1 min-w-48 p-3 rounded-lg border" style="background: var(--bg-tertiary); border-color: ${team.riskColor};">
+                                <div class="font-semibold text-sm mb-2" style="color: var(--text-primary);">${team.name}</div>
+                                <div class="flex flex-wrap gap-1">
+                                    ${team.riskFactors.map(factor => `
+                                        <span class="px-2 py-1 rounded text-xs" style="background: ${team.riskColor}; color: white;">
+                                            ${factor}
+                                        </span>
+                                    `).join('')}
                                 </div>
                             </div>
                         `).join('')}
                     </div>
+                </div>
+            ` : ''}
 
-                    <!-- Recommended Actions -->
-                    <div class="mt-6">
-                        <h4 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-blue);">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M9 12l2 2 4-4"/>
-                                <circle cx="12" cy="12" r="10"/>
-                            </svg>
-                            Recommended Actions
-                        </h4>
-                        
-                        <div class="space-y-2">
-                            ${riskAnalysis.recommendations.map((rec, index) => `
-                                <div class="flex items-start gap-2 p-2 rounded" style="background: rgba(59, 130, 246, 0.05);">
-                                    <span class="text-xs font-bold px-1.5 py-0.5 rounded-full" style="background: var(--accent-blue); color: white; min-width: 20px; text-align: center;">${index + 1}</span>
-                                    <div class="text-xs leading-relaxed" style="color: var(--text-secondary);">${rec}</div>
+            <!-- Recommendations - Compact Grid -->
+            ${riskAnalysis.recommendations.length > 0 ? `
+                <div>
+                    <h3 class="text-lg font-semibold mb-3 flex items-center gap-2" style="color: var(--text-primary);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 12l2 2 4-4"/>
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Recommended Actions
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        ${riskAnalysis.recommendations.map((rec, index) => `
+                            <div class="flex items-start gap-2 p-2 rounded" style="background: var(--bg-quaternary);">
+                                <div class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style="background: var(--accent-blue); color: white; flex-shrink: 0;">
+                                    ${index + 1}
                                 </div>
-                            `).join('')}
+                                <div class="text-sm" style="color: var(--text-secondary);">${rec}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pt-4 border-t" style="border-color: var(--border-primary);">
+                <button onclick="closeModal()" 
+                        class="flex-1 px-4 py-2 rounded font-medium transition-colors" 
+                        style="background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-primary);">
+                    Close
+                </button>
+                <button onclick="highlightInitiativeAndTeam('${initiative.id}'); closeModal();" 
+                        class="flex-1 px-4 py-2 rounded font-medium transition-colors" 
+                        style="background: var(--accent-primary); color: white;">
+                    Highlight on Board
+                </button>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.add('show');
+}
+
+// ALSO UPDATE: Make the Risk Score Info Modal more compact too
+function showRiskScoreInfoModal() {
+    const modal = document.getElementById('detail-modal');
+    const title = document.getElementById('modal-title');
+    const content = document.getElementById('modal-content');
+    
+    title.textContent = 'Risk Score Calculation';
+    
+    content.innerHTML = `
+        <div class="space-y-4">
+            <div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid var(--accent-blue);">
+                <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">
+                    Risk scores analyze <strong>6 team health dimensions</strong> plus utilization and priority to assess delivery risk.
+                </p>
+            </div>
+            
+            <div class="space-y-3">
+                <h3 class="font-semibold" style="color: var(--text-primary);">Scoring Rules</h3>
+                
+                <!-- High Impact Factors -->
+                <div>
+                    <div class="text-sm font-medium mb-2" style="color: var(--accent-red);">High Impact (+2 points each)</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                            <div class="w-2 h-2 rounded-full" style="background: var(--accent-red);"></div>
+                            Team Capacity At-Risk
+                        </div>
+                        <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                            <div class="w-2 h-2 rounded-full" style="background: var(--accent-red);"></div>
+                            Team Skillset At-Risk
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Bottom Actions -->
-            <div class="pt-4 border-t" style="border-color: var(--border-primary);">
-                <button onclick="showInitiativeModal(boardData.initiatives.find(i => i.id === ${initiative.id}))" 
-                        class="w-full px-4 py-2 rounded font-medium transition-colors" 
-                        style="background: var(--accent-primary); color: white;">
-                    View Full Initiative Details
-                </button>
+                <!-- Medium Impact Factors -->
+                <div>
+                    <div class="text-sm font-medium mb-2" style="color: var(--accent-orange);">Medium Impact (+1 point each)</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                            <div class="w-2 h-2 rounded-full" style="background: var(--accent-orange);"></div>
+                            Team Vision At-Risk
+                        </div>
+                        <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                            <div class="w-2 h-2 rounded-full" style="background: var(--accent-orange);"></div>
+                            Team Support At-Risk
+                        </div>
+                        <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                            <div class="w-2 h-2 rounded-full" style="background: var(--accent-orange);"></div>
+                            Team Teamwork At-Risk
+                        </div>
+                        <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                            <div class="w-2 h-2 rounded-full" style="background: var(--accent-orange);"></div>
+                            Team Autonomy At-Risk
+                        </div>
+                        <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                            <div class="w-2 h-2 rounded-full" style="background: var(--accent-orange);"></div>
+                            Over-Utilization (>95%)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bonus Factors -->
+                <div>
+                    <div class="text-sm font-medium mb-2" style="color: var(--accent-red);">Bonus</div>
+                    <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
+                        <div class="w-2 h-2 rounded-full" style="background: var(--accent-red);"></div>
+                        Critical Priority + High Risk: +2 points
+                    </div>
+                </div>
             </div>
+            
+            <div class="p-3 rounded text-center" style="background: rgba(59, 130, 246, 0.05); border: 1px solid var(--accent-blue);">
+                <div class="text-sm" style="color: var(--text-secondary);">
+                    <strong style="color: var(--accent-blue);">Maximum Score:</strong> 10 points
+                </div>
+            </div>
+            
+            <button onclick="closeModal()" 
+                    class="w-full px-4 py-2 rounded font-medium transition-colors" 
+                    style="background: var(--accent-primary); color: white;">
+                Close
+            </button>
         </div>
     `;
     
