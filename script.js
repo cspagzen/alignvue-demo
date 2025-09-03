@@ -8103,7 +8103,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
         const teamsAssigned = getFieldValue(issue, 'customfield_10053');
         const initiativeType = getFieldValue(issue, 'customfield_10051');
         
-        // Handle numeric Matrix Position (unchanged)
+        // Handle numeric Matrix Position
         let priority;
         if (matrixSlot === 0 || matrixSlot === null || matrixSlot === undefined) {
             priority = 'pipeline';
@@ -8113,7 +8113,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
             priority = 'pipeline';
         }
         
-        // Process teams correctly (unchanged)
+        // Process teams correctly
         let processedTeams;
         if (Array.isArray(teamsAssigned)) {
             processedTeams = teamsAssigned.map(team => {
@@ -8148,20 +8148,40 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
         
         processedTeams = processedTeams.filter(team => team && team.trim());
 
-        // NEW: Calculate live completion data
+        // Calculate completion data with caching support
         const liveCompletion = calculateLiveCompletion(issue.childIssues);
-        
-        // If no child issues, fall back to mock data for backwards compatibility
         const hasChildIssues = liveCompletion.total > 0;
-        const finalCompletion = hasChildIssues ? liveCompletion : {
-            total: Math.floor(Math.random() * 30) + 10,
-            completed: Math.floor(Math.random() * 15) + 5,
-            inProgress: Math.floor(Math.random() * 10) + 3,
-            blocked: Math.floor(Math.random() * 5),
-            progress: Math.floor(Math.random() * 80) + 10,
-            velocity: Math.floor(Math.random() * 15) + 5
-        };
-
+        
+        // Check if we have existing cached data for this initiative
+        const existingInitiative = boardData.initiatives?.find(init => init.jira?.key === issue.key);
+        const hasCachedData = existingInitiative && existingInitiative.jira?.hasLiveData;
+        
+        let finalCompletion;
+        if (hasChildIssues) {
+            // Use fresh live data from child issues
+            finalCompletion = liveCompletion;
+        } else if (hasCachedData) {
+            // Preserve cached data instead of generating new mock data
+            finalCompletion = {
+                total: existingInitiative.jira.stories,
+                completed: existingInitiative.jira.completed,
+                inProgress: existingInitiative.jira.inProgress,
+                blocked: existingInitiative.jira.blocked,
+                progress: existingInitiative.progress,
+                velocity: existingInitiative.jira.velocity
+            };
+        } else {
+            // Only generate mock data if no cached data exists
+            finalCompletion = {
+                total: Math.floor(Math.random() * 30) + 10,
+                completed: Math.floor(Math.random() * 15) + 5,
+                inProgress: Math.floor(Math.random() * 10) + 3,
+                blocked: Math.floor(Math.random() * 5),
+                progress: Math.floor(Math.random() * 80) + 10,
+                velocity: Math.floor(Math.random() * 15) + 5
+            };
+        }
+        
         return {
             id: parseInt(issue.id),
             title: issue.fields.summary,
@@ -8169,10 +8189,9 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
             validation: mapJiraValidationStatus(validationStatus),
             priority: priority,
             teams: processedTeams,
-            progress: finalCompletion.progress, // LIVE DATA when available
+            progress: finalCompletion.progress,
             jira: {
                 key: issue.key,
-                // LIVE DATA when child issues exist, mock data otherwise
                 stories: finalCompletion.total,
                 completed: finalCompletion.completed,
                 inProgress: finalCompletion.inProgress,
@@ -8181,7 +8200,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
                 status: issue.fields.status.name,
                 assignee: issue.fields.assignee?.displayName || 'Unassigned',
                 updated: issue.fields.updated,
-                hasLiveData: hasChildIssues // Flag to indicate if using live data
+                hasLiveData: hasChildIssues || hasCachedData
             },
             canvas: {
                 outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Outcome to be defined',
@@ -8200,21 +8219,15 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
     const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
     const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
     
-    applyCachedCompletion(activeInitiatives);
-    
-    console.log(`Active on board: ${activeInitiatives.length}, Pipeline: ${pipelineInitiatives.length}`);
-    
     // Log completion statistics
     const liveDataCount = activeInitiatives.filter(i => i.jira.hasLiveData).length;
-    console.log(`Active initiatives: ${activeInitiatives.length} (${liveDataCount} with live completion data)`);
+    const cachedDataCount = activeInitiatives.filter(i => i.jira.hasLiveData && !calculateLiveCompletion(initiativesResponse.issues.find(issue => issue.key === i.jira.key)?.childIssues || []).total).length;
     
-    if (liveDataCount > 0) {
-        console.log('Sample live completion data:');
-        activeInitiatives.filter(i => i.jira.hasLiveData).slice(0, 3).forEach(init => {
-            console.log(`  ${init.jira.key}: ${init.progress}% (${init.jira.completed}/${init.jira.stories} done)`);
-        });
-    }
-
+    console.log(`Active initiatives: ${activeInitiatives.length}`);
+    console.log(`  - With live data: ${liveDataCount - cachedDataCount}`);
+    console.log(`  - With cached data: ${cachedDataCount}`);
+    console.log(`  - With mock data: ${activeInitiatives.length - liveDataCount}`);
+    
     return {
         initiatives: activeInitiatives,
         bullpen: pipelineInitiatives,
@@ -8223,7 +8236,6 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
         recentlyCompleted: completedInitiatives || []
     };
 }
-
 
 // Fetch data from Jira
 async function fetchJiraData() {
