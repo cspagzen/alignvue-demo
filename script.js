@@ -644,7 +644,7 @@ function getRiskLevel(riskScore) {
     }
 }
 
-ffunction showRiskScoreInfoModal() {
+function showRiskScoreInfoModal() {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
