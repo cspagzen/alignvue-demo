@@ -7705,7 +7705,9 @@ if (typeof updateRecentlyCompletedCard === 'function') {
         updateValidationCard();
     }
     
-    
+  if (typeof updateAtRiskCard === 'function') {
+        updateAtRiskCard();
+    }  
     
 }
 
