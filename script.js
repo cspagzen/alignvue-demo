@@ -397,22 +397,49 @@ function analyzeInitiativeRisk(initiative) {
             analysis.riskScore += 2;
         }
 
-        // Check leadership risk
-        if (team.leadership === 'at-risk') {
-            teamRiskFactors.push('Leadership');
-            analysis.riskScore += 2;
+        // *** REMOVE OLD LEADERSHIP CHECK - IT DOESN'T EXIST ***
+        // if (team.leadership === 'at-risk') {  // <-- REMOVE THIS
+        //     teamRiskFactors.push('Leadership');
+        //     analysis.riskScore += 2;
+        // }
+
+        // *** ADD NEW 4 ATTRIBUTES ***
+        
+        // Check vision risk (NEW)
+        if (team.vision === 'at-risk') {
+            teamRiskFactors.push('Vision');
+            analysis.riskScore += 1;
         }
 
-        // Check utilization
+        // Check support risk (NEW)
+        if (team.support === 'at-risk') {
+            teamRiskFactors.push('Support');
+            analysis.riskScore += 1;
+        }
+
+        // Check teamwork risk (NEW)
+        if (team.teamwork === 'at-risk') {
+            teamRiskFactors.push('Teamwork');
+            analysis.riskScore += 1;
+        }
+
+        // Check autonomy risk (NEW)
+        if (team.autonomy === 'at-risk') {
+            teamRiskFactors.push('Autonomy');
+            analysis.riskScore += 1;
+        }
+
+        // Check utilization (unchanged)
         if (team.jira && team.jira.utilization > 95) {
             teamRiskFactors.push('Over-utilized');
             analysis.riskScore += 1;
         }
 
-        // Determine team risk color
-        if (teamRiskFactors.length >= 3) teamRiskColor = 'var(--accent-red)';
-        else if (teamRiskFactors.length >= 2) teamRiskColor = '#f97316';
-        else if (teamRiskFactors.length >= 1) teamRiskColor = 'var(--accent-orange)';
+        // Determine team risk color based on number of risk factors
+        if (teamRiskFactors.length >= 4) teamRiskColor = 'var(--accent-red)';     // Critical
+        else if (teamRiskFactors.length >= 3) teamRiskColor = '#f97316';          // High Risk  
+        else if (teamRiskFactors.length >= 2) teamRiskColor = 'var(--accent-orange)'; // Medium Risk
+        else if (teamRiskFactors.length >= 1) teamRiskColor = '#eab308';          // Low Risk
 
         if (teamRiskFactors.length > 0) {
             analysis.impactedTeams.push({
@@ -423,11 +450,15 @@ function analyzeInitiativeRisk(initiative) {
         }
     });
 
-    // Add specific risk factors based on analysis
+    // Add specific risk factors based on analysis - UPDATE FOR 6 ATTRIBUTES
     const capacityIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Capacity')).length;
     const skillsetIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Skillset')).length;
-    const leadershipIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Leadership')).length;
+    const visionIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Vision')).length;
+    const supportIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Support')).length;
+    const teamworkIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Teamwork')).length;
+    const autonomyIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Autonomy')).length;
 
+    // Capacity risk factors
     if (capacityIssues > 0) {
         analysis.riskFactors.push({
             name: 'Team Capacity',
@@ -439,6 +470,7 @@ function analyzeInitiativeRisk(initiative) {
         analysis.primaryRiskFactors.push('capacity');
     }
 
+    // Skillset risk factors
     if (skillsetIssues > 0) {
         analysis.riskFactors.push({
             name: 'Skillset Gaps',
@@ -450,18 +482,55 @@ function analyzeInitiativeRisk(initiative) {
         analysis.primaryRiskFactors.push('skillset');
     }
 
-    if (leadershipIssues > 0) {
+    // Vision risk factors (NEW)
+    if (visionIssues > 0) {
         analysis.riskFactors.push({
-            name: 'Leadership Issues',
-            severity: leadershipIssues > 1 ? 'CRITICAL' : 'HIGH', 
-            color: leadershipIssues > 1 ? 'var(--accent-red)' : 'var(--accent-orange)',
-            description: `${leadershipIssues} team(s) have leadership concerns affecting decision-making and coordination.`,
-            impact: 'Poor coordination and delayed decisions'
+            name: 'Vision Alignment',
+            severity: visionIssues > 1 ? 'HIGH' : 'MODERATE',
+            color: visionIssues > 1 ? 'var(--accent-orange)' : '#eab308',
+            description: `${visionIssues} team(s) lack clarity on strategic direction, potentially causing misaligned efforts.`,
+            impact: 'Wasted effort and scope creep'
         });
-        analysis.primaryRiskFactors.push('leadership');
+        analysis.primaryRiskFactors.push('vision');
     }
 
-    // Priority-based risk factors
+    // Support risk factors (NEW)
+    if (supportIssues > 0) {
+        analysis.riskFactors.push({
+            name: 'Support Issues',
+            severity: supportIssues > 1 ? 'HIGH' : 'MODERATE',
+            color: supportIssues > 1 ? 'var(--accent-orange)' : '#eab308',
+            description: `${supportIssues} team(s) lack adequate tools, resources, or organizational backing.`,
+            impact: 'Reduced productivity and morale'
+        });
+        analysis.primaryRiskFactors.push('support');
+    }
+
+    // Teamwork risk factors (NEW)
+    if (teamworkIssues > 0) {
+        analysis.riskFactors.push({
+            name: 'Teamwork Concerns',
+            severity: teamworkIssues > 1 ? 'HIGH' : 'MODERATE',
+            color: teamworkIssues > 1 ? 'var(--accent-orange)' : '#eab308',
+            description: `${teamworkIssues} team(s) have communication and collaboration challenges.`,
+            impact: 'Coordination issues and delays'
+        });
+        analysis.primaryRiskFactors.push('teamwork');
+    }
+
+    // Autonomy risk factors (NEW)
+    if (autonomyIssues > 0) {
+        analysis.riskFactors.push({
+            name: 'Autonomy Limitations',
+            severity: autonomyIssues > 1 ? 'HIGH' : 'MODERATE',
+            color: autonomyIssues > 1 ? 'var(--accent-orange)' : '#eab308',
+            description: `${autonomyIssues} team(s) have limited decision-making authority, creating bottlenecks.`,
+            impact: 'Slow decisions and reduced agility'
+        });
+        analysis.primaryRiskFactors.push('autonomy');
+    }
+
+    // Priority-based risk factors (unchanged)
     const row = getRowColFromSlot(initiative.priority).row;
     if (row <= 2 && analysis.riskScore > 4) {
         analysis.riskFactors.push({
@@ -474,7 +543,7 @@ function analyzeInitiativeRisk(initiative) {
         analysis.riskScore += 2;
     }
 
-    // Generate recommendations
+    // Generate recommendations - UPDATE FOR 6 ATTRIBUTES
     if (capacityIssues > 0) {
         analysis.recommendations.push('Consider redistributing workload or bringing in additional resources to overloaded teams.');
         analysis.recommendations.push('Implement capacity management strategies and monitor team utilization closely.');
@@ -485,9 +554,24 @@ function analyzeInitiativeRisk(initiative) {
         analysis.recommendations.push('Consider bringing in specialists or consultants for critical skill areas.');
     }
 
-    if (leadershipIssues > 0) {
-        analysis.recommendations.push('Provide additional leadership support and clear decision-making frameworks.');
-        analysis.recommendations.push('Consider assigning an experienced technical lead or project manager.');
+    if (visionIssues > 0) {
+        analysis.recommendations.push('Conduct vision alignment sessions with affected teams to clarify strategic direction.');
+        analysis.recommendations.push('Ensure clear communication of initiative goals and success criteria.');
+    }
+
+    if (supportIssues > 0) {
+        analysis.recommendations.push('Review and improve tooling, resources, and organizational support for affected teams.');
+        analysis.recommendations.push('Consider escalating support needs to leadership for resolution.');
+    }
+
+    if (teamworkIssues > 0) {
+        analysis.recommendations.push('Facilitate team building activities or process improvements to enhance collaboration.');
+        analysis.recommendations.push('Implement better communication tools and regular sync meetings.');
+    }
+
+    if (autonomyIssues > 0) {
+        analysis.recommendations.push('Review decision-making processes and empower teams with more autonomy where appropriate.');
+        analysis.recommendations.push('Reduce approval bottlenecks and clarify decision-making authority.');
     }
 
     if (row <= 4 && analysis.riskScore > 6) {
@@ -560,7 +644,7 @@ function getRiskLevel(riskScore) {
     }
 }
 
-function showRiskScoreInfoModal() {
+ffunction showRiskScoreInfoModal() {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
@@ -571,7 +655,7 @@ function showRiskScoreInfoModal() {
         <div class="space-y-4">
             <div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid var(--accent-blue);">
                 <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">
-                    The risk score is calculated by analyzing team health factors and initiative priority to provide an objective measure of delivery risk.
+                    The risk score is calculated by analyzing 6 team health dimensions plus utilization and initiative priority to provide an objective measure of delivery risk.
                 </p>
             </div>
             
@@ -597,10 +681,34 @@ function showRiskScoreInfoModal() {
                     
                     <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
                         <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full" style="background: var(--accent-red);"></div>
-                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Leadership At-Risk</span>
+                            <div class="w-3 h-3 rounded-full" style="background: #eab308;"></div>
+                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Vision At-Risk</span>
                         </div>
-                        <span class="text-sm font-bold" style="color: var(--accent-red);">+2 points</span>
+                        <span class="text-sm font-bold" style="color: #eab308;">+1 point</span>
+                    </div>
+
+                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 rounded-full" style="background: #eab308;"></div>
+                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Support At-Risk</span>
+                        </div>
+                        <span class="text-sm font-bold" style="color: #eab308;">+1 point</span>
+                    </div>
+
+                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 rounded-full" style="background: #eab308;"></div>
+                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Teamwork At-Risk</span>
+                        </div>
+                        <span class="text-sm font-bold" style="color: #eab308;">+1 point</span>
+                    </div>
+
+                    <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 rounded-full" style="background: #eab308;"></div>
+                            <span class="text-sm font-medium" style="color: var(--text-primary);">Team Autonomy At-Risk</span>
+                        </div>
+                        <span class="text-sm font-bold" style="color: #eab308;">+1 point</span>
                     </div>
                     
                     <div class="flex justify-between items-center p-3 rounded" style="background: var(--bg-tertiary);">
@@ -628,14 +736,16 @@ function showRiskScoreInfoModal() {
             </div>
             
             <div class="pt-4 border-t" style="border-color: var(--border-primary);">
-                <button onclick="history.back(); showAtRiskAnalysisModal(boardData.initiatives.find(i => i.id === ${JSON.stringify('${initiative.id}')})); return false;" 
+                <button onclick="closeModal()" 
                         class="w-full px-4 py-2 rounded font-medium transition-colors" 
                         style="background: var(--accent-primary); color: white;">
-                    Back to Risk Analysis
+                    Close
                 </button>
             </div>
         </div>
     `;
+    
+    modal.classList.add('show');
 }
 
 
@@ -2738,17 +2848,31 @@ function calculateSimpleRiskScore(initiative) {
         const team = boardData.teams[teamName];
         if (!team) return;
 
+        // NEW 6-ATTRIBUTE RISK SCORING:
+        
         // Check capacity risk
         if (team.capacity === 'at-risk') riskScore += 2;
+        
         // Check skillset risk  
         if (team.skillset === 'at-risk') riskScore += 2;
-        // Check leadership risk
-        if (team.leadership === 'at-risk') riskScore += 2;
-        // Check utilization
+        
+        // Check vision risk (NEW)
+        if (team.vision === 'at-risk') riskScore += 1;
+        
+        // Check support risk (NEW)
+        if (team.support === 'at-risk') riskScore += 1;
+        
+        // Check teamwork risk (NEW)
+        if (team.teamwork === 'at-risk') riskScore += 1;
+        
+        // Check autonomy risk (NEW)
+        if (team.autonomy === 'at-risk') riskScore += 1;
+        
+        // Check utilization (unchanged)
         if (team.jira && team.jira.utilization > 95) riskScore += 1;
     });
 
-    // Priority-based risk factors
+    // Priority-based risk factors (unchanged)
     const row = getRowColFromSlot(initiative.priority).row;
     if (row <= 2 && riskScore > 4) riskScore += 2;
 
