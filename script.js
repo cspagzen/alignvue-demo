@@ -358,7 +358,7 @@ function showAtRiskAnalysisModal(initiative) {
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="text-3xl font-bold" style="color: ${riskLevel.color};">${riskAnalysis.riskScore}/10</div>
+                    <div class="text-3xl font-bold" style="color: ${riskLevel.color};">${riskAnalysis.riskScore}/50</div>
                     <button onclick="showRiskScoreInfoModal()" class="text-xs underline hover:opacity-75 transition-opacity" style="color: var(--accent-blue); background: none; border: none; padding: 0; cursor: pointer;">
                         How calculated?
                     </button>
