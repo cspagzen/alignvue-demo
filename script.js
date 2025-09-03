@@ -3511,35 +3511,52 @@ function generateConfidenceTrendLine(color) {
 }
 
 // Function to transform Jira completed initiatives to our data format
+// Fixed transform function for completed initiatives
 function transformJiraCompletedInitiatives(jiraIssues) {
     return jiraIssues.map(issue => {
         const project = issue.fields.project.key;
         const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
         const initiativeType = getFieldValue(issue, 'customfield_10051') || typeMapping[project] || 'strategic';
-        const completedDate = getFieldValue(issue, 'customfield_10124');
+        
+        // Try multiple sources for completion date
+        let completedDate = null;
+        
+        // Option 1: Custom completion date field
+        completedDate = getFieldValue(issue, 'customfield_10124');
+        
+        // Option 2: If custom field empty, use resolved date
+        if (!completedDate && issue.fields.resolved) {
+            completedDate = issue.fields.resolved;
+        }
+        
+        // Option 3: If still no date, use updated date as fallback
+        if (!completedDate && issue.fields.updated) {
+            completedDate = issue.fields.updated;
+        }
+        
+        console.log(`Completed initiative ${issue.key}: completedDate = ${completedDate}`);
         
         return {
             id: parseInt(issue.id),
             title: issue.fields.summary,
             type: initiativeType,
-            completedDate: completedDate,
+            completedDate: completedDate, // This was undefined before
             teams: ['Core Platform'], // Simplified for completed initiatives
             jira: {
                 key: issue.key
             },
             canvas: {
-                outcome: extractTextFromDoc(issue.fields.customfield_10059) || getFieldValue(issue, 'customfield_10059') || '',
-                measures: extractTextFromDoc(issue.fields.customfield_10060) || getFieldValue(issue, 'customfield_10060') || '',
-                customer: extractTextFromDoc(issue.fields.customfield_10062) || getFieldValue(issue, 'customfield_10062') || '',
-                problem: extractTextFromDoc(issue.fields.customfield_10063) || getFieldValue(issue, 'customfield_10063') || '',
-                solution: extractTextFromDoc(issue.fields.customfield_10064) || getFieldValue(issue, 'customfield_10064') || '',
-                bigPicture: extractTextFromDoc(issue.fields.customfield_10065) || getFieldValue(issue, 'customfield_10065') || '',
-                alternatives: extractTextFromDoc(issue.fields.customfield_10066) || getFieldValue(issue, 'customfield_10066') || ''
+                outcome: getFieldValue(issue, 'customfield_10059') || 'Completed outcome',
+                measures: getFieldValue(issue, 'customfield_10060') || 'Success achieved',
+                customer: getFieldValue(issue, 'customfield_10062') || 'Customer value delivered',
+                problem: getFieldValue(issue, 'customfield_10063') || 'Problem solved',
+                solution: getFieldValue(issue, 'customfield_10064') || 'Solution implemented',
+                bigPicture: getFieldValue(issue, 'customfield_10065') || 'Strategic value delivered',
+                alternatives: getFieldValue(issue, 'customfield_10066') || 'Optimal solution chosen'
             }
         };
     });
 }
-
 // Function to fetch completed initiatives from Jira (last 90 days to cover all modal needs)
 async function fetchCompletedInitiativesFromJira() {
     try {
