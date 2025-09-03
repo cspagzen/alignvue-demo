@@ -8370,39 +8370,7 @@ function addManualSyncButton() {
     syncButton.addEventListener('mouseenter', () => syncButton.style.opacity = '1');
     syncButton.addEventListener('mouseleave', () => syncButton.style.opacity = '0.7');
     syncButton.addEventListener('click', () => {
-  async function syncWithJira() {
-    if (syncState.isPaused) return;
-    
-    try {
-        showSyncIndicator('syncing');
-        
-        // Get current data from Jira
-        const newData = await fetchJiraData();
-        
-        // Check if data actually changed
-        if (hasDataChanged(newData)) {
-            // Use your existing function
-            updateBoardWithLiveData(newData);
-            
-            // Add a delay to ensure UI updates complete before hiding indicator
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            syncState.lastSyncData = newData;
-            syncState.lastSyncTime = Date.now();
-            
-            showSyncIndicator('success');
-        } else {
-            showSyncIndicator('no-change');
-        }
-        
-        // Process any pending updates to Jira
-        await processPendingUpdates();
-        
-    } catch (error) {
-        console.error('Smart sync failed:', error);
-        showSyncIndicator('error');
-    }
-}      console.log('Manual sync triggered');
+        console.log('Manual sync triggered');
         syncWithJira();
     });
     
