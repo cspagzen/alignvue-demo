@@ -2513,7 +2513,7 @@ mendoza-line:hover {
 }
 
 .kpi-gauge-header {
-    font-size: clamp(0.7rem, 1vw, 0.875rem);
+    font-size: clamp(0.5rem, 1vw, 0.875rem);
     font-weight: 700;
     color: var(--text-secondary);
     margin-bottom: 0.375rem;
