@@ -2624,6 +2624,13 @@ function transformKeyResultsData(keyResults, valueHistory) {
             return parentOKR && parentOKR.key === kr.key;
         });
         
+        console.log(`${kr.key}: Found ${krHistoryRecords.length} raw history records`);
+        krHistoryRecords.forEach((record, i) => {
+            const date = getFieldValue(record, 'customfield_10159');
+            const value = getFieldValue(record, 'customfield_10158');
+        console.log(`  Record ${i}: date=${date}, value=${value}, parsedValue=${parseFloat(value)}`);
+        });
+        
         // Sort by change date and extract values
         const sortedHistory = krHistoryRecords
             .map(record => ({
