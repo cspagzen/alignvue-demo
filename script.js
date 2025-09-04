@@ -2577,7 +2577,7 @@ async function fetchKeyResultsData() {
                 endpoint: '/rest/api/3/search',
                 method: 'POST',
                 body: {
-                    jql: `project = "OKRs" AND issuetype = "Value History" ORDER BY "customfield_10159" ASC`,
+                    jql: `project = "OKRs" AND issuetype = "Value History" ORDER BY created ASC`,
                     fields: [
                         "customfield_10162", // Parent OKR
                         "customfield_10159", // Change Date
