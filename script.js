@@ -2862,13 +2862,13 @@ function updateProgressCard() {
                                     <!-- Trend line - Special handling for Strategic Capabilities -->
 <polyline points="${(kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
     const [x, y] = point.split(',');
-    return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
+    return `${parseFloat(x)},${parseFloat(y)}`;
 }).join(' ')}"
                                               fill="none" stroke="${kpi.color}" stroke-width="2" stroke-linecap="round"/>
                                     
                                    ${(kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
     const [x, y] = point.split(',');
-    return `<circle cx="${pointIndex * 20}" cy="${35 - (parseInt(y) * 1.2)}" r="2" fill="${kpi.color}"/>`;
+    return `<circle cx="${parseFloat(x)}" cy="${parseFloat(y)}" r="2" fill="${kpi.color}"/>`;
 }).join('')}
                                 </svg>
                                 <div class="kpi-trend-label">Last 30 days</div>
