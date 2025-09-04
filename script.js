@@ -2618,6 +2618,17 @@ function transformKeyResultsData(keyResults, valueHistory) {
         const krType = getFieldValue(kr, 'customfield_10049') || 'Operations';
         const shortName = getFieldValue(kr, 'customfield_10163') || kr.fields.summary;
         
+        // Debug the Value History field structure
+console.log(`Debugging Value History records for ${kr.key}:`);
+valueHistory.slice(0, 3).forEach((vh, i) => {
+    const parentField = getFieldValue(vh, 'customfield_10162');
+    console.log(`  VH ${i}: parentField =`, parentField);
+    console.log(`  VH ${i}: parentField type =`, typeof parentField);
+    if (parentField && typeof parentField === 'object') {
+        console.log(`  VH ${i}: parentField keys =`, Object.keys(parentField));
+    }
+});
+        
         // Get historical data for sparkline
         const krHistoryRecords = valueHistory.filter(vh => {
             const parentOKR = getFieldValue(vh, 'customfield_10162');
