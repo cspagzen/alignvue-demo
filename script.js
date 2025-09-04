@@ -2541,137 +2541,337 @@ function showTeamAllocationModal(allocationType) {
     
     modal.classList.add('show');
 }
-      
-  function updateProgressCard() {
-   const content = document.getElementById('progress-overview-content');
-   
-   // Calculate KPI values
-   const kpis = calculateOKRProgress();
-   
-   content.innerHTML = `
-       <div class="grid grid-cols-3 gap-2 h-full">
-           ${kpis.map((kpi, index) => `
-               <div class="kpi-gauge-card">
-                   <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; align-items: flex-start; justify-content: flex-start; text-align: left; padding-top: 0.5rem;">${kpi.title}</div>
-                   
-                   <!-- Centered content group - moved up -->
-                   <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; margin-top:  -1.3rem; margin-bottom: 0.25rem; padding-top: 0;">
-                       
-                       <div style="color: white; font-size: clamp(0.75rem, 1vw, 0.875rem); text-align: center; margin-bottom: 0.25rem;">Target: ${kpi.targetValue}</div>
-                       
-                       <div class="kpi-current-value" style="color: ${kpi.color};">${kpi.currentValue}</div>
-                       
-                       <div class="kpi-gauge-chart" style="margin-bottom: 6px;">
-                           <svg width="100%" height="80" viewBox="0 0 200 110" style="max-width: 200px;">
-       <!-- Red zone (0-33%) -->
-       <path d="M 20 90 A 80 80 0 0 1 73.2 26.9" 
-             fill="none" stroke="var(--accent-red)" stroke-width="16" stroke-linecap="round"/>
-       
-       <!-- Orange zone (33-66%) -->
-       <path d="M 73.2 26.9 A 80 80 0 0 1 126.8 26.9" 
-             fill="none" stroke="var(--accent-orange)" stroke-width="16" stroke-linecap="round"/>
-       
-       <!-- Green zone (66-100%) -->
-       <path d="M 126.8 26.9 A 80 80 0 0 1 180 90" 
-             fill="none" stroke="var(--accent-green)" stroke-width="16" stroke-linecap="round"/>
-       
-       <!-- Needle -->
-       <g transform="translate(100, 90)">
-           <line x1="0" y1="0" x2="0" y2="-60" 
-                 stroke="white" stroke-width="4" stroke-linecap="round"
-                 transform="rotate(${(kpi.progress / 100) * 180 - 90})"/>
-           <circle cx="0" cy="0" r="5" fill="white"/>
-       </g>
-   </svg>
-                       </div>
-                       
-                       <div class="kpi-trend-chart" style="margin-bottom: 0.25rem;">
-                           <svg width="100%" height="48" viewBox="0 0 120 40">
-                               <!-- Define gradient for this specific KPI -->
-                               <defs>
-                                   <linearGradient id="trendGradient${index}" x1="0%" y1="0%" x2="0%" y2="100%">
-                                       <stop offset="0%" style="stop-color:${kpi.color};stop-opacity:0.3" />
-                                       <stop offset="100%" style="stop-color:${kpi.color};stop-opacity:0" />
-                                   </linearGradient>
-                               </defs>
-                               
-                               <!-- Y-axis -->
-                               <line x1="0" y1="5" x2="0" y2="35" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-                               
-                               <!-- X-axis -->
-                               <line x1="0" y1="35" x2="120" y2="35" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-                               
-                               <!-- Grid lines -->
-                               <line x1="0" y1="20" x2="120" y2="20" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                               <line x1="0" y1="12" x2="120" y2="12" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                               <line x1="0" y1="28" x2="120" y2="28" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                               
-                               <!-- Gradient fill area -->
-                               <polygon points="${index === 2 ? 
-                                // For Strategic Capabilities (index 2), show progression from 0 to 1
-                                "0,35 20,35 40,35 60,28 80,28 100,28 120,28 120,35 0,35" :
-                                   // For other KPIs, create fill area from trend line to X-axis
-                                   kpi.trendPoints.split(' ').map((point, pointIndex) => {
-                                       const [x, y] = point.split(',');
-                                       return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
-                                   }).join(' ') + ' 120,35 0,35'
-                               }" 
-                                         fill="url(#trendGradient${index})" stroke="none"/>
-                               
-                               <!-- Trend line - Special handling for Strategic Capabilities -->
-                                <polyline points="${index === 2 ? 
-                                // For Strategic Capabilities (index 2), show progression from 0 to 1
-                                "0,35 20,35 40,35 60,28 80,28 100,28 120,28" :
-                                   // For other KPIs, use normal calculation
-                                   kpi.trendPoints.split(' ').map((point, pointIndex) => {
-                                       const [x, y] = point.split(',');
-                                       return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
-                                   }).join(' ')
-                               }" 
-                                         fill="none" stroke="${kpi.color}" stroke-width="2" stroke-linecap="round"/>
-                               <!-- Current data point -->
-                                <circle cx="120" cy="${index === 2 ? 28 : 35 - (parseInt(kpi.trendPoints.split(' ').pop().split(',')[1]) * 1.2)}" r="2" fill="${kpi.color}"/>
-                           </svg>
-                           <div class="kpi-trend-label">Last 30 days</div>
-                       </div>
-                       
-                       </div>
 
-               </div>
-           `).join('')}
-       </div>
-   `;
-
-// Add click handlers to make entire cards clickable
-setTimeout(() => {
-   const cards = document.querySelectorAll('#progress-overview-content .kpi-gauge-card');
-   const kpis = calculateOKRProgress();
-   
-   cards.forEach((card, index) => {
-       card.style.cursor = 'pointer';
-       card.style.transition = 'all 0.2s ease';
-       
-       card.addEventListener('mouseenter', function() {
-           this.style.transform = 'translateY(-2px)';
-           this.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
-       });
-       
-       card.addEventListener('mouseleave', function() {
-           this.style.transform = 'translateY(0)';
-           this.style.boxShadow = 'none';
-       });
-       
-       card.addEventListener('click', function(e) {
-           // Don't open detail modal if clicking the edit button
-           if (e.target.closest('.kpi-edit-button')) {
-               return;
-           }
-           // Use the current KPI directly based on the index
-           openKPIDetailModal(kpis[index]);
-       });
-   });
-}, 100);
+// Function to fetch Key Results and Value History data from Jira
+async function fetchKeyResultsData() {
+    try {
+        console.log('Fetching Key Results data from Jira...');
+        
+        // Fetch Key Results (Tasks under OKR Epics)
+        const keyResultsResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: `project = "OKRs" AND issuetype = Task AND parent IS NOT EMPTY ORDER BY key ASC`,
+                    fields: [
+                        "summary", "key", "parent",
+                        "customfield_10048", // Current Value
+                        "customfield_10047", // Target Value
+                        "customfield_10050", // Value Unit
+                        "customfield_10049", // KR Type
+                        "customfield_10163"  // KR Short Names
+                    ],
+                    maxResults: 100
+                }
+            })
+        });
+        
+        // Fetch Value History records
+        const valueHistoryResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: `project = "OKRs" AND issuetype = "Value History" ORDER BY "customfield_10159" ASC`,
+                    fields: [
+                        "customfield_10162", // Parent OKR
+                        "customfield_10159", // Change Date
+                        "customfield_10158"  // New Value
+                    ],
+                    maxResults: 500
+                }
+            })
+        });
+        
+        if (!keyResultsResponse.ok || !valueHistoryResponse.ok) {
+            console.error('Failed to fetch Key Results data from Jira');
+            return { keyResults: [], valueHistory: [] };
+        }
+        
+        const keyResultsData = await keyResultsResponse.json();
+        const valueHistoryData = await valueHistoryResponse.json();
+        
+        console.log(`Fetched ${keyResultsData.issues.length} Key Results and ${valueHistoryData.issues.length} Value History records`);
+        
+        return {
+            keyResults: keyResultsData.issues || [],
+            valueHistory: valueHistoryData.issues || []
+        };
+        
+    } catch (error) {
+        console.error('Error fetching Key Results data:', error);
+        return { keyResults: [], valueHistory: [] };
+    }
 }
+
+// Function to transform Key Results data for display
+function transformKeyResultsData(keyResults, valueHistory) {
+    return keyResults.slice(0, 3).map(kr => { // Limit to 3 cards to match current layout
+        const currentValue = getFieldValue(kr, 'customfield_10048') || 0;
+        const targetValue = getFieldValue(kr, 'customfield_10047') || 100;
+        const valueUnit = getFieldValue(kr, 'customfield_10050') || 'count';
+        const krType = getFieldValue(kr, 'customfield_10049') || 'Operations';
+        const shortName = getFieldValue(kr, 'customfield_10163') || kr.fields.summary;
+        
+        // Get historical data for sparkline
+        const krHistoryRecords = valueHistory.filter(vh => {
+            const parentOKR = getFieldValue(vh, 'customfield_10162');
+            return parentOKR && parentOKR.key === kr.key;
+        });
+        
+        // Sort by change date and extract values
+        const sortedHistory = krHistoryRecords
+            .map(record => ({
+                date: getFieldValue(record, 'customfield_10159'),
+                value: parseFloat(getFieldValue(record, 'customfield_10158')) || 0
+            }))
+            .filter(record => record.date && !isNaN(record.value))
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Generate sparkline points (last 30 data points or pad with current value)
+        let sparklineValues = sortedHistory.map(h => h.value);
+        if (sparklineValues.length === 0) {
+            sparklineValues = [currentValue]; // Fallback to current value
+        }
+        
+        // Pad or trim to reasonable sparkline length
+        while (sparklineValues.length < 10) {
+            sparklineValues.unshift(sparklineValues[0] || 0);
+        }
+        sparklineValues = sparklineValues.slice(-30); // Last 30 points max
+        
+        // Generate sparkline path
+        const sparklinePath = generateSparklinePath(sparklineValues);
+        
+        // Format unit for display
+        const formattedUnit = formatValueUnit(valueUnit);
+        
+        // Calculate progress percentage
+        const progressPercentage = targetValue > 0 ? Math.min((currentValue / targetValue) * 100, 100) : 0;
+        
+        // Determine badge color based on KR Type
+        const badgeColor = getBadgeColor(krType);
+        
+        return {
+            key: kr.key,
+            title: shortName,
+            currentValue: currentValue,
+            targetValue: targetValue,
+            unit: formattedUnit,
+            progress: progressPercentage,
+            krType: krType,
+            badgeColor: badgeColor,
+            sparklinePath: sparklinePath,
+            color: progressPercentage >= 80 ? 'var(--accent-green)' : 
+                   progressPercentage >= 60 ? 'var(--accent-orange)' : 'var(--accent-red)'
+        };
+    });
+}
+
+// Helper function to format value units
+function formatValueUnit(unit) {
+    switch (unit?.toLowerCase()) {
+        case 'percent':
+            return '%';
+        case 'count':
+            return '';
+        case 'score':
+            return '';
+        case 'days':
+            return 'Days';
+        case 'users':
+            return 'Users';
+        default:
+            return '';
+    }
+}
+
+// Helper function to get badge colors for KR Types
+function getBadgeColor(krType) {
+    switch (krType?.toLowerCase()) {
+        case 'growth':
+            return 'var(--accent-green)';
+        case 'innovation':
+            return 'var(--accent-blue)';
+        case 'operations':
+            return 'var(--accent-orange)';
+        default:
+            return 'var(--accent-blue)';
+    }
+}
+
+// Helper function to generate sparkline SVG path
+function generateSparklinePath(values) {
+    if (values.length === 0) return '';
+    
+    const width = 60;
+    const height = 30;
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    const range = maxValue - minValue || 1; // Avoid division by zero
+    
+    const points = values.map((value, index) => {
+        const x = (index / (values.length - 1)) * width;
+        const y = height - ((value - minValue) / range) * height;
+        return `${x},${y}`;
+    }).join(' ');
+    
+    return `M${points.split(' ').join(' L')}`;
+}
+
+// Global variable to store live KR data
+let liveKeyResultsData = [];
+
+// Helper function to generate fallback sparkline for existing data
+function generateFallbackSparkline(currentValue, maxValue) {
+    const points = [];
+    const numPoints = 10;
+    
+    for (let i = 0; i < numPoints; i++) {
+        const variation = (Math.random() - 0.5) * (maxValue * 0.1);
+        const value = Math.max(0, Math.min(maxValue, currentValue + variation));
+        const x = (i / (numPoints - 1)) * 60;
+        const y = 30 - ((value / maxValue) * 30);
+        points.push(`${x},${y}`);
+    }
+    
+    return points.join(' ');
+}
+      
+// Updated updateProgressCard function with KR Type badges
+function updateProgressCard() {
+    const content = document.getElementById('progress-overview-content');
+    
+    // Calculate KPI values (will use live data if available)
+    calculateOKRProgress().then(kpis => {
+        content.innerHTML = `
+            <div class="grid grid-cols-3 gap-2 h-full">
+                ${kpis.map((kpi, index) => `
+                    <div class="kpi-gauge-card">
+                        <!-- KR Type Badge -->
+                        <div class="kpi-kr-type-badge" style="background: ${kpi.badgeColor};">
+                            ${kpi.krType}
+                        </div>
+                        
+                        <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; align-items: flex-start; justify-content: flex-start; text-align: left; padding-top: 0.5rem;">${kpi.title}</div>
+                        
+                        <!-- Centered content group - moved up -->
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; margin-top: -1rem;">
+                            
+                            <!-- Large metric display -->
+                            <div class="kpi-current-value" style="color: ${kpi.color};">
+                                ${kpi.currentValue}${kpi.unit}
+                            </div>
+                            
+                            <!-- Target and progress -->
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <div class="kpi-target-value">Target: ${kpi.targetValue}${kpi.unit}</div>
+                            </div>
+                            
+                            <!-- Progress bar -->
+                            <div class="kpi-progress-container">
+                                <div class="kpi-progress-bar" style="width: ${Math.min(kpi.progress, 100)}%; background: ${kpi.color};"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Edit button in top right -->
+                        <button class="kpi-edit-button" onclick="openKPIEditModal('${kpi.title}', ${kpi.currentValue}, ${kpi.targetValue}, '${kpi.unit}')" title="Edit current value">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        
+                        <!-- Bottom section - trend chart -->
+                        <div class="kpi-trend-container">
+                            <svg class="kpi-trend-chart" viewBox="0 0 60 30" preserveAspectRatio="none">
+                                <path d="${kpi.sparklinePath || kpi.trendPoints}" fill="none" stroke="${kpi.color}" stroke-width="1.5" opacity="0.8"/>
+                                ${kpi.sparklinePath ? '' : kpi.trendPoints.split(' ').map(point => 
+                                    `<circle cx="${point.split(',')[0]}" cy="${point.split(',')[1]}" r="2" fill="${kpi.color}"/>`
+                                ).join('')}
+                            </svg>
+                            <div class="kpi-trend-label">Last 30 days</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // Add click handlers to make entire cards clickable
+        setTimeout(() => {
+            const cards = document.querySelectorAll('#progress-overview-content .kpi-gauge-card');
+            
+            cards.forEach((card, index) => {
+                card.style.cursor = 'pointer';
+                card.style.transition = 'all 0.2s ease';
+                
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                });
+                
+                card.addEventListener('click', function(e) {
+                    // Don't open detail modal if clicking the edit button
+                    if (e.target.closest('.kpi-edit-button')) {
+                        return;
+                    }
+                    // Use the current KPI directly based on the index
+                    openKPIDetailModal(kpis[index]);
+                });
+            });
+        }, 100);
+    });
+}
+
+// Add CSS styles for KR Type badges
+const krTypeBadgeStyles = `
+.kpi-kr-type-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: white;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    z-index: 2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.kpi-gauge-card {
+    position: relative;
+}
+
+/* Make edit button respect the badge placement */
+.kpi-edit-button {
+    top: 3rem !important;
+}
+`;
+
+// Function to inject KR Type badge styles
+function ensureKRTypeBadgeStyles() {
+    if (!document.getElementById('kr-type-badge-styles')) {
+        const styleSheet = document.createElement('style');
+        styleSheet.id = 'kr-type-badge-styles';
+        styleSheet.textContent = krTypeBadgeStyles;
+        document.head.appendChild(styleSheet);
+    }
+}
+
+
+
 
 function updateHealthCard() {
     const content = document.getElementById('health-status-content');
@@ -4494,71 +4694,79 @@ function calculateOKRAlignment() {
     return Math.round((alignedCount / activeBoardInitiatives.length) * 100);
 }
 
-function calculateOKRProgress() {
-   // Calculate MAU progress based on user engagement initiatives
-   const userEngagementInits = boardData.initiatives.filter(init => 
-       init.canvas && (
-           init.canvas.outcome.toLowerCase().includes('user') ||
-           init.canvas.outcome.toLowerCase().includes('engagement') ||
-           init.canvas.outcome.toLowerCase().includes('onboarding') ||
-           init.title.toLowerCase().includes('mobile') ||
-           init.title.toLowerCase().includes('experience')
-       )
-   );
-   const mauProgress = Math.min(userEngagementInits.reduce((sum, init) => sum + init.progress, 0) / userEngagementInits.length, 100);
-   const mauCurrent = 35; // Changed from 25 + calculation to fixed 35%
-   
-   // Rest of the function stays the same...
-   const infrastructureInits = boardData.initiatives.filter(init => 
-       init.canvas && (
-           init.canvas.outcome.toLowerCase().includes('uptime') ||
-           init.canvas.outcome.toLowerCase().includes('reliability') ||
-           init.canvas.outcome.toLowerCase().includes('monitoring') ||
-           init.title.toLowerCase().includes('security') ||
-           init.title.toLowerCase().includes('backup')
-       )
-   );
-   const uptimeProgress = infrastructureInits.reduce((sum, init) => sum + init.progress, 0) / infrastructureInits.length;
-   const uptimeCurrent = 92 + (uptimeProgress / 100) * 3;
-   
-   const strategicInits = boardData.initiatives.filter(init => 
-       init.type === 'strategic' && init.progress >= 80
-   );
-   const capabilitiesCurrent = 1; // Changed from Math.min(strategicInits.length, 3) to fixed 1
-   const capabilitiesProgress = (capabilitiesCurrent / 3) * 100;
-   
-   return [
-       {
-           title: "Monthly Active Users",
-           currentValue: `${mauCurrent}%`,
-           targetValue: "40%",
-           progress: (mauCurrent / 40) * 100, // This will put it in green zone (87.5%)
-           color: 'var(--accent-green)',
-           trend: 'up',
-           trendText: "3 days ago",
-           trendPoints: "0,10 20,12 40,15 60,18 80,20 100,22 120,25"
-       },
-       {
-           title: "System Uptime",
-           currentValue: `${Math.round(uptimeCurrent)}%`,
-           targetValue: "95%",
-           progress: ((uptimeCurrent - 92) / 3) * 100,
-           color: uptimeCurrent >= 94.5 ? 'var(--accent-green)' : uptimeCurrent >= 93.5 ? 'var(--accent-orange)' : 'var(--accent-red)',
-           trend: uptimeCurrent >= 94 ? 'up' : uptimeCurrent >= 93 ? 'stable' : 'down',
-           trendText: "1 day ago",
-           trendPoints: "0,15 20,16 40,14 60,15 80,13 100,14 120,12"
-       },
-       {
-           title: "Strategic Capabilities",
-           currentValue: `${capabilitiesCurrent}`,
-           targetValue: "3",
-           progress: capabilitiesProgress,
-           color: capabilitiesCurrent >= 3 ? 'var(--accent-green)' : capabilitiesCurrent >= 2 ? 'var(--accent-orange)' : 'var(--accent-red)',
-           trend: capabilitiesCurrent >= 2 ? 'up' : capabilitiesCurrent >= 1 ? 'stable' : 'down',
-           trendText: "5 days ago",
-           trendPoints: "0,28 20,28 40,28 60,28 80,28 100,28 120,28" // Moved up to first grid line (Y=28)
-       }
-   ];
+// Updated calculateOKRProgress function to use live data
+async function calculateOKRProgress() {
+    // Use live data if available, otherwise fall back to current hardcoded data
+    if (liveKeyResultsData.length > 0) {
+        return liveKeyResultsData;
+    }
+    
+    // Fallback to current hardcoded data structure (for compatibility)
+    const userEngagementInits = boardData.initiatives.filter(init => 
+        init.canvas && (
+            init.canvas.outcome.toLowerCase().includes('user') ||
+            init.canvas.outcome.toLowerCase().includes('engagement') ||
+            init.canvas.outcome.toLowerCase().includes('onboarding') ||
+            init.title.toLowerCase().includes('mobile') ||
+            init.title.toLowerCase().includes('experience')
+        )
+    );
+    const mauProgress = Math.min(userEngagementInits.reduce((sum, init) => sum + init.progress, 0) / userEngagementInits.length, 100);
+    const mauCurrent = 35;
+    
+    const reliabilityInits = boardData.initiatives.filter(init => 
+        init.canvas && (
+            init.canvas.outcome.toLowerCase().includes('uptime') ||
+            init.canvas.outcome.toLowerCase().includes('stability') ||
+            init.canvas.outcome.toLowerCase().includes('performance') ||
+            init.title.toLowerCase().includes('infrastructure') ||
+            init.title.toLowerCase().includes('monitoring')
+        )
+    );
+    const uptimeProgress = Math.min(reliabilityInits.reduce((sum, init) => sum + init.progress, 0) / reliabilityInits.length, 100);
+    const uptimeCurrent = 94.2;
+    
+    const strategicInits = boardData.initiatives.filter(init => 
+        init.type === 'strategic' && init.priority !== 'pipeline'
+    );
+    const capabilitiesProgress = Math.min(strategicInits.reduce((sum, init) => sum + init.progress, 0) / strategicInits.length, 100);
+    const capabilitiesCurrent = 2;
+    
+    return [
+        {
+            title: "Monthly Active Users",
+            currentValue: mauCurrent,
+            targetValue: 42,
+            unit: '%',
+            progress: mauProgress,
+            krType: 'Growth',
+            badgeColor: 'var(--accent-green)',
+            color: mauProgress >= 80 ? 'var(--accent-green)' : mauProgress >= 60 ? 'var(--accent-orange)' : 'var(--accent-red)',
+            trendPoints: generateFallbackSparkline(mauCurrent, 30)
+        },
+        {
+            title: "System Uptime", 
+            currentValue: uptimeCurrent,
+            targetValue: 99.5,
+            unit: '%',
+            progress: uptimeProgress,
+            krType: 'Operations',
+            badgeColor: 'var(--accent-orange)',
+            color: uptimeProgress >= 80 ? 'var(--accent-green)' : uptimeProgress >= 60 ? 'var(--accent-orange)' : 'var(--accent-red)',
+            trendPoints: generateFallbackSparkline(uptimeCurrent, 30)
+        },
+        {
+            title: "Strategic Capabilities",
+            currentValue: capabilitiesCurrent,
+            targetValue: 4,
+            unit: '',
+            progress: capabilitiesProgress,
+            krType: 'Innovation',
+            badgeColor: 'var(--accent-blue)',
+            color: capabilitiesProgress >= 80 ? 'var(--accent-green)' : capabilitiesProgress >= 60 ? 'var(--accent-orange)' : 'var(--accent-red)',
+            trendPoints: generateFallbackSparkline(capabilitiesCurrent, 10)
+        }
+    ];
 }
       
 
@@ -7945,11 +8153,11 @@ function initEssentialKeyboard() {
 // Add this entire block to the end of your script.js file
 // =============================================================================
 
-// Add this function to your script.js file (before the sync functions)
+// Updated updateBoardWithLiveData function to include Key Results
 function updateBoardWithLiveData(newData) {
     console.log('=== UPDATE BOARD DEBUG ===');
     console.log('Updating boardData with live data from Jira...');
-    console.log('New data includes OKRs:', !!newData.okrs);
+    console.log('New data includes OKRs:', !newData.okrs);
     console.log('OKR issues count:', newData.okrs?.issues?.length || 0);
     
     // Update the global boardData object
@@ -7964,7 +8172,6 @@ function updateBoardWithLiveData(newData) {
         cacheCompletionData(boardData.initiatives);
     }
     
-    
     // Keep existing teams data (don't replace)
     if (newData.teams) {
         boardData.teams = { ...boardData.teams, ...newData.teams };
@@ -7976,6 +8183,12 @@ function updateBoardWithLiveData(newData) {
     try {
         generatePyramid();
         generateTeamHealthMatrix();
+        
+        // Ensure KR badge styles are loaded
+        ensureKRTypeBadgeStyles();
+        
+        // Update progress card with Key Results data
+        updateProgressCard();
         
         // Update pipeline if the function exists
         if (typeof updatePipelineCard === 'function') {
@@ -7996,20 +8209,19 @@ function updateBoardWithLiveData(newData) {
         console.error('Error updating UI with live data:', error);
     }
 
-// Update the Recently Completed card with fresh data
-if (typeof updateRecentlyCompletedCard === 'function') {
-    updateRecentlyCompletedCard();
-}
-    
+    // Update the Recently Completed card with fresh data
+    if (typeof updateRecentlyCompletedCard === 'function') {
+        updateRecentlyCompletedCard();
+    }
+        
     // Update validation cards with live Jira data
     if (typeof updateValidationCard === 'function') {
         updateValidationCard();
     }
     
-  if (typeof updateAtRiskCard === 'function') {
+    if (typeof updateAtRiskCard === 'function') {
         updateAtRiskCard();
     }  
-    
 }
 
 // Smart Bidirectional Sync State
@@ -8237,7 +8449,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
     };
 }
 
-// Fetch data from Jira
+// Updated fetchJiraData function to include Key Results
 async function fetchJiraData() {
     console.log('Fetching Jira data with paginated batch child queries...');
     
@@ -8294,74 +8506,89 @@ async function fetchJiraData() {
                 });
 
                 if (childrenResponse.ok) {
-                    const childrenBatch = await childrenResponse.json();
-                    allChildIssues = allChildIssues.concat(childrenBatch.issues);
-                    
-                    console.log(`Fetched batch: ${childrenBatch.issues.length} issues (total so far: ${allChildIssues.length})`);
+                    const childrenData = await childrenResponse.json();
+                    allChildIssues = allChildIssues.concat(childrenData.issues || []);
                     
                     // Check if there are more results
-                    hasMoreResults = (startAt + maxResults) < childrenBatch.total;
+                    hasMoreResults = childrenData.issues.length === maxResults;
                     startAt += maxResults;
+                    
+                    console.log(`Fetched ${allChildIssues.length} child issues so far...`);
                 } else {
-                    console.log('Failed to fetch child issues batch:', childrenResponse.status);
-                    hasMoreResults = false;
+                    console.error('Failed to fetch child issues');
+                    break;
                 }
             }
 
-            console.log(`Fetched ${allChildIssues.length} total child issues`);
-
-            // Group children by parent epic key
-            const childrenByEpic = {};
+            // Group child issues by parent
+            const childIssuesByParent = {};
             allChildIssues.forEach(child => {
-                const parentKey = child.fields.parent?.key;
-                if (parentKey) {
-                    if (!childrenByEpic[parentKey]) {
-                        childrenByEpic[parentKey] = [];
-                    }
-                    childrenByEpic[parentKey].push(child);
+                const parentKey = child.fields.parent.key;
+                if (!childIssuesByParent[parentKey]) {
+                    childIssuesByParent[parentKey] = [];
                 }
+                childIssuesByParent[parentKey].push(child);
             });
 
-            console.log(`Children grouped for ${Object.keys(childrenByEpic).length} epics`);
-
-            // Assign children to their parent epics
+            // Add child issues to each epic
             initiatives.issues.forEach(epic => {
-                epic.childIssues = childrenByEpic[epic.key] || [];
-                if (epic.childIssues.length > 0) {
-                    console.log(`${epic.key}: ${epic.childIssues.length} child issues`);
-                }
+                epic.childIssues = childIssuesByParent[epic.key] || [];
             });
 
+            console.log(`Linked child issues to ${Object.keys(childIssuesByParent).length} epics`);
+            
         } catch (error) {
-            console.log('Error fetching child issues:', error.message);
-            initiatives.issues.forEach(epic => {
-                epic.childIssues = [];
-            });
+            console.error('Error fetching child issues:', error);
         }
     }
-
-    // Continue with OKRs and completed initiatives...
-    const okrsResponse = await fetch('/api/jira', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: '/rest/api/3/search',
-            method: 'POST',
-            body: {
-                jql: 'project = OKRs',
-                maxResults: 50,
-                fields: ['summary', 'issuetype', 'issuelinks', 'parent', 'key']
-            }
-        })
-    });
-
-    const okrs = await okrsResponse.json();
     
-    let completedInitiatives = [];
-    let transformedCompleted = [];
-
+    // Fetch OKRs data
+    let okrs;
     try {
-        completedInitiatives = await fetchCompletedInitiativesFromJira();
+        const okrsResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST', 
+                body: {
+                    jql: 'project = "OKRs" ORDER BY key ASC',
+                    fields: ["*all"],
+                    maxResults: 100
+                }
+            })
+        });
+
+        if (okrsResponse.ok) {
+            okrs = await okrsResponse.json();
+            console.log(`Found ${okrs.issues.length} OKR issues`);
+        } else {
+            console.error('Failed to fetch OKRs');
+            okrs = { issues: [] };
+        }
+    } catch (error) {
+        console.error('Error fetching OKRs:', error);
+        okrs = { issues: [] };
+    }
+    
+    // NEW: Fetch Key Results data
+    let keyResultsData = { keyResults: [], valueHistory: [] };
+    try {
+        keyResultsData = await fetchKeyResultsData();
+        
+        // Transform and store Key Results data
+        if (keyResultsData.keyResults.length > 0) {
+            liveKeyResultsData = transformKeyResultsData(keyResultsData.keyResults, keyResultsData.valueHistory);
+            console.log(`✅ Loaded ${liveKeyResultsData.length} live Key Results`);
+        }
+    } catch (error) {
+        console.error('Error fetching Key Results:', error);
+    }
+    
+    // Fetch completed initiatives
+    let transformedCompleted = [];
+    try {
+        const completedInitiatives = await fetchCompletedInitiativesFromJira();
         transformedCompleted = transformJiraCompletedInitiatives(completedInitiatives);
         console.log('Completed Initiatives Found:', transformedCompleted.length);
     } catch (error) {
