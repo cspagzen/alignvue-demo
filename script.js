@@ -2485,12 +2485,40 @@ function showTeamAllocationModal(allocationType) {
     
     modal.classList.add('show');
 }
+
+// Add these helper functions to your script.js (at the end is fine)
+
+// Fetch Key Result values from Jira
+async function getKeyResultData(keyResultKey) {
+    try {
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: `/rest/api/3/issue/${keyResultKey}`,
+                method: 'GET',
+                params: {
+                    fields: 'customfield_10048,customfield_10047'
+                }
+            })
+        });
+        const issue = await response.json();
+        return {
+            current: parseFloat(issue.fields.customfield_10048) || 35,
+            target: parseFloat(issue.fields.customfield_10047) || 100
+        };
+    } catch (error) {
+        return { current: 35, target: 100 }; // fallback
+    }
+}
+
+
       
-  function updateProgressCard() {
+  async function updateProgressCard() {
    const content = document.getElementById('progress-overview-content');
    
    // Calculate KPI values
-   const kpis = calculateOKRProgress();
+   const kpis = await calculateOKRProgress();
    
    content.innerHTML = `
        <div class="grid grid-cols-3 gap-2 h-full">
@@ -2587,9 +2615,9 @@ function showTeamAllocationModal(allocationType) {
    `;
 
 // Add click handlers to make entire cards clickable
-setTimeout(() => {
+setTimeout(async() => {
    const cards = document.querySelectorAll('#progress-overview-content .kpi-gauge-card');
-   const kpis = calculateOKRProgress();
+   const kpis = await calculateOKRProgress();
    
    cards.forEach((card, index) => {
        card.style.cursor = 'pointer';
@@ -4421,7 +4449,7 @@ function calculateOKRAlignment() {
     return Math.round((alignedCount / activeBoardInitiatives.length) * 100);
 }
 
-function calculateOKRProgress() {
+async function calculateOKRProgress() {
    // Calculate MAU progress based on user engagement initiatives
    const userEngagementInits = boardData.initiatives.filter(init => 
        init.canvas && (
