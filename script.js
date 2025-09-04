@@ -4450,6 +4450,7 @@ function calculateOKRAlignment() {
 }
 
 async function calculateOKRProgress() {
+    console.log("DEBUG: calculateOKRProgress CALLED");
    // Calculate MAU progress based on user engagement initiatives
    const userEngagementInits = boardData.initiatives.filter(init => 
        init.canvas && (
