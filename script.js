@@ -2703,7 +2703,7 @@ trendPoints: sortedHistory.length > 0 ?
         const maxVal = targetValue * 1.1; // Target + 10% buffer
         const range = maxVal - minVal;
         const x = (index / Math.max(1, sortedHistory.slice(-6).length - 1)) * 120;
-        const y = 5 + (((historyPoint.value - minVal) / range) * 30);
+        const y = (historyPoint.value - minVal) / range * 25;
         return `${x},${y}`;
     }).join(' ') : 
     generateFallbackSparkline(currentValue, Math.max(targetValue, 100)),
@@ -2862,13 +2862,13 @@ function updateProgressCard() {
                                     <!-- Trend line - Special handling for Strategic Capabilities -->
 <polyline points="${(kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
     const [x, y] = point.split(',');
-    return `${parseFloat(x)},${parseFloat(y)}`;
+    return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
 }).join(' ')}"
                                               fill="none" stroke="${kpi.color}" stroke-width="2" stroke-linecap="round"/>
                                     
                                    ${(kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
     const [x, y] = point.split(',');
-    return `<circle cx="${parseFloat(x)}" cy="${parseFloat(y)}" r="2" fill="${kpi.color}"/>`;
+    return `<circle cx="${pointIndex * 20}" cy="${35 - (parseInt(y) * 1.2)}" r="2" fill="${kpi.color}"/>`;
 }).join('')}
                                 </svg>
                                 <div class="kpi-trend-label">Last 30 days</div>
