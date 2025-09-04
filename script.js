@@ -2793,11 +2793,6 @@ function updateProgressCard() {
             <div class="grid grid-cols-3 gap-2 h-full">
                 ${kpis.map((kpi, index) => `
                     <div class="kpi-gauge-card">
-                        <!-- KR Type Badge - ONLY NEW ADDITION -->
-                        <div class="kpi-kr-type-badge" style="background: ${kpi.badgeColor};">
-                            ${kpi.krType}
-                        </div>
-                        
                         <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; align-items: flex-start; justify-content: flex-start; text-align: left; padding-top: 0.5rem;">${kpi.title}</div>
                         
                         <!-- Centered content group - moved up -->

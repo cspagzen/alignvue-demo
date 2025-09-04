@@ -2500,7 +2500,7 @@ mendoza-line:hover {
 }
 
 .kpi-trend-label {
-    font-size: clamp(0.625rem, 0.8vw, 0.75rem);
+    font-size: clamp(0.4rem, 0.8vw, 0.75rem);
     color: var(--text-tertiary);
     text-align: center;
     margin-bottom: 0.25rem;
