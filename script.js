@@ -2793,7 +2793,7 @@ function updateProgressCard() {
             <div class="grid grid-cols-3 gap-2 h-full">
                 ${kpis.map((kpi, index) => `
                     <div class="kpi-gauge-card">
-                        <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; align-items: flex-start; justify-content: flex-start; text-align: left; padding-top: 0.5rem;">${kpi.title}</div>
+                        <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; align-items: flex-start; justify-content: flex-start; text-align: left; padding-top: 0.2rem;">${kpi.title}</div>
                         
                         <!-- Centered content group - moved up -->
                         <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; margin-top: -2rem; margin-bottom: 0.25rem; padding-top: 0;">
