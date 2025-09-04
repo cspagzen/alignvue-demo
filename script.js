@@ -2651,6 +2651,11 @@ valueHistory.slice(0, 3).forEach((vh, i) => {
             .filter(record => record.date && !isNaN(record.value))
             .sort((a, b) => new Date(a.date) - new Date(b.date));
         
+        console.log(`${shortName}: sortedHistory data:`);
+sortedHistory.forEach((point, i) => {
+    console.log(`  ${i}: ${point.date} → ${point.value}`);
+});
+        
         // Add this debugging:
 console.log(`${shortName}: Found ${krHistoryRecords.length} history records`);
 console.log(`${shortName}: Sorted history length: ${sortedHistory.length}`);
