@@ -2809,14 +2809,16 @@ async function calculateOKRProgressLive() {
                 kr.summary;
 
             return {
-                title: displayTitle,
-                current: values.current,
-                target: values.target,
-                unit: values.current > 10 ? "%" : "", // Add % unit for larger values
-                color: color,
-                trendPoints: trendPoints,
-                jiraKey: kr.key // Keep reference for future use
-            };
+    title: displayTitle,
+    current: values.current,
+    target: values.target,
+    unit: displayUnit,
+    type: values.type,
+    typeBadge: getKRTypeBadge(values.type), // Add this line
+    color: color,
+    trendPoints: trendPoints,
+    jiraKey: kr.key
+};
         })
     );
 
@@ -2855,7 +2857,7 @@ async function updateProgressCardWithLiveData() {
                     <div class="kpi-gauge-card">
                         <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; text-align: left; padding-top: 0.5rem;">
                             <div style="margin-bottom: 0.5rem;">
-                                ${getKRTypeBadge(kpi.type)}
+                                ${kpi.typeBadge}
                             </div>
                             <div>${kpi.title}</div>
                         </div>
