@@ -2813,33 +2813,23 @@ function updateProgressCard() {
                                     <line x1="0" y1="28" x2="120" y2="28" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
                                     
                                     <!-- Gradient fill area -->
-                                    <polygon points="${index === 2 ? 
-                                        "0,35 20,35 40,35 60,28 80,28 100,28 120,28 120,35 0,35" :
-                                        (kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
-                                            const [x, y] = point.split(',');
-                                            return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
-                                        }).join(' ') + ' 120,35 0,35'
-                                    }" 
+                                    <polygon points="${(kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
+    const [x, y] = point.split(',');
+    return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
+}).join(' ') + ' 120,35 0,35'}"
                                               fill="url(#trendGradient${index})" stroke="none"/>
                                     
                                     <!-- Trend line - Special handling for Strategic Capabilities -->
-                                    <polyline points="${index === 2 ?
-                                        "0,35 20,35 40,35 60,28 80,28 100,28 120,28" :
-                                        (kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
-                                            const [x, y] = point.split(',');
-                                            return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
-                                        }).join(' ')
-                                    }" 
+<polyline points="${(kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
+    const [x, y] = point.split(',');
+    return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
+}).join(' ')}"
                                               fill="none" stroke="${kpi.color}" stroke-width="2" stroke-linecap="round"/>
                                     
-                                    <!-- Data points -->
-                                    ${index === 2 ?
-                                        '<circle cx="60" cy="28" r="2" fill="var(--accent-blue)"/><circle cx="80" cy="28" r="2" fill="var(--accent-blue)"/><circle cx="100" cy="28" r="2" fill="var(--accent-blue)"/><circle cx="120" cy="28" r="2" fill="var(--accent-blue)"/>' :
-                                        (kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
-                                            const [x, y] = point.split(',');
-                                            return `<circle cx="${pointIndex * 20}" cy="${35 - (parseInt(y) * 1.2)}" r="2" fill="${kpi.color}"/>`;
-                                        }).join('')
-                                    }
+                                   ${(kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
+    const [x, y] = point.split(',');
+    return `<circle cx="${pointIndex * 20}" cy="${35 - (parseInt(y) * 1.2)}" r="2" fill="${kpi.color}"/>`;
+}).join('')}
                                 </svg>
                                 <div class="kpi-trend-label">Last 30 days</div>
                             </div>
