@@ -2673,11 +2673,14 @@ if (sortedHistory.length > 0) {
     progress: progressPercentage,
     krType: krType,
     badgeColor: badgeColor,
-    trendPoints: sortedHistory.length > 0 ? 
+    // Replace the existing trendPoints calculation with this:
+trendPoints: sortedHistory.length > 0 ? 
     sortedHistory.slice(-6).map((historyPoint, index) => {
-        const maxVal = Math.max(targetValue, currentValue, ...sortedHistory.map(h => h.value));
+        const minVal = 0;
+        const maxVal = targetValue * 1.1; // Target + 10% buffer
+        const range = maxVal - minVal;
         const x = (index / Math.max(1, sortedHistory.slice(-6).length - 1)) * 120;
-        const y = 30 - ((historyPoint.value / maxVal) * 25);
+        const y = 35 - (((historyPoint.value - minVal) / range) * 30);
         return `${x},${y}`;
     }).join(' ') : 
     generateFallbackSparkline(currentValue, Math.max(targetValue, 100)),
