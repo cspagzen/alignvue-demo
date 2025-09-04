@@ -2631,9 +2631,9 @@ valueHistory.slice(0, 3).forEach((vh, i) => {
         
         // Get historical data for sparkline
         const krHistoryRecords = valueHistory.filter(vh => {
-            const parentOKR = getFieldValue(vh, 'customfield_10162');
-            return parentOKR && parentOKR.key === kr.key;
-        });
+    const parentOKR = getFieldValue(vh, 'customfield_10162');
+    return parentOKR === kr.key;  // Direct string comparison instead of parentOKR.key
+});
         
         console.log(`${kr.key}: Found ${krHistoryRecords.length} raw history records`);
         krHistoryRecords.forEach((record, i) => {
