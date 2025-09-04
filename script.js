@@ -2657,19 +2657,19 @@ function transformKeyResultsData(keyResults, valueHistory) {
         // Determine badge color based on KR Type
         const badgeColor = getBadgeColor(krType);
         
-        return {
-            key: kr.key,
-            title: shortName,
-            currentValue: currentValue,
-            targetValue: targetValue,
-            unit: formattedUnit,
-            progress: progressPercentage,
-            krType: krType,
-            badgeColor: badgeColor,
-            sparklinePath: sparklinePath,
-            color: progressPercentage >= 80 ? 'var(--accent-green)' : 
-                   progressPercentage >= 60 ? 'var(--accent-orange)' : 'var(--accent-red)'
-        };
+       return {
+    key: kr.key,
+    title: shortName,
+    currentValue: currentValue,
+    targetValue: targetValue,
+    unit: formattedUnit,
+    progress: progressPercentage,
+    krType: krType,
+    badgeColor: badgeColor,
+    trendPoints: generateFallbackSparkline(currentValue, Math.max(targetValue, 100)), // ADD THIS LINE
+    color: progressPercentage >= 80 ? 'var(--accent-green)' : 
+           progressPercentage >= 60 ? 'var(--accent-orange)' : 'var(--accent-red)'
+};
     });
 }
 
