@@ -2,62 +2,6 @@
         let selectedInitiativeId = null;
         let draggedInitiative = null;
 
-// Completion data caching
-const COMPLETION_CACHE_KEY = 'jira_completion_cache';
-const CACHE_EXPIRY_KEY = 'jira_completion_cache_expiry';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 30 minutes
-
-function cacheCompletionData(initiatives) {
-    const cacheData = initiatives.map(init => ({
-        id: init.id,
-        jiraKey: init.jira?.key,
-        progress: init.progress,
-        stories: init.jira?.stories,
-        completed: init.jira?.completed,
-        inProgress: init.jira?.inProgress,
-        blocked: init.jira?.blocked,
-        hasLiveData: init.jira?.hasLiveData
-    }));
-    
-    localStorage.setItem(COMPLETION_CACHE_KEY, JSON.stringify(cacheData));
-    localStorage.setItem(CACHE_EXPIRY_KEY, Date.now() + CACHE_DURATION);
-    console.log(`Cached completion data for ${cacheData.length} initiatives`);
-}
-
-function loadCachedCompletionData() {
-    const expiry = localStorage.getItem(CACHE_EXPIRY_KEY);
-    if (!expiry || Date.now() > parseInt(expiry)) {
-        return null;
-    }
-    
-    const cached = localStorage.getItem(COMPLETION_CACHE_KEY);
-    return cached ? JSON.parse(cached) : null;
-}
-
-function applyCachedCompletion(initiatives) {
-    const cachedData = loadCachedCompletionData();
-    if (!cachedData) return false;
-    
-    let appliedCount = 0;
-    cachedData.forEach(cached => {
-        if (!cached.jiraKey) return;
-        
-        const initiative = initiatives.find(init => init.jira?.key === cached.jiraKey);
-        if (initiative) {
-            initiative.progress = cached.progress;
-            initiative.jira.stories = cached.stories;
-            initiative.jira.completed = cached.completed;
-            initiative.jira.inProgress = cached.inProgress;
-            initiative.jira.blocked = cached.blocked;
-            initiative.jira.hasLiveData = cached.hasLiveData;
-            appliedCount++;
-        }
-    });
-    
-    console.log(`Applied cached completion data to ${appliedCount} initiatives`);
-    return appliedCount > 0;
-}
-
         function getRowGradientColor(row) {
             const colors = [
                 'linear-gradient(135deg, #10b981, #059669)',
@@ -2028,7 +1972,7 @@ teamCard.innerHTML =
     
     updatePipelineCard();
     updateOKRCard();
-    updateProgressCardWithLiveData();
+    updateProgressCard();
     updateHealthCard();
     updateAtRiskCard();
     updateResourceCard();
@@ -2672,281 +2616,6 @@ setTimeout(() => {
    });
 }, 100);
 }
-
-// =================================
-// LIVE JIRA DATA INTEGRATION FOR EXISTING CARDS
-// =================================
-
-// Fetch current value from Key Result task in Jira
-async function getCurrentKeyResultValue(keyResultKey) {
-    try {
-        const response = await fetch('/api/jira', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                endpoint: `/rest/api/3/issue/${keyResultKey}`,
-                method: 'GET',
-                params: {
-                    fields: 'customfield_10048' // Current Value field
-                }
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const issue = await response.json();
-        return parseFloat(issue.fields.customfield_10048) || 0;
-    } catch (error) {
-        console.error(`Failed to fetch current value for ${keyResultKey}:`, error);
-        return 0;
-    }
-}
-
-// Fetch historical data for sparkline (simplified for just generating trendPoints)
-async function getKeyResultTrendPoints(keyResultKey) {
-    try {
-        const jql = `project = OKR AND issuetype = "Value History" AND "Parent Key Result" = "${keyResultKey}" ORDER BY created ASC`;
-        
-        const response = await fetch('/api/jira', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                endpoint: '/rest/api/3/search',
-                method: 'POST',
-                body: {
-                    jql: jql,
-                    fields: ['customfield_10158'], // New Value field
-                    maxResults: 30 // Last 30 data points for sparkline
-                }
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        if (data.issues.length === 0) {
-            // No historical data, return demo points
-            return "10,12,8,15,20,18,25,22,28,25";
-        }
-
-        // Convert to sparkline format (just the values)
-        const values = data.issues.map(issue => 
-            parseFloat(issue.fields.customfield_10158) || 0
-        );
-        
-        return values.join(',');
-    } catch (error) {
-        console.error(`Failed to fetch trend for ${keyResultKey}:`, error);
-        // Return demo data on error
-        return "10,12,8,15,20,18,25,22,28,25";
-    }
-}
-
-// Enhanced calculateOKRProgress that uses live Jira data
-async function calculateOKRProgressLive() {
-    const { keyResults } = parseOKRData();
-    
-    if (keyResults.length === 0) {
-        // Fallback to demo data if no Key Results found in Jira
-        return [
-            {
-                title: "Monthly Active Users",
-                current: 42,
-                target: 50,
-                unit: "%",
-                color: "var(--accent-green)",
-                trendPoints: "35,37,34,39,42,40,45,43,47,42"
-            },
-            {
-                title: "System Uptime", 
-                current: 99.2,
-                target: 99.9,
-                unit: "%",
-                color: "var(--accent-orange)",
-                trendPoints: "99.1,99.3,99.0,99.4,99.2,99.1,99.5,99.2,99.4,99.2"
-            },
-            {
-                title: "Strategic Capabilities",
-                current: 2,
-                target: 3,
-                unit: "",
-                color: "var(--accent-red)",
-                trendPoints: "1,1,2,2,2,2,2,2,2,2"
-            }
-        ];
-    }
-
-    // Process up to 3 Key Results with live data
-    const liveKRs = await Promise.all(
-        keyResults.slice(0, 3).map(async (kr, index) => {
-            // Fetch current and target values from Jira
-            const values = await getKeyResultValues(kr.key);
-            
-            // Fetch trend points for sparkline
-            const trendPoints = await getKeyResultTrendPoints(kr.key);
-            
-            // Calculate progress percentage (same as original script)
-            const progress = values.target > 0 ? (values.current / values.target) * 100 : 0;
-            
-            // Determine color based on progress (matching original logic)
-            let color;
-            if (progress >= 80) {
-                color = "var(--accent-green)";
-            } else if (progress >= 60) {
-                color = "var(--accent-orange)";
-            } else {
-                color = "var(--accent-red)";
-            }
-
-            // Truncate title if too long for card
-            const displayTitle = kr.summary.length > 25 ? 
-                kr.summary.substring(0, 25) + "..." : 
-                kr.summary;
-
-            return {
-    title: displayTitle,
-    current: values.current,
-    target: values.target,
-    unit: displayUnit,
-    type: values.type,
-    typeBadge: getKRTypeBadge(values.type), // Add this line
-    color: color,
-    trendPoints: trendPoints,
-    jiraKey: kr.key
-};
-        })
-    );
-
-    return liveKRs;
-}
-
-// Function to replace the existing updateProgressCard 
-async function updateProgressCardWithLiveData() {
-    const content = document.getElementById('progress-overview-content');
-    
-    // Show loading state briefly
-    content.innerHTML = `
-        <div class="grid grid-cols-3 gap-2 h-full">
-            ${[1,2,3].map(() => `
-                <div class="kpi-gauge-card">
-                    <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; align-items: center; justify-content: center;">
-                        <div class="animate-pulse h-4 bg-gray-300 rounded w-24"></div>
-                    </div>
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1;">
-                        <div class="animate-pulse h-8 bg-gray-300 rounded w-16 mb-2"></div>
-                        <div class="animate-pulse h-4 bg-gray-300 rounded w-20"></div>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-    
-    try {
-        // Get live KPI data
-        const kpis = await calculateOKRProgressLive();
-        
-        // Render using the EXACT same structure as the original, with KR type badges
-        content.innerHTML = `
-            <div class="grid grid-cols-3 gap-2 h-full">
-                ${kpis.map((kpi, index) => `
-                    <div class="kpi-gauge-card">
-                        <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; text-align: left; padding-top: 0.5rem;">
-                            <div style="margin-bottom: 0.5rem;">
-                                ${kpi.typeBadge}
-                            </div>
-                            <div>${kpi.title}</div>
-                        </div>
-                        
-                        <!-- Centered content group - moved up -->
-                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; margin-bottom: 0.5rem;">
-                            <div class="text-3xl font-bold" style="color: ${kpi.color}; margin-bottom: 0.25rem;">
-                                ${kpi.current}${kpi.unit}
-                            </div>
-                            <div class="text-sm" style="color: var(--text-tertiary); margin-bottom: 0.5rem;">
-                                Target: ${kpi.target}${kpi.unit}
-                            </div>
-                            
-                            <!-- Progress gauge -->
-                            <div style="position: relative; width: 80px; height: 40px; margin-bottom: 0.75rem;">
-                                <svg width="80" height="40" viewBox="0 0 100 50">
-                                    <path d="M 10,40 A 40,40 0 0,1 90,40" fill="none" stroke="var(--border-primary)" stroke-width="8" stroke-linecap="round"/>
-                                    <path d="M 10,40 A 40,40 0 0,1 90,40" fill="none" stroke="${kpi.color}" stroke-width="8" stroke-linecap="round"
-                                          stroke-dasharray="${(kpi.current / kpi.target) * 125.66} 125.66"/>
-                                    <circle cx="${10 + ((kpi.current / kpi.target) * 80)}" cy="${40 - Math.sin(Math.acos((((kpi.current / kpi.target) * 80) - 40) / 40)) * 40}" r="4" fill="${kpi.color}"/>
-                                </svg>
-                            </div>
-                            
-                            <!-- Mini sparkline chart -->
-                            <div style="margin-bottom: 0.5rem;">
-                                <svg width="60" height="20">
-                                    <polyline points="${kpi.trendPoints.split(',').map((val, i) => `${i * 6.67},${20 - (val / Math.max(...kpi.trendPoints.split(',').map(v => parseFloat(v))) * 18)}`).join(' ')}" 
-                                             fill="none" stroke="${kpi.color}" stroke-width="1.5" opacity="0.7"/>
-                                    ${kpi.trendPoints.split(',').map((val, i) => 
-                                        `<circle cx="${i * 6.67}" cy="${20 - (val / Math.max(...kpi.trendPoints.split(',').map(v => parseFloat(v))) * 18)}" r="1" fill="${kpi.color}" opacity="0.8"/>`
-                                    ).join('')}
-                                </svg>
-                                <div class="kpi-trend-label">Last 30 days</div>
-                            </div>
-                        </div>
-                        
-                        <div class="kpi-gauge-footer">
-                            <button class="kpi-edit-button" onclick="editKPI('${kpi.title}', ${kpi.current})">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 20h9"/>
-                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                                </svg>
-                                Edit
-                            </button>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-
-        // Add click handlers (same as original)
-        setTimeout(() => {
-            const cards = document.querySelectorAll('#progress-overview-content .kpi-gauge-card');
-            cards.forEach((card, index) => {
-                card.style.cursor = 'pointer';
-                card.style.transition = 'all 0.2s ease';
-                
-                card.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-2px)';
-                    this.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
-                });
-                
-                card.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                    this.style.boxShadow = 'none';
-                });
-                
-                card.addEventListener('click', function(e) {
-                    if (e.target.closest('.kpi-edit-button')) {
-                        return;
-                    }
-                    openKPIDetailModal(kpis[index]);
-                });
-            });
-        }, 100);
-
-    } catch (error) {
-        console.error('Error loading live KPI data:', error);
-        // Fall back to original function if there's an error
-        if (typeof calculateOKRProgress === 'function') {
-            const fallbackKpis = calculateOKRProgress();
-            // Use original rendering logic as fallback
-        }
-    }
-}
-
-// Export for global access
-window.updateProgressCardWithLiveData = updateProgressCardWithLiveData;
-window.calculateOKRProgressLive = calculateOKRProgressLive;
 
 function updateHealthCard() {
     const content = document.getElementById('health-status-content');
@@ -3842,52 +3511,35 @@ function generateConfidenceTrendLine(color) {
 }
 
 // Function to transform Jira completed initiatives to our data format
-// Fixed transform function for completed initiatives
 function transformJiraCompletedInitiatives(jiraIssues) {
     return jiraIssues.map(issue => {
         const project = issue.fields.project.key;
         const typeMapping = { 'STRAT': 'strategic', 'KTLO': 'ktlo', 'EMRG': 'emergent' };
         const initiativeType = getFieldValue(issue, 'customfield_10051') || typeMapping[project] || 'strategic';
-        
-        // Try multiple sources for completion date
-        let completedDate = null;
-        
-        // Option 1: Custom completion date field
-        completedDate = getFieldValue(issue, 'customfield_10124');
-        
-        // Option 2: If custom field empty, use resolved date
-        if (!completedDate && issue.fields.resolved) {
-            completedDate = issue.fields.resolved;
-        }
-        
-        // Option 3: If still no date, use updated date as fallback
-        if (!completedDate && issue.fields.updated) {
-            completedDate = issue.fields.updated;
-        }
-        
-        console.log(`Completed initiative ${issue.key}: completedDate = ${completedDate}`);
+        const completedDate = getFieldValue(issue, 'customfield_10124');
         
         return {
             id: parseInt(issue.id),
             title: issue.fields.summary,
             type: initiativeType,
-            completedDate: completedDate, // This was undefined before
+            completedDate: completedDate,
             teams: ['Core Platform'], // Simplified for completed initiatives
             jira: {
                 key: issue.key
             },
             canvas: {
-                outcome: getFieldValue(issue, 'customfield_10059') || 'Completed outcome',
-                measures: getFieldValue(issue, 'customfield_10060') || 'Success achieved',
-                customer: getFieldValue(issue, 'customfield_10062') || 'Customer value delivered',
-                problem: getFieldValue(issue, 'customfield_10063') || 'Problem solved',
-                solution: getFieldValue(issue, 'customfield_10064') || 'Solution implemented',
-                bigPicture: getFieldValue(issue, 'customfield_10065') || 'Strategic value delivered',
-                alternatives: getFieldValue(issue, 'customfield_10066') || 'Optimal solution chosen'
+                outcome: extractTextFromDoc(issue.fields.customfield_10059) || getFieldValue(issue, 'customfield_10059') || '',
+                measures: extractTextFromDoc(issue.fields.customfield_10060) || getFieldValue(issue, 'customfield_10060') || '',
+                customer: extractTextFromDoc(issue.fields.customfield_10062) || getFieldValue(issue, 'customfield_10062') || '',
+                problem: extractTextFromDoc(issue.fields.customfield_10063) || getFieldValue(issue, 'customfield_10063') || '',
+                solution: extractTextFromDoc(issue.fields.customfield_10064) || getFieldValue(issue, 'customfield_10064') || '',
+                bigPicture: extractTextFromDoc(issue.fields.customfield_10065) || getFieldValue(issue, 'customfield_10065') || '',
+                alternatives: extractTextFromDoc(issue.fields.customfield_10066) || getFieldValue(issue, 'customfield_10066') || ''
             }
         };
     });
 }
+
 // Function to fetch completed initiatives from Jira (last 90 days to cover all modal needs)
 async function fetchCompletedInitiativesFromJira() {
     try {
@@ -6444,7 +6096,7 @@ function saveKPIValue() {
     }
     
     // Refresh the progress card to show new values
-    updateProgressCardWithLiveData();
+    updateProgressCard();
     
     // Close the modal
     closeKPIEditModal();
@@ -8230,14 +7882,8 @@ function updateBoardWithLiveData(newData) {
     // Update the global boardData object
     boardData.initiatives = newData.initiatives || [];
     boardData.bullpen = newData.bullpen || [];
-    boardData.okrs = newData.okrs || { issues: [] };
+    boardData.okrs = newData.okrs || { issues: [] }; // Store OKR data!
     boardData.recentlyCompleted = newData.recentlyCompleted || [];
-    
-    // NEW: Cache the live completion data for next page load
-    const initiativesWithLiveData = boardData.initiatives.filter(init => init.jira?.hasLiveData);
-    if (initiativesWithLiveData.length > 0) {
-        cacheCompletionData(boardData.initiatives);
-    }
     
     
     // Keep existing teams data (don't replace)
@@ -8367,7 +8013,7 @@ function findOKRAlignment(issue, okrIssues) {
 
 // Transform Jira data to board format
 function transformJiraData(initiativesResponse, okrsResponse, completedInitiatives) {
-    console.log('Transforming Jira data with live completion...');
+    console.log('Transforming Jira data...');
     
     const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
         const project = issue.fields.project.key;
@@ -8388,7 +8034,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
             priority = 'pipeline';
         }
         
-        // Process teams correctly
+        // Process teams correctly - handle Jira select field format AND split concatenated teams
         let processedTeams;
         if (Array.isArray(teamsAssigned)) {
             processedTeams = teamsAssigned.map(team => {
@@ -8399,11 +8045,12 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
                     teamValue = team;
                 }
                 
+                // Split concatenated teams (semicolon separated)
                 if (teamValue && teamValue.includes(';')) {
                     return teamValue.split(';').map(t => t.trim());
                 }
                 return teamValue;
-            }).flat();
+            }).flat(); // Flatten in case we split any teams
         } else if (teamsAssigned && typeof teamsAssigned === 'object' && teamsAssigned.value) {
             const teamValue = teamsAssigned.value;
             if (teamValue.includes(';')) {
@@ -8421,41 +8068,8 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
             processedTeams = ['Core Platform'];
         }
         
+        // Remove any empty strings
         processedTeams = processedTeams.filter(team => team && team.trim());
-
-        // Calculate completion data with caching support
-        const liveCompletion = calculateLiveCompletion(issue.childIssues);
-        const hasChildIssues = liveCompletion.total > 0;
-        
-        // Check if we have existing cached data for this initiative
-        const existingInitiative = boardData.initiatives?.find(init => init.jira?.key === issue.key);
-        const hasCachedData = existingInitiative && existingInitiative.jira?.hasLiveData;
-        
-        let finalCompletion;
-        if (hasChildIssues) {
-            // Use fresh live data from child issues
-            finalCompletion = liveCompletion;
-        } else if (hasCachedData) {
-            // Preserve cached data instead of generating new mock data
-            finalCompletion = {
-                total: existingInitiative.jira.stories,
-                completed: existingInitiative.jira.completed,
-                inProgress: existingInitiative.jira.inProgress,
-                blocked: existingInitiative.jira.blocked,
-                progress: existingInitiative.progress,
-                velocity: existingInitiative.jira.velocity
-            };
-        } else {
-            // Only generate mock data if no cached data exists
-            finalCompletion = {
-                total: Math.floor(Math.random() * 30) + 10,
-                completed: Math.floor(Math.random() * 15) + 5,
-                inProgress: Math.floor(Math.random() * 10) + 3,
-                blocked: Math.floor(Math.random() * 5),
-                progress: Math.floor(Math.random() * 80) + 10,
-                velocity: Math.floor(Math.random() * 15) + 5
-            };
-        }
         
         return {
             id: parseInt(issue.id),
@@ -8464,18 +8078,14 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
             validation: mapJiraValidationStatus(validationStatus),
             priority: priority,
             teams: processedTeams,
-            progress: finalCompletion.progress,
+            progress: Math.floor(Math.random() * 80) + 10,
             jira: {
                 key: issue.key,
-                stories: finalCompletion.total,
-                completed: finalCompletion.completed,
-                inProgress: finalCompletion.inProgress,
-                blocked: finalCompletion.blocked,
-                velocity: finalCompletion.velocity,
-                status: issue.fields.status.name,
-                assignee: issue.fields.assignee?.displayName || 'Unassigned',
-                updated: issue.fields.updated,
-                hasLiveData: hasChildIssues || hasCachedData
+                stories: Math.floor(Math.random() * 30) + 10,
+                completed: Math.floor(Math.random() * 15) + 5,
+                inProgress: Math.floor(Math.random() * 10) + 3,
+                blocked: Math.floor(Math.random() * 5),
+                velocity: Math.floor(Math.random() * 15) + 5
             },
             canvas: {
                 outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Outcome to be defined',
@@ -8494,29 +8104,20 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
     const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
     const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
     
-    // Log completion statistics
-    const liveDataCount = activeInitiatives.filter(i => i.jira.hasLiveData).length;
-    const cachedDataCount = activeInitiatives.filter(i => i.jira.hasLiveData && !calculateLiveCompletion(initiativesResponse.issues.find(issue => issue.key === i.jira.key)?.childIssues || []).total).length;
-    
-    console.log(`Active initiatives: ${activeInitiatives.length}`);
-    console.log(`  - With live data: ${liveDataCount - cachedDataCount}`);
-    console.log(`  - With cached data: ${cachedDataCount}`);
-    console.log(`  - With mock data: ${activeInitiatives.length - liveDataCount}`);
-    
+    console.log(`Active on board: ${activeInitiatives.length}, Pipeline: ${pipelineInitiatives.length}`);
+
     return {
         initiatives: activeInitiatives,
         bullpen: pipelineInitiatives,
         teams: boardData.teams,
         okrs: { issues: okrsResponse?.issues || [] },
-        recentlyCompleted: completedInitiatives || []
+        recentlyCompleted: completedInitiatives || []  // ADD this line
     };
 }
 
 // Fetch data from Jira
 async function fetchJiraData() {
-    console.log('Fetching Jira data with paginated batch child queries...');
-    
-    // Get all epics first
+    // Get initiatives via proxy
     const initiativesResponse = await fetch('/api/jira', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8536,86 +8137,8 @@ async function fetchJiraData() {
     }
 
     const initiatives = await initiativesResponse.json();
-    console.log(`Found ${initiatives.issues.length} epics`);
 
-    // Get ALL child issues with proper pagination
-    if (initiatives.issues.length > 0) {
-        const epicKeys = initiatives.issues.map(epic => epic.key);
-        const parentJQL = `parent IN ("${epicKeys.join('","')}")`;
-        
-        console.log('Fetching all child issues with pagination...');
-        
-        try {
-            let allChildIssues = [];
-            let startAt = 0;
-            const maxResults = 100;
-            let hasMoreResults = true;
-
-            // Paginate through all child issues
-            while (hasMoreResults) {
-                const childrenResponse = await fetch('/api/jira', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        endpoint: '/rest/api/3/search',
-                        method: 'POST',
-                        body: {
-                            jql: parentJQL,
-                            fields: ['parent', 'status', 'key', 'summary'],
-                            startAt: startAt,
-                            maxResults: maxResults
-                        }
-                    })
-                });
-
-                if (childrenResponse.ok) {
-                    const childrenBatch = await childrenResponse.json();
-                    allChildIssues = allChildIssues.concat(childrenBatch.issues);
-                    
-                    console.log(`Fetched batch: ${childrenBatch.issues.length} issues (total so far: ${allChildIssues.length})`);
-                    
-                    // Check if there are more results
-                    hasMoreResults = (startAt + maxResults) < childrenBatch.total;
-                    startAt += maxResults;
-                } else {
-                    console.log('Failed to fetch child issues batch:', childrenResponse.status);
-                    hasMoreResults = false;
-                }
-            }
-
-            console.log(`Fetched ${allChildIssues.length} total child issues`);
-
-            // Group children by parent epic key
-            const childrenByEpic = {};
-            allChildIssues.forEach(child => {
-                const parentKey = child.fields.parent?.key;
-                if (parentKey) {
-                    if (!childrenByEpic[parentKey]) {
-                        childrenByEpic[parentKey] = [];
-                    }
-                    childrenByEpic[parentKey].push(child);
-                }
-            });
-
-            console.log(`Children grouped for ${Object.keys(childrenByEpic).length} epics`);
-
-            // Assign children to their parent epics
-            initiatives.issues.forEach(epic => {
-                epic.childIssues = childrenByEpic[epic.key] || [];
-                if (epic.childIssues.length > 0) {
-                    console.log(`${epic.key}: ${epic.childIssues.length} child issues`);
-                }
-            });
-
-        } catch (error) {
-            console.log('Error fetching child issues:', error.message);
-            initiatives.issues.forEach(epic => {
-                epic.childIssues = [];
-            });
-        }
-    }
-
-    // Continue with OKRs and completed initiatives...
+    // Get OKRs via proxy
     const okrsResponse = await fetch('/api/jira', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8632,6 +8155,14 @@ async function fetchJiraData() {
 
     const okrs = await okrsResponse.json();
     
+    console.log('=== OKR FETCH DEBUG ===');
+    console.log('OKRs Response Status:', okrsResponse.status);
+    console.log('OKRs Found:', okrs.issues ? okrs.issues.length : 0);
+    if (okrs.issues) {
+        console.log('Sample OKR:', okrs.issues[0]);
+    }
+    
+    // Get completed initiatives for the Recently Completed card
     let completedInitiatives = [];
     let transformedCompleted = [];
 
@@ -8643,53 +8174,9 @@ async function fetchJiraData() {
         console.error('Error fetching completed initiatives:', error);
         transformedCompleted = [];
     }
-
-    // CHANGE: Pass the completed initiatives instead of empty array
-    return transformJiraData(initiatives, okrs, transformedCompleted);
-}
-
-// Helper function to calculate completion from child issues
-function calculateLiveCompletion(childIssues) {
-    if (!childIssues || childIssues.length === 0) {
-        return {
-            total: 0,
-            completed: 0,
-            inProgress: 0,
-            blocked: 0,
-            progress: 0,
-            velocity: 5 // Default velocity
-        };
-    }
-
-    const total = childIssues.length;
-    let completed = 0;
-    let inProgress = 0;
-    let toDo = 0;
-
-    childIssues.forEach(child => {
-        const statusCategory = child.fields.status.statusCategory.key;
-        const statusName = child.fields.status.name.toLowerCase();
-
-        if (statusCategory === 'done' || statusName.includes('done') || statusName.includes('closed') || statusName.includes('resolved')) {
-            completed++;
-        } else if (statusCategory === 'indeterminate' || statusName.includes('progress') || statusName.includes('review')) {
-            inProgress++;
-        } else {
-            toDo++;
-        }
-    });
-
-    const progressPercentage = Math.round((completed / total) * 100);
-    const velocity = Math.max(1, Math.round(progressPercentage / 10)); // Simple velocity calculation
-
-    return {
-        total,
-        completed,
-        inProgress,
-        blocked: toDo, // Using toDo as "blocked" for consistency with existing structure
-        progress: progressPercentage,
-        velocity
-    };
+    
+    // Transform the data AND include OKRs
+   return transformJiraData(initiatives, okrs, transformedCompleted);
 }
 
 // Initialize smart sync on page load
