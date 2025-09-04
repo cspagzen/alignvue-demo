@@ -2815,7 +2815,7 @@ function updateProgressCard() {
                                     <!-- Gradient fill area -->
                                     <polygon points="${index === 2 ? 
                                         "0,35 20,35 40,35 60,28 80,28 100,28 120,28 120,35 0,35" :
-                                        kpi.trendPoints.split(' ').map((point, pointIndex) => {
+                                        (kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
                                             const [x, y] = point.split(',');
                                             return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
                                         }).join(' ') + ' 120,35 0,35'
@@ -2825,7 +2825,7 @@ function updateProgressCard() {
                                     <!-- Trend line - Special handling for Strategic Capabilities -->
                                     <polyline points="${index === 2 ?
                                         "0,35 20,35 40,35 60,28 80,28 100,28 120,28" :
-                                        kpi.trendPoints.split(' ').map((point, pointIndex) => {
+                                        (kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
                                             const [x, y] = point.split(',');
                                             return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
                                         }).join(' ')
@@ -2835,7 +2835,7 @@ function updateProgressCard() {
                                     <!-- Data points -->
                                     ${index === 2 ?
                                         '<circle cx="60" cy="28" r="2" fill="var(--accent-blue)"/><circle cx="80" cy="28" r="2" fill="var(--accent-blue)"/><circle cx="100" cy="28" r="2" fill="var(--accent-blue)"/><circle cx="120" cy="28" r="2" fill="var(--accent-blue)"/>' :
-                                        kpi.trendPoints.split(' ').map((point, pointIndex) => {
+                                        (kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
                                             const [x, y] = point.split(',');
                                             return `<circle cx="${pointIndex * 20}" cy="${35 - (parseInt(y) * 1.2)}" r="2" fill="${kpi.color}"/>`;
                                         }).join('')
