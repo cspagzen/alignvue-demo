@@ -2666,7 +2666,14 @@ function transformKeyResultsData(keyResults, valueHistory) {
     progress: progressPercentage,
     krType: krType,
     badgeColor: badgeColor,
-    trendPoints: generateFallbackSparkline(currentValue, Math.max(targetValue, 100)), // ADD THIS LINE
+    trendPoints: sortedHistory.length > 0 ? 
+    sortedHistory.slice(-6).map((historyPoint, index) => {
+        const maxVal = Math.max(targetValue, currentValue, ...sortedHistory.map(h => h.value));
+        const x = (index / Math.max(1, sortedHistory.slice(-6).length - 1)) * 120;
+        const y = 30 - ((historyPoint.value / maxVal) * 25);
+        return `${x},${y}`;
+    }).join(' ') : 
+    generateFallbackSparkline(currentValue, Math.max(targetValue, 100)),
     color: progressPercentage >= 80 ? 'var(--accent-green)' : 
            progressPercentage >= 60 ? 'var(--accent-orange)' : 'var(--accent-red)'
 };
@@ -2730,13 +2737,13 @@ let liveKeyResultsData = [];
 // Helper function to generate fallback sparkline for existing data
 function generateFallbackSparkline(currentValue, maxValue) {
     const points = [];
-    const numPoints = 10;
+    const numPoints = 6; // Reduced from 10 to fit better
     
     for (let i = 0; i < numPoints; i++) {
         const variation = (Math.random() - 0.5) * (maxValue * 0.1);
         const value = Math.max(0, Math.min(maxValue, currentValue + variation));
-        const x = (i / (numPoints - 1)) * 60;
-        const y = 30 - ((value / maxValue) * 30);
+        const x = (i / (numPoints - 1)) * 120; // Changed from 60 to 120 to match chart width
+        const y = 30 - ((value / maxValue) * 25); // Adjusted Y scaling
         points.push(`${x},${y}`);
     }
     
