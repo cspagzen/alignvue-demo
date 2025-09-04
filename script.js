@@ -2633,6 +2633,13 @@ function transformKeyResultsData(keyResults, valueHistory) {
             .filter(record => record.date && !isNaN(record.value))
             .sort((a, b) => new Date(a.date) - new Date(b.date));
         
+        // Add this debugging:
+console.log(`${shortName}: Found ${krHistoryRecords.length} history records`);
+console.log(`${shortName}: Sorted history length: ${sortedHistory.length}`);
+if (sortedHistory.length > 0) {
+    console.log(`${shortName}: Sample history:`, sortedHistory.slice(0, 3));
+}
+        
         // Generate sparkline points (last 30 data points or pad with current value)
         let sparklineValues = sortedHistory.map(h => h.value);
         if (sparklineValues.length === 0) {
