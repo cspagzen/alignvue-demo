@@ -2796,13 +2796,13 @@ function updateProgressCard() {
                         <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; align-items: flex-start; justify-content: flex-start; text-align: left; padding-top: 0.5rem;">${kpi.title}</div>
                         
                         <!-- Centered content group - moved up -->
-                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; margin-top: -1.3rem; margin-bottom: 0.25rem; padding-top: 0;">
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; margin-top: -2rem; margin-bottom: 0.25rem; padding-top: 0;">
                             
                             <div style="color: white; font-size: clamp(0.75rem, 1vw, 0.875rem); text-align: center; margin-bottom: 0.25rem;">Target: ${kpi.targetValue}${kpi.unit || ''}</div>
                             
                             <div class="kpi-current-value" style="color: ${kpi.color};">${kpi.currentValue}${kpi.unit || ''}</div>
                             
-                            <div class="kpi-gauge-chart" style="margin-bottom: 6px;">
+                            <div class="kpi-gauge-chart" style="margin-bottom: 2px;">
                                 <svg width="100%" height="80" viewBox="0 0 200 110" style="max-width: 200px;">
                                     <!-- Red zone (0-33%) -->
                                     <path d="M 20 90 A 80 80 0 0 1 73.2 26.9" 
@@ -2826,7 +2826,7 @@ function updateProgressCard() {
                                 </svg>
                             </div>
                             
-                            <div class="kpi-trend-chart" style="margin-bottom: 0.25rem;">
+                            <div class="kpi-trend-chart" style="margin-bottom: 0.1rem;">
                                 <svg width="100%" height="48" viewBox="0 0 120 40">
                                     <!-- Define gradient for this specific KPI -->
                                     <defs>
