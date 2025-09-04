@@ -2703,7 +2703,7 @@ trendPoints: sortedHistory.length > 0 ?
         const maxVal = targetValue * 1.1; // Target + 10% buffer
         const range = maxVal - minVal;
         const x = (index / Math.max(1, sortedHistory.slice(-6).length - 1)) * 120;
-        const y = 35 - (((historyPoint.value - minVal) / range) * 30);
+        const y = 5 + (((historyPoint.value - minVal) / range) * 30);
         return `${x},${y}`;
     }).join(' ') : 
     generateFallbackSparkline(currentValue, Math.max(targetValue, 100)),
