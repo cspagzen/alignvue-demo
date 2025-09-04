@@ -4451,6 +4451,19 @@ function calculateOKRAlignment() {
 
 async function calculateOKRProgress() {
     console.log("DEBUG: calculateOKRProgress CALLED");
+    console.log("DEBUG: About to call parseOKRData");
+    const { keyResults } = parseOKRData();
+    console.log("DEBUG: parseOKRData returned:", keyResults.length, keyResults);
+    
+    if (keyResults.length >= 1) {
+        console.log("DEBUG: Found keyResults, trying to fetch live data");
+        const liveData = await getKeyResultData(keyResults[0].key);
+        console.log("DEBUG: Live data received:", liveData);
+    } else {
+        console.log("DEBUG: No keyResults found, using fallback");
+    }
+    
+    console.log("DEBUG: Reached end of function");
    // Calculate MAU progress based on user engagement initiatives
    const userEngagementInits = boardData.initiatives.filter(init => 
        init.canvas && (
