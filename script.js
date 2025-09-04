@@ -4735,9 +4735,15 @@ function calculateOKRAlignment() {
 async function calculateOKRProgress() {
     // Use live data if available, otherwise fall back to current hardcoded data
     if (liveKeyResultsData && liveKeyResultsData.length > 0) {
-        console.log(`Using ${liveKeyResultsData.length} live Key Results`);
-        return liveKeyResultsData;
-    }
+    console.log(`Using ${liveKeyResultsData.length} live Key Results`);
+    // Add this debug logging:
+    liveKeyResultsData.forEach((kr, index) => {
+        console.log(`KR ${index}: ${kr.title}`);
+        console.log(`  trendPoints:`, kr.trendPoints);
+        console.log(`  trendPoints type:`, typeof kr.trendPoints);
+    });
+    return liveKeyResultsData;
+}
     
     console.log('Using fallback hardcoded data for Key Results');
     
