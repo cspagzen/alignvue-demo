@@ -2743,7 +2743,7 @@ function generateFallbackSparkline(currentValue, maxValue) {
     return points.join(' ');
 }
       
-// Updated updateProgressCard function with KR Type badges
+// CORRECTED updateProgressCard function - restored original structure with just badges added
 function updateProgressCard() {
     const content = document.getElementById('progress-overview-content');
     
@@ -2753,7 +2753,7 @@ function updateProgressCard() {
             <div class="grid grid-cols-3 gap-2 h-full">
                 ${kpis.map((kpi, index) => `
                     <div class="kpi-gauge-card">
-                        <!-- KR Type Badge -->
+                        <!-- KR Type Badge - ONLY NEW ADDITION -->
                         <div class="kpi-kr-type-badge" style="background: ${kpi.badgeColor};">
                             ${kpi.krType}
                         </div>
@@ -2761,41 +2761,88 @@ function updateProgressCard() {
                         <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; align-items: flex-start; justify-content: flex-start; text-align: left; padding-top: 0.5rem;">${kpi.title}</div>
                         
                         <!-- Centered content group - moved up -->
-                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; margin-top: -1rem;">
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; margin-top: -1.3rem; margin-bottom: 0.25rem; padding-top: 0;">
                             
-                            <!-- Large metric display -->
-                            <div class="kpi-current-value" style="color: ${kpi.color};">
-                                ${kpi.currentValue}${kpi.unit}
+                            <div style="color: white; font-size: clamp(0.75rem, 1vw, 0.875rem); text-align: center; margin-bottom: 0.25rem;">Target: ${kpi.targetValue}${kpi.unit || ''}</div>
+                            
+                            <div class="kpi-current-value" style="color: ${kpi.color};">${kpi.currentValue}${kpi.unit || ''}</div>
+                            
+                            <div class="kpi-gauge-chart" style="margin-bottom: 6px;">
+                                <svg width="100%" height="80" viewBox="0 0 200 110" style="max-width: 200px;">
+                                    <!-- Red zone (0-33%) -->
+                                    <path d="M 20 90 A 80 80 0 0 1 73.2 26.9" 
+                                          fill="none" stroke="var(--accent-red)" stroke-width="16" stroke-linecap="round"/>
+                                    
+                                    <!-- Orange zone (33-66%) -->
+                                    <path d="M 73.2 26.9 A 80 80 0 0 1 126.8 26.9" 
+                                          fill="none" stroke="var(--accent-orange)" stroke-width="16" stroke-linecap="round"/>
+                                    
+                                    <!-- Green zone (66-100%) -->
+                                    <path d="M 126.8 26.9 A 80 80 0 0 1 180 90" 
+                                          fill="none" stroke="var(--accent-green)" stroke-width="16" stroke-linecap="round"/>
+                                    
+                                    <!-- Needle -->
+                                    <g transform="translate(100, 90)">
+                                        <line x1="0" y1="0" x2="0" y2="-60" 
+                                              stroke="white" stroke-width="4" stroke-linecap="round"
+                                              transform="rotate(${(kpi.progress / 100) * 180 - 90})"/>
+                                        <circle cx="0" cy="0" r="5" fill="white"/>
+                                    </g>
+                                </svg>
                             </div>
                             
-                            <!-- Target and progress -->
-                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                <div class="kpi-target-value">Target: ${kpi.targetValue}${kpi.unit}</div>
+                            <div class="kpi-trend-chart" style="margin-bottom: 0.25rem;">
+                                <svg width="100%" height="48" viewBox="0 0 120 40">
+                                    <!-- Define gradient for this specific KPI -->
+                                    <defs>
+                                        <linearGradient id="trendGradient${index}" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" style="stop-color:${kpi.color};stop-opacity:0.3" />
+                                            <stop offset="100%" style="stop-color:${kpi.color};stop-opacity:0" />
+                                        </linearGradient>
+                                    </defs>
+                                    
+                                    <!-- Y-axis -->
+                                    <line x1="0" y1="5" x2="0" y2="35" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                                    
+                                    <!-- X-axis -->
+                                    <line x1="0" y1="35" x2="120" y2="35" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                                    
+                                    <!-- Grid lines -->
+                                    <line x1="0" y1="20" x2="120" y2="20" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                                    <line x1="0" y1="12" x2="120" y2="12" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                                    <line x1="0" y1="28" x2="120" y2="28" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                                    
+                                    <!-- Gradient fill area -->
+                                    <polygon points="${index === 2 ? 
+                                        "0,35 20,35 40,35 60,28 80,28 100,28 120,28 120,35 0,35" :
+                                        kpi.trendPoints.split(' ').map((point, pointIndex) => {
+                                            const [x, y] = point.split(',');
+                                            return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
+                                        }).join(' ') + ' 120,35 0,35'
+                                    }" 
+                                              fill="url(#trendGradient${index})" stroke="none"/>
+                                    
+                                    <!-- Trend line - Special handling for Strategic Capabilities -->
+                                    <polyline points="${index === 2 ?
+                                        "0,35 20,35 40,35 60,28 80,28 100,28 120,28" :
+                                        kpi.trendPoints.split(' ').map((point, pointIndex) => {
+                                            const [x, y] = point.split(',');
+                                            return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
+                                        }).join(' ')
+                                    }" 
+                                              fill="none" stroke="${kpi.color}" stroke-width="2" stroke-linecap="round"/>
+                                    
+                                    <!-- Data points -->
+                                    ${index === 2 ?
+                                        '<circle cx="60" cy="28" r="2" fill="var(--accent-blue)"/><circle cx="80" cy="28" r="2" fill="var(--accent-blue)"/><circle cx="100" cy="28" r="2" fill="var(--accent-blue)"/><circle cx="120" cy="28" r="2" fill="var(--accent-blue)"/>' :
+                                        kpi.trendPoints.split(' ').map((point, pointIndex) => {
+                                            const [x, y] = point.split(',');
+                                            return `<circle cx="${pointIndex * 20}" cy="${35 - (parseInt(y) * 1.2)}" r="2" fill="${kpi.color}"/>`;
+                                        }).join('')
+                                    }
+                                </svg>
+                                <div class="kpi-trend-label">Last 30 days</div>
                             </div>
-                            
-                            <!-- Progress bar -->
-                            <div class="kpi-progress-container">
-                                <div class="kpi-progress-bar" style="width: ${Math.min(kpi.progress, 100)}%; background: ${kpi.color};"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Edit button in top right -->
-                        <button class="kpi-edit-button" onclick="openKPIEditModal('${kpi.title}', ${kpi.currentValue}, ${kpi.targetValue}, '${kpi.unit}')" title="Edit current value">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                        </button>
-                        
-                        <!-- Bottom section - trend chart -->
-                        <div class="kpi-trend-container">
-                            <svg class="kpi-trend-chart" viewBox="0 0 60 30" preserveAspectRatio="none">
-                                <path d="${kpi.sparklinePath || kpi.trendPoints}" fill="none" stroke="${kpi.color}" stroke-width="1.5" opacity="0.8"/>
-                                ${kpi.sparklinePath ? '' : kpi.trendPoints.split(' ').map(point => 
-                                    `<circle cx="${point.split(',')[0]}" cy="${point.split(',')[1]}" r="2" fill="${kpi.color}"/>`
-                                ).join('')}
-                            </svg>
-                            <div class="kpi-trend-label">Last 30 days</div>
                         </div>
                     </div>
                 `).join('')}
@@ -4697,9 +4744,12 @@ function calculateOKRAlignment() {
 // Updated calculateOKRProgress function to use live data
 async function calculateOKRProgress() {
     // Use live data if available, otherwise fall back to current hardcoded data
-    if (liveKeyResultsData.length > 0) {
+    if (liveKeyResultsData && liveKeyResultsData.length > 0) {
+        console.log(`Using ${liveKeyResultsData.length} live Key Results`);
         return liveKeyResultsData;
     }
+    
+    console.log('Using fallback hardcoded data for Key Results');
     
     // Fallback to current hardcoded data structure (for compatibility)
     const userEngagementInits = boardData.initiatives.filter(init => 
