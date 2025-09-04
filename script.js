@@ -7915,7 +7915,7 @@ function initEssentialKeyboard() {
 // =============================================================================
 
 // Add this function to your script.js file (before the sync functions)
-function updateBoardWithLiveData(newData) {
+async function updateBoardWithLiveData(newData) {
     console.log('=== UPDATE BOARD DEBUG ===');
     console.log('Updating boardData with live data from Jira...');
     console.log('New data includes OKRs:', !!newData.okrs);
@@ -7934,6 +7934,8 @@ function updateBoardWithLiveData(newData) {
     }
     
     console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, and ${boardData.okrs.issues.length} OKR items`);
+    
+    await updateProgressCard();
     
     // Regenerate the UI with new data
     try {
