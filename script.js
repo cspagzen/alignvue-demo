@@ -7122,6 +7122,7 @@ function getLastUpdatedFromJira(kpi) {
     return recentDates[Math.floor(Math.random() * recentDates.length)];
 }
 
+// Updated tooltip functions for chart hover
 function showTooltip(evt, date, value) {
     const tooltip = document.getElementById('chart-tooltip');
     const dateText = document.getElementById('tooltip-date');
@@ -7179,6 +7180,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Updated calculateKPIProjections function (removing data quality calculation)
 function calculateKPIProjections(kpi) {
     const currentNumeric = parseFloat(kpi.currentValue.replace(/[^\d.]/g, ''));
     const targetNumeric = parseFloat(kpi.targetValue.replace(/[^\d.]/g, ''));
@@ -7213,6 +7215,7 @@ function calculateKPIProjections(kpi) {
         daysRemaining: remainingDays
     };
 }
+
 
 function getKPIProgressClass(progress) {
     if (progress >= 80) return 'high-progress';
