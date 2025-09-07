@@ -7036,23 +7036,30 @@ function showKpiChart(kpi, chartData) {
     
     // Use CSS variables from your color palette for the gradient
     if (lineColor.includes('var(--accent-primary)') || lineColor === '#8b5cf6') {
-        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');      // --accent-primary with opacity
-        gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');    // Mid-fade
-        gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');     // Almost transparent
+        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
+        gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
+        gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
     } else if (lineColor.includes('var(--accent-green)') || lineColor === '#10b981') {
-        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');      // --accent-green with opacity
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
         gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.2)');
         gradient.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
     } else if (lineColor.includes('var(--accent-blue)') || lineColor === '#3b82f6') {
-        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');      // --accent-blue with opacity
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
         gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.2)');
         gradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
     } else {
-        // Default purple gradient for other colors
         gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
         gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
         gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
     }
+
+    // Calculate Y-axis range to include target
+    const target = parseFloat(kpi.targetValue) || 0;
+    const dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
+    const yMin = Math.min(dataMin - Math.abs(dataMin * 0.1), target - Math.abs(target * 0.1));
+    const yMax = Math.max(dataMax + Math.abs(dataMax * 0.1), target + Math.abs(target * 0.1));
+    console.log('Y-axis forced range:', yMin, 'to', yMax, '| target:', target);
 
     // Create the line chart with improved styling
     window._kpiChart = new Chart(ctx, {
@@ -7096,19 +7103,18 @@ function showKpiChart(kpi, chartData) {
                     displayColors: false,
                     callbacks: {
                         title: (context) => {
-                            const date = new Date(chartData[context[0].dataIndex].date);
-                            return date.toLocaleDateString(undefined, { 
-                                weekday: 'short',
-                                month: 'short', 
-                                day: 'numeric' 
-                            });
+                            if (chartData && chartData[context[0].dataIndex] && chartData[context[0].dataIndex].date) {
+                                const date = new Date(chartData[context[0].dataIndex].date);
+                                return date.toLocaleDateString(undefined, { 
+                                    weekday: 'short',
+                                    month: 'short', 
+                                    day: 'numeric' 
+                                });
+                            }
+                            return context[0].label;
                         },
                         label: (ctx) => `Value: ${format(ctx.parsed.y)}`
                     }
-                },
-                targetLine: { 
-                    target: (kpi && typeof kpi.targetValue === 'number') ? parseFloat(kpi.targetValue) : null, 
-                    format 
                 }
             },
             scales: {
@@ -7130,97 +7136,49 @@ function showKpiChart(kpi, chartData) {
                     }
                 },
                 y: {
-    beginAtZero: false,
-    suggestedMin: function() {
-        const target = parseFloat(kpi.targetValue) || 0;
-        const dataMin = Math.min(...values);
-        return Math.min(dataMin * 0.9, target * 0.9, 0);
-    },
-    suggestedMax: function() {
-        const target = parseFloat(kpi.targetValue) || 0;
-        const dataMax = Math.max(...values);
-        return Math.max(dataMax * 1.1, target * 1.1);
-    },
-    grid: { 
-        color: 'rgba(255, 255, 255, 0.08)',
-        drawBorder: false
-    },
-    ticks: {
-        color: 'rgba(255, 255, 255, 0.6)',
-        font: { size: 11 },
-        callback: (v) => format(v)
-    },
-    border: { 
-        display: false
-    }
-}
+                    min: yMin,
+                    max: yMax,
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.08)', 
+                        drawBorder: false 
+                    },
+                    ticks: { 
+                        color: 'rgba(255, 255, 255, 0.6)', 
+                        font: { size: 11 }, 
+                        callback: (v) => format(v) 
+                    },
+                    border: { 
+                        display: false 
+                    }
+                }
             }
         },
         plugins: [{
-    id: 'annotationLine',
-    afterDraw(chart) {
-        console.log('PLUGIN IS RUNNING!');
-        const target = 40; // hardcoded for testing
-        const { ctx, chartArea, scales: { y } } = chart;
-        const yPx = y.getPixelForValue(target);
-        
-        ctx.save();
-        ctx.strokeStyle = '#ff0000'; // bright red for visibility
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, yPx);
-        ctx.lineTo(chartArea.right, yPx);
-        ctx.stroke();
-        ctx.restore();
-    }
-}]
+            id: 'annotationLine',
+            afterDraw(chart) {
+                console.log('PLUGIN IS RUNNING!');
+                const target = parseFloat(kpi.targetValue) || 0;
+                console.log('Plugin using live target:', target);
+                const { ctx, chartArea, scales: { y } } = chart;
+                const yPx = y.getPixelForValue(target);
+                
+                ctx.save();
+                ctx.strokeStyle = '#8b5cf6';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(chartArea.left, yPx);
+                ctx.lineTo(chartArea.right, yPx);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#8b5cf6';
+                ctx.font = '11px sans-serif';
+                ctx.fillText(`Target (${format(target)})`, chartArea.right - 110, yPx - 6);
+                ctx.restore();
+            }
+        }]
     });
 }
-
-// Enhanced target line plugin with better styling
-const targetLinePlugin = {
-    id: 'targetLine',
-    afterDraw(chart, _args, opts) {
-        const target = opts && opts.target;
-        if (typeof target !== 'number') return;
-        
-        const format = (opts && opts.format) || ((v) => v);
-        const { ctx, chartArea, scales: { y } } = chart;
-        const yPx = y.getPixelForValue(target);
-        
-        if (yPx < chartArea.top || yPx > chartArea.bottom) return;
-
-        ctx.save();
-        
-        // Draw the target line
-        ctx.strokeStyle = 'rgba(139, 92, 246, 0.8)'; // Use accent-primary color
-        ctx.setLineDash([8, 4]);
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, yPx);
-        ctx.lineTo(chartArea.right, yPx);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        
-        // Draw the target label with background
-        const text = `Target: ${format(target)}`;
-        ctx.font = '12px Inter, sans-serif';
-        ctx.fillStyle = 'rgba(139, 92, 246, 0.9)';
-        
-        const textWidth = ctx.measureText(text).width;
-        const labelX = chartArea.right - textWidth - 12;
-        const labelY = yPx - 8;
-        
-        // Label background
-        ctx.fillRect(labelX - 4, labelY - 14, textWidth + 8, 18);
-        
-        // Label text
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(text, labelX, labelY);
-        
-        ctx.restore();
-    }
-};
 
 // Updated openKPIDetailModal function to use live data
 // Missing function: calculateLiveKPIProjections
@@ -7580,141 +7538,7 @@ function withAlpha(color, alpha) {
 // Main chart creation function
 // SIMPLE FIX: Replace these specific functions in your script.js
 
-// 1. Fix the showKpiChart function to use ACTUAL data points and target line
-function showKpiChart(kpi, chartData) {
-    console.log('Creating chart with ACTUAL data points:', chartData);
-    
-    const container = document.getElementById('kpiModalBody');
-    if (!container) {
-        console.error('Missing container #kpiModalBody');
-        return;
-    }
 
-    if (!window.Chart) {
-        console.error('Chart.js not found');
-        return;
-    }
-
-    // Build fresh canvas
-    container.innerHTML = `
-        <div style="position:relative; width:100%; height:200px;">
-            <canvas id="kpiChartCanvas" style="width:100%; height:200px;"></canvas>
-        </div>
-    `;
-    const canvas = document.getElementById('kpiChartCanvas');
-    if (!canvas) return;
-
-    // Extract ONLY the actual data points - no padding!
-    let labels, values;
-    
-    if (Array.isArray(chartData) && chartData.length > 0 && typeof chartData[0] === 'object') {
-        // Use actual Jira data points
-        labels = chartData.map(d => {
-            const date = new Date(d.date);
-            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        });
-        values = chartData.map(d => Number(d.value) || 0);
-        console.log(`Using ${chartData.length} ACTUAL Jira data points`);
-    } else {
-        // Minimal fallback - just 3 points
-        labels = ['Start', 'Mid', 'Current'];
-        const current = parseFloat(kpi.currentValue) || 0;
-        values = [current * 0.7, current * 0.85, current];
-        console.log('Using minimal fallback data');
-    }
-
-    // Format values
-    const unit = (kpi && kpi.unit) ? String(kpi.unit) : '';
-    const isPercent = unit === '%';
-    const format = (v) => {
-        const n = Number(v);
-        if (Number.isNaN(n)) return String(v);
-        return isPercent ? `${n.toFixed(1)}%` : n.toFixed(1);
-    };
-
-    // Destroy old chart
-    if (window._kpiChart) {
-        window._kpiChart.destroy();
-        window._kpiChart = null;
-    }
-
-    // Create gradient
-    const ctx = canvas.getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-    gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-    gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
-    gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
-
-    // Create chart with target line
-    window._kpiChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: kpi.title || 'KPI',
-                data: values,
-                borderColor: '#8b5cf6',
-                backgroundColor: gradient,
-                tension: 0.4,
-                fill: true,
-                pointRadius: 6,
-                pointHoverRadius: 8,
-                pointBackgroundColor: '#8b5cf6',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 15, 35, 0.95)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#e5e7eb',
-                    borderColor: 'rgba(139, 92, 246, 0.3)',
-                    borderWidth: 1,
-                    cornerRadius: 8,
-                    displayColors: false,
-                    callbacks: {
-                        label: (ctx) => `Value: ${format(ctx.parsed.y)}`
-                    }
-                },
-                
-            },
-            scales: {
-                x: {
-                    grid: { 
-                        color: 'rgba(255, 255, 255, 0.08)',
-                        drawBorder: false
-                    },
-                    ticks: { 
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        font: { size: 11 }
-                    },
-                    border: { display: false }
-                },
-                y: {
-                    beginAtZero: false,
-                    grid: { 
-                        color: 'rgba(255, 255, 255, 0.08)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        font: { size: 11 },
-                        callback: (v) => format(v)
-                    },
-                    border: { display: false }
-                }
-            }
-        },
-        plugins: [targetLinePlugin] // Use your existing plugin
-    });
-
-    console.log('Chart created with target:', kpi.targetValue);
-}
 
 // 2. Fix convertJiraHistoryToChartData to return ONLY actual data points
 function convertJiraHistoryToChartData(kpi, valueHistory) {
