@@ -7130,22 +7130,30 @@ function showKpiChart(kpi, chartData) {
                     }
                 },
                 y: {
-                    beginAtZero: false,
-                    grid: { 
-                        color: 'rgba(255, 255, 255, 0.08)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        font: {
-                            size: 11
-                        },
-                        callback: (v) => format(v)
-                    },
-                    border: {
-                        display: false
-                    }
-                }
+    beginAtZero: false,
+    min: function(context) {
+        const target = parseFloat(kpi.targetValue) || 0;
+        const dataMin = Math.min(...values);
+        return Math.min(0, dataMin * 0.9, target * 0.9);
+    },
+    max: function(context) {
+        const target = parseFloat(kpi.targetValue) || 0;
+        const dataMax = Math.max(...values);
+        return Math.max(dataMax * 1.1, target * 1.1);
+    },
+    grid: { 
+        color: 'rgba(255, 255, 255, 0.08)',
+        drawBorder: false
+    },
+    ticks: {
+        color: 'rgba(255, 255, 255, 0.6)',
+        font: { size: 11 },
+        callback: (v) => format(v)
+    },
+    border: { 
+        display: false
+    }
+}
             }
         },
         plugins: [{
