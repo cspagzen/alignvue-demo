@@ -7042,34 +7042,101 @@ function openKPIDetailModal(kpi) {
     }, 100);
 }
 
-// New function to generate KPI trend chart using the SAME approach as the cards
+// New function to generate KPI trend chart with SMART Y-axis scaling and proper containment
 function generateKPITrendChart(kpi) {
-    console.log('📈 Generating trend chart for:', kpi.title, 'Target:', kpi.targetValue, 'Current:', kpi.currentValue);
+    console.log('📈 Generating trend chart for:', kpi.title, 'Target:', kpi.targetValue, 'Current:', kpi.currentValue, 'Unit:', kpi.unit);
     
     // Use the exact same logic as the working cards
     const trendPoints = kpi.trendPoints || '0,35 20,35 40,35'; // Fallback to default
     const modalIndex = 'modal'; // Unique ID for modal chart
     
-    // Calculate dynamic target line position based on actual values
+    // Get actual values for smart scaling
     const currentValue = parseFloat(kpi.currentValue) || 0;
     const targetValue = parseFloat(kpi.targetValue) || 100;
+    const valueUnit = kpi.unit || '';
     
-    // Determine the chart's value range (0 to max of target * 1.1)
-    const maxChartValue = Math.max(targetValue * 1.1, currentValue * 1.1, 100);
-    const chartHeight = 120; // Reduced chart height 
-    const chartTop = 20; // Top margin
-    const chartBottom = 140; // Bottom of chart area (20 + 120)
-    const chartLeft = 30; // Left margin
-    const chartRight = 450; // Right boundary - fits in modal
-    const chartWidth = chartRight - chartLeft; // 420px wide
+    // SMART Y-AXIS SCALING based on actual data AND unit type
+    let minChartValue, maxChartValue, yAxisValues;
     
-    // Calculate target line Y position (inverted since SVG Y increases downward)
-    const targetLineY = chartBottom - ((targetValue / maxChartValue) * chartHeight);
+    // Extract actual data values from trend points to understand the real range
+    const dataValues = trendPoints.split(' ').map(point => {
+        const y = parseInt(point.split(',')[1]) || 0;
+        // Convert from card coordinate system to actual values
+        if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
+            // For percentages, assume card coordinates represent percentage points
+            return y * (100 / 35); // Scale from card's 35-max to percentage
+        } else {
+            // For counts, assume linear scaling based on target
+            return y * (targetValue / 35);
+        }
+    });
     
-    console.log(`Chart calculation - Max: ${maxChartValue}, Target Y: ${targetLineY}, Target Value: ${targetValue}`);
+    // Include current and target values in range calculation
+    const allValues = [...dataValues, currentValue, targetValue];
+    const minDataValue = Math.min(...allValues);
+    const maxDataValue = Math.max(...allValues);
+    
+    console.log('Data analysis:', { dataValues, currentValue, targetValue, minDataValue, maxDataValue, unit: valueUnit });
+    
+    if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
+        // For percentages, use smart range based on actual data spread
+        const dataRange = maxDataValue - minDataValue;
+        const padding = Math.max(dataRange * 0.2, 5); // At least 5% padding
+        
+        minChartValue = Math.max(0, Math.floor(minDataValue - padding));
+        maxChartValue = Math.min(100, Math.ceil(maxDataValue + padding));
+        
+        // Generate percentage labels
+        const step = (maxChartValue - minChartValue) / 4;
+        yAxisValues = [
+            Math.round(maxChartValue),
+            Math.round(maxChartValue - step),
+            Math.round(maxChartValue - step * 2), 
+            Math.round(maxChartValue - step * 3),
+            Math.round(minChartValue)
+        ];
+    } else {
+        // For counts, scores, days, users - use tight data-driven scaling
+        const dataRange = maxDataValue - minDataValue;
+        const padding = Math.max(dataRange * 0.15, 1); // At least 1 unit padding
+        
+        minChartValue = Math.max(0, Math.floor(minDataValue - padding));
+        maxChartValue = Math.ceil(maxDataValue + padding);
+        
+        // Generate evenly spaced numeric labels
+        const step = (maxChartValue - minChartValue) / 4;
+        yAxisValues = [
+            Math.round(maxChartValue),
+            Math.round(maxChartValue - step),
+            Math.round(maxChartValue - step * 2), 
+            Math.round(maxChartValue - step * 3),
+            Math.round(minChartValue)
+        ];
+    }
+    
+    // Chart dimensions - CONTAINED within modal
+    const chartHeight = 120;
+    const chartTop = 20;
+    const chartBottom = chartTop + chartHeight; // 140
+    const chartLeft = 40;
+    const chartRight = 350; // WELL within modal bounds
+    const chartWidth = chartRight - chartLeft; // 310px
+    
+    // Calculate target line Y position using smart scaling
+    const targetLineY = chartBottom - ((targetValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
+    
+    // Format Y-axis labels based on unit type
+    const formatYLabel = (value) => {
+        if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
+            return `${value}%`;
+        }
+        return value.toString();
+    };
+    
+    console.log(`Smart scaling - Min: ${minChartValue}, Max: ${maxChartValue}, Target Y: ${targetLineY}, Unit: ${valueUnit}`);
     
     return `
-        <svg width="100%" height="180" viewBox="0 0 500 180" style="background: rgba(255,255,255,0.02); border-radius: 4px;">
+        <svg width="100%" height="170" viewBox="0 0 400 170" style="background: rgba(255,255,255,0.02); border-radius: 4px;">
             <!-- Define gradient for this specific KPI modal -->
             <defs>
                 <linearGradient id="trendGradient${modalIndex}" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -7089,62 +7156,66 @@ function generateKPITrendChart(kpi) {
             <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.5)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.5)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
             <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.75)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.75)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
             
-            <!-- Dynamic Target line based on actual target value -->
+            <!-- Dynamic Target line based on actual target value and smart scaling -->
             <line x1="${chartLeft}" y1="${targetLineY}" x2="${chartRight}" y2="${targetLineY}" stroke="var(--accent-primary)" stroke-width="2" stroke-dasharray="5,5" opacity="0.8"/>
-            <text x="${chartRight + 5}" y="${targetLineY + 4}" fill="var(--accent-primary)" font-size="12">Target (${targetValue}${kpi.unit || ''})</text>
+            <text x="${chartRight + 5}" y="${targetLineY + 4}" fill="var(--accent-primary)" font-size="11">Target (${formatYLabel(targetValue)})</text>
             
-            <!-- Gradient fill area using same coordinate mapping as cards but scaled for modal -->
+            <!-- Gradient fill area using smart scaling -->
             <polygon points="${trendPoints.split(' ').map((point, pointIndex) => {
                 const [x, y] = point.split(',');
                 const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(trendPoints.split(' ').length - 1, 1))); 
-                const scaledY = chartBottom - (parseInt(y) * (chartHeight / 35)); // Scale based on chart height
+                // Use smart scaling instead of hardcoded /35
+                const dataValue = parseInt(y);
+                const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
                 return `${scaledX},${scaledY}`;
             }).join(' ') + ` ${chartRight},${chartBottom} ${chartLeft},${chartBottom}`}"
                       fill="url(#trendGradient${modalIndex})" stroke="none"/>
             
-            <!-- Trend line - using dynamic scaling -->
+            <!-- Trend line - using smart scaling -->
             <polyline points="${kpi.title === 'Strategic Capabilities' ? 
-                // Special handling for Strategic Capabilities with proper scaling
-                `${chartLeft},${chartBottom} ${chartLeft + chartWidth * 0.17},${chartBottom} ${chartLeft + chartWidth * 0.33},${chartBottom} ${chartLeft + chartWidth * 0.5},${targetLineY} ${chartLeft + chartWidth * 0.67},${targetLineY} ${chartLeft + chartWidth * 0.83},${targetLineY} ${chartRight},${targetLineY}` :
-                // Dynamic scaling for other KPIs
+                // Special handling for Strategic Capabilities with smart scaling
+                `${chartLeft},${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight} ${chartLeft + chartWidth * 0.17},${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight} ${chartLeft + chartWidth * 0.33},${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight} ${chartLeft + chartWidth * 0.5},${targetLineY} ${chartLeft + chartWidth * 0.67},${targetLineY} ${chartLeft + chartWidth * 0.83},${targetLineY} ${chartRight},${targetLineY}` :
+                // Dynamic scaling for other KPIs using smart scaling
                 trendPoints.split(' ').map((point, pointIndex) => {
                     const [x, y] = point.split(',');
                     const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(trendPoints.split(' ').length - 1, 1)));
-                    const scaledY = chartBottom - (parseInt(y) * (chartHeight / 35));
+                    const dataValue = parseInt(y);
+                    const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
                     return `${scaledX},${scaledY}`;
                 }).join(' ')
             }"
                       fill="none" stroke="${kpi.color || 'var(--accent-green)'}" stroke-width="3" stroke-linecap="round"/>
             
-            <!-- Data points - using dynamic scaling -->
+            <!-- Data points - using smart scaling -->
             ${kpi.title === 'Strategic Capabilities' ? 
                 // Special data points for Strategic Capabilities
-                `<circle cx="${chartLeft}" cy="${chartBottom}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
-                 <circle cx="${chartLeft + chartWidth * 0.17}" cy="${chartBottom}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
-                 <circle cx="${chartLeft + chartWidth * 0.33}" cy="${chartBottom}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
+                `<circle cx="${chartLeft}" cy="${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
+                 <circle cx="${chartLeft + chartWidth * 0.17}" cy="${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
+                 <circle cx="${chartLeft + chartWidth * 0.33}" cy="${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
                  <circle cx="${chartLeft + chartWidth * 0.5}" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
                  <circle cx="${chartLeft + chartWidth * 0.67}" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
                  <circle cx="${chartLeft + chartWidth * 0.83}" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
                  <circle cx="${chartRight}" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>` :
-                // Dynamic data points for other KPIs
+                // Dynamic data points for other KPIs using smart scaling
                 trendPoints.split(' ').map((point, pointIndex) => {
                     const [x, y] = point.split(',');
                     const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(trendPoints.split(' ').length - 1, 1)));
-                    const scaledY = chartBottom - (parseInt(y) * (chartHeight / 35));
+                    const dataValue = parseInt(y);
+                    const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
                     return `<circle cx="${scaledX}" cy="${scaledY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>`;
                 }).join('')
             }
             
             <!-- Axis labels -->
-            <text x="${chartLeft}" y="170" fill="rgba(255,255,255,0.6)" font-size="12">30 days ago</text>
-            <text x="${chartRight - 60}" y="170" fill="rgba(255,255,255,0.6)" font-size="12">Today</text>
+            <text x="${chartLeft}" y="160" fill="rgba(255,255,255,0.6)" font-size="12">30 days ago</text>
+            <text x="${chartRight - 50}" y="160" fill="rgba(255,255,255,0.6)" font-size="12">Today</text>
             
-            <!-- Value labels on Y-axis -->
-            <text x="5" y="${chartTop + 5}" fill="rgba(255,255,255,0.6)" font-size="11">${Math.round(maxChartValue)}</text>
-            <text x="5" y="${chartTop + (chartHeight * 0.25) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${Math.round(maxChartValue * 0.75)}</text>
-            <text x="5" y="${chartTop + (chartHeight * 0.5) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${Math.round(maxChartValue * 0.5)}</text>
-            <text x="5" y="${chartTop + (chartHeight * 0.75) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${Math.round(maxChartValue * 0.25)}</text>
-            <text x="5" y="${chartBottom + 4}" fill="rgba(255,255,255,0.6)" font-size="11">0</text>
+            <!-- Smart Y-axis labels based on value unit -->
+            <text x="5" y="${chartTop + 5}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[0])}</text>
+            <text x="5" y="${chartTop + (chartHeight * 0.25) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[1])}</text>
+            <text x="5" y="${chartTop + (chartHeight * 0.5) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[2])}</text>
+            <text x="5" y="${chartTop + (chartHeight * 0.75) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[3])}</text>
+            <text x="5" y="${chartBottom + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[4])}</text>
         </svg>
     `;
 }
