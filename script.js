@@ -6987,6 +6987,20 @@ function createFallbackChartData(kpi) {
     return chartData;
 }
 
+// Add this function before your showKpiChart function
+function calculateTrendline(data) {
+    const n = data.length;
+    const sumX = data.reduce((sum, _, i) => sum + i, 0);
+    const sumY = data.reduce((sum, val) => sum + val, 0);
+    const sumXY = data.reduce((sum, val, i) => sum + (i * val), 0);
+    const sumXX = data.reduce((sum, _, i) => sum + (i * i), 0);
+    
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+    
+    return data.map((_, i) => slope * i + intercept);
+}
+
 function showKpiChart(kpi, chartData) {
     const container = document.getElementById('kpiModalBody');
     if (!container) {
@@ -7049,21 +7063,31 @@ function showKpiChart(kpi, chartData) {
         data: {
             labels,
             datasets: [{
-                label: (kpi && kpi.title) || 'KPI',
-                data: values,
-                borderColor: '#6366f1',  // Indigo line
-                backgroundColor: gradient,
-                tension: 0.4,
-                fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#f59e0b',  // Orange data points for great contrast
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointHoverBackgroundColor: '#f59e0b',
-                pointHoverBorderColor: '#ffffff',
-                pointHoverBorderWidth: 3
-            }]
+    label: (kpi && kpi.title) || 'KPI',
+    data: values,
+    borderColor: '#6366f1',  // Indigo line
+    backgroundColor: gradient,
+    tension: 0.4,
+    fill: true,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    pointBackgroundColor: '#f59e0b',  // Orange data points
+    pointBorderColor: '#ffffff',
+    pointBorderWidth: 2,
+    pointHoverBackgroundColor: '#f59e0b',
+    pointHoverBorderColor: '#ffffff',
+    pointHoverBorderWidth: 3
+}, {
+    label: 'Trend',
+    data: calculateTrendline(values),
+    borderColor: '#ef4444',  // Red trendline
+    borderDash: [5, 5],      // Dotted pattern
+    borderWidth: 2,
+    fill: false,
+    pointRadius: 0,          // No points on trendline
+    pointHoverRadius: 0,
+    tension: 0               // Straight line
+}]
         },
         options: {
             responsive: true,
@@ -7162,8 +7186,10 @@ function showKpiChart(kpi, chartData) {
     });
 }
 
-// Updated openKPIDetailModal function to use live data
-// Missing function: calculateLiveKPIProjections
+
+
+
+
 function calculateLiveKPIProjections(kpi) {
     console.log('Calculating projections for live KPI:', kpi.title);
     
