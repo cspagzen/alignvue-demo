@@ -2290,9 +2290,19 @@ function showMendozaAnalysisModal() {
         <div class="p-6 space-y-6">
             <!-- Efficiency Overview -->
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
-                <h3 class="text-lg font-semibold mb-3" style="color: ${metrics.efficiencyColor};">
-                    ${metrics.efficiencyScore}% Resource Efficiency
-                </h3>
+                <div class="flex items-center gap-2 mb-3">
+                    <h3 class="text-lg font-semibold" style="color: ${metrics.efficiencyColor};">
+                        ${metrics.efficiencyScore}% Resource Efficiency
+                    </h3>
+                    <button onclick="showEfficiencyInfoModal()" class="flex items-center gap-1 text-xs" style="color: var(--accent-blue); cursor: pointer;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 16v-4"/>
+                            <path d="M12 8h.01"/>
+                        </svg>
+                        How is this score calculated?
+                    </button>
+                </div>
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <div style="color: var(--text-secondary);">Above Line (1-14)</div>
@@ -2318,18 +2328,11 @@ function showMendozaAnalysisModal() {
             </div>
             ` : ''}
             
-            <!-- Activity Breakdown -->
+            <!-- Activity Distribution Chart -->
             <div>
                 <h4 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Activity Distribution</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-3 rounded" style="background: var(--bg-quaternary);">
-                        <h5 class="font-medium mb-2" style="color: var(--accent-green);">Above Line (Good)</h5>
-                        <div class="space-y-1 text-sm" id="above-line-activities"></div>
-                    </div>
-                    <div class="p-3 rounded" style="background: var(--bg-quaternary);">
-                        <h5 class="font-medium mb-2" style="color: var(--accent-blue);">Below Line</h5>
-                        <div class="space-y-1 text-sm" id="below-line-activities"></div>
-                    </div>
+                <div class="relative" style="height: 300px;">
+                    <canvas id="modal-activity-chart"></canvas>
                 </div>
             </div>
             
@@ -2344,8 +2347,9 @@ function showMendozaAnalysisModal() {
         </div>
     `;
     
-    // Populate activity breakdowns and recommendations
+    // Populate recommendations and create activity chart
     populateModalDetails(detailedBreakdown, metrics);
+    createModalActivityChart(detailedBreakdown);
     
     modal.classList.add('show');
 }
@@ -2370,17 +2374,6 @@ function calculateDetailedResourceBreakdown() {
                 
                 const target = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
                 target[activityType] = (target[activityType] || 0) + 1;
-                
-                // Track misallocated initiatives
-                if ((isHighResource && !isAboveLine) || (!isHighResource && isAboveLine && activityType !== 'optimization' && activityType !== 'bugs')) {
-                    breakdown.misallocated.push({
-                        title: initiative.title,
-                        priority,
-                        activityType,
-                        isAboveLine,
-                        issue: isHighResource ? 'High-resource work below line' : 'Discovery work above line'
-                    });
-                }
             }
         });
     }
@@ -2397,7 +2390,32 @@ function populateModalDetails(breakdown, metrics) {
     }
 }
 
-// Create activity distribution chart in modal
+function generateRecommendations(breakdown, metrics) {
+    const recommendations = [];
+    
+    if (metrics.wasteLevel > 20) {
+        recommendations.push('Move development and go-to-market initiatives above priority 14');
+    }
+    
+    if (breakdown.belowLine.development > 2) {
+        recommendations.push('Consider promoting high-impact development work to higher priorities');
+    }
+    
+    if (breakdown.aboveLine.validation > 1) {
+        recommendations.push('Move validation activities below the line to preserve development capacity');
+    }
+    
+    if (metrics.efficiencyScore < 60) {
+        recommendations.push('Review initiative prioritization to align resource-intensive work above the line');
+    }
+    
+    if (recommendations.length === 0) {
+        recommendations.push('Resource allocation looks efficient - maintain current prioritization approach');
+    }
+    
+    return recommendations;
+}
+
 function createModalActivityChart(breakdown) {
     const canvas = document.getElementById('modal-activity-chart');
     if (!canvas) return;
@@ -2409,7 +2427,7 @@ function createModalActivityChart(breakdown) {
         window.modalActivityChart.destroy();
     }
     
-    // Activity colors matching your color scheme
+    // Activity colors
     const activityColors = {
         'development': '#3b82f6',
         'go-to-market': '#8b5cf6',
@@ -2438,12 +2456,10 @@ function createModalActivityChart(breakdown) {
     const colors = [];
     
     allActivities.forEach(activity => {
-        if (activity in breakdown.aboveLine || activity in breakdown.belowLine) {
-            labels.push(activity);
-            aboveData.push(breakdown.aboveLine[activity] || 0);
-            belowData.push(breakdown.belowLine[activity] || 0);
-            colors.push(activityColors[activity] || '#6b7280');
-        }
+        labels.push(activity);
+        aboveData.push(breakdown.aboveLine[activity] || 0);
+        belowData.push(breakdown.belowLine[activity] || 0);
+        colors.push(activityColors[activity] || '#6b7280');
     });
     
     window.modalActivityChart = new Chart(ctx, {
@@ -2473,57 +2489,24 @@ function createModalActivityChart(breakdown) {
                     position: 'top',
                     labels: {
                         color: 'var(--text-primary)',
-                        font: {
-                            size: 12
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'var(--bg-tertiary)',
-                    titleColor: 'var(--text-primary)',
-                    bodyColor: 'var(--text-secondary)',
-                    borderColor: 'var(--glass-border)',
-                    borderWidth: 1,
-                    callbacks: {
-                        title: function(contexts) {
-                            const activity = contexts[0].label;
-                            const highResourceActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
-                            const isHighResource = highResourceActivities.includes(activity);
-                            const location = contexts[0].datasetIndex === 0 ? 'above' : 'below';
-                            const appropriate = (isHighResource && location === 'above') || 
-                                             (!isHighResource && location === 'below');
-                            return `${activity} (${appropriate ? '✓ Appropriate' : '⚠️ Review'})`;
-                        }
+                        font: { size: 12 }
                     }
                 }
             },
             scales: {
                 x: {
-                    stacked: false,
-                    ticks: {
-                        color: 'var(--text-secondary)',
-                        font: { size: 10 }
-                    },
-                    grid: {
-                        display: false
-                    }
+                    ticks: { color: 'var(--text-secondary)', font: { size: 10 } },
+                    grid: { display: false }
                 },
                 y: {
-                    stacked: false,
-                    ticks: {
-                        color: 'var(--text-secondary)',
-                        font: { size: 10 }
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    }
+                    ticks: { color: 'var(--text-secondary)', font: { size: 10 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 }
             }
         }
     });
 }
 
-// Info modal for efficiency calculation explanation
 function showEfficiencyInfoModal() {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.getElementById('modal-content');
@@ -2548,49 +2531,6 @@ function showEfficiencyInfoModal() {
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="p-4 rounded-lg" style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-green);">
-                    <h4 class="font-semibold mb-2" style="color: var(--accent-green);">
-                        High-Resource Activities
-                    </h4>
-                    <p class="text-sm mb-2" style="color: var(--text-secondary);">
-                        These should be <strong>above the line</strong> (priorities 1-14):
-                    </p>
-                    <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
-                        <li>• Development</li>
-                        <li>• Go-to-Market</li>
-                        <li>• Infrastructure</li>
-                        <li>• Support</li>
-                    </ul>
-                </div>
-                
-                <div class="p-4 rounded-lg" style="background: rgba(251, 146, 60, 0.1); border: 1px solid var(--accent-orange);">
-                    <h4 class="font-semibold mb-2" style="color: var(--accent-orange);">
-                        Low-Resource Activities
-                    </h4>
-                    <p class="text-sm mb-2" style="color: var(--text-secondary);">
-                        These should be <strong>below the line</strong> (priorities 15+):
-                    </p>
-                    <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
-                        <li>• Validation</li>
-                        <li>• Research</li>
-                        <li>• Prototyping</li>
-                        <li>• Planning</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">
-                <h4 class="font-semibold mb-2" style="color: var(--accent-blue);">
-                    💡 Interpretation
-                </h4>
-                <ul class="text-sm space-y-2" style="color: var(--text-secondary);">
-                    <li><strong style="color: var(--accent-green);">80%+ (Green):</strong> Excellent resource allocation</li>
-                    <li><strong style="color: var(--accent-orange);">60-79% (Orange):</strong> Good but room for improvement</li>
-                    <li><strong style="color: var(--accent-red);">Below 60% (Red):</strong> Significant resource waste</li>
-                </ul>
-            </div>
-            
             <div class="text-center">
                 <button onclick="showMendozaAnalysisModal()" class="px-6 py-2 rounded-md text-sm font-medium" style="background: var(--accent-blue); color: white;">
                     ← Back to Analysis
@@ -2599,52 +2539,6 @@ function showEfficiencyInfoModal() {
         </div>
     `;
 }
-
-function generateRecommendations(breakdown, metrics) {
-    const recommendations = [];
-    
-    if (metrics.wasteLevel > 20) {
-        recommendations.push('Move development and go-to-market initiatives above priority 14');
-    }
-    
-    if (breakdown.belowLine.development > 2) {
-        recommendations.push('Consider promoting high-impact development work to higher priorities');
-    }
-    
-    if (breakdown.aboveLine.validation > 1) {
-        recommendations.push('Move validation activities below the line to preserve development capacity');
-    }
-    
-    if (metrics.efficiencyScore < 60) {
-        recommendations.push('Review initiative prioritization to align resource-intensive work above the line');
-    }
-    
-    if (Object.keys(breakdown.aboveLine).length === 0) {
-        recommendations.push('No initiatives above the line - consider promoting validated initiatives');
-    }
-    
-    if (recommendations.length === 0) {
-        recommendations.push('Resource allocation looks efficient - maintain current prioritization approach');
-    }
-    
-    return recommendations;
-}
-
-// Add this to your transformJiraData function to include activity type
-function enhanceJiraTransformWithActivityType(issue) {
-    // Add activity type extraction to your existing transform
-    const activityType = getFieldValue(issue, 'customfield_10190');
-    
-    return {
-        // ... existing transformation
-        activityType: activityType,
-        jira: {
-            // ... existing jira fields
-            activityType: activityType
-        }
-    };
-}
-
 
 // Add new function for team allocation modals
 function showTeamAllocationModal(allocationType) {
