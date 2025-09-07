@@ -7190,48 +7190,131 @@ function showKpiChart(kpi, chartData) {
 
 
 
-function calculateLiveKPIProjections(kpi) {
+function calculateLiveKPIProjections(kpi, chartData) {
     console.log('Calculating projections for live KPI:', kpi.title);
     
-    const currentNumeric = parseFloat(kpi.currentValue) || 0;
-    const targetNumeric = parseFloat(kpi.targetValue) || 100;
-    const progress = kpi.progress || 0;
+    const currentValue = parseFloat(kpi.currentValue) || 0;
+    const targetValue = parseFloat(kpi.targetValue) || 100;
+    const unit = kpi.unit || '';
     
-    // Enhanced projection logic using actual Jira data patterns
-    const daysElapsed = 30; // Assume 30 days of tracking so far
-    const progressRate = progress / daysElapsed; // Daily progress rate
-    const velocity = `+${(progressRate * 7).toFixed(1)}% per week`;
+    // If no chart data, return basic info
+    if (!chartData || chartData.length < 2) {
+        return {
+            velocity: 'No trend data',
+            projectedValue: `${currentValue}${unit}`,
+            requiredPace: 'Unable to calculate',
+            onTrack: currentValue >= targetValue * 0.9,
+            shortfall: currentValue < targetValue ? `${(targetValue - currentValue).toFixed(1)}${unit} below target` : '',
+            paceChange: 'Need more data points',
+            daysRemaining: 'Unknown',
+            lastUpdated: 'Just now',
+            dataQuality: 75
+        };
+    }
     
-    // Project final value based on current trajectory
-    const remainingDays = 60; // Assume 60 days remaining in period
-    const projectedProgress = Math.min(progress + (progressRate * remainingDays), 100);
-    const projectedValue = `${Math.round((projectedProgress / 100) * targetNumeric)}${kpi.unit || ''}`;
+    // Get the actual data points sorted by date
+    const sortedData = chartData
+        .filter(d => d.date && !isNaN(d.value))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    if (sortedData.length < 2) {
+        return {
+            velocity: 'Insufficient data',
+            projectedValue: `${currentValue}${unit}`,
+            requiredPace: 'Need more data',
+            onTrack: currentValue >= targetValue * 0.9,
+            shortfall: '',
+            paceChange: 'Collect more data points',
+            daysRemaining: 'Unknown',
+            lastUpdated: 'Just now',
+            dataQuality: 50
+        };
+    }
+    
+    // Calculate actual velocity from the data
+    const firstPoint = sortedData[0];
+    const lastPoint = sortedData[sortedData.length - 1];
+    const daysBetween = Math.max(1, (new Date(lastPoint.date) - new Date(firstPoint.date)) / (1000 * 60 * 60 * 24));
+    const totalChange = lastPoint.value - firstPoint.value;
+    const dailyRate = totalChange / daysBetween;
+    const weeklyRate = dailyRate * 7;
+    
+    // Format velocity based on unit
+    let velocity;
+    if (unit === '%') {
+        velocity = weeklyRate >= 0 ? `+${weeklyRate.toFixed(1)}pp per week` : `${weeklyRate.toFixed(1)}pp per week`;
+    } else {
+        velocity = weeklyRate >= 0 ? `+${weeklyRate.toFixed(1)}${unit} per week` : `${weeklyRate.toFixed(1)}${unit} per week`;
+    }
+    
+    // Calculate how much we need to reach target
+    const gap = targetValue - currentValue;
+    
+    // Estimate days remaining (could be made dynamic)
+    const daysRemaining = 90; // Reasonable default - could be parameterized
+    const weeksRemaining = daysRemaining / 7;
+    
+    // Project where we'll be at current velocity
+    const projectedFinalValue = currentValue + (weeklyRate * weeksRemaining);
+    const projectedValue = `${Math.round(projectedFinalValue * 10) / 10}${unit}`;
     
     // Calculate required weekly rate to hit target
-    const requiredWeeklyRate = ((100 - progress) / (remainingDays / 7));
-    const requiredPace = `+${Math.max(0, requiredWeeklyRate).toFixed(1)}% per week`;
+    const requiredWeeklyRate = gap / weeksRemaining;
+    let requiredPace;
+    if (unit === '%') {
+        requiredPace = requiredWeeklyRate >= 0 ? `+${requiredWeeklyRate.toFixed(1)}pp per week` : `${requiredWeeklyRate.toFixed(1)}pp per week`;
+    } else {
+        requiredPace = requiredWeeklyRate >= 0 ? `+${requiredWeeklyRate.toFixed(1)}${unit} per week` : `${requiredWeeklyRate.toFixed(1)}${unit} per week`;
+    }
     
-    // Determine last updated time from Jira data if available
-    const lastUpdated = kpi.lastUpdated || '2 hours ago';
-    const dataQuality = kpi.dataQuality || Math.round(85 + Math.random() * 15);
+    // Determine if on track (will we hit 90% of target?)
+    const onTrack = projectedFinalValue >= (targetValue * 0.9);
     
-    const onTrack = projectedProgress >= 85; // 85% or better is "on track"
+    // Calculate shortfall
+    let shortfall = '';
+    if (!onTrack) {
+        const shortfallAmount = (targetValue * 0.9) - projectedFinalValue;
+        shortfall = `${shortfallAmount.toFixed(1)}${unit} below target pace`;
+    }
     
-    // Calculate pace change recommendations
-    const currentWeeklyRate = progressRate * 7;
-    const paceIncrease = Math.max(0, Math.round(((requiredWeeklyRate - currentWeeklyRate) / Math.max(currentWeeklyRate, 1)) * 100));
+    // Pace change recommendation
+    let paceChange;
+    if (onTrack) {
+        if (projectedFinalValue >= targetValue) {
+            paceChange = 'On track to exceed target';
+        } else {
+            paceChange = 'On track - maintain current pace';
+        }
+    } else {
+        const accelerationNeeded = ((requiredWeeklyRate - weeklyRate) / Math.max(Math.abs(weeklyRate), 0.1)) * 100;
+        if (accelerationNeeded > 50) {
+            paceChange = 'Significant acceleration needed';
+        } else if (accelerationNeeded > 20) {
+            paceChange = 'Moderate acceleration needed';
+        } else {
+            paceChange = 'Minor acceleration needed';
+        }
+    }
+    
+    // Data quality based on number of points and recency
+    const lastUpdateDate = new Date(lastPoint.date);
+    const daysSinceUpdate = (new Date() - lastUpdateDate) / (1000 * 60 * 60 * 24);
+    let dataQuality = Math.min(100, sortedData.length * 10); // 10 points = 100%
+    if (daysSinceUpdate > 7) dataQuality -= 20; // Reduce if data is old
+    if (daysSinceUpdate > 14) dataQuality -= 20;
     
     return {
         velocity,
         projectedValue,
         requiredPace,
         onTrack,
-        shortfall: onTrack ? '' : `${Math.round(85 - projectedProgress)}% behind target pace`,
-        paceChange: onTrack ? 'Maintain current pace to reach target' : 'Acceleration needed to meet target',
-        paceIncrease: `${paceIncrease}%`,
-        daysRemaining: remainingDays,
-        lastUpdated,
-        dataQuality
+        shortfall,
+        paceChange,
+        daysRemaining,
+        lastUpdated: daysSinceUpdate < 1 ? 'Today' : 
+                    daysSinceUpdate < 2 ? 'Yesterday' : 
+                    `${Math.round(daysSinceUpdate)} days ago`,
+        dataQuality: Math.round(dataQuality)
     };
 }
 
@@ -7250,8 +7333,7 @@ async function openKPIDetailModal(kpi) {
     
     title.textContent = kpi.title;
     
-    // First, calculate projection data (this was causing the error)
-    const projectionData = calculateLiveKPIProjections(kpi);
+   
     
     // Try to fetch live Jira data, but don't block the modal if it fails
     let chartData = [];
@@ -7268,6 +7350,9 @@ async function openKPIDetailModal(kpi) {
         chartData = createFallbackChartData(kpi);
         dataSource = 'fallback';
     }
+    
+     // First, calculate projection data (this was causing the error)
+    const projectionData = calculateLiveKPIProjections(kpi, chartData);
     
     content.innerHTML = `
     <div class="space-y-6">
