@@ -6878,68 +6878,7 @@ function getTeamNotes(teamName, teamData) {
     return notes;
 }
 
-content.innerHTML = `
-    <div class="space-y-6" style="min-height: 600px;">
-        <!-- Two Column Layout for Key Metrics and Projections -->
-        <div class="grid gap-6" style="grid-template-columns: 1fr 1.5fr;">
-            <!-- Key Metrics Column -->
-            <div class="space-y-4">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: var(--text-primary);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m12 14 4-4"/>
-                        <path d="M3.34 19a10 10 0 1 1 17.32 0"/>
-                    </svg>
-                    Key Metrics
-                </h3>
-                
-                <!-- Current Value -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-end">
-                        <div class="text-lg font-bold leading-tight" style="color: var(--text-secondary);">Current<br>Value</div>
-                        <div class="text-4xl font-bold text-right" style="color: ${kpi.color || 'var(--accent-green)'};">${kpi.currentValue}${kpi.unit || ''}</div>
-                    </div>
-                </div>
-                
-                <!-- Target Value -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-end">
-                        <div class="text-lg font-bold leading-tight" style="color: var(--text-secondary);">Target<br>Value</div>
-                        <div class="text-4xl font-bold text-right" style="color: var(--accent-primary);">${kpi.targetValue}${kpi.unit || ''}</div>
-                    </div>
-                </div>
-                
-                <!-- Progress Percentage -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-end">
-                        <div class="text-lg font-bold leading-tight" style="color: var(--text-secondary);">Progress<br>Complete</div>
-                        <div class="text-4xl font-bold text-right" style="color: ${kpi.progress >= 80 ? 'var(--accent-green)' : kpi.progress >= 60 ? 'var(--accent-orange)' : 'var(--accent-red)'};">${Math.round(kpi.progress || 0)}%</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Projections Column -->
-            <div class="space-y-4">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: var(--text-primary);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M16 17h6v-6"/>
-                        <path d="m22 17-8.5-8.5-5 5L2 7"/>
-                    </svg>
-                    Live Projections
-                </h3>
-                
-                <!-- Current Velocity -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium" style="color: var(--text-secondary);">Current Velocity</span>
-                        <span class="text-lg font-bold" style="color: var(--accent-blue);">${projectionData.velocity}</span>
-                    </div>
-                </div>
-                
-                <!-- Projected Final Value -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium" style="color: var(--text-secondary);">Projected Final</span>
-                        <span class="text-lg font-bold" style="color: ${// New function to generate KPI trend chart with PROPER scaling and EXACT card shading
+// New function to generate KPI trend chart with PROPER scaling and EXACT card shading
 function generateKPITrendChart(kpi) {
     console.log('📈 Generating trend chart for:', kpi.title, 'Target:', kpi.targetValue, 'Current:', kpi.currentValue, 'Unit:', kpi.unit);
     console.log('Raw trendPoints:', kpi.trendPoints);
