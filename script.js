@@ -7154,7 +7154,7 @@ function showKpiChart(kpi, last30Days) {
         _kpiChart = null;
     }
 
-    // Create the line chart with clean styling
+    // Create the line chart with proper gradient colors
     const color = (kpi && kpi.color) || '#4bc0c0';
     _kpiChart = new Chart(canvas.getContext('2d'), {
         type: 'line',
@@ -7164,14 +7164,14 @@ function showKpiChart(kpi, last30Days) {
                 label: (kpi && kpi.title) || 'KPI',
                 data: values,
                 borderColor: color,
-                backgroundColor: 'transparent', // Remove the black fill
-                tension: 0.1, // Less curved lines for more accurate representation
-                fill: false, // Explicitly disable fill
-                pointRadius: 4,
+                backgroundColor: createGradient(canvas, color), // Custom gradient function
+                tension: 0.2, // Slight curve for smooth lines
+                fill: true, // Enable gradient fill under line
+                pointRadius: 5,
                 pointBackgroundColor: color,
                 pointBorderColor: 'white',
                 pointBorderWidth: 2,
-                pointHoverRadius: 6
+                pointHoverRadius: 7
             }]
         },
         options: {
@@ -7181,7 +7181,7 @@ function showKpiChart(kpi, last30Days) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    backgroundColor: 'rgba(15, 15, 35, 0.9)',
                     titleColor: 'white',
                     bodyColor: 'white',
                     borderColor: color,
@@ -7218,6 +7218,21 @@ function showKpiChart(kpi, last30Days) {
         },
         plugins: [targetLinePlugin]
     });
+}
+
+// Create gradient that matches your color palette
+function createGradient(canvas, color) {
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+    
+    // Convert color to rgba for gradient
+    const baseColor = withAlpha(color, 0.4); // More opaque at top
+    const fadeColor = withAlpha(color, 0.05); // Very transparent at bottom
+    
+    gradient.addColorStop(0, baseColor);
+    gradient.addColorStop(1, fadeColor);
+    
+    return gradient;
 }
 
 // Helper functions from ChatGPT
