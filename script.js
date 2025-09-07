@@ -6447,8 +6447,6 @@ async function saveKPIValue() {
         return;
     }
     
-    console.log(`Updating Key Result ${kpi.key} with new value: ${currentValue}`);
-    
     const saveButton = document.querySelector('#kpi-edit-modal button[onclick="saveKPIValue()"]');
     const originalText = saveButton.textContent;
     saveButton.textContent = 'Updating...';
@@ -6472,8 +6470,8 @@ async function saveKPIValue() {
             })
         });
         
-        // Jira often returns 204 (no content) on successful updates
-        if (updateResponse.ok) {
+        // Check for success status codes (200, 204, etc.)
+        if (updateResponse.status >= 200 && updateResponse.status < 300) {
             console.log('✅ Key Result updated successfully');
             
             // Update local data
@@ -6488,7 +6486,8 @@ async function saveKPIValue() {
                 updateProgressCard();
             }
         } else {
-            throw new Error(`Update failed with status ${updateResponse.status}`);
+            const errorText = await updateResponse.text();
+            throw new Error(`Update failed with status ${updateResponse.status}: ${errorText}`);
         }
         
     } catch (error) {
