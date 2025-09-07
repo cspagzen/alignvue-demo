@@ -4851,7 +4851,7 @@ function updateMendozaCard() {
             
             <!-- Chart.js Donut Chart -->
             <div class="relative mb-3">
-                <canvas id="mendoza-donut-chart" width="120" height="120"></canvas>
+                <canvas id="mendoza-donut-chart" width="140" height="140"></canvas>
                 
                 <!-- Center Metric -->
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -4863,18 +4863,6 @@ function updateMendozaCard() {
                             EFFICIENT
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Quick Stats -->
-            <div class="text-xs" style="color: var(--text-secondary);">
-                <div class="flex justify-between items-center mb-1">
-                    <span>Above Line:</span>
-                    <span style="color: var(--accent-green);">${resourceMetrics.aboveLineCount} initiatives</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span>Below Line:</span>
-                    <span style="color: var(--accent-blue);">${resourceMetrics.belowLineCount} initiatives</span>
                 </div>
             </div>
         </div>
@@ -4980,7 +4968,6 @@ function getInitiativeActivityType(initiative) {
     }
     
     // If not available in cached data, try to get from live Jira data
-    // This would be populated during the transformJiraData process
     if (initiative.activityType) {
         return initiative.activityType;
     }
@@ -5044,40 +5031,26 @@ function initializeMendozaChart(metrics) {
                     display: false
                 },
                 tooltip: {
-                    backgroundColor: 'var(--bg-tertiary)',
-                    titleColor: 'var(--text-primary)',
-                    bodyColor: 'var(--text-secondary)',
-                    borderColor: 'var(--glass-border)',
-                    borderWidth: 1,
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label;
-                            const value = context.parsed;
-                            const count = label.includes('Above') ? metrics.aboveLineCount : metrics.belowLineCount;
-                            return `${label}: ${value}% (${count} initiatives)`;
-                        },
-                        afterBody: function() {
-                            return [
-                                '',
-                                `Efficiency Score: ${metrics.efficiencyScore}%`,
-                                `Resource Waste: ${metrics.wasteLevel}%`
-                            ];
-                        }
-                    }
+                    enabled: false
                 }
             },
             onClick: function(evt, elements) {
-                // Handle click to show modal with details
                 showMendozaAnalysisModal();
             },
             animation: {
                 animateRotate: true,
                 duration: 1000
+            },
+            interaction: {
+                intersect: false,
+                mode: 'nearest'
+            },
+            hover: {
+                mode: null
             }
         }
     });
 }
-
 function getTeamsWorkingOnlyOnHighPriority() {
     // Mock data - replace with actual logic
     return ['Core Platform', 'User Experience', 'Security'];
