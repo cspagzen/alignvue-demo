@@ -7307,7 +7307,7 @@ function calculateLiveKPIProjections(kpi, chartData) {
         velocity,
         projectedValue,
         requiredPace,
-        onTrack,
+        onTrack: adjustedOnTrack,
         shortfall,
         paceChange,
         daysRemaining,
