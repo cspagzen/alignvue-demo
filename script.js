@@ -7042,85 +7042,80 @@ function openKPIDetailModal(kpi) {
     }, 100);
 }
 
-// New function to generate KPI trend chart using live Jira Value History data
+// New function to generate KPI trend chart using the SAME approach as the cards
 function generateKPITrendChart(kpi) {
     console.log('📈 Generating trend chart for:', kpi.title);
     
-    // Check if we have live trend data from Jira
-    if (kpi.trendPoints && typeof kpi.trendPoints === 'string' && kpi.trendPoints.trim() !== '') {
-        console.log('Using live trend data from Jira Value History');
-        
-        // Parse the trend points from the live data
-        const points = kpi.trendPoints.split(' ');
-        const maxY = Math.max(kpi.targetValue * 1.1, 100);
-        
-        return `
-            <svg width="100%" height="160" viewBox="0 0 360 140">
-                <!-- Grid lines -->
-                <defs>
-                    <pattern id="grid" width="40" height="20" patternUnits="userSpaceOnUse">
-                        <path d="M 40 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                    </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid)" />
-                
-                <!-- Target line -->
-                <line x1="0" y1="70" x2="360" y2="70" stroke="var(--accent-primary)" stroke-width="2" stroke-dasharray="5,5" opacity="0.6"/>
-                <text x="365" y="75" fill="var(--accent-primary)" font-size="12">Target</text>
-                
-                <!-- Trend line -->
-                <polyline points="${kpi.trendPoints}" fill="none" stroke="${kpi.color || 'var(--accent-green)'}" stroke-width="3"/>
-                
-                <!-- Data points -->
-                ${points.map((point, index) => {
+    // Use the exact same logic as the working cards
+    const trendPoints = kpi.trendPoints || '0,35 20,35 40,35'; // Fallback to default
+    const modalIndex = 'modal'; // Unique ID for modal chart
+    
+    return `
+        <svg width="100%" height="120" viewBox="0 0 300 100" style="background: rgba(255,255,255,0.02); border-radius: 4px;">
+            <!-- Define gradient for this specific KPI modal -->
+            <defs>
+                <linearGradient id="trendGradient${modalIndex}" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:${kpi.color || 'var(--accent-green)'};stop-opacity:0.3" />
+                    <stop offset="100%" style="stop-color:${kpi.color || 'var(--accent-green)'};stop-opacity:0" />
+                </linearGradient>
+            </defs>
+            
+            <!-- Y-axis -->
+            <line x1="20" y1="10" x2="20" y2="85" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            
+            <!-- X-axis -->
+            <line x1="20" y1="85" x2="280" y2="85" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            
+            <!-- Grid lines -->
+            <line x1="20" y1="30" x2="280" y2="30" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <line x1="20" y1="50" x2="280" y2="50" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <line x1="20" y1="70" x2="280" y2="70" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            
+            <!-- Target line -->
+            <line x1="20" y1="40" x2="280" y2="40" stroke="var(--accent-primary)" stroke-width="2" stroke-dasharray="5,5" opacity="0.6"/>
+            <text x="285" y="45" fill="var(--accent-primary)" font-size="10">Target</text>
+            
+            <!-- Gradient fill area using same coordinate mapping as cards -->
+            <polygon points="${trendPoints.split(' ').map((point, pointIndex) => {
+                const [x, y] = point.split(',');
+                return `${20 + (pointIndex * 40)},${85 - (parseInt(y) * 2)}`;
+            }).join(' ') + ' 280,85 20,85'}"
+                      fill="url(#trendGradient${modalIndex})" stroke="none"/>
+            
+            <!-- Trend line - using exact same logic as cards -->
+            <polyline points="${kpi.title === 'Strategic Capabilities' ? 
+                '20,85 60,85 100,85 140,55 180,55 220,55 260,55' :
+                trendPoints.split(' ').map((point, pointIndex) => {
                     const [x, y] = point.split(',');
-                    return `<circle cx="${x}" cy="${y}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>`;
-                }).join('')}
-                
-                <!-- Current value indicator -->
-                <circle cx="${points[points.length - 1]?.split(',')[0] || 300}" cy="${points[points.length - 1]?.split(',')[1] || 70}" r="6" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="3"/>
-                
-                <!-- Axis labels -->
-                <text x="0" y="155" fill="rgba(255,255,255,0.6)" font-size="10">30 days ago</text>
-                <text x="320" y="155" fill="rgba(255,255,255,0.6)" font-size="10">Today</text>
-                
-                <!-- Value labels -->
-                <text x="5" y="15" fill="rgba(255,255,255,0.6)" font-size="10">${Math.round(maxY)}</text>
-                <text x="5" y="135" fill="rgba(255,255,255,0.6)" font-size="10">0</text>
-            </svg>
-        `;
-    } else {
-        console.log('No live trend data available, showing placeholder');
-        
-        // Fallback chart when no live data is available
-        return `
-            <svg width="100%" height="160" viewBox="0 0 360 140">
-                <!-- Grid lines -->
-                <defs>
-                    <pattern id="grid" width="40" height="20" patternUnits="userSpaceOnUse">
-                        <path d="M 40 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                    </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid)" />
-                
-                <!-- Target line -->
-                <line x1="0" y1="70" x2="360" y2="70" stroke="var(--accent-primary)" stroke-width="2" stroke-dasharray="5,5" opacity="0.6"/>
-                <text x="365" y="75" fill="var(--accent-primary)" font-size="12">Target</text>
-                
-                <!-- Placeholder message -->
-                <text x="180" y="85" fill="rgba(255,255,255,0.6)" font-size="14" text-anchor="middle">
-                    Trend chart will display when Value History data is available
-                </text>
-                <text x="180" y="105" fill="rgba(255,255,255,0.4)" font-size="12" text-anchor="middle">
-                    from Jira Key Results
-                </text>
-                
-                <!-- Axis labels -->
-                <text x="0" y="155" fill="rgba(255,255,255,0.6)" font-size="10">30 days ago</text>
-                <text x="320" y="155" fill="rgba(255,255,255,0.6)" font-size="10">Today</text>
-            </svg>
-        `;
-    }
+                    return `${20 + (pointIndex * 40)},${85 - (parseInt(y) * 2)}`;
+                }).join(' ')
+            }"
+                      fill="none" stroke="${kpi.color || 'var(--accent-green)'}" stroke-width="3" stroke-linecap="round"/>
+            
+            <!-- Data points - using exact same logic as cards -->
+            ${kpi.title === 'Strategic Capabilities' ? 
+                '<circle cx="20" cy="85" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
+                '<circle cx="60" cy="85" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
+                '<circle cx="100" cy="85" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
+                '<circle cx="140" cy="55" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
+                '<circle cx="180" cy="55" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
+                '<circle cx="220" cy="55" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
+                '<circle cx="260" cy="55" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' :
+                trendPoints.split(' ').map((point, pointIndex) => {
+                    const [x, y] = point.split(',');
+                    return `<circle cx="${20 + (pointIndex * 40)}" cy="${85 - (parseInt(y) * 2)}" r="3" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="1"/>`;
+                }).join('')
+            }
+            
+            <!-- Axis labels -->
+            <text x="20" y="100" fill="rgba(255,255,255,0.6)" font-size="10">30 days ago</text>
+            <text x="240" y="100" fill="rgba(255,255,255,0.6)" font-size="10">Today</text>
+            
+            <!-- Value labels -->
+            <text x="5" y="15" fill="rgba(255,255,255,0.6)" font-size="10">${kpi.targetValue}</text>
+            <text x="5" y="90" fill="rgba(255,255,255,0.6)" font-size="10">0</text>
+        </svg>
+    `;
 }
 
 // Updated calculateLiveKPIProjections function to work better with actual Jira data
