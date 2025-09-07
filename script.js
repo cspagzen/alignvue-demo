@@ -7188,8 +7188,6 @@ function showKpiChart(kpi, chartData) {
 
 
 
-
-
 function calculateLiveKPIProjections(kpi, chartData) {
     console.log('Calculating projections for live KPI:', kpi.title);
     
