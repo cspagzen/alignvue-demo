@@ -7521,11 +7521,11 @@ async function openKPIDetailModal(kpi) {
     <button onclick="showDataQualityModal(${projectionData.dataQuality})" 
             class="inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-opacity-20 hover:bg-gray-500 transition-colors"
             title="How is Data Quality calculated?"
-            style="color: var(--text-secondary);">
+            style="color: var(--accent-primary);">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
-            <path d="M9,9h0a3,3,0,0,1,6,0c0,2-3,3-3,3"/>
-            <path d="m12,17h.01"/>
+            <line x1="12" x2="12" y1="16" y2="12"/>
+            <line x1="12" x2="12.01" y1="8" y2="8"/>
         </svg>
     </button>
     <span>• Last Updated: ${projectionData.lastUpdated}</span>
