@@ -2284,7 +2284,6 @@ function showMendozaAnalysisModal() {
             <h2 class="text-xl font-bold" style="color: var(--text-primary);">
                 Resource Allocation Analysis
             </h2>
-            <button onclick="closeModal()" class="text-xl" style="color: var(--text-secondary);">×</button>
         </div>
         
         <div class="p-6 space-y-6">
@@ -2536,7 +2535,6 @@ function showEfficiencyInfoModal() {
             <h2 class="text-xl font-bold" style="color: var(--text-primary);">
                 How Resource Efficiency Works
             </h2>
-            <button onclick="showMendozaAnalysisModal()" class="text-xl" style="color: var(--text-secondary);">×</button>
         </div>
         
         <div class="p-6 space-y-6">
