@@ -9477,7 +9477,7 @@ function calculateLiveCompletion(childIssues) {
 // Initialize smart sync on page load
 function initSmartSync() {
     // Initial sync
-    syncWithJira();
+    syncWithJiraOnLoad();
     
     // Track user activity
     let lastActivity = Date.now();
