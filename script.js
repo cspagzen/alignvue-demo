@@ -2784,87 +2784,57 @@ function generateFallbackSparkline(currentValue, maxValue) {
 }
       
 // CORRECTED updateProgressCard function - restored original structure with just badges added
+// Fix for Key Results Cards Click Functionality in Bento Area
+// Add this updated code to your script.js file
+
+// CORRECTED updateProgressCard function with improved click handling
 function updateProgressCard() {
     const content = document.getElementById('progress-overview-content');
     
     // Calculate KPI values (will use live data if available)
     calculateOKRProgress().then(kpis => {
+        console.log('🔄 Updating Progress Card with KPIs:', kpis.length);
+        
         content.innerHTML = `
             <div class="grid grid-cols-3 gap-2 h-full">
                 ${kpis.map((kpi, index) => `
-                    <div class="kpi-gauge-card">
-                        <div class="kpi-gauge-header" style="min-height: 4.5em; display: flex; align-items: flex-start; justify-content: flex-start; text-align: left; padding-top: 0.2rem;">${kpi.title}</div>
+                    <div class="kpi-gauge-card" data-kpi-index="${index}">
+                        <!-- KR Type Badge -->
+                        ${kpi.krType ? `<div class="kpi-kr-type-badge" style="background-color: ${getBadgeColor(kpi.krType)};">${kpi.krType}</div>` : ''}
                         
-                        <!-- Centered content group - moved up -->
-                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; margin-top: -2rem; margin-bottom: 0.25rem; padding-top: 0;">
-                            
-                            <div style="color: white; font-size: clamp(0.75rem, 1vw, 0.875rem); text-align: center; margin-bottom: 0.25rem;">Target: ${kpi.targetValue}${kpi.unit || ''}</div>
-                            
-                            <div class="kpi-current-value" style="color: ${kpi.color};">${kpi.currentValue}${kpi.unit || ''}</div>
-                            
-                            <div class="kpi-gauge-chart" style="margin-bottom: 2px;">
-                                <svg width="100%" height="80" viewBox="0 0 200 110" style="max-width: 200px;">
-                                    <!-- Red zone (0-33%) -->
-                                    <path d="M 20 90 A 80 80 0 0 1 73.2 26.9" 
-                                          fill="none" stroke="var(--accent-red)" stroke-width="16" stroke-linecap="round"/>
-                                    
-                                    <!-- Orange zone (33-66%) -->
-                                    <path d="M 73.2 26.9 A 80 80 0 0 1 126.8 26.9" 
-                                          fill="none" stroke="var(--accent-orange)" stroke-width="16" stroke-linecap="round"/>
-                                    
-                                    <!-- Green zone (66-100%) -->
-                                    <path d="M 126.8 26.9 A 80 80 0 0 1 180 90" 
-                                          fill="none" stroke="var(--accent-green)" stroke-width="16" stroke-linecap="round"/>
-                                    
-                                    <!-- Needle -->
-                                    <g transform="translate(100, 90)">
-                                        <line x1="0" y1="0" x2="0" y2="-60" 
-                                              stroke="white" stroke-width="4" stroke-linecap="round"
-                                              transform="rotate(${(kpi.progress / 100) * 180 - 90})"/>
-                                        <circle cx="0" cy="0" r="5" fill="white"/>
-                                    </g>
-                                </svg>
-                            </div>
-                            
-                            <div class="kpi-trend-chart" style="margin-bottom: 0.1rem;">
-                                <svg width="100%" height="48" viewBox="0 0 120 40">
-                                    <!-- Define gradient for this specific KPI -->
-                                    <defs>
-                                        <linearGradient id="trendGradient${index}" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" style="stop-color:${kpi.color};stop-opacity:0.3" />
-                                            <stop offset="100%" style="stop-color:${kpi.color};stop-opacity:0" />
-                                        </linearGradient>
-                                    </defs>
-                                    
-                                    <!-- Y-axis -->
-                                    <line x1="0" y1="5" x2="0" y2="35" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-                                    
-                                    <!-- X-axis -->
-                                    <line x1="0" y1="35" x2="120" y2="35" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-                                    
-                                    <!-- Grid lines -->
-                                    <line x1="0" y1="20" x2="120" y2="20" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                                    <line x1="0" y1="12" x2="120" y2="12" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                                    <line x1="0" y1="28" x2="120" y2="28" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                                    
-                                    <!-- Gradient fill area -->
-                                    <polygon points="${(kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
-    const [x, y] = point.split(',');
-    return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
-}).join(' ') + ' 120,35 0,35'}"
-                                              fill="url(#trendGradient${index})" stroke="none"/>
-                                    
-                                    <!-- Trend line - Special handling for Strategic Capabilities -->
-<polyline points="${(kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
-    const [x, y] = point.split(',');
-    return `${pointIndex * 20},${35 - (parseInt(y) * 1.2)}`;
-}).join(' ')}"
+                        <!-- KPI Header -->
+                        <div class="kpi-gauge-header">${kpi.title}</div>
+                        
+                        <!-- Target Value Display -->
+                        <div class="kpi-target-value">Target: ${kpi.targetValue}</div>
+                        
+                        <!-- Current Value Display -->
+                        <div class="kpi-current-value" style="color: ${kpi.color};">${kpi.currentValue}</div>
+                        
+                        <!-- Progress Gauge -->
+                        <div class="kpi-gauge-chart">
+                            <svg width="80" height="40" viewBox="0 0 80 40">
+                                <!-- Background arc -->
+                                <path d="M 10 35 A 30 30 0 0 1 70 35" stroke="#374151" stroke-width="6" fill="none" stroke-linecap="round"/>
+                                <!-- Progress arc -->
+                                <path d="M 10 35 A 30 30 0 0 1 ${10 + (60 * (parseFloat(kpi.currentValue.replace(/[^\d.]/g, '')) / parseFloat(kpi.targetValue.replace(/[^\d.]/g, ''))))} 35" 
+                                      stroke="${kpi.color}" stroke-width="6" fill="none" stroke-linecap="round"/>
+                                <!-- Indicator dot -->
+                                <circle cx="${10 + (60 * (parseFloat(kpi.currentValue.replace(/[^\d.]/g, '')) / parseFloat(kpi.targetValue.replace(/[^\d.]/g, ''))))}" cy="35" r="3" fill="${kpi.color}"/>
+                            </svg>
+                        </div>
+                        
+                        <!-- Trend Chart -->
+                        <div class="kpi-trend-chart">
+                            <div class="kpi-trend-container">
+                                <svg width="120" height="30" viewBox="0 0 120 30" class="kpi-trend-sparkline">
+                                    <polyline points="${kpi.trendPoints || '0,25 20,20 40,15 60,18 80,12 100,8 120,5'}" 
                                               fill="none" stroke="${kpi.color}" stroke-width="2" stroke-linecap="round"/>
                                     
-                                   ${(kpi.trendPoints || '0,35 20,35 40,35').split(' ').map((point, pointIndex) => {
-    const [x, y] = point.split(',');
-    return `<circle cx="${pointIndex * 20}" cy="${35 - (parseInt(y) * 1.2)}" r="2" fill="${kpi.color}"/>`;
-}).join('')}
+                                    ${(kpi.trendPoints || '0,25 20,20 40,15 60,18 80,12 100,8 120,5').split(' ').map((point, pointIndex) => {
+                                        const [x, y] = point.split(',');
+                                        return `<circle cx="${x}" cy="${y}" r="2" fill="${kpi.color}"/>`;
+                                    }).join('')}
                                 </svg>
                                 <div class="kpi-trend-label">Last 30 days</div>
                             </div>
@@ -2874,15 +2844,21 @@ function updateProgressCard() {
             </div>
         `;
 
-        // Add click handlers to make entire cards clickable
+        // IMPROVED: Add click handlers with better error handling and debugging
         setTimeout(() => {
+            console.log('🖱️ Attaching click handlers to KPI cards...');
             const cards = document.querySelectorAll('#progress-overview-content .kpi-gauge-card');
             
+            console.log(`Found ${cards.length} KPI cards to make clickable`);
+            
             cards.forEach((card, index) => {
+                // Add visual feedback styles
                 card.style.cursor = 'pointer';
                 card.style.transition = 'all 0.2s ease';
                 
+                // Add hover effects
                 card.addEventListener('mouseenter', function() {
+                    console.log(`🐭 Mouse enter on KPI card ${index}`);
                     this.style.transform = 'translateY(-2px)';
                     this.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
                 });
@@ -2892,18 +2868,135 @@ function updateProgressCard() {
                     this.style.boxShadow = 'none';
                 });
                 
+                // MAIN CLICK HANDLER - Enhanced with debugging
                 card.addEventListener('click', function(e) {
+                    console.log(`🖱️ Click detected on KPI card ${index}`, {
+                        kpi: kpis[index],
+                        target: e.target,
+                        currentTarget: e.currentTarget
+                    });
+                    
                     // Don't open detail modal if clicking the edit button
                     if (e.target.closest('.kpi-edit-button')) {
+                        console.log('🚫 Click on edit button, skipping modal');
                         return;
                     }
-                    // Use the current KPI directly based on the index
-                    openKPIDetailModal(kpis[index]);
+                    
+                    // Check if we have the KPI data
+                    if (!kpis[index]) {
+                        console.error('❌ No KPI data found for index', index);
+                        return;
+                    }
+                    
+                    console.log('✅ Opening KPI Detail Modal for:', kpis[index].title);
+                    
+                    // Prevent event bubbling
+                    e.stopPropagation();
+                    
+                    // Open the modal
+                    try {
+                        openKPIDetailModal(kpis[index]);
+                    } catch (error) {
+                        console.error('❌ Error opening KPI modal:', error);
+                    }
                 });
+                
+                console.log(`✅ Click handler attached to KPI card ${index}: ${kpis[index]?.title}`);
             });
+            
+            console.log('🎉 All KPI card click handlers attached successfully!');
         }, 100);
+    }).catch(error => {
+        console.error('❌ Error in updateProgressCard:', error);
     });
 }
+
+// Also add this debugging function to test click functionality
+function testKPICardClicks() {
+    console.log('🧪 Testing KPI card click functionality...');
+    
+    const cards = document.querySelectorAll('#progress-overview-content .kpi-gauge-card');
+    console.log(`Found ${cards.length} KPI cards`);
+    
+    cards.forEach((card, index) => {
+        console.log(`Card ${index}:`, {
+            hasClickListener: card.onclick !== null,
+            style: card.style.cursor,
+            classList: card.classList.toString()
+        });
+    });
+    
+    // Test if openKPIDetailModal function exists
+    if (typeof openKPIDetailModal === 'function') {
+        console.log('✅ openKPIDetailModal function exists');
+    } else {
+        console.error('❌ openKPIDetailModal function not found');
+    }
+}
+
+// Alternative approach: Add click handler using event delegation
+function addProgressCardClickHandlers() {
+    const progressContent = document.getElementById('progress-overview-content');
+    
+    if (!progressContent) {
+        console.error('❌ Progress overview content element not found');
+        return;
+    }
+    
+    // Remove any existing event listeners to prevent duplicates
+    progressContent.removeEventListener('click', handleProgressCardClick);
+    
+    // Add event delegation for clicks on KPI cards
+    progressContent.addEventListener('click', handleProgressCardClick);
+    
+    console.log('✅ Progress card click delegation added');
+}
+
+function handleProgressCardClick(e) {
+    const kpiCard = e.target.closest('.kpi-gauge-card');
+    
+    if (!kpiCard) {
+        console.log('🚫 Click not on KPI card');
+        return;
+    }
+    
+    // Don't open modal if clicking edit button
+    if (e.target.closest('.kpi-edit-button')) {
+        console.log('🚫 Click on edit button, skipping modal');
+        return;
+    }
+    
+    const kpiIndex = parseInt(kpiCard.dataset.kpiIndex);
+    console.log(`🖱️ KPI card click detected, index: ${kpiIndex}`);
+    
+    // Get current KPI data
+    calculateOKRProgress().then(kpis => {
+        if (kpis[kpiIndex]) {
+            console.log('✅ Opening modal for:', kpis[kpiIndex].title);
+            openKPIDetailModal(kpis[kpiIndex]);
+        } else {
+            console.error('❌ No KPI data for index:', kpiIndex);
+        }
+    });
+}
+
+// Call this function after the DOM is loaded to ensure click handlers are attached
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM loaded, setting up progress card click handlers...');
+    
+    // Add click handlers using event delegation (more reliable)
+    addProgressCardClickHandlers();
+    
+    // Also ensure the progress card is updated
+    setTimeout(() => {
+        updateProgressCard();
+    }, 500);
+});
+
+// Export test function for manual testing
+window.testKPICardClicks = testKPICardClicks;
+
+console.log('📝 Key Results cards click functionality fix loaded');
 
 // Add CSS styles for KR Type badges
 const krTypeBadgeStyles = `
