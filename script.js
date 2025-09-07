@@ -6440,7 +6440,8 @@ function closeKPIEditModal() {
     currentEditingKPI = null;
 }
 
-function saveKPIValue() {
+// Updated saveKPIValue function to update live Jira data
+async function saveKPIValue() {
     const currentValue = parseFloat(document.getElementById('kpi-current-value').value);
     
     if (isNaN(currentValue)) {
@@ -6448,23 +6449,203 @@ function saveKPIValue() {
         return;
     }
     
-    // Update the KPI data based on which one is being edited
-    if (currentEditingKPI === 'Monthly Active Users') {
-        // Update MAU data - you can customize this logic
-    } else if (currentEditingKPI === 'System Uptime') {
-        // Update uptime data
-    } else if (currentEditingKPI === 'Strategic Capabilities') {
-        // Update capabilities data
+    // Show loading state
+    const saveButton = document.querySelector('#kpi-edit-modal button[onclick="saveKPIValue()"]');
+    const originalText = saveButton.textContent;
+    saveButton.textContent = 'Updating...';
+    saveButton.disabled = true;
+    
+    try {
+        // Find the KPI/Key Result we're updating
+        const kpi = findKPIByTitle(currentEditingKPI);
+        if (!kpi || !kpi.key) {
+            throw new Error('Could not find KPI data for updating');
+        }
+        
+        console.log(`Updating Key Result ${kpi.key} with new value: ${currentValue}`);
+        
+        // 1. Update the Key Result issue with new Current Value and Change Date
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        
+        const updateResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: `/rest/api/3/issue/${kpi.key}`,
+                method: 'PUT',
+                body: {
+                    fields: {
+                        "customfield_10048": currentValue,      // Current Value
+                        "customfield_10159": today               // Change Date
+                    }
+                }
+            })
+        });
+        
+        if (!updateResponse.ok) {
+            const errorData = await updateResponse.json();
+            throw new Error(`Failed to update Key Result: ${errorData.message || 'Unknown error'}`);
+        }
+        
+        console.log('✅ Key Result updated successfully');
+        
+        // 2. Create a new Value History record for audit trail
+        try {
+            const valueHistoryResponse = await fetch('/api/jira', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endpoint: '/rest/api/3/issue',
+                    method: 'POST',
+                    body: {
+                        fields: {
+                            project: { key: "OKRs" },
+                            issuetype: { name: "Value History" },
+                            summary: `${kpi.title} updated to ${currentValue}${kpi.unit || ''}`,
+                            "customfield_10162": kpi.key,              // Parent OKR (link to Key Result)
+                            "customfield_10158": parseFloat(currentValue), // New Value (number)
+                            "customfield_10159": today                     // Change Date (YYYY-MM-DD)
+                        }
+                    }
+                })
+            });
+            
+            if (valueHistoryResponse.ok) {
+                console.log('✅ Value History record created');
+            } else {
+                console.warn('⚠️ Key Result updated but Value History creation failed');
+            }
+        } catch (historyError) {
+            console.warn('⚠️ Value History creation failed:', historyError);
+            // Don't fail the whole operation if history creation fails
+        }
+        
+        // 3. Update local data and refresh UI
+        updateLocalKPIData(currentEditingKPI, currentValue, today);
+        
+        // 4. Refresh the progress card and any open modals
+        await refreshKPIDisplays();
+        
+        // 5. Close the modal and show success
+        closeKPIEditModal();
+        
+        // Show success message with more detail
+        alert(`✅ ${currentEditingKPI} updated to ${currentValue}${kpi.unit || ''} and synced to Jira`);
+        
+    } catch (error) {
+        console.error('Error updating KPI value:', error);
+        alert(`❌ Failed to update ${currentEditingKPI}: ${error.message}`);
+        
+        // Restore button state
+        saveButton.textContent = originalText;
+        saveButton.disabled = false;
+    }
+}
+
+// Helper function to find KPI data by title
+function findKPIByTitle(title) {
+    // Look in the current KPI data structure
+    const kpis = [
+        { 
+            title: "Monthly Active Users", 
+            key: "OKR-123", // Replace with actual Jira key
+            unit: "%",
+            currentValue: "35"
+        },
+        { 
+            title: "System Uptime", 
+            key: "OKR-124", // Replace with actual Jira key
+            unit: "%",
+            currentValue: "93.1"
+        },
+        { 
+            title: "Strategic Capabilities", 
+            key: "OKR-125", // Replace with actual Jira key
+            unit: "",
+            currentValue: "1"
+        }
+    ];
+    
+    return kpis.find(kpi => kpi.title === title);
+}
+
+// Helper function to update local KPI data
+function updateLocalKPIData(kpiTitle, newValue, changeDate) {
+    // Update the local boardData if it exists
+    if (window.boardData && window.boardData.okrs && window.boardData.okrs.issues) {
+        const kpiIssue = window.boardData.okrs.issues.find(issue => {
+            const summary = issue.fields.summary || '';
+            return summary.includes(kpiTitle) || summary === kpiTitle;
+        });
+        
+        if (kpiIssue) {
+            kpiIssue.fields.customfield_10048 = newValue;
+            kpiIssue.fields.customfield_10159 = changeDate;
+            console.log(`Updated local data for ${kpiTitle}`);
+        }
+    }
+}
+
+// Helper function to refresh KPI displays after update
+async function refreshKPIDisplays() {
+    try {
+        // Refresh the progress card
+        if (typeof updateProgressCard === 'function') {
+            updateProgressCard();
+        }
+        
+        // If there's an open KPI detail modal, refresh its data
+        const kpiDetailModal = document.getElementById('kpi-detail-modal');
+        if (kpiDetailModal && kpiDetailModal.classList.contains('show')) {
+            // Close and reopen with fresh data
+            const kpiTitle = document.getElementById('kpi-detail-modal-title').textContent;
+            closeKPIDetailModal();
+            
+            // Wait a moment then reopen with fresh data
+            setTimeout(async () => {
+                try {
+                    // Fetch fresh data
+                    const { keyResults, valueHistory } = await fetchKeyResultsData();
+                    
+                    // Find the updated KPI
+                    const updatedKPI = findKPIByTitle(kpiTitle);
+                    if (updatedKPI) {
+                        openKPIDetailModal(updatedKPI);
+                    }
+                } catch (error) {
+                    console.error('Error refreshing KPI modal:', error);
+                }
+            }, 500);
+        }
+        
+    } catch (error) {
+        console.error('Error refreshing KPI displays:', error);
+    }
+}
+
+// Enhanced version that also handles offline/error scenarios
+async function saveKPIValueWithFallback() {
+    const currentValue = parseFloat(document.getElementById('kpi-current-value').value);
+    
+    if (isNaN(currentValue)) {
+        alert('Please enter a valid number for the current value.');
+        return;
     }
     
-    // Refresh the progress card to show new values
-    updateProgressCard();
+    // Check if we're in demo mode or have live Jira connection
+    const isLiveMode = window.boardData && window.boardData.jiraConnected;
     
-    // Close the modal
-    closeKPIEditModal();
-    
-    // Show success message
-alert('Key Result current value would be updated here. This is a demo - no actual data is saved.');
+    if (isLiveMode) {
+        // Use the full Jira integration
+        await saveKPIValue();
+    } else {
+        // Demo mode - just update local display
+        const today = new Date().toISOString().split('T')[0];
+        updateLocalKPIData(currentEditingKPI, currentValue, today);
+        updateProgressCard();
+        closeKPIEditModal();
+        alert(`📊 ${currentEditingKPI} updated to ${currentValue} (Demo mode - not saved to Jira)`);
+    }
 }
       
   let currentKPIDetail = null;
