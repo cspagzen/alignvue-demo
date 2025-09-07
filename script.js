@@ -5021,6 +5021,14 @@ function initializeMendozaChart(metrics) {
             }
         }
     });
+    // ADD THIS PART - Force center text to match calculation
+    setTimeout(() => {
+        const centerElement = document.getElementById('mendoza-efficiency-score');
+        if (centerElement) {
+            centerElement.textContent = metrics.efficiencyScore + '%';
+        }
+    }, 100);
+}
 }
 function getTeamsWorkingOnlyOnHighPriority() {
     // Mock data - replace with actual logic
