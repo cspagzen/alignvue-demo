@@ -6880,7 +6880,7 @@ function getTeamNotes(teamName, teamData) {
 
 // Complete rewrite of KPI modal functions using Chart.js instead of SVG
 
-/ Clean, production-ready KPI modal implementation
+// Clean, production-ready KPI modal implementation
 // Based on ChatGPT's superior approach
 
 // Keep a reference so we can cleanly recreate the chart when the modal reopens
