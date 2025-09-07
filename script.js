@@ -4822,6 +4822,8 @@ function updateMendozaCard() {
 }
 
 function calculateResourceAllocation() {
+    console.log('=== CALCULATING RESOURCE ALLOCATION ===');
+    
     // High-resource activities that should be above the line
     const highResourceActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
     
@@ -4837,9 +4839,13 @@ function calculateResourceAllocation() {
     
     // Process active initiatives
     if (boardData?.initiatives) {
+        console.log('Processing initiatives:', boardData.initiatives.length);
+        
         boardData.initiatives.forEach(initiative => {
             const priority = initiative.priority;
             const activityType = getInitiativeActivityType(initiative);
+            
+            console.log(`Initiative: ${initiative.title}, Priority: ${priority}, Activity: ${activityType}`);
             
             if (priority !== 'pipeline') {
                 const isAboveLine = priority <= 14;
@@ -4851,14 +4857,11 @@ function calculateResourceAllocation() {
                     if (isHighResource) {
                         aboveLineHighResource++;
                         aboveLineAppropriate++;
-                    } else if (isLowResource) {
-                        // Low resource work above line - not ideal but not terrible
                     }
                 } else {
                     belowLineTotal++;
                     if (isHighResource) {
                         belowLineHighResource++;
-                        // High resource work below line - this is waste
                     } else if (isLowResource) {
                         belowLineAppropriate++;
                     }
@@ -4870,17 +4873,29 @@ function calculateResourceAllocation() {
     const totalInitiatives = aboveLineTotal + belowLineTotal;
     const totalHighResourceWork = aboveLineHighResource + belowLineHighResource;
     
+    console.log('Calculation details:');
+    console.log('- Above line high resource:', aboveLineHighResource);
+    console.log('- Below line high resource:', belowLineHighResource);
+    console.log('- Total high resource:', totalHighResourceWork);
+    
     // Calculate efficiency: what % of high-resource work is appropriately above the line
     let efficiencyScore = 0;
     if (totalHighResourceWork > 0) {
         efficiencyScore = Math.round((aboveLineHighResource / totalHighResourceWork) * 100);
-    } else if (totalInitiatives > 0) {
-        // If no high-resource work, base on overall appropriate placement
+        console.log('Efficiency calculation:', aboveLineHighResource, '/', totalHighResourceWork, '=', efficiencyScore);
+    } else {
+        // If no high-resource work identified, calculate based on proper placement
         const totalAppropriate = aboveLineAppropriate + belowLineAppropriate;
-        efficiencyScore = Math.round((totalAppropriate / totalInitiatives) * 100);
+        if (totalInitiatives > 0) {
+            efficiencyScore = Math.round((totalAppropriate / totalInitiatives) * 100);
+            console.log('Fallback calculation:', totalAppropriate, '/', totalInitiatives, '=', efficiencyScore);
+        } else {
+            efficiencyScore = 0;
+            console.log('No initiatives found, setting efficiency to 0');
+        }
     }
     
-    // Determine efficiency color based on your color palette
+    // Determine efficiency color
     let efficiencyColor;
     if (efficiencyScore >= 80) {
         efficiencyColor = 'var(--accent-green)';
@@ -4890,10 +4905,9 @@ function calculateResourceAllocation() {
         efficiencyColor = 'var(--accent-red)';
     }
     
-    // Calculate waste level (high-resource work below line)
     const wasteLevel = totalInitiatives > 0 ? Math.round((belowLineHighResource / totalInitiatives) * 100) : 0;
     
-    return {
+    const result = {
         efficiencyScore,
         efficiencyColor,
         aboveLineCount: aboveLineTotal,
@@ -4908,32 +4922,39 @@ function calculateResourceAllocation() {
             belowLineAppropriate
         }
     };
+    
+    console.log('Final efficiency score:', result.efficiencyScore);
+    return result;
 }
 
 function getInitiativeActivityType(initiative) {
+    console.log('Getting activity type for:', initiative.title);
+    console.log('- initiative.jira?.activityType:', initiative.jira?.activityType);
+    console.log('- initiative.activityType:', initiative.activityType);
+    
     // Extract activity type from Jira data (customfield_10190)
     if (initiative.jira?.activityType) {
+        console.log('- Using jira.activityType:', initiative.jira.activityType);
         return initiative.jira.activityType;
     }
     
-    // If not available in cached data, try to get from live Jira data
     if (initiative.activityType) {
+        console.log('- Using activityType:', initiative.activityType);
         return initiative.activityType;
     }
     
-    // Fallback: infer from validation status and type
+    // Fallback logic
+    let fallback = 'development';
     if (initiative.validation === 'not-validated') {
-        return 'validation';
+        fallback = 'validation';
     } else if (initiative.validation === 'in-validation') {
-        return 'prototyping';
-    } else if (initiative.type === 'strategic') {
-        return 'development';
+        fallback = 'prototyping';
     } else if (initiative.type === 'ktlo') {
-        return 'support';
+        fallback = 'support';
     }
     
-    // Default fallback
-    return 'development';
+    console.log('- Using fallback:', fallback);
+    return fallback;
 }
 
 let mendozaChart = null;
