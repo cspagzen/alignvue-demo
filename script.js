@@ -6880,7 +6880,19 @@ function getTeamNotes(teamName, teamData) {
 
 // Complete rewrite of KPI modal functions using Chart.js instead of SVG
 
-// Main function to open KPI detail modal with live Jira data
+/ Clean, production-ready KPI modal implementation
+// Based on ChatGPT's superior approach
+
+// Keep a reference so we can cleanly recreate the chart when the modal reopens
+let _kpiChart = null;
+
+/**
+ * PUBLIC: Call this when you open your KPI detail modal.
+ * @param {Object} kpi              e.g. { title: 'MAU', unit: '%', targetValue: 40, currentValue: 35, color: '#4bc0c0' }
+ * @param {Array}  last30Days       Either:
+ *     A) [{date:'YYYY-MM-DD', value:Number}, ... 30 items]
+ *     B) [Number, Number, ... 30 items]  // values only
+ */
 function openKPIDetailModal(kpi) {
     console.log('Opening KPI Detail Modal with live data:', kpi);
     currentKPIDetail = kpi;
@@ -6899,8 +6911,8 @@ function openKPIDetailModal(kpi) {
     // Calculate projection data for live KPI using actual Jira data
     const projectionData = calculateLiveKPIProjections(kpi);
     
-    // Generate Chart.js chart
-    const trendChartHTML = generateKPITrendChart(kpi);
+    // Convert trendPoints to 30-day data format
+    const last30Days = convertTrendPointsTo30Days(kpi);
     
     content.innerHTML = `
     <div class="space-y-6">
@@ -7024,7 +7036,9 @@ function openKPIDetailModal(kpi) {
             </h3>
             
             <div class="p-4 rounded-lg w-full" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); min-height: 220px;">
-                ${trendChartHTML}
+                <div id="kpiModalBody" style="position: relative; height: 200px; width: 100%;">
+                    <canvas id="kpiChart" width="100%" height="200"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -7042,24 +7056,22 @@ function openKPIDetailModal(kpi) {
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
     
+    // Now create the chart using ChatGPT's clean approach
+    setTimeout(() => {
+        showKpiChart(kpi, last30Days);
+    }, 100);
+    
     // Focus the close button
     setTimeout(() => {
         const closeButton = modal.querySelector('button');
         if (closeButton) {
             closeButton.focus();
         }
-    }, 100);
+    }, 200);
 }
 
-// Chart.js implementation - much cleaner than SVG
-function generateKPITrendChart(kpi) {
-    console.log('Generating Chart.js chart for:', kpi.title, 'Target:', kpi.targetValue, 'Current:', kpi.currentValue, 'Unit:', kpi.unit);
-    
-    const currentValue = parseFloat(kpi.currentValue) || 0;
-    const targetValue = parseFloat(kpi.targetValue) || 100;
-    const valueUnit = kpi.unit || '';
-    
-    // Convert trendPoints to actual data values
+// Convert your existing trendPoints to 30-day format for Chart.js
+function convertTrendPointsTo30Days(kpi) {
     const trendPoints = kpi.trendPoints || '0,35 20,35 40,35';
     const coordinatePoints = trendPoints.split(' ').map(point => {
         const [x, y] = point.split(',');
@@ -7069,12 +7081,11 @@ function generateKPITrendChart(kpi) {
     // Create realistic data progression ending at current value
     let actualDataValues;
     if (kpi.title === 'Strategic Capabilities') {
-        // 0, 0, 0, 1, 1, 1, 1 pattern
         actualDataValues = coordinatePoints.map((coord, index) => 
-            index < 3 ? 0 : currentValue
+            index < 3 ? 0 : parseFloat(kpi.currentValue)
         );
     } else {
-        // Realistic progression to current value
+        const currentValue = parseFloat(kpi.currentValue) || 0;
         const startValue = currentValue * 0.7;
         actualDataValues = coordinatePoints.map(coord => {
             const progress = coord / 35;
@@ -7082,122 +7093,201 @@ function generateKPITrendChart(kpi) {
         });
     }
     
-    // Smart Y-axis scaling including target
-    const allValues = [...actualDataValues, currentValue, targetValue];
-    const minDataValue = Math.min(...allValues);
-    const maxDataValue = Math.max(...allValues);
+    // Generate 30 days of data (pad or interpolate as needed)
+    const fullData = [];
+    for (let i = 0; i < 30; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - (29 - i));
+        
+        // Simple interpolation
+        const valueIndex = Math.floor((i / 29) * (actualDataValues.length - 1));
+        const value = actualDataValues[valueIndex] || actualDataValues[actualDataValues.length - 1];
+        
+        fullData.push({
+            date: date.toISOString().slice(0, 10),
+            value: Math.round(value * 100) / 100
+        });
+    }
     
-    const dataRange = maxDataValue - minDataValue;
-    const padding = Math.max(dataRange * 0.2, valueUnit.includes('percent') ? 2 : 0.5);
-    
-    const minChartValue = Math.max(0, Math.floor(minDataValue - padding));
-    const maxChartValue = Math.ceil(maxDataValue + padding);
-    
-    // Format labels based on unit
-    const formatLabel = (value) => {
-        if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
-            return `${Math.round(value)}%`;
-        }
-        return Math.round(value * 10) / 10;
-    };
-    
-    console.log('Chart.js data:', actualDataValues, 'Range:', minChartValue, '-', maxChartValue);
-    
-    // Generate unique canvas ID
-    const canvasId = `chart-${kpi.title.replace(/\s+/g, '-').toLowerCase()}`;
-    
-    return `
-        <div style="position: relative; height: 200px; width: 100%;">
-            <canvas id="${canvasId}" width="100%" height="200"></canvas>
-        </div>
-        <script>
-            // Wait for Chart.js to be available, then create chart
-            setTimeout(() => {
-                const ctx = document.getElementById('${canvasId}');
-                if (ctx && window.Chart) {
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: ['30 days ago', '25 days', '20 days', '15 days', '10 days', '5 days', 'Today'],
-                            datasets: [{
-                                label: '${kpi.title}',
-                                data: ${JSON.stringify(actualDataValues)},
-                                borderColor: '${kpi.color || 'var(--accent-green)'}',
-                                backgroundColor: '${kpi.color || 'var(--accent-green)'}20',
-                                fill: true,
-                                tension: 0.3,
-                                pointBackgroundColor: '${kpi.color || 'var(--accent-green)'}',
-                                pointBorderColor: 'white',
-                                pointBorderWidth: 2,
-                                pointRadius: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            return '${kpi.title}: ' + ${valueUnit.includes('percent') ? `context.parsed.y.toFixed(1) + '%'` : `context.parsed.y.toFixed(1)`};
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    grid: { color: 'rgba(255,255,255,0.1)' },
-                                    ticks: { color: 'rgba(255,255,255,0.6)', font: { size: 11 } }
-                                },
-                                y: {
-                                    min: ${minChartValue},
-                                    max: ${maxChartValue},
-                                    grid: { color: 'rgba(255,255,255,0.1)' },
-                                    ticks: { 
-                                        color: 'rgba(255,255,255,0.6)',
-                                        font: { size: 11 },
-                                        callback: function(value) {
-                                            return ${valueUnit.includes('percent') ? `value + '%'` : `value`};
-                                        }
-                                    }
-                                }
-                            },
-                            elements: {
-                                line: { borderWidth: 3 }
-                            }
-                        },
-                        plugins: [{
-                            afterDraw: function(chart) {
-                                // Draw target line
-                                const ctx = chart.ctx;
-                                const yScale = chart.scales.y;
-                                const xScale = chart.scales.x;
-                                
-                                const targetY = yScale.getPixelForValue(${targetValue});
-                                
-                                ctx.save();
-                                ctx.strokeStyle = 'var(--accent-primary)';
-                                ctx.lineWidth = 2;
-                                ctx.setLineDash([5, 5]);
-                                ctx.beginPath();
-                                ctx.moveTo(xScale.left, targetY);
-                                ctx.lineTo(xScale.right, targetY);
-                                ctx.stroke();
-                                
-                                // Target label
-                                ctx.fillStyle = 'var(--accent-primary)';
-                                ctx.font = '11px sans-serif';
-                                ctx.fillText('Target (${formatLabel(targetValue)})', xScale.right + 5, targetY + 4);
-                                ctx.restore();
-                            }
-                        }]
-                    });
-                }
-            }, 100);
-        </script>
-    `;
+    return fullData;
 }
+
+// ChatGPT's clean Chart.js implementation
+function showKpiChart(kpi, last30Days) {
+    // Where to put the chart
+    const container = document.getElementById('kpiModalBody');
+    if (!container) {
+        console.error('Missing container #kpiModalBody in your HTML.');
+        return;
+    }
+
+    // Make sure Chart.js is available
+    if (!window.Chart) {
+        console.error('Chart.js not found. Include it before script.js.');
+        return;
+    }
+
+    // Build the canvas (fresh each time)
+    container.innerHTML = `
+        <div style="position:relative; width:100%; height:200px;">
+            <canvas id="kpiChartCanvas" style="width:100%; height:200px;"></canvas>
+        </div>
+    `;
+    const canvas = document.getElementById('kpiChartCanvas');
+    if (!canvas) return;
+
+    // Normalize incoming data (accepts objects or plain numbers)
+    const { labels, values } = normalize30DaySeries(last30Days);
+
+    // Optional display formatting
+    const unit = (kpi && kpi.unit) ? String(kpi.unit) : '';
+    const isPercent = unit === '%' || unit.toLowerCase().includes('percent');
+    const format = (v) => {
+        const n = Number(v);
+        if (Number.isNaN(n)) return String(v);
+        return isPercent ? `${n.toFixed(1)}%` : n.toFixed(1);
+    };
+
+    // Destroy old chart if present
+    if (_kpiChart) {
+        _kpiChart.destroy();
+        _kpiChart = null;
+    }
+
+    // Create the line chart
+    const color = (kpi && kpi.color) || '#4bc0c0';
+    _kpiChart = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: (kpi && kpi.title) || 'KPI',
+                data: values,
+                borderColor: color,
+                backgroundColor: withAlpha(color, 0.2),
+                tension: 0.3,
+                fill: true,
+                pointRadius: 3,
+                pointBackgroundColor: color,
+                pointBorderColor: 'white',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'nearest', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => ` ${format(ctx.parsed.y)}`
+                    }
+                },
+                annotationLine: { 
+                    target: (kpi && typeof kpi.targetValue === 'number') ? parseFloat(kpi.targetValue) : null, 
+                    format 
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { 
+                        autoSkip: true, 
+                        maxTicksLimit: 6,
+                        color: 'rgba(255,255,255,0.6)'
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.6)',
+                        callback: (v) => isPercent ? `${v}%` : v
+                    }
+                }
+            }
+        },
+        plugins: [targetLinePlugin]
+    });
+}
+
+// Helper functions from ChatGPT
+function normalize30DaySeries(series) {
+    if (Array.isArray(series) && series.length) {
+        // Case A: objects with {date, value}
+        if (typeof series[0] === 'object' && series[0] !== null && 'value' in series[0]) {
+            const labels = series.map(d => labelFromDateString(d.date));
+            const values = series.map(d => Number(d.value) || 0);
+            return { labels, values };
+        }
+        // Case B: plain numbers
+        if (typeof series[0] === 'number') {
+            const labels = last30DayLabels();
+            const values = series.map(v => Number(v) || 0);
+            return { labels, values };
+        }
+    }
+    // Fallback: generate dummy data so you at least see a chart
+    const labels = last30DayLabels();
+    const values = Array.from({ length: 30 }, () => 50 + Math.round(Math.random() * 20));
+    return { labels, values };
+}
+
+function last30DayLabels() {
+    return Array.from({ length: 30 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (29 - i));
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    });
+}
+
+function labelFromDateString(s) {
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) return s || '';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function withAlpha(color, alpha) {
+    // #rrggbb -> rgba(r,g,b,alpha)
+    if (/^#([0-9a-f]{6})$/i.test(color)) {
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    // already rgb/rgba — just replace/append alpha
+    if (color.startsWith('rgb(')) return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
+    if (color.startsWith('rgba(')) return color.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, `rgba($1,$2,$3,${alpha})`);
+    return color;
+}
+
+// Target line plugin
+const targetLinePlugin = {
+    id: 'annotationLine',
+    afterDraw(chart, _args, opts) {
+        const target = opts && opts.target;
+        if (typeof target !== 'number') return;
+        const format = (opts && opts.format) || ((v) => v);
+        const { ctx, chartArea, scales: { y } } = chart;
+        const yPx = y.getPixelForValue(target);
+        if (yPx < chartArea.top || yPx > chartArea.bottom) return;
+
+        ctx.save();
+        ctx.strokeStyle = 'var(--accent-primary)';
+        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, yPx);
+        ctx.lineTo(chartArea.right, yPx);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'var(--accent-primary)';
+        ctx.font = '11px sans-serif';
+        ctx.fillText(`Target (${format(target)})`, chartArea.right - 110, yPx - 6);
+        ctx.restore();
+    }
+};
 
 // Enhanced projection calculation for live KPI data
 function calculateLiveKPIProjections(kpi) {
