@@ -9506,42 +9506,33 @@ function initSmartSync() {
 
 
 // Enhanced sync function with change detection
+// Make sure your syncWithJira function looks like this (the original):
 async function syncWithJira() {
     if (syncState.isPaused) return;
     
     try {
-        await syncOverlay.syncWithProgress(async () => {
-            console.log('=== ENHANCED SYNC WITH JIRA ===');
+        showSyncIndicator('syncing');
+        
+        // Get current data from Jira
+        const newData = await fetchJiraData();
+        
+        // Check if data actually changed
+        if (hasDataChanged(newData)) {
+            updateBoardWithLiveData(newData);
+            syncState.lastSyncData = newData;
+            syncState.lastSyncTime = Date.now();
             
-            // Your existing sync logic
-            const newData = await fetchJiraData();
-            
-            // Check if data actually changed
-            if (hasDataChanged(newData)) {
-                console.log('Data has changed, updating board...');
-                updateBoardWithLiveData(newData);
-                syncState.lastSyncData = newData;
-                syncState.lastSyncTime = Date.now();
-                return { updated: true };
-            } else {
-                console.log('No data changes detected');
-                return { updated: false };
-            }
-        }, {
-            title: 'Syncing with Jira',
-            subtitle: 'Updating initiative data...',
-            successTitle: 'Dashboard Updated',
-            successSubtitle: 'All data is current',
-            errorTitle: 'Sync Failed',
-            errorSubtitle: 'Could not connect to Jira'
-        });
+            showSyncIndicator('success');
+        } else {
+            showSyncIndicator('no-change');
+        }
         
         // Process any pending updates to Jira
         await processPendingUpdates();
         
     } catch (error) {
         console.error('Smart sync failed:', error);
-        // Error handling is already done by syncWithProgress
+        showSyncIndicator('error');
     }
 }
 
