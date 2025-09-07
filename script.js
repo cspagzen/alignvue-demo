@@ -6448,7 +6448,6 @@ async function saveKPIValue() {
     }
     
     console.log(`Updating Key Result ${kpi.key} with new value: ${currentValue}`);
-    console.log('KPI object:', kpi);
     
     const saveButton = document.querySelector('#kpi-edit-modal button[onclick="saveKPIValue()"]');
     const originalText = saveButton.textContent;
@@ -6457,12 +6456,6 @@ async function saveKPIValue() {
     
     try {
         const today = new Date().toISOString().split('T')[0];
-        
-        // First, just try updating the Key Result (skip Value History for now)
-        console.log('Updating Key Result with payload:', {
-            "customfield_10048": parseFloat(currentValue),
-            "customfield_10159": today
-        });
         
         const updateResponse = await fetch('/api/jira', {
             method: 'POST',
@@ -6479,30 +6472,23 @@ async function saveKPIValue() {
             })
         });
         
-        if (!updateResponse.ok) {
-            const errorText = await updateResponse.text();
-            console.error('Update failed. Response:', errorText);
-            let errorData;
-            try {
-                errorData = JSON.parse(errorText);
-            } catch {
-                errorData = { message: errorText };
+        // Jira often returns 204 (no content) on successful updates
+        if (updateResponse.ok) {
+            console.log('✅ Key Result updated successfully');
+            
+            // Update local data
+            updateLocalKPIData(kpi, currentValue, today);
+            
+            // Close modal and show success
+            closeKPIEditModal();
+            alert(`✅ ${kpi.title} updated to ${currentValue}${kpi.unit || ''} and synced to Jira`);
+            
+            // Refresh displays
+            if (typeof updateProgressCard === 'function') {
+                updateProgressCard();
             }
-            throw new Error(`Failed to update Key Result: ${errorData.errorMessages ? errorData.errorMessages.join(', ') : errorData.message || 'Unknown error'}`);
-        }
-        
-        console.log('✅ Key Result updated successfully');
-        
-        // Update local data
-        updateLocalKPIData(kpi, currentValue, today);
-        
-        // Close modal and show success
-        closeKPIEditModal();
-        alert(`✅ ${kpi.title} updated to ${currentValue}${kpi.unit || ''}`);
-        
-        // Refresh displays
-        if (typeof updateProgressCard === 'function') {
-            updateProgressCard();
+        } else {
+            throw new Error(`Update failed with status ${updateResponse.status}`);
         }
         
     } catch (error) {
