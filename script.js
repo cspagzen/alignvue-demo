@@ -7154,7 +7154,7 @@ function showKpiChart(kpi, last30Days) {
         _kpiChart = null;
     }
 
-    // Create the line chart
+    // Create the line chart with clean styling
     const color = (kpi && kpi.color) || '#4bc0c0';
     _kpiChart = new Chart(canvas.getContext('2d'), {
         type: 'line',
@@ -7164,13 +7164,14 @@ function showKpiChart(kpi, last30Days) {
                 label: (kpi && kpi.title) || 'KPI',
                 data: values,
                 borderColor: color,
-                backgroundColor: withAlpha(color, 0.2),
-                tension: 0.3,
-                fill: true,
-                pointRadius: 3,
+                backgroundColor: 'transparent', // Remove the black fill
+                tension: 0.1, // Less curved lines for more accurate representation
+                fill: false, // Explicitly disable fill
+                pointRadius: 4,
                 pointBackgroundColor: color,
                 pointBorderColor: 'white',
-                pointBorderWidth: 2
+                pointBorderWidth: 2,
+                pointHoverRadius: 6
             }]
         },
         options: {
@@ -7180,8 +7181,13 @@ function showKpiChart(kpi, last30Days) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: color,
+                    borderWidth: 1,
                     callbacks: {
-                        label: (ctx) => ` ${format(ctx.parsed.y)}`
+                        label: (ctx) => `${kpi.title}: ${format(ctx.parsed.y)}`
                     }
                 },
                 annotationLine: { 
@@ -7194,8 +7200,9 @@ function showKpiChart(kpi, last30Days) {
                     grid: { color: 'rgba(255,255,255,0.1)' },
                     ticks: { 
                         autoSkip: true, 
-                        maxTicksLimit: 6,
-                        color: 'rgba(255,255,255,0.6)'
+                        maxTicksLimit: Math.min(values.length, 8), // Limit based on actual data points
+                        color: 'rgba(255,255,255,0.6)',
+                        font: { size: 11 }
                     }
                 },
                 y: {
@@ -7203,6 +7210,7 @@ function showKpiChart(kpi, last30Days) {
                     grid: { color: 'rgba(255,255,255,0.1)' },
                     ticks: {
                         color: 'rgba(255,255,255,0.6)',
+                        font: { size: 11 },
                         callback: (v) => isPercent ? `${v}%` : v
                     }
                 }
