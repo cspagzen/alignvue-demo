@@ -4800,7 +4800,7 @@ function updateMendozaCard() {
             
             <!-- Chart.js Donut Chart -->
             <div class="relative mb-3">
-                <canvas id="mendoza-donut-chart" width="140" height="140"></canvas>
+                <canvas id="mendoza-donut-chart" width="120" height="120"></canvas>
                 
                 <!-- Center Metric -->
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -10363,8 +10363,6 @@ function showSyncIndicator(type) {
     } catch (error) {
         console.error('❌ Application initialization failed:', error);
     }
-            
-           //DELETE ME
             // Add this anywhere in your script.js - outside of any function
 const mendozaTextFixer = setInterval(() => {
     const centerElement = document.getElementById('mendoza-efficiency-score');
