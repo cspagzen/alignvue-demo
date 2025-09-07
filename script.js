@@ -7553,29 +7553,24 @@ function withAlpha(color, alpha) {
 // Note: targetLinePlugin already exists in your script.js, so we'll use that one
 
 // Main chart creation function
+// SIMPLE FIX: Replace these specific functions in your script.js
+
+// 1. Fix the showKpiChart function to use ACTUAL data points and target line
 function showKpiChart(kpi, chartData) {
-    console.log('Creating KPI chart for:', kpi.title, 'with data:', chartData);
+    console.log('Creating chart with ACTUAL data points:', chartData);
     
     const container = document.getElementById('kpiModalBody');
     if (!container) {
-        console.error('Missing container #kpiModalBody in your HTML.');
+        console.error('Missing container #kpiModalBody');
         return;
     }
 
     if (!window.Chart) {
-        console.error('Chart.js not found. Include it before script.js.');
-        container.innerHTML = `
-            <div class="flex items-center justify-center h-full text-center" style="color: var(--text-secondary);">
-                <div>
-                    <div class="text-sm">Chart.js not loaded</div>
-                    <div class="text-xs mt-1">Please include Chart.js library</div>
-                </div>
-            </div>
-        `;
+        console.error('Chart.js not found');
         return;
     }
 
-    // Build the canvas (fresh each time)
+    // Build fresh canvas
     container.innerHTML = `
         <div style="position:relative; width:100%; height:200px;">
             <canvas id="kpiChartCanvas" style="width:100%; height:200px;"></canvas>
@@ -7584,198 +7579,145 @@ function showKpiChart(kpi, chartData) {
     const canvas = document.getElementById('kpiChartCanvas');
     if (!canvas) return;
 
-    try {
-        // Normalize the data
-        const { labels, values } = normalize30DaySeries(chartData);
-        console.log('Chart will use labels:', labels.slice(-5), 'values:', values.slice(-5));
+    // Extract ONLY the actual data points - no padding!
+    let labels, values;
+    
+    if (Array.isArray(chartData) && chartData.length > 0 && typeof chartData[0] === 'object') {
+        // Use actual Jira data points
+        labels = chartData.map(d => {
+            const date = new Date(d.date);
+            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        });
+        values = chartData.map(d => Number(d.value) || 0);
+        console.log(`Using ${chartData.length} ACTUAL Jira data points`);
+    } else {
+        // Minimal fallback - just 3 points
+        labels = ['Start', 'Mid', 'Current'];
+        const current = parseFloat(kpi.currentValue) || 0;
+        values = [current * 0.7, current * 0.85, current];
+        console.log('Using minimal fallback data');
+    }
 
-        // Format values based on KPI unit
-        const unit = (kpi && kpi.unit) ? String(kpi.unit) : '';
-        const isPercent = unit === '%' || unit.toLowerCase().includes('percent');
-        const format = (v) => {
-            const n = Number(v);
-            if (Number.isNaN(n)) return String(v);
-            return isPercent ? `${n.toFixed(1)}%` : n.toFixed(1);
-        };
+    // Format values
+    const unit = (kpi && kpi.unit) ? String(kpi.unit) : '';
+    const isPercent = unit === '%';
+    const format = (v) => {
+        const n = Number(v);
+        if (Number.isNaN(n)) return String(v);
+        return isPercent ? `${n.toFixed(1)}%` : n.toFixed(1);
+    };
 
-        // Destroy old chart if present
-        if (window._kpiChart) {
-            window._kpiChart.destroy();
-            window._kpiChart = null;
-        }
+    // Destroy old chart
+    if (window._kpiChart) {
+        window._kpiChart.destroy();
+        window._kpiChart = null;
+    }
 
-        // Determine color based on KPI or use accent primary
-        const lineColor = (kpi && kpi.color) || '#8b5cf6';
-        
-        // Create gradient that matches your color palette
-        const ctx = canvas.getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-        
-        // Use CSS variables from your color palette for the gradient
-        if (lineColor.includes('#8b5cf6') || lineColor.includes('purple')) {
-            gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');      // --accent-primary with opacity
-            gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');    // Mid-fade
-            gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');     // Almost transparent
-        } else if (lineColor.includes('#10b981') || lineColor.includes('green')) {
-            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');      // --accent-green with opacity
-            gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.2)');
-            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
-        } else if (lineColor.includes('#3b82f6') || lineColor.includes('blue')) {
-            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');      // --accent-blue with opacity
-            gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.2)');
-            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
-        } else {
-            // Default purple gradient for other colors
-            gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-            gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
-            gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
-        }
+    // Create gradient
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
+    gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
+    gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
 
-        // Create the line chart with improved styling
-        window._kpiChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    label: (kpi && kpi.title) || 'KPI',
-                    data: values,
-                    borderColor: lineColor,
-                    backgroundColor: gradient,
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    pointBackgroundColor: lineColor,
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointHoverBackgroundColor: lineColor,
-                    pointHoverBorderColor: '#ffffff',
-                    pointHoverBorderWidth: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { 
-                    mode: 'nearest', 
-                    intersect: false,
-                    axis: 'x'
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 15, 35, 0.95)',
-                        titleColor: '#ffffff',
-                        bodyColor: '#e5e7eb',
-                        borderColor: 'rgba(139, 92, 246, 0.3)',
-                        borderWidth: 1,
-                        cornerRadius: 8,
-                        displayColors: false,
-                        callbacks: {
-                            title: (context) => {
-                                if (chartData && chartData[context[0].dataIndex] && chartData[context[0].dataIndex].date) {
-                                    const date = new Date(chartData[context[0].dataIndex].date);
-                                    return date.toLocaleDateString(undefined, { 
-                                        weekday: 'short',
-                                        month: 'short', 
-                                        day: 'numeric' 
-                                    });
-                                }
-                                return context[0].label;
-                            },
-                            label: (ctx) => `Value: ${format(ctx.parsed.y)}`
-                        }
+    // Create chart with target line
+    window._kpiChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: kpi.title || 'KPI',
+                data: values,
+                borderColor: '#8b5cf6',
+                backgroundColor: gradient,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: '#8b5cf6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#e5e7eb',
+                    borderColor: 'rgba(139, 92, 246, 0.3)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: (ctx) => `Value: ${format(ctx.parsed.y)}`
                     }
                 },
-                scales: {
-                    x: {
-                        grid: { 
-                            color: 'rgba(255, 255, 255, 0.08)',
-                            drawBorder: false
-                        },
-                        ticks: { 
-                            autoSkip: true, 
-                            maxTicksLimit: Math.min(labels.length, 8),
-                            color: 'rgba(255, 255, 255, 0.6)',
-                            font: {
-                                size: 11
-                            }
-                        },
-                        border: {
-                            display: false
-                        }
-                    },
-                    y: {
-                        beginAtZero: false,
-                        grid: { 
-                            color: 'rgba(255, 255, 255, 0.08)',
-                            drawBorder: false
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.6)',
-                            font: {
-                                size: 11
-                            },
-                            callback: (v) => format(v)
-                        },
-                        border: {
-                            display: false
-                        }
-                    }
+                // Use your existing plugin with correct options format
+                annotationLine: { 
+                    target: parseFloat(kpi.targetValue) || null,
+                    format: format
                 }
             },
-            plugins: [targetLinePlugin]
-        });
+            scales: {
+                x: {
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.08)',
+                        drawBorder: false
+                    },
+                    ticks: { 
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        font: { size: 11 }
+                    },
+                    border: { display: false }
+                },
+                y: {
+                    beginAtZero: false,
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.08)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        font: { size: 11 },
+                        callback: (v) => format(v)
+                    },
+                    border: { display: false }
+                }
+            }
+        },
+        plugins: [targetLinePlugin] // Use your existing plugin
+    });
 
-        console.log('Chart created successfully with target line plugin');
-
-        // DEBUG: Log the target value and plugin
-        console.log('Target value for line:', kpi.targetValue);
-        console.log('Target line plugin attached:', targetLinePlugin);
-
-    } catch (error) {
-        console.error('Error creating chart:', error);
-        container.innerHTML = `
-            <div class="flex items-center justify-center h-full text-center" style="color: var(--text-secondary);">
-                <div>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 opacity-50">
-                        <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
-                    </svg>
-                    <div class="text-sm">Chart temporarily unavailable</div>
-                    <div class="text-xs mt-1">Data: ${kpi.currentValue}${kpi.unit || ''} → ${kpi.targetValue}${kpi.unit || ''}</div>
-                    <div class="text-xs mt-1 opacity-75">Error: ${error.message}</div>
-                </div>
-            </div>
-        `;
-    }
+    console.log('Chart created with target:', kpi.targetValue);
 }
 
-// Enhanced function to convert live Jira Value History to chart data
+// 2. Fix convertJiraHistoryToChartData to return ONLY actual data points
 function convertJiraHistoryToChartData(kpi, valueHistory) {
-    console.log(`Converting Jira history for KPI: ${kpi.title}`, kpi);
+    console.log(`Converting Jira history for KPI: ${kpi.title}`);
     
     if (!valueHistory || valueHistory.length === 0) {
-        console.log('No value history available, creating fallback data');
-        return createFallbackChartData(kpi);
+        console.log('No value history, returning minimal data');
+        return createSimpleFallback(kpi);
     }
     
-    // Find Value History records that match this KPI's parent Key Result
+    // Find matching Value History records
     const krHistoryRecords = valueHistory.filter(vh => {
         const parentOKR = getFieldValue(vh, 'customfield_10162');
-        // Match by the KPI's key (assuming KPI object has the Jira key)
         return parentOKR === kpi.key;
     });
     
-    console.log(`Found ${krHistoryRecords.length} Value History records for ${kpi.title}`);
+    console.log(`Found ${krHistoryRecords.length} Value History records`);
     
     if (krHistoryRecords.length === 0) {
-        // No history data - create a simple progression to current value
-        console.log(`No history data for ${kpi.title}, creating fallback data`);
-        return createFallbackChartData(kpi);
+        return createSimpleFallback(kpi);
     }
     
-    // Sort by change date and extract values
-    const sortedHistory = krHistoryRecords
+    // Convert to chart data - ACTUAL POINTS ONLY
+    const chartData = krHistoryRecords
         .map(record => ({
             date: getFieldValue(record, 'customfield_10159'),
             value: parseFloat(getFieldValue(record, 'customfield_10158')) || 0
@@ -7783,52 +7725,38 @@ function convertJiraHistoryToChartData(kpi, valueHistory) {
         .filter(record => record.date && !isNaN(record.value))
         .sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    console.log(`Sorted ${sortedHistory.length} valid history points:`, sortedHistory);
-    
-    if (sortedHistory.length === 0) {
-        return createFallbackChartData(kpi);
-    }
-    
-    // Ensure we have current value as the latest point if not already there
+    // Add current value if different from last
     const currentValue = parseFloat(kpi.currentValue) || 0;
-    const lastHistoryValue = sortedHistory[sortedHistory.length - 1]?.value || 0;
-    
-    // Add current value as today's data point if it's different from the last recorded value
-    if (Math.abs(lastHistoryValue - currentValue) > 0.01) {
-        const today = new Date().toISOString().slice(0, 10);
-        sortedHistory.push({
-            date: today,
+    if (chartData.length === 0 || Math.abs(chartData[chartData.length - 1].value - currentValue) > 0.01) {
+        chartData.push({
+            date: new Date().toISOString().slice(0, 10),
             value: currentValue
         });
     }
     
-    // Create 30-day chart data from the actual history
-    const chartData = [];
-    const endDate = new Date();
-    
-    for (let i = 29; i >= 0; i--) {
-        const chartDate = new Date(endDate);
-        chartDate.setDate(chartDate.getDate() - i);
-        const chartDateStr = chartDate.toISOString().slice(0, 10);
-        
-        // Find the most recent value up to this date
-        let value = 0;
-        for (const historyPoint of sortedHistory) {
-            if (historyPoint.date <= chartDateStr) {
-                value = historyPoint.value;
-            } else {
-                break;
-            }
-        }
-        
-        chartData.push({
-            date: chartDateStr,
-            value: value
-        });
-    }
-    
-    console.log(`Generated 30-day chart data:`, chartData.slice(-5)); // Log last 5 points
+    console.log(`Returning ${chartData.length} ACTUAL data points:`, chartData);
     return chartData;
+}
+
+// 3. Simple fallback that creates minimal realistic data
+function createSimpleFallback(kpi) {
+    const currentValue = parseFloat(kpi.currentValue) || 0;
+    const today = new Date();
+    
+    return [
+        {
+            date: new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+            value: Math.round(currentValue * 0.8 * 100) / 100
+        },
+        {
+            date: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+            value: Math.round(currentValue * 0.9 * 100) / 100
+        },
+        {
+            date: today.toISOString().slice(0, 10),
+            value: currentValue
+        }
+    ];
 }
 
 function closeKPIDetailModal() {
