@@ -7658,7 +7658,7 @@ function showKpiChart(kpi, chartData) {
                 },
                 // Use your existing plugin with correct options format
                 annotationLine: { 
-                    target: parseFloat(kpi.targetValue) || null,
+                    target: parseFloat(kpi.targetValue) || 100,
                     format: format
                 }
             },
