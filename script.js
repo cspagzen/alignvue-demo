@@ -9548,28 +9548,40 @@ class SyncOverlay {
     }
 
     show(options = {}) {
-        const {
-            title = 'Syncing with Jira',
-            subtitle = 'Updating initiative data...',
-            showProgress = true
-        } = options;
-
-        this.title.textContent = title;
-        this.subtitle.textContent = subtitle;
-        
-        // Reset to loading state
-        this.icon.innerHTML = `
-            <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 12a9 9 0 11-6.219-8.56"/>
-            </svg>
-        `;
-        this.icon.className = 'sync-icon';
-
-        this.overlay.classList.add('active');
-        this.isActive = true;
-        
-        console.log('🔄 Sync overlay shown:', title);
+    // Re-query elements if they weren't available during construction
+    if (!this.overlay) this.overlay = document.getElementById('syncOverlay');
+    if (!this.icon) this.icon = document.getElementById('syncIcon');
+    if (!this.title) this.title = document.getElementById('syncTitle');
+    if (!this.subtitle) this.subtitle = document.getElementById('syncSubtitle');
+    
+    if (!this.title || !this.subtitle || !this.icon || !this.overlay) {
+        console.error('❌ Sync overlay elements still not available');
+        return;
     }
+
+    const {
+        title = 'Syncing with Jira',
+        subtitle = 'Updating initiative data...',
+        showProgress = true
+    } = options;
+
+    this.title.textContent = title;
+    this.subtitle.textContent = subtitle;
+    
+    // Use spinning AlignVue compass icon
+    this.icon.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>
+            <circle cx="12" cy="12" r="10"/>
+        </svg>
+    `;
+    this.icon.className = 'sync-icon'; // This keeps the spinning animation
+
+    this.overlay.classList.add('active');
+    this.isActive = true;
+    
+    console.log('🔄 Sync overlay shown:', title);
+}
 
     showSuccess(options = {}) {
         const {
