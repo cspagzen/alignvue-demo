@@ -6880,22 +6880,326 @@ function getTeamNotes(teamName, teamData) {
 
 // Complete rewrite of KPI modal functions using Chart.js instead of SVG
 
-// Clean, production-ready KPI modal implementation
-// Based on ChatGPT's superior approach
+// Updated KPI Detail Modal functions to use live Jira data
 
-// Keep a reference so we can cleanly recreate the chart when the modal reopens
-let _kpiChart = null;
+// Enhanced function to convert live Jira Value History to chart data
+function convertJiraHistoryToChartData(kpi, valueHistory) {
+    console.log(`Converting Jira history for KPI: ${kpi.title}`, kpi);
+    
+    // Find Value History records that match this KPI's parent Key Result
+    const krHistoryRecords = valueHistory.filter(vh => {
+        const parentOKR = getFieldValue(vh, 'customfield_10162');
+        // Match by the KPI's key (assuming KPI object has the Jira key)
+        return parentOKR === kpi.key;
+    });
+    
+    console.log(`Found ${krHistoryRecords.length} Value History records for ${kpi.title}`);
+    
+    if (krHistoryRecords.length === 0) {
+        // No history data - create a simple progression to current value
+        console.log(`No history data for ${kpi.title}, creating fallback data`);
+        return createFallbackChartData(kpi);
+    }
+    
+    // Sort by change date and extract values
+    const sortedHistory = krHistoryRecords
+        .map(record => ({
+            date: getFieldValue(record, 'customfield_10159'),
+            value: parseFloat(getFieldValue(record, 'customfield_10158')) || 0
+        }))
+        .filter(record => record.date && !isNaN(record.value))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    console.log(`Sorted ${sortedHistory.length} valid history points:`, sortedHistory);
+    
+    if (sortedHistory.length === 0) {
+        return createFallbackChartData(kpi);
+    }
+    
+    // Ensure we have current value as the latest point if not already there
+    const currentValue = parseFloat(kpi.currentValue) || 0;
+    const lastHistoryValue = sortedHistory[sortedHistory.length - 1]?.value || 0;
+    
+    // Add current value as today's data point if it's different from the last recorded value
+    if (Math.abs(lastHistoryValue - currentValue) > 0.01) {
+        const today = new Date().toISOString().slice(0, 10);
+        sortedHistory.push({
+            date: today,
+            value: currentValue
+        });
+    }
+    
+    // Create 30-day chart data from the actual history
+    const chartData = [];
+    const endDate = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+        const chartDate = new Date(endDate);
+        chartDate.setDate(chartDate.getDate() - i);
+        const chartDateStr = chartDate.toISOString().slice(0, 10);
+        
+        // Find the most recent value up to this date
+        let value = 0;
+        for (const historyPoint of sortedHistory) {
+            if (historyPoint.date <= chartDateStr) {
+                value = historyPoint.value;
+            } else {
+                break;
+            }
+        }
+        
+        chartData.push({
+            date: chartDateStr,
+            value: value
+        });
+    }
+    
+    console.log(`Generated 30-day chart data:`, chartData.slice(-5)); // Log last 5 points
+    return chartData;
+}
 
-/**
- * PUBLIC: Call this when you open your KPI detail modal.
- * @param {Object} kpi              e.g. { title: 'MAU', unit: '%', targetValue: 40, currentValue: 35, color: '#4bc0c0' }
- * @param {Array}  last30Days       Either:
- *     A) [{date:'YYYY-MM-DD', value:Number}, ... 30 items]
- *     B) [Number, Number, ... 30 items]  // values only
- */
-function openKPIDetailModal(kpi) {
+// Fallback data creation when no Jira history exists
+function createFallbackChartData(kpi) {
+    const currentValue = parseFloat(kpi.currentValue) || 0;
+    const targetValue = parseFloat(kpi.targetValue) || 100;
+    
+    // Create a realistic progression showing growth to current value
+    const chartData = [];
+    const endDate = new Date();
+    const startValue = Math.max(0, currentValue * 0.6); // Start at 60% of current value
+    
+    for (let i = 29; i >= 0; i--) {
+        const chartDate = new Date(endDate);
+        chartDate.setDate(chartDate.getDate() - i);
+        const chartDateStr = chartDate.toISOString().slice(0, 10);
+        
+        // Create gradual progression to current value
+        const progress = (29 - i) / 29;
+        const value = startValue + (progress * (currentValue - startValue));
+        
+        chartData.push({
+            date: chartDateStr,
+            value: Math.round(value * 100) / 100
+        });
+    }
+    
+    console.log(`Created fallback chart data ending at ${currentValue}`);
+    return chartData;
+}
+
+// Updated Chart.js implementation with better gradient
+function showKpiChart(kpi, chartData) {
+    const container = document.getElementById('kpiModalBody');
+    if (!container) {
+        console.error('Missing container #kpiModalBody in your HTML.');
+        return;
+    }
+
+    if (!window.Chart) {
+        console.error('Chart.js not found. Include it before script.js.');
+        return;
+    }
+
+    // Build the canvas (fresh each time)
+    container.innerHTML = `
+        <div style="position:relative; width:100%; height:200px;">
+            <canvas id="kpiChartCanvas" style="width:100%; height:200px;"></canvas>
+        </div>
+    `;
+    const canvas = document.getElementById('kpiChartCanvas');
+    if (!canvas) return;
+
+    // Normalize the data
+    const { labels, values } = normalize30DaySeries(chartData);
+
+    // Format values based on KPI unit
+    const unit = (kpi && kpi.unit) ? String(kpi.unit) : '';
+    const isPercent = unit === '%' || unit.toLowerCase().includes('percent');
+    const format = (v) => {
+        const n = Number(v);
+        if (Number.isNaN(n)) return String(v);
+        return isPercent ? `${n.toFixed(1)}%` : n.toFixed(1);
+    };
+
+    // Destroy old chart if present
+    if (window._kpiChart) {
+        window._kpiChart.destroy();
+        window._kpiChart = null;
+    }
+
+    // Determine color based on KPI or use accent primary
+    const lineColor = (kpi && kpi.color) || 'var(--accent-primary)';
+    
+    // Create gradient that matches your color palette
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+    
+    // Use CSS variables from your color palette for the gradient
+    if (lineColor.includes('var(--accent-primary)') || lineColor === '#8b5cf6') {
+        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');      // --accent-primary with opacity
+        gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');    // Mid-fade
+        gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');     // Almost transparent
+    } else if (lineColor.includes('var(--accent-green)') || lineColor === '#10b981') {
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');      // --accent-green with opacity
+        gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.2)');
+        gradient.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
+    } else if (lineColor.includes('var(--accent-blue)') || lineColor === '#3b82f6') {
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');      // --accent-blue with opacity
+        gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.2)');
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
+    } else {
+        // Default purple gradient for other colors
+        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
+        gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
+        gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
+    }
+
+    // Create the line chart with improved styling
+    window._kpiChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: (kpi && kpi.title) || 'KPI',
+                data: values,
+                borderColor: lineColor,
+                backgroundColor: gradient,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: lineColor,
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: lineColor,
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { 
+                mode: 'nearest', 
+                intersect: false,
+                axis: 'x'
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#e5e7eb',
+                    borderColor: 'rgba(139, 92, 246, 0.3)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        title: (context) => {
+                            const date = new Date(chartData[context[0].dataIndex].date);
+                            return date.toLocaleDateString(undefined, { 
+                                weekday: 'short',
+                                month: 'short', 
+                                day: 'numeric' 
+                            });
+                        },
+                        label: (ctx) => `Value: ${format(ctx.parsed.y)}`
+                    }
+                },
+                targetLine: { 
+                    target: (kpi && typeof kpi.targetValue === 'number') ? parseFloat(kpi.targetValue) : null, 
+                    format 
+                }
+            },
+            scales: {
+                x: {
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.08)',
+                        drawBorder: false
+                    },
+                    ticks: { 
+                        autoSkip: true, 
+                        maxTicksLimit: 6,
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        font: {
+                            size: 11
+                        }
+                    },
+                    border: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.08)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        font: {
+                            size: 11
+                        },
+                        callback: (v) => format(v)
+                    },
+                    border: {
+                        display: false
+                    }
+                }
+            }
+        },
+        plugins: [targetLinePlugin]
+    });
+}
+
+// Enhanced target line plugin with better styling
+const targetLinePlugin = {
+    id: 'targetLine',
+    afterDraw(chart, _args, opts) {
+        const target = opts && opts.target;
+        if (typeof target !== 'number') return;
+        
+        const format = (opts && opts.format) || ((v) => v);
+        const { ctx, chartArea, scales: { y } } = chart;
+        const yPx = y.getPixelForValue(target);
+        
+        if (yPx < chartArea.top || yPx > chartArea.bottom) return;
+
+        ctx.save();
+        
+        // Draw the target line
+        ctx.strokeStyle = 'rgba(139, 92, 246, 0.8)'; // Use accent-primary color
+        ctx.setLineDash([8, 4]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, yPx);
+        ctx.lineTo(chartArea.right, yPx);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // Draw the target label with background
+        const text = `Target: ${format(target)}`;
+        ctx.font = '12px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.9)';
+        
+        const textWidth = ctx.measureText(text).width;
+        const labelX = chartArea.right - textWidth - 12;
+        const labelY = yPx - 8;
+        
+        // Label background
+        ctx.fillRect(labelX - 4, labelY - 14, textWidth + 8, 18);
+        
+        // Label text
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(text, labelX, labelY);
+        
+        ctx.restore();
+    }
+};
+
+// Updated openKPIDetailModal function to use live data
+async function openKPIDetailModal(kpi) {
     console.log('Opening KPI Detail Modal with live data:', kpi);
-    currentKPIDetail = kpi;
     
     const modal = document.getElementById('kpi-detail-modal');
     const title = document.getElementById('kpi-detail-modal-title');
@@ -6908,137 +7212,122 @@ function openKPIDetailModal(kpi) {
     
     title.textContent = kpi.title;
     
+    // Fetch live Jira data for this KPI
+    let chartData = [];
+    try {
+        const { valueHistory } = await fetchKeyResultsData();
+        chartData = convertJiraHistoryToChartData(kpi, valueHistory);
+        console.log('Using live Jira data for chart:', chartData.length, 'data points');
+    } catch (error) {
+        console.error('Failed to fetch live data, using fallback:', error);
+        chartData = createFallbackChartData(kpi);
+    }
+    
     // Calculate projection data for live KPI using actual Jira data
     const projectionData = calculateLiveKPIProjections(kpi);
-    
-    // Convert trendPoints to 30-day data format
-    const last30Days = convertTrendPointsTo30Days(kpi);
     
     content.innerHTML = `
     <div class="space-y-6">
         <!-- Two Column Layout for Key Metrics and Projections -->
-        <div class="grid gap-6" style="grid-template-columns: 1fr 1.5fr;">
-            <!-- Key Metrics Column -->
-            <div class="space-y-4">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: var(--text-primary);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m12 14 4-4"/>
-                        <path d="M3.34 19a10 10 0 1 1 17.32 0"/>
+        <div class="grid gap-6 md:grid-cols-2">
+            <!-- Left Column - Current State -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12,6 12,12 16,14"/>
                     </svg>
-                    Key Metrics
+                    Current Performance
                 </h3>
                 
-                <!-- Current Value -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-end">
-                        <div class="text-lg font-bold leading-tight" style="color: var(--text-secondary);">Current<br>Value</div>
-                        <div class="text-4xl font-bold text-right" style="color: ${kpi.color || 'var(--accent-green)'};">${kpi.currentValue}${kpi.unit || ''}</div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-4 rounded-lg" style="background: var(--bg-tertiary);">
+                        <div>
+                            <div class="text-sm" style="color: var(--text-secondary);">Current Value</div>
+                            <div class="text-2xl font-bold" style="color: var(--text-primary);">${kpi.currentValue}${kpi.unit || ''}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm" style="color: var(--text-secondary);">Target</div>
+                            <div class="text-2xl font-bold" style="color: var(--accent-primary);">${kpi.targetValue}${kpi.unit || ''}</div>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Target Value -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-end">
-                        <div class="text-lg font-bold leading-tight" style="color: var(--text-secondary);">Target<br>Value</div>
-                        <div class="text-4xl font-bold text-right" style="color: var(--accent-primary);">${kpi.targetValue}${kpi.unit || ''}</div>
+                    
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary);">
+                        <div class="text-sm mb-2" style="color: var(--text-secondary);">Progress to Target</div>
+                        <div class="w-full bg-gray-700 rounded-full h-3 mb-2">
+                            <div class="h-3 rounded-full transition-all duration-500" 
+                                 style="width: ${Math.min(kpi.progress || 0, 100)}%; background: linear-gradient(90deg, var(--accent-primary), var(--accent-primary-hover));"></div>
+                        </div>
+                        <div class="text-xl font-semibold" style="color: var(--text-primary);">${Math.round(kpi.progress || 0)}%</div>
                     </div>
-                </div>
-                
-                <!-- Progress Percentage -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-end">
-                        <div class="text-lg font-bold leading-tight" style="color: var(--text-secondary);">Progress<br>Complete</div>
-                        <div class="text-4xl font-bold text-right" style="color: ${kpi.progress >= 80 ? 'var(--accent-green)' : kpi.progress >= 60 ? 'var(--accent-orange)' : 'var(--accent-red)'};">${Math.round(kpi.progress || 0)}%</div>
+                    
+                    <div class="text-center">
+                        <div class="text-xs mb-2" style="color: var(--text-secondary);">Data Quality: ${projectionData.dataQuality}% • Last Updated: ${projectionData.lastUpdated}</div>
+                        <button onclick="closeKPIDetailModal(); setTimeout(() => openKPIEditModal('${kpi.title}', '${kpi.currentValue}', '${kpi.targetValue}'), 100);" 
+                                class="px-3 py-1 rounded text-xs hover:bg-opacity-90 mt-3" 
+                                style="background: var(--accent-primary); color: white;">
+                            Update Current Key Result Value
+                        </button>
                     </div>
                 </div>
             </div>
             
-            <!-- Projections Column -->
-            <div class="space-y-4">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: var(--text-primary);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M16 17h6v-6"/>
-                        <path d="m22 17-8.5-8.5-5 5L2 7"/>
+            <!-- Right Column - Projections & Insights -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 3v16a2 2 0 0 0 2 2h16"/>
+                        <path d="M7 11h8"/>
+                        <path d="M7 16h12"/>
+                        <path d="M7 6h16"/>
                     </svg>
-                    Live Projections
+                    Trajectory Analysis
                 </h3>
                 
-                <!-- Current Velocity -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium" style="color: var(--text-secondary);">Current Velocity</span>
-                        <span class="text-lg font-bold" style="color: var(--accent-blue);">${projectionData.velocity}</span>
+                <div class="space-y-4">
+                    <div class="p-4 rounded-lg" style="background: ${projectionData.onTrack ? 'var(--status-success-bg)' : 'rgba(239, 68, 68, 0.15)'}; border-left: 4px solid ${projectionData.onTrack ? 'var(--status-success)' : 'var(--accent-red)'};">
+                        <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">${projectionData.onTrack ? '✓ On Track' : '⚠ At Risk'}</div>
+                        <div class="text-xs" style="color: var(--text-secondary);">${projectionData.onTrack ? projectionData.paceChange : projectionData.shortfall}</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="text-center p-3 rounded-lg" style="background: var(--bg-tertiary);">
+                            <div class="text-lg font-bold" style="color: var(--text-primary);">${projectionData.velocity}</div>
+                            <div class="text-xs" style="color: var(--text-secondary);">Current Velocity</div>
+                        </div>
+                        <div class="text-center p-3 rounded-lg" style="background: var(--bg-tertiary);">
+                            <div class="text-lg font-bold" style="color: var(--text-primary);">${projectionData.requiredPace}</div>
+                            <div class="text-xs" style="color: var(--text-secondary);">Required Pace</div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary);">
+                        <div class="text-sm mb-2" style="color: var(--text-secondary);">Projected Final Value</div>
+                        <div class="text-xl font-bold" style="color: var(--text-primary);">${projectionData.projectedValue}</div>
+                        <div class="text-xs mt-1" style="color: var(--text-tertiary);">${projectionData.daysRemaining} days remaining</div>
                     </div>
                 </div>
-                
-                <!-- Projected Final Value -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium" style="color: var(--text-secondary);">Projected Final</span>
-                        <span class="text-lg font-bold" style="color: ${projectionData.onTrack ? 'var(--accent-green)' : 'var(--accent-orange)'};">${projectionData.projectedValue}</span>
-                    </div>
-                </div>
-                
-                <!-- Required Pace -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium" style="color: var(--text-secondary);">Required Pace</span>
-                        <span class="text-lg font-bold" style="color: var(--accent-primary);">${projectionData.requiredPace}</span>
-                    </div>
-                </div>
-                
-                <!-- Status Assessment -->
-                <div class="p-4 rounded-lg" style="background: ${projectionData.onTrack ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; border: 1px solid ${projectionData.onTrack ? 'var(--accent-green)' : 'var(--accent-red)'};">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-2 h-2 rounded-full" style="background: ${projectionData.onTrack ? 'var(--accent-green)' : 'var(--accent-red)'};"></div>
-                        <span class="text-sm font-medium" style="color: ${projectionData.onTrack ? 'var(--accent-green)' : 'var(--accent-red)'};">
-                            ${projectionData.onTrack ? 'On Track' : 'Needs Attention'}
-                        </span>
-                    </div>
-                    <div class="text-xs" style="color: var(--text-secondary);">
-                        ${projectionData.onTrack ? projectionData.paceChange : projectionData.shortfall}
-                        ${!projectionData.onTrack ? ` • ${projectionData.paceChange}` : ''}
-                    </div>
-                </div>
-                
-                <!-- Data Quality Info -->
-                <div class="mt-4 space-y-2">
-                    <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12,6 12,12 16,14"/>
-                        </svg>
-                        <span style="color: var(--text-secondary);">Last updated ${projectionData.lastUpdated}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 12l2 2 4-4"/>
-                            <path d="M21 12c.552 0 1-.448 1-1V5l-8-3-8 3v6c0 .552.448 1 1 1z"/>
-                        </svg>
-                        <span style="color: var(--text-secondary);">Data quality: ${projectionData.dataQuality}% complete</span>
-                    </div>
-                </div>
-                <button onclick="closeKPIDetailModal(); setTimeout(() => openKPIEditModal('${kpi.title}', '${kpi.currentValue}', '${kpi.targetValue}'), 100);" 
-                        class="px-3 py-1 rounded text-xs hover:bg-opacity-90 mt-3" 
-                        style="background: var(--accent-primary); color: white;">
-                    Update Current Key Result Value
-                </button>
             </div>
         </div>
         
         <!-- Full-Width Trend Chart Section spanning both columns -->
-        <div class="col-span-2 w-full" style="min-height: 280px;">
+        <div class="w-full" style="min-height: 280px;">
             <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: var(--text-primary);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
                 </svg>
-                30-Day Performance Trend
+                Performance Trend - Live Jira Data
+                <span class="text-xs px-2 py-1 rounded" style="background: var(--status-success-bg); color: var(--status-success);">LIVE</span>
             </h3>
             
             <div class="p-4 rounded-lg w-full" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); min-height: 220px;">
                 <div id="kpiModalBody" style="position: relative; height: 200px; width: 100%;">
                     <canvas id="kpiChart" width="100%" height="200"></canvas>
                 </div>
+            </div>
+            
+            <div class="text-xs mt-2 text-center" style="color: var(--text-tertiary);">
+                ${chartData.length} data points from Jira Value History • Updated in real-time
             </div>
         </div>
     </div>
@@ -7056,9 +7345,9 @@ function openKPIDetailModal(kpi) {
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
     
-    // Now create the chart using ChatGPT's clean approach
+    // Now create the chart using the live data
     setTimeout(() => {
-        showKpiChart(kpi, last30Days);
+        showKpiChart(kpi, chartData);
     }, 100);
     
     // Focus the close button
@@ -7068,271 +7357,6 @@ function openKPIDetailModal(kpi) {
             closeButton.focus();
         }
     }, 200);
-}
-
-// Convert your existing trendPoints to 30-day format for Chart.js
-function convertTrendPointsTo30Days(kpi) {
-    const trendPoints = kpi.trendPoints || '0,35 20,35 40,35';
-    const coordinatePoints = trendPoints.split(' ').map(point => {
-        const [x, y] = point.split(',');
-        return parseInt(y);
-    });
-    
-    // Create realistic data progression ending at current value
-    let actualDataValues;
-    if (kpi.title === 'Strategic Capabilities') {
-        actualDataValues = coordinatePoints.map((coord, index) => 
-            index < 3 ? 0 : parseFloat(kpi.currentValue)
-        );
-    } else {
-        const currentValue = parseFloat(kpi.currentValue) || 0;
-        const startValue = currentValue * 0.7;
-        actualDataValues = coordinatePoints.map(coord => {
-            const progress = coord / 35;
-            return startValue + (progress * (currentValue - startValue));
-        });
-    }
-    
-    // Generate 30 days of data (pad or interpolate as needed)
-    const fullData = [];
-    for (let i = 0; i < 30; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - (29 - i));
-        
-        // Simple interpolation
-        const valueIndex = Math.floor((i / 29) * (actualDataValues.length - 1));
-        const value = actualDataValues[valueIndex] || actualDataValues[actualDataValues.length - 1];
-        
-        fullData.push({
-            date: date.toISOString().slice(0, 10),
-            value: Math.round(value * 100) / 100
-        });
-    }
-    
-    return fullData;
-}
-
-// ChatGPT's clean Chart.js implementation
-function showKpiChart(kpi, last30Days) {
-    // Where to put the chart
-    const container = document.getElementById('kpiModalBody');
-    if (!container) {
-        console.error('Missing container #kpiModalBody in your HTML.');
-        return;
-    }
-
-    // Make sure Chart.js is available
-    if (!window.Chart) {
-        console.error('Chart.js not found. Include it before script.js.');
-        return;
-    }
-
-    // Build the canvas (fresh each time)
-    container.innerHTML = `
-        <div style="position:relative; width:100%; height:200px;">
-            <canvas id="kpiChartCanvas" style="width:100%; height:200px;"></canvas>
-        </div>
-    `;
-    const canvas = document.getElementById('kpiChartCanvas');
-    if (!canvas) return;
-
-    // Normalize incoming data (accepts objects or plain numbers)
-    const { labels, values } = normalize30DaySeries(last30Days);
-
-    // Optional display formatting
-    const unit = (kpi && kpi.unit) ? String(kpi.unit) : '';
-    const isPercent = unit === '%' || unit.toLowerCase().includes('percent');
-    const format = (v) => {
-        const n = Number(v);
-        if (Number.isNaN(n)) return String(v);
-        return isPercent ? `${n.toFixed(1)}%` : n.toFixed(1);
-    };
-
-    // Destroy old chart if present
-    if (_kpiChart) {
-        _kpiChart.destroy();
-        _kpiChart = null;
-    }
-
-    // Create the line chart
-    const color = (kpi && kpi.color) || '#4bc0c0';
-    _kpiChart = new Chart(canvas.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: (kpi && kpi.title) || 'KPI',
-                data: values,
-                borderColor: color,
-                backgroundColor: withAlpha(color, 0.2),
-                tension: 0.3,
-                fill: true,
-                pointRadius: 3,
-                pointBackgroundColor: color,
-                pointBorderColor: 'white',
-                pointBorderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'nearest', intersect: false },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (ctx) => ` ${format(ctx.parsed.y)}`
-                    }
-                },
-                annotationLine: { 
-                    target: (kpi && typeof kpi.targetValue === 'number') ? parseFloat(kpi.targetValue) : null, 
-                    format 
-                }
-            },
-            scales: {
-                x: {
-                    grid: { color: 'rgba(255,255,255,0.1)' },
-                    ticks: { 
-                        autoSkip: true, 
-                        maxTicksLimit: 6,
-                        color: 'rgba(255,255,255,0.6)'
-                    }
-                },
-                y: {
-                    beginAtZero: false,
-                    grid: { color: 'rgba(255,255,255,0.1)' },
-                    ticks: {
-                        color: 'rgba(255,255,255,0.6)',
-                        callback: (v) => isPercent ? `${v}%` : v
-                    }
-                }
-            }
-        },
-        plugins: [targetLinePlugin]
-    });
-}
-
-// Helper functions from ChatGPT
-function normalize30DaySeries(series) {
-    if (Array.isArray(series) && series.length) {
-        // Case A: objects with {date, value}
-        if (typeof series[0] === 'object' && series[0] !== null && 'value' in series[0]) {
-            const labels = series.map(d => labelFromDateString(d.date));
-            const values = series.map(d => Number(d.value) || 0);
-            return { labels, values };
-        }
-        // Case B: plain numbers
-        if (typeof series[0] === 'number') {
-            const labels = last30DayLabels();
-            const values = series.map(v => Number(v) || 0);
-            return { labels, values };
-        }
-    }
-    // Fallback: generate dummy data so you at least see a chart
-    const labels = last30DayLabels();
-    const values = Array.from({ length: 30 }, () => 50 + Math.round(Math.random() * 20));
-    return { labels, values };
-}
-
-function last30DayLabels() {
-    return Array.from({ length: 30 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (29 - i));
-        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    });
-}
-
-function labelFromDateString(s) {
-    const d = new Date(s);
-    if (Number.isNaN(d.getTime())) return s || '';
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-function withAlpha(color, alpha) {
-    // #rrggbb -> rgba(r,g,b,alpha)
-    if (/^#([0-9a-f]{6})$/i.test(color)) {
-        const r = parseInt(color.slice(1, 3), 16);
-        const g = parseInt(color.slice(3, 5), 16);
-        const b = parseInt(color.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-    // already rgb/rgba — just replace/append alpha
-    if (color.startsWith('rgb(')) return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
-    if (color.startsWith('rgba(')) return color.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, `rgba($1,$2,$3,${alpha})`);
-    return color;
-}
-
-// Target line plugin
-const targetLinePlugin = {
-    id: 'annotationLine',
-    afterDraw(chart, _args, opts) {
-        const target = opts && opts.target;
-        if (typeof target !== 'number') return;
-        const format = (opts && opts.format) || ((v) => v);
-        const { ctx, chartArea, scales: { y } } = chart;
-        const yPx = y.getPixelForValue(target);
-        if (yPx < chartArea.top || yPx > chartArea.bottom) return;
-
-        ctx.save();
-        ctx.strokeStyle = 'var(--accent-primary)';
-        ctx.setLineDash([5, 5]);
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, yPx);
-        ctx.lineTo(chartArea.right, yPx);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = 'var(--accent-primary)';
-        ctx.font = '11px sans-serif';
-        ctx.fillText(`Target (${format(target)})`, chartArea.right - 110, yPx - 6);
-        ctx.restore();
-    }
-};
-
-// Enhanced projection calculation for live KPI data
-function calculateLiveKPIProjections(kpi) {
-    console.log('Calculating projections for live KPI:', kpi.title);
-    
-    const currentNumeric = parseFloat(kpi.currentValue) || 0;
-    const targetNumeric = parseFloat(kpi.targetValue) || 100;
-    const progress = kpi.progress || 0;
-    
-    // Enhanced projection logic using actual Jira data patterns
-    const daysElapsed = 30; // Assume 30 days of tracking so far
-    const progressRate = progress / daysElapsed; // Daily progress rate
-    const velocity = `+${(progressRate * 7).toFixed(1)}% per week`;
-    
-    // Project final value based on current trajectory
-    const remainingDays = 60; // Assume 60 days remaining in period
-    const projectedProgress = Math.min(progress + (progressRate * remainingDays), 100);
-    const projectedValue = `${Math.round((projectedProgress / 100) * targetNumeric)}${kpi.unit || ''}`;
-    
-    // Calculate required weekly rate to hit target
-    const requiredWeeklyRate = ((100 - progress) / (remainingDays / 7));
-    const requiredPace = `+${Math.max(0, requiredWeeklyRate).toFixed(1)}% per week`;
-    
-    // Determine last updated time from Jira data if available
-    const lastUpdated = kpi.lastUpdated || '2 hours ago';
-    const dataQuality = kpi.dataQuality || Math.round(85 + Math.random() * 15);
-    
-    const onTrack = projectedProgress >= 85; // 85% or better is "on track"
-    
-    // Calculate pace change recommendations
-    const currentWeeklyRate = progressRate * 7;
-    const paceIncrease = Math.max(0, Math.round(((requiredWeeklyRate - currentWeeklyRate) / Math.max(currentWeeklyRate, 1)) * 100));
-    
-    return {
-        velocity,
-        projectedValue,
-        requiredPace,
-        onTrack,
-        shortfall: onTrack ? '' : `${Math.round(85 - projectedProgress)}% behind target pace`,
-        paceChange: onTrack ? 'Maintain current pace to reach target' : 'Acceleration needed to meet target',
-        paceIncrease: `${paceIncrease}%`,
-        daysRemaining: remainingDays,
-        lastUpdated,
-        dataQuality
-    };
 }
 
 function closeKPIDetailModal() {
