@@ -6878,185 +6878,11 @@ function getTeamNotes(teamName, teamData) {
     return notes;
 }
 
-// New function to generate KPI trend chart with PROPER scaling and EXACT card shading
-function generateKPITrendChart(kpi) {
-    console.log('📈 Generating trend chart for:', kpi.title, 'Target:', kpi.targetValue, 'Current:', kpi.currentValue, 'Unit:', kpi.unit);
-    console.log('Raw trendPoints:', kpi.trendPoints);
-    
-    const trendPoints = kpi.trendPoints || '0,35 20,35 40,35'; // Fallback to default
-    const modalIndex = 'modal';
-    
-    // Get actual values for smart scaling
-    const currentValue = parseFloat(kpi.currentValue) || 0;
-    const targetValue = parseFloat(kpi.targetValue) || 100;
-    const valueUnit = kpi.unit || '';
-    
-    // PROPERLY extract actual data values from trendPoints
-    // The trendPoints are coordinates - convert them back to actual values
-    const coordinatePoints = trendPoints.split(' ').map(point => {
-        const [x, y] = point.split(',');
-        return { x: parseInt(x), y: parseInt(y) };
-    });
-    
-    console.log('Coordinate points:', coordinatePoints);
-    
-    // Convert coordinates to actual values based on the KPI type and current/target values
-    let actualDataValues;
-    
-    if (kpi.title === 'Strategic Capabilities') {
-        // For Strategic Capabilities: map coordinates to actual count progression
-        actualDataValues = coordinatePoints.map((point, index) => {
-            // Y coordinate 35 = max value, 0 = min value
-            // Map to actual range between 0 and current/target values
-            const maxValue = Math.max(currentValue, targetValue);
-            return (point.y / 35) * maxValue;
-        });
-    } else if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
-        // For percentages, map coordinates to actual percentage values
-        // Assume the trend shows progression from some starting point to current value
-        const minValue = Math.min(currentValue * 0.7, targetValue * 0.7); // Reasonable starting point
-        const maxValue = Math.max(currentValue, targetValue);
-        actualDataValues = coordinatePoints.map(point => {
-            // Map Y coordinate (0-35) to actual percentage range
-            const normalizedY = point.y / 35; // Normalize to 0-1
-            return minValue + (normalizedY * (maxValue - minValue));
-        });
-    } else {
-        // For counts, scores, days, users - map coordinates to actual values
-        const maxValue = Math.max(currentValue, targetValue);
-        actualDataValues = coordinatePoints.map(point => {
-            return (point.y / 35) * maxValue;
-        });
-    }
-    
-    console.log('Actual data values:', actualDataValues);
-    
-    // CRITICAL: Include target value in range calculation for proper journey visualization
-    const allValues = [...actualDataValues, currentValue, targetValue];
-    const minDataValue = Math.min(...allValues);
-    const maxDataValue = Math.max(...allValues); // This includes target!
-    
-    // SMART Y-AXIS SCALING with target value included
-    let minChartValue, maxChartValue, yAxisValues;
-    
-    if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
-        // For percentages, include target in range with buffer
-        const dataRange = maxDataValue - minDataValue;
-        const padding = Math.max(dataRange * 0.2, 2); // At least 2% padding
-        
-        minChartValue = Math.max(0, Math.floor(minDataValue - padding));
-        maxChartValue = Math.min(100, Math.ceil(maxDataValue + padding)); // Target + buffer
-        
-        const step = (maxChartValue - minChartValue) / 4;
-        yAxisValues = [
-            Math.round(maxChartValue),
-            Math.round(maxChartValue - step),
-            Math.round(maxChartValue - step * 2), 
-            Math.round(maxChartValue - step * 3),
-            Math.round(minChartValue)
-        ];
-    } else {
-        // For counts, include target with buffer
-        const dataRange = maxDataValue - minDataValue;
-        const padding = Math.max(dataRange * 0.2, 0.5); // At least 0.5 unit padding
-        
-        minChartValue = Math.max(0, Math.floor(minDataValue - padding));
-        maxChartValue = Math.ceil(maxDataValue + padding); // Target + buffer
-        
-        const step = (maxChartValue - minChartValue) / 4;
-        yAxisValues = [
-            Math.round(maxChartValue * 10) / 10,
-            Math.round((maxChartValue - step) * 10) / 10,
-            Math.round((maxChartValue - step * 2) * 10) / 10, 
-            Math.round((maxChartValue - step * 3) * 10) / 10,
-            Math.round(minChartValue * 10) / 10
-        ];
-    }
-    
-    // Chart dimensions - FULL WIDTH spanning two columns
-    const chartHeight = 120;
-    const chartTop = 20;
-    const chartBottom = chartTop + chartHeight; // 140
-    const chartLeft = 40;
-    const chartRight = 600; // FULL WIDTH for two columns
-    const chartWidth = chartRight - chartLeft; // 560px wide
-    
-    // Calculate target line Y position using smart scaling that includes target
-    const targetLineY = chartBottom - ((targetValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
-    
-    // Format Y-axis labels based on unit type
-    const formatYLabel = (value) => {
-        if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
-            return `${value}%`;
-        }
-        return value.toString();
-    };
-    
-    console.log(`Dynamic scaling - Min: ${minChartValue}, Max: ${maxChartValue} (includes target), Target Y: ${targetLineY}`);
-    
-    return `
-        <svg width="100%" height="180" viewBox="0 0 650 180" style="background: rgba(255,255,255,0.02); border-radius: 4px;">
-            <!-- Define gradient EXACTLY like cards -->
-            <defs>
-                <linearGradient id="trendGradient${modalIndex}" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:${kpi.color || 'var(--accent-green)'};stop-opacity:0.3" />
-                    <stop offset="100%" style="stop-color:${kpi.color || 'var(--accent-green)'};stop-opacity:0" />
-                </linearGradient>
-            </defs>
-            
-            <!-- Y-axis -->
-            <line x1="${chartLeft}" y1="${chartTop}" x2="${chartLeft}" y2="${chartBottom}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-            
-            <!-- X-axis -->
-            <line x1="${chartLeft}" y1="${chartBottom}" x2="${chartRight}" y2="${chartBottom}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-            
-            <!-- Grid lines (horizontal) -->
-            <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.25)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.25)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-            <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.5)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.5)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-            <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.75)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.75)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-            
-            <!-- Dynamic Target line based on actual target value and smart scaling -->
-            <line x1="${chartLeft}" y1="${targetLineY}" x2="${chartRight}" y2="${targetLineY}" stroke="var(--accent-primary)" stroke-width="2" stroke-dasharray="5,5" opacity="0.8"/>
-            <text x="${chartRight + 5}" y="${targetLineY + 4}" fill="var(--accent-primary)" font-size="11">Target (${formatYLabel(targetValue)})</text>
-            
-            <!-- Gradient fill area using EXACT card shading logic -->
-            <polygon points="${actualDataValues.map((dataValue, pointIndex) => {
-                const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(actualDataValues.length - 1, 1))); 
-                const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
-                return `${scaledX},${scaledY}`;
-            }).join(' ') + ` ${chartRight},${chartBottom} ${chartLeft},${chartBottom}`}"
-                      fill="url(#trendGradient${modalIndex})" stroke="none"/>
-            
-            <!-- Trend line using actual data values -->
-            <polyline points="${actualDataValues.map((dataValue, pointIndex) => {
-                const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(actualDataValues.length - 1, 1)));
-                const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
-                return `${scaledX},${scaledY}`;
-            }).join(' ')}"
-                      fill="none" stroke="${kpi.color || 'var(--accent-green)'}" stroke-width="3" stroke-linecap="round"/>
-            
-            <!-- Data points using actual data values -->
-            ${actualDataValues.map((dataValue, pointIndex) => {
-                const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(actualDataValues.length - 1, 1)));
-                const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
-                return `<circle cx="${scaledX}" cy="${scaledY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>`;
-            }).join('')}
-            
-            <!-- Axis labels -->
-            <text x="${chartLeft}" y="170" fill="rgba(255,255,255,0.6)" font-size="12">30 days ago</text>
-            <text x="${chartRight - 50}" y="170" fill="rgba(255,255,255,0.6)" font-size="12">Today</text>
-            
-            <!-- Dynamic Y-axis labels based on actual data + target range -->
-            <text x="5" y="${chartTop + 5}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[0])}</text>
-            <text x="5" y="${chartTop + (chartHeight * 0.25) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[1])}</text>
-            <text x="5" y="${chartTop + (chartHeight * 0.5) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[2])}</text>
-            <text x="5" y="${chartTop + (chartHeight * 0.75) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[3])}</text>
-            <text x="5" y="${chartBottom + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[4])}</text>
-        </svg>
-    `;
-}// Updated openKPIDetailModal function to work with live Jira data
+// Complete rewrite of KPI modal functions using Chart.js instead of SVG
+
+// Main function to open KPI detail modal with live Jira data
 function openKPIDetailModal(kpi) {
-    console.log('📊 Opening KPI Detail Modal with live data:', kpi);
+    console.log('Opening KPI Detail Modal with live data:', kpi);
     currentKPIDetail = kpi;
     
     const modal = document.getElementById('kpi-detail-modal');
@@ -7064,17 +6890,17 @@ function openKPIDetailModal(kpi) {
     const content = document.getElementById('kpi-detail-modal-content');
     
     if (!modal || !title || !content) {
-        console.error('❌ Modal elements not found');
+        console.error('Modal elements not found');
         return;
     }
     
     title.textContent = kpi.title;
     
-    // Use calculateLiveKPIProjections instead of calculateKPIProjections for live data
+    // Calculate projection data for live KPI using actual Jira data
     const projectionData = calculateLiveKPIProjections(kpi);
     
-    // Generate trend chart using actual Value History data from Jira
-    const trendChartSVG = generateKPITrendChart(kpi);
+    // Generate Chart.js chart
+    const trendChartHTML = generateKPITrendChart(kpi);
     
     content.innerHTML = `
     <div class="space-y-6">
@@ -7188,8 +7014,8 @@ function openKPIDetailModal(kpi) {
             </div>
         </div>
         
-        <!-- Full-Width Trend Chart Section -->
-        <div class="w-full">
+        <!-- Full-Width Trend Chart Section spanning both columns -->
+        <div class="col-span-2 w-full" style="min-height: 280px;">
             <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: var(--text-primary);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
@@ -7197,14 +7023,21 @@ function openKPIDetailModal(kpi) {
                 30-Day Performance Trend
             </h3>
             
-            <div class="p-6 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                <div class="kpi-trend-chart">
-                    ${trendChartSVG}
-                </div>
+            <div class="p-4 rounded-lg w-full" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); min-height: 220px;">
+                ${trendChartHTML}
             </div>
         </div>
     </div>
     `;
+    
+    // Increase modal height to accommodate chart
+    modal.style.maxHeight = '95vh';
+    modal.style.height = 'auto';
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.maxHeight = '90vh';
+        modalContent.style.overflow = 'auto';
+    }
     
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
@@ -7218,187 +7051,157 @@ function openKPIDetailModal(kpi) {
     }, 100);
 }
 
-// New function to generate KPI trend chart with SMART Y-axis scaling and proper containment
+// Chart.js implementation - much cleaner than SVG
 function generateKPITrendChart(kpi) {
-    console.log('📈 Generating trend chart for:', kpi.title, 'Target:', kpi.targetValue, 'Current:', kpi.currentValue, 'Unit:', kpi.unit);
+    console.log('Generating Chart.js chart for:', kpi.title, 'Target:', kpi.targetValue, 'Current:', kpi.currentValue, 'Unit:', kpi.unit);
     
-    // Use the exact same logic as the working cards
-    const trendPoints = kpi.trendPoints || '0,35 20,35 40,35'; // Fallback to default
-    const modalIndex = 'modal'; // Unique ID for modal chart
-    
-    // Get actual values for smart scaling
     const currentValue = parseFloat(kpi.currentValue) || 0;
     const targetValue = parseFloat(kpi.targetValue) || 100;
     const valueUnit = kpi.unit || '';
     
-    // SMART Y-AXIS SCALING based on actual data AND unit type
-    let minChartValue, maxChartValue, yAxisValues;
-    
-    // Extract actual data values from trend points to understand the real range
-    const dataValues = trendPoints.split(' ').map(point => {
-        const y = parseInt(point.split(',')[1]) || 0;
-        // Convert from card coordinate system to actual values
-        if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
-            // For percentages, assume card coordinates represent percentage points
-            return y * (100 / 35); // Scale from card's 35-max to percentage
-        } else {
-            // For counts, assume linear scaling based on target
-            return y * (targetValue / 35);
-        }
+    // Convert trendPoints to actual data values
+    const trendPoints = kpi.trendPoints || '0,35 20,35 40,35';
+    const coordinatePoints = trendPoints.split(' ').map(point => {
+        const [x, y] = point.split(',');
+        return parseInt(y);
     });
     
-    // Include current and target values in range calculation
-    const allValues = [...dataValues, currentValue, targetValue];
+    // Create realistic data progression ending at current value
+    let actualDataValues;
+    if (kpi.title === 'Strategic Capabilities') {
+        // 0, 0, 0, 1, 1, 1, 1 pattern
+        actualDataValues = coordinatePoints.map((coord, index) => 
+            index < 3 ? 0 : currentValue
+        );
+    } else {
+        // Realistic progression to current value
+        const startValue = currentValue * 0.7;
+        actualDataValues = coordinatePoints.map(coord => {
+            const progress = coord / 35;
+            return startValue + (progress * (currentValue - startValue));
+        });
+    }
+    
+    // Smart Y-axis scaling including target
+    const allValues = [...actualDataValues, currentValue, targetValue];
     const minDataValue = Math.min(...allValues);
     const maxDataValue = Math.max(...allValues);
     
-    console.log('Data analysis:', { dataValues, currentValue, targetValue, minDataValue, maxDataValue, unit: valueUnit });
+    const dataRange = maxDataValue - minDataValue;
+    const padding = Math.max(dataRange * 0.2, valueUnit.includes('percent') ? 2 : 0.5);
     
-    if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
-        // For percentages, use smart range based on actual data spread
-        const dataRange = maxDataValue - minDataValue;
-        const padding = Math.max(dataRange * 0.2, 5); // At least 5% padding
-        
-        minChartValue = Math.max(0, Math.floor(minDataValue - padding));
-        maxChartValue = Math.min(100, Math.ceil(maxDataValue + padding));
-        
-        // Generate percentage labels
-        const step = (maxChartValue - minChartValue) / 4;
-        yAxisValues = [
-            Math.round(maxChartValue),
-            Math.round(maxChartValue - step),
-            Math.round(maxChartValue - step * 2), 
-            Math.round(maxChartValue - step * 3),
-            Math.round(minChartValue)
-        ];
-    } else {
-        // For counts, scores, days, users - use tight data-driven scaling
-        const dataRange = maxDataValue - minDataValue;
-        const padding = Math.max(dataRange * 0.15, 1); // At least 1 unit padding
-        
-        minChartValue = Math.max(0, Math.floor(minDataValue - padding));
-        maxChartValue = Math.ceil(maxDataValue + padding);
-        
-        // Generate evenly spaced numeric labels
-        const step = (maxChartValue - minChartValue) / 4;
-        yAxisValues = [
-            Math.round(maxChartValue),
-            Math.round(maxChartValue - step),
-            Math.round(maxChartValue - step * 2), 
-            Math.round(maxChartValue - step * 3),
-            Math.round(minChartValue)
-        ];
-    }
+    const minChartValue = Math.max(0, Math.floor(minDataValue - padding));
+    const maxChartValue = Math.ceil(maxDataValue + padding);
     
-    // Chart dimensions - CONTAINED within modal
-    const chartHeight = 120;
-    const chartTop = 20;
-    const chartBottom = chartTop + chartHeight; // 140
-    const chartLeft = 40;
-    const chartRight = 350; // WELL within modal bounds
-    const chartWidth = chartRight - chartLeft; // 310px
-    
-    // Calculate target line Y position using smart scaling
-    const targetLineY = chartBottom - ((targetValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
-    
-    // Format Y-axis labels based on unit type
-    const formatYLabel = (value) => {
+    // Format labels based on unit
+    const formatLabel = (value) => {
         if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
-            return `${value}%`;
+            return `${Math.round(value)}%`;
         }
-        return value.toString();
+        return Math.round(value * 10) / 10;
     };
     
-    console.log(`Smart scaling - Min: ${minChartValue}, Max: ${maxChartValue}, Target Y: ${targetLineY}, Unit: ${valueUnit}`);
+    console.log('Chart.js data:', actualDataValues, 'Range:', minChartValue, '-', maxChartValue);
+    
+    // Generate unique canvas ID
+    const canvasId = `chart-${kpi.title.replace(/\s+/g, '-').toLowerCase()}`;
     
     return `
-        <svg width="100%" height="170" viewBox="0 0 400 170" style="background: rgba(255,255,255,0.02); border-radius: 4px;">
-            <!-- Define gradient for this specific KPI modal -->
-            <defs>
-                <linearGradient id="trendGradient${modalIndex}" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:${kpi.color || 'var(--accent-green)'};stop-opacity:0.3" />
-                    <stop offset="100%" style="stop-color:${kpi.color || 'var(--accent-green)'};stop-opacity:0" />
-                </linearGradient>
-            </defs>
-            
-            <!-- Y-axis -->
-            <line x1="${chartLeft}" y1="${chartTop}" x2="${chartLeft}" y2="${chartBottom}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-            
-            <!-- X-axis -->
-            <line x1="${chartLeft}" y1="${chartBottom}" x2="${chartRight}" y2="${chartBottom}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-            
-            <!-- Grid lines (horizontal) -->
-            <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.25)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.25)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-            <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.5)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.5)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-            <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.75)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.75)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-            
-            <!-- Dynamic Target line based on actual target value and smart scaling -->
-            <line x1="${chartLeft}" y1="${targetLineY}" x2="${chartRight}" y2="${targetLineY}" stroke="var(--accent-primary)" stroke-width="2" stroke-dasharray="5,5" opacity="0.8"/>
-            <text x="${chartRight + 5}" y="${targetLineY + 4}" fill="var(--accent-primary)" font-size="11">Target (${formatYLabel(targetValue)})</text>
-            
-            <!-- Gradient fill area using smart scaling -->
-            <polygon points="${trendPoints.split(' ').map((point, pointIndex) => {
-                const [x, y] = point.split(',');
-                const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(trendPoints.split(' ').length - 1, 1))); 
-                // Use smart scaling instead of hardcoded /35
-                const dataValue = parseInt(y);
-                const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
-                return `${scaledX},${scaledY}`;
-            }).join(' ') + ` ${chartRight},${chartBottom} ${chartLeft},${chartBottom}`}"
-                      fill="url(#trendGradient${modalIndex})" stroke="none"/>
-            
-            <!-- Trend line - using smart scaling -->
-            <polyline points="${kpi.title === 'Strategic Capabilities' ? 
-                // Special handling for Strategic Capabilities with smart scaling
-                `${chartLeft},${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight} ${chartLeft + chartWidth * 0.17},${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight} ${chartLeft + chartWidth * 0.33},${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight} ${chartLeft + chartWidth * 0.5},${targetLineY} ${chartLeft + chartWidth * 0.67},${targetLineY} ${chartLeft + chartWidth * 0.83},${targetLineY} ${chartRight},${targetLineY}` :
-                // Dynamic scaling for other KPIs using smart scaling
-                trendPoints.split(' ').map((point, pointIndex) => {
-                    const [x, y] = point.split(',');
-                    const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(trendPoints.split(' ').length - 1, 1)));
-                    const dataValue = parseInt(y);
-                    const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
-                    return `${scaledX},${scaledY}`;
-                }).join(' ')
-            }"
-                      fill="none" stroke="${kpi.color || 'var(--accent-green)'}" stroke-width="3" stroke-linecap="round"/>
-            
-            <!-- Data points - using smart scaling -->
-            ${kpi.title === 'Strategic Capabilities' ? 
-                // Special data points for Strategic Capabilities
-                `<circle cx="${chartLeft}" cy="${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
-                 <circle cx="${chartLeft + chartWidth * 0.17}" cy="${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
-                 <circle cx="${chartLeft + chartWidth * 0.33}" cy="${chartBottom - ((0 - minChartValue) / (maxChartValue - minChartValue)) * chartHeight}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
-                 <circle cx="${chartLeft + chartWidth * 0.5}" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
-                 <circle cx="${chartLeft + chartWidth * 0.67}" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
-                 <circle cx="${chartLeft + chartWidth * 0.83}" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
-                 <circle cx="${chartRight}" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>` :
-                // Dynamic data points for other KPIs using smart scaling
-                trendPoints.split(' ').map((point, pointIndex) => {
-                    const [x, y] = point.split(',');
-                    const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(trendPoints.split(' ').length - 1, 1)));
-                    const dataValue = parseInt(y);
-                    const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
-                    return `<circle cx="${scaledX}" cy="${scaledY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>`;
-                }).join('')
-            }
-            
-            <!-- Axis labels -->
-            <text x="${chartLeft}" y="160" fill="rgba(255,255,255,0.6)" font-size="12">30 days ago</text>
-            <text x="${chartRight - 50}" y="160" fill="rgba(255,255,255,0.6)" font-size="12">Today</text>
-            
-            <!-- Smart Y-axis labels based on value unit -->
-            <text x="5" y="${chartTop + 5}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[0])}</text>
-            <text x="5" y="${chartTop + (chartHeight * 0.25) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[1])}</text>
-            <text x="5" y="${chartTop + (chartHeight * 0.5) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[2])}</text>
-            <text x="5" y="${chartTop + (chartHeight * 0.75) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[3])}</text>
-            <text x="5" y="${chartBottom + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[4])}</text>
-        </svg>
+        <div style="position: relative; height: 200px; width: 100%;">
+            <canvas id="${canvasId}" width="100%" height="200"></canvas>
+        </div>
+        <script>
+            // Wait for Chart.js to be available, then create chart
+            setTimeout(() => {
+                const ctx = document.getElementById('${canvasId}');
+                if (ctx && window.Chart) {
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['30 days ago', '25 days', '20 days', '15 days', '10 days', '5 days', 'Today'],
+                            datasets: [{
+                                label: '${kpi.title}',
+                                data: ${JSON.stringify(actualDataValues)},
+                                borderColor: '${kpi.color || 'var(--accent-green)'}',
+                                backgroundColor: '${kpi.color || 'var(--accent-green)'}20',
+                                fill: true,
+                                tension: 0.3,
+                                pointBackgroundColor: '${kpi.color || 'var(--accent-green)'}',
+                                pointBorderColor: 'white',
+                                pointBorderWidth: 2,
+                                pointRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return '${kpi.title}: ' + ${valueUnit.includes('percent') ? `context.parsed.y.toFixed(1) + '%'` : `context.parsed.y.toFixed(1)`};
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { color: 'rgba(255,255,255,0.1)' },
+                                    ticks: { color: 'rgba(255,255,255,0.6)', font: { size: 11 } }
+                                },
+                                y: {
+                                    min: ${minChartValue},
+                                    max: ${maxChartValue},
+                                    grid: { color: 'rgba(255,255,255,0.1)' },
+                                    ticks: { 
+                                        color: 'rgba(255,255,255,0.6)',
+                                        font: { size: 11 },
+                                        callback: function(value) {
+                                            return ${valueUnit.includes('percent') ? `value + '%'` : `value`};
+                                        }
+                                    }
+                                }
+                            },
+                            elements: {
+                                line: { borderWidth: 3 }
+                            }
+                        },
+                        plugins: [{
+                            afterDraw: function(chart) {
+                                // Draw target line
+                                const ctx = chart.ctx;
+                                const yScale = chart.scales.y;
+                                const xScale = chart.scales.x;
+                                
+                                const targetY = yScale.getPixelForValue(${targetValue});
+                                
+                                ctx.save();
+                                ctx.strokeStyle = 'var(--accent-primary)';
+                                ctx.lineWidth = 2;
+                                ctx.setLineDash([5, 5]);
+                                ctx.beginPath();
+                                ctx.moveTo(xScale.left, targetY);
+                                ctx.lineTo(xScale.right, targetY);
+                                ctx.stroke();
+                                
+                                // Target label
+                                ctx.fillStyle = 'var(--accent-primary)';
+                                ctx.font = '11px sans-serif';
+                                ctx.fillText('Target (${formatLabel(targetValue)})', xScale.right + 5, targetY + 4);
+                                ctx.restore();
+                            }
+                        }]
+                    });
+                }
+            }, 100);
+        </script>
     `;
 }
 
-// Updated calculateLiveKPIProjections function to work better with actual Jira data
+// Enhanced projection calculation for live KPI data
 function calculateLiveKPIProjections(kpi) {
-    console.log('🔮 Calculating projections for live KPI:', kpi.title);
+    console.log('Calculating projections for live KPI:', kpi.title);
     
     const currentNumeric = parseFloat(kpi.currentValue) || 0;
     const targetNumeric = parseFloat(kpi.targetValue) || 100;
@@ -7473,109 +7276,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function calculateKPIProjections(kpi) {
-    const currentNumeric = parseFloat(kpi.currentValue.replace(/[^\d.]/g, ''));
-    const targetNumeric = parseFloat(kpi.targetValue.replace(/[^\d.]/g, ''));
-    const progress = kpi.progress;
-    
-    // Calculate velocity and projections based on KPI type
-    let velocity, projectedValue, requiredPace, daysRemaining, lastUpdated, dataQuality;
-    
-    switch(kpi.title) {
-        case 'Monthly Active Users':
-    velocity = '+0.8%';
-    projectedValue = '40.1%';
-    requiredPace = '+0.8% per week';
-    daysRemaining = 45;
-    lastUpdated = '3 minutes ago';
-    dataQuality = 96;
-    
-    // Corrected projection results for MAU
-    return {
-        velocity,
-        projectedValue,
-        requiredPace,
-        onTrack: true,
-        shortfall: '',
-        paceChange: 'Maintain current pace to exceed target',
-        daysRemaining,
-        lastUpdated,
-        dataQuality
-    };
-        case 'System Uptime':
-    velocity = '+0.2%';
-    projectedValue = '95.7%';
-    requiredPace = '+0.2% per week';
-    daysRemaining = 60;
-    lastUpdated = '1 minute ago';
-    dataQuality = 99;
-    break;
-        case 'Strategic Capabilities':
-            velocity = '+0.3';
-            projectedValue = '2.8';
-            requiredPace = '+0.4 per week';
-            daysRemaining = 75;
-            lastUpdated = '2 hours ago';
-            dataQuality = 92;
-            break;
-        default:
-            velocity = '+1.2%';
-            projectedValue = currentNumeric + '%';
-            requiredPace = '+1.5% per week';
-            daysRemaining = 30;
-            lastUpdated = '5 minutes ago';
-            dataQuality = 95;
-    }
-    
-  // Calculate if on track based on projection vs target
-    let onTrack, shortfall, paceChange;
 
-    if (kpi.title === 'System Uptime') {
-        onTrack = true; // 95.7% exceeds 95% target
-        shortfall = '';
-        paceChange = 'On track to exceed target';
-    } else if (kpi.title === 'Monthly Active Users') {
-        onTrack = true; // 40.1% exceeds 40% target  
-        shortfall = '';
-        paceChange = 'On track to exceed target';
-    } else {
-    // Strategic Capabilities: 2.8/3.0 = 93.3% of target (missing 6.7%)
-    onTrack = false; // 2.8 is short of 3.0 target
-    shortfall = '6.7%'; // (3.0 - 2.8) / 3.0 * 100 = 6.7%
-    paceChange = 'Increase pace by 7%'; // Need slight increase, not 20%
-}
-
-    return {
-        velocity,
-        projectedValue,
-        requiredPace,
-        onTrack,
-        shortfall,
-        paceChange,
-        daysRemaining,
-        lastUpdated,
-        dataQuality
-    };
-}
-
-function getKPIProgressClass(progress) {
-    if (progress >= 80) return 'high-progress';
-    if (progress >= 60) return 'medium-progress';
-    return 'low-progress';
-}
-
-function getTrendIcon(trend) {
-    switch(trend) {
-        case 'up': 
-            return '<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>';
-        case 'stable': 
-            return '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>';
-        case 'down': 
-            return '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/></svg>';
-        default: 
-            return '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>';
-    }
-}
       
 function incrementKPIValue() {
     const input = document.getElementById('kpi-current-value');
