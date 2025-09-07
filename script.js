@@ -2463,48 +2463,68 @@ function createModalActivityChart(breakdown) {
     });
     
     window.modalActivityChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Above Line',
-                data: aboveData,
-                backgroundColor: colors.map(color => color + '80'),
-                borderColor: colors,
-                borderWidth: 1
-            }, {
-                label: 'Below Line', 
-                data: belowData,
-                backgroundColor: colors.map(color => color + '40'),
-                borderColor: colors,
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        color: 'var(--text-primary)',
-                        font: { size: 12 }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: { color: 'var(--text-secondary)', font: { size: 10 } },
-                    grid: { display: false }
-                },
-                y: {
-                    ticks: { color: 'var(--text-secondary)', font: { size: 10 } },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Above Line (1-14)',
+            data: aboveData,
+            backgroundColor: colors.map(color => color + '80'),
+            borderColor: colors,
+            borderWidth: 1
+        }, {
+            label: 'Below Line (15+)', 
+            data: belowData,
+            backgroundColor: colors.map(color => color + '40'),
+            borderColor: colors,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    color: 'var(--text-primary)',
+                    font: { size: 12 }
                 }
             }
+        },
+        scales: {
+            x: {
+                title: {
+                    display: true,
+                    text: 'Activity Type',
+                    color: 'var(--text-primary)',
+                    font: { size: 12 }
+                },
+                ticks: { 
+                    color: 'var(--text-secondary)', 
+                    font: { size: 10 },
+                    maxRotation: 45
+                },
+                grid: { display: false }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Number of Initiatives',
+                    color: 'var(--text-primary)',
+                    font: { size: 12 }
+                },
+                ticks: { 
+                    color: 'var(--text-secondary)', 
+                    font: { size: 10 },
+                    stepSize: 1
+                },
+                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+            }
         }
-    });
+    }
+});
 }
 
 function showEfficiencyInfoModal() {
@@ -2514,26 +2534,63 @@ function showEfficiencyInfoModal() {
     modalContent.innerHTML = `
         <div class="modal-header">
             <h2 class="text-xl font-bold" style="color: var(--text-primary);">
-                How Resource Efficiency is Calculated
+                How Resource Efficiency Works
             </h2>
             <button onclick="showMendozaAnalysisModal()" class="text-xl" style="color: var(--text-secondary);">×</button>
         </div>
         
-        <div class="p-6 space-y-4">
+        <div class="p-6 space-y-6">
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
                 <h3 class="text-lg font-semibold mb-3" style="color: var(--accent-blue);">
-                    Resource Efficiency Formula
+                    The Simple Idea
                 </h3>
-                <div class="text-center p-4 rounded" style="background: var(--bg-quaternary); font-family: monospace;">
-                    <div class="text-lg" style="color: var(--text-primary);">
-                        (High-Resource Work Above Line ÷ Total High-Resource Work) × 100
-                    </div>
+                <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">
+                    We want our expensive development resources (engineers, designers, product managers) working on 
+                    <strong>above the line</strong> priorities. Cheap discovery work (research, validation) should happen 
+                    <strong>below the line</strong> where it doesn't consume precious development capacity.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 rounded-lg" style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-green);">
+                    <h4 class="font-semibold mb-2" style="color: var(--accent-green);">
+                        Expensive Work (Above Line)
+                    </h4>
+                    <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
+                        <li>• Full development teams</li>
+                        <li>• Go-to-market campaigns</li>
+                        <li>• Infrastructure projects</li>
+                        <li>• Customer support</li>
+                    </ul>
+                </div>
+                
+                <div class="p-4 rounded-lg" style="background: rgba(251, 146, 60, 0.1); border: 1px solid var(--accent-orange);">
+                    <h4 class="font-semibold mb-2" style="color: var(--accent-orange);">
+                        Cheap Discovery (Below Line)
+                    </h4>
+                    <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
+                        <li>• User interviews</li>
+                        <li>• Market research</li>
+                        <li>• Quick prototypes</li>
+                        <li>• Planning and design</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">
+                <h4 class="font-semibold mb-2" style="color: var(--accent-blue);">
+                    What the Score Means
+                </h4>
+                <div class="text-sm space-y-2" style="color: var(--text-secondary);">
+                    <p><strong style="color: var(--accent-green);">80%+ (Green):</strong> Most expensive work is above the line - efficient use of resources</p>
+                    <p><strong style="color: var(--accent-orange);">60-79% (Orange):</strong> Some expensive work below the line - room for improvement</p>
+                    <p><strong style="color: var(--accent-red);">Below 60% (Red):</strong> Too much expensive work below the line - wasting development capacity</p>
                 </div>
             </div>
             
             <div class="text-center">
                 <button onclick="showMendozaAnalysisModal()" class="px-6 py-2 rounded-md text-sm font-medium" style="background: var(--accent-blue); color: white;">
-                    ← Back to Analysis
+                    Back to Analysis
                 </button>
             </div>
         </div>
@@ -4884,6 +4941,7 @@ function getInitiativeActivityType(initiative) {
 let mendozaChart = null;
 
 function initializeMendozaChart(metrics) {
+    console.log('Chart metrics:', metrics);
     const canvas = document.getElementById('mendoza-donut-chart');
     if (!canvas) return;
     
