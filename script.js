@@ -7195,16 +7195,25 @@ function calculateLiveKPIProjections(kpi, chartData) {
     const targetValue = parseFloat(kpi.targetValue) || 100;
     const unit = kpi.unit || '';
     
+    // Q3 2025 ends on September 30, 2025
+    const q3EndDate = new Date('2025-09-30');
+    const today = new Date();
+    const daysRemaining = Math.max(0, Math.ceil((q3EndDate - today) / (1000 * 60 * 60 * 24)));
+    const weeksRemaining = Math.max(0.1, daysRemaining / 7); // Minimum 0.1 to avoid division by zero
+    
     // If no chart data, return basic info
     if (!chartData || chartData.length < 2) {
+        const requiredChange = targetValue - currentValue;
+        const requiredWeeklyPace = daysRemaining > 0 ? requiredChange / weeksRemaining : 0;
+        
         return {
             velocity: 'No trend data',
             projectedValue: `${currentValue}${unit}`,
-            requiredPace: 'Unable to calculate',
+            requiredPace: formatChange(requiredWeeklyPace, unit),
             onTrack: currentValue >= targetValue * 0.9,
-            shortfall: currentValue < targetValue ? `${(targetValue - currentValue).toFixed(1)}${unit} below target` : '',
+            shortfall: currentValue < targetValue ? `${Math.abs(targetValue - currentValue).toFixed(1)}${unit} below target` : '',
             paceChange: 'Need more data points',
-            daysRemaining: 'Unknown',
+            daysRemaining: daysRemaining,
             lastUpdated: 'Just now',
             dataQuality: 75
         };
@@ -7216,104 +7225,134 @@ function calculateLiveKPIProjections(kpi, chartData) {
         .sort((a, b) => new Date(a.date) - new Date(b.date));
     
     if (sortedData.length < 2) {
+        const requiredChange = targetValue - currentValue;
+        const requiredWeeklyPace = daysRemaining > 0 ? requiredChange / weeksRemaining : 0;
+        
         return {
             velocity: 'Insufficient data',
             projectedValue: `${currentValue}${unit}`,
-            requiredPace: 'Need more data',
+            requiredPace: formatChange(requiredWeeklyPace, unit),
             onTrack: currentValue >= targetValue * 0.9,
             shortfall: '',
             paceChange: 'Collect more data points',
-            daysRemaining: 'Unknown',
+            daysRemaining: daysRemaining,
             lastUpdated: 'Just now',
             dataQuality: 50
         };
     }
     
-    // Calculate actual velocity from the data
-    const firstPoint = sortedData[0];
-    const lastPoint = sortedData[sortedData.length - 1];
+    // Calculate ACTUAL velocity using linear regression on recent data points
+    // Use last 5 data points for more accurate trend, or all if less than 5
+    const recentData = sortedData.slice(-Math.min(5, sortedData.length));
+    
+    // Linear regression calculation
+    const n = recentData.length;
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    
+    recentData.forEach((point, index) => {
+        const x = index; // Use array index as x-value for trend calculation
+        const y = point.value;
+        sumX += x;
+        sumY += y;
+        sumXY += x * y;
+        sumXX += x * x;
+    });
+    
+    // Calculate slope (daily rate of change)
+    const slope = n > 1 ? (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX) : 0;
+    
+    // Convert to time-based rate
+    const firstPoint = recentData[0];
+    const lastPoint = recentData[recentData.length - 1];
     const daysBetween = Math.max(1, (new Date(lastPoint.date) - new Date(firstPoint.date)) / (1000 * 60 * 60 * 24));
-    const totalChange = lastPoint.value - firstPoint.value;
-    const dailyRate = totalChange / daysBetween;
-    const weeklyRate = dailyRate * 7;
     
-    // Format velocity based on unit
-    let velocity;
-    if (unit === '%') {
-        velocity = weeklyRate >= 0 ? `+${weeklyRate.toFixed(1)}pp per week` : `${weeklyRate.toFixed(1)}pp per week`;
-    } else {
-        velocity = weeklyRate >= 0 ? `+${weeklyRate.toFixed(1)}${unit} per week` : `${weeklyRate.toFixed(1)}${unit} per week`;
-    }
+    // Calculate actual daily rate from the data
+    const actualDailyRate = slope * (n - 1) / Math.max(1, daysBetween);
+    const weeklyRate = actualDailyRate * 7;
     
-    // Calculate how much we need to reach target
-    const gap = targetValue - currentValue;
+    // Calculate projection to Q3 end
+    const projectedValue = currentValue + (actualDailyRate * daysRemaining);
     
-    // Estimate days remaining (could be made dynamic)
-    const daysRemaining = 90; // Reasonable default - could be parameterized
-    const weeksRemaining = daysRemaining / 7;
+    // Calculate required pace to hit target
+    const requiredChange = targetValue - currentValue;
+    const requiredWeeklyPace = daysRemaining > 0 ? requiredChange / weeksRemaining : 0;
     
-    // Project where we'll be at current velocity
-    const projectedFinalValue = currentValue + (weeklyRate * weeksRemaining);
-    const projectedValue = `${Math.round(projectedFinalValue * 10) / 10}${unit}`;
+    // Determine if on track (with 5% buffer for near-misses)
+    const onTrackThreshold = targetValue * 0.95;
+    const isOnTrack = projectedValue >= onTrackThreshold;
     
-    // Calculate required weekly rate to hit target
-    const requiredWeeklyRate = gap / weeksRemaining;
-    let requiredPace;
-    if (unit === '%') {
-        requiredPace = requiredWeeklyRate >= 0 ? `+${requiredWeeklyRate.toFixed(1)}pp per week` : `${requiredWeeklyRate.toFixed(1)}pp per week`;
-    } else {
-        requiredPace = requiredWeeklyRate >= 0 ? `+${requiredWeeklyRate.toFixed(1)}${unit} per week` : `${requiredWeeklyRate.toFixed(1)}${unit} per week`;
-    }
-    
-    // Determine if on track (will we hit 90% of target?)
-    const onTrack = projectedFinalValue >= (targetValue * 0.9);
-    
-    // Calculate shortfall
-    let shortfall = '';
-    if (!onTrack) {
-        const shortfallAmount = (targetValue * 0.9) - projectedFinalValue;
-        shortfall = `${shortfallAmount.toFixed(1)}${unit} below target pace`;
-    }
-    
-    // Pace change recommendation
-    let paceChange;
-    if (onTrack) {
-        if (projectedFinalValue >= targetValue) {
-            paceChange = 'On track to exceed target';
-        } else {
-            paceChange = 'On track - maintain current pace';
-        }
-    } else {
-        const accelerationNeeded = ((requiredWeeklyRate - weeklyRate) / Math.max(Math.abs(weeklyRate), 0.1)) * 100;
-        if (accelerationNeeded > 50) {
-            paceChange = 'Significant acceleration needed';
-        } else if (accelerationNeeded > 20) {
-            paceChange = 'Moderate acceleration needed';
-        } else {
-            paceChange = 'Minor acceleration needed';
-        }
-    }
-    
-    // Data quality based on number of points and recency
+    // Calculate data quality based on recency and consistency
     const lastUpdateDate = new Date(lastPoint.date);
-    const daysSinceUpdate = (new Date() - lastUpdateDate) / (1000 * 60 * 60 * 24);
-    let dataQuality = Math.min(100, sortedData.length * 10); // 10 points = 100%
-    if (daysSinceUpdate > 7) dataQuality -= 20; // Reduce if data is old
-    if (daysSinceUpdate > 14) dataQuality -= 20;
+    const daysSinceUpdate = Math.max(0, (today - lastUpdateDate) / (1000 * 60 * 60 * 24));
+    
+    // Data quality factors: recency (50%), consistency (30%), completeness (20%)
+    const recencyScore = Math.max(0, 100 - (daysSinceUpdate * 10)); // Lose 10 points per day
+    const consistencyScore = calculateConsistencyScore(recentData);
+    const completenessScore = Math.min(100, (sortedData.length / 10) * 100); // Full score at 10+ points
+    
+    const dataQuality = Math.round(
+        (recencyScore * 0.5) + (consistencyScore * 0.3) + (completenessScore * 0.2)
+    );
+    
+    // Format last updated
+    const lastUpdated = daysSinceUpdate < 1 ? 'Today' : 
+                       daysSinceUpdate < 2 ? 'Yesterday' : 
+                       `${Math.round(daysSinceUpdate)} days ago`;
+    
+    // Calculate pace change needed
+    const paceGap = requiredWeeklyPace - weeklyRate;
+    let paceChange;
+    if (Math.abs(paceGap) < 0.01) {
+        paceChange = 'Maintain current pace';
+    } else if (paceGap > 0) {
+        paceChange = `Increase by ${formatChange(paceGap, unit)} per week`;
+    } else {
+        paceChange = `Can reduce pace by ${formatChange(Math.abs(paceGap), unit)} per week`;
+    }
     
     return {
-        velocity,
-        projectedValue,
-        requiredPace,
-        onTrack,
-        shortfall,
-        paceChange,
-        daysRemaining,
-        lastUpdated: daysSinceUpdate < 1 ? 'Today' : 
-                    daysSinceUpdate < 2 ? 'Yesterday' : 
-                    `${Math.round(daysSinceUpdate)} days ago`,
-        dataQuality: Math.round(dataQuality)
+        velocity: formatChange(weeklyRate, unit),
+        projectedValue: `${Math.round(projectedValue * 100) / 100}${unit}`,
+        requiredPace: formatChange(requiredWeeklyPace, unit),
+        onTrack: isOnTrack,
+        shortfall: !isOnTrack ? `${Math.abs(targetValue - projectedValue).toFixed(1)}${unit} projected shortfall` : '',
+        paceChange: paceChange,
+        daysRemaining: daysRemaining,
+        lastUpdated: lastUpdated,
+        dataQuality: Math.max(0, Math.min(100, dataQuality))
     };
+}
+
+// Helper function to format change values
+function formatChange(value, unit) {
+    if (!value || isNaN(value)) return '0';
+    
+    const absValue = Math.abs(value);
+    const sign = value >= 0 ? '+' : '-';
+    
+    if (unit === '%') {
+        return `${sign}${absValue.toFixed(1)}pp per week`;
+    } else {
+        return `${sign}${absValue.toFixed(1)} per week`;
+    }
+}
+
+// Helper function to calculate consistency score based on data variance
+function calculateConsistencyScore(data) {
+    if (data.length < 3) return 70; // Default for limited data
+    
+    const values = data.map(d => d.value);
+    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+    const stdDev = Math.sqrt(variance);
+    const coefficientOfVariation = mean !== 0 ? (stdDev / Math.abs(mean)) * 100 : 0;
+    
+    // Lower coefficient of variation = higher consistency score
+    // CV of 0-5% = 100 points, 5-15% = 80 points, 15-30% = 60 points, >30% = 40 points
+    if (coefficientOfVariation <= 5) return 100;
+    if (coefficientOfVariation <= 15) return 80;
+    if (coefficientOfVariation <= 30) return 60;
+    return 40;
 }
 
 // Fixed openKPIDetailModal function that handles errors gracefully
