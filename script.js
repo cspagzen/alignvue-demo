@@ -7148,7 +7148,31 @@ function showKpiChart(kpi, chartData) {
                 }
             }
         },
-        plugins: [targetLinePlugin]
+        plugins: [{
+    id: 'annotationLine',
+    afterDraw(chart, args, opts) {
+        const target = parseFloat(kpi.targetValue);
+        if (!target) return;
+        
+        const { ctx, chartArea, scales: { y } } = chart;
+        const yPx = y.getPixelForValue(target);
+        if (yPx < chartArea.top || yPx > chartArea.bottom) return;
+
+        ctx.save();
+        ctx.strokeStyle = '#8b5cf6';
+        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, yPx);
+        ctx.lineTo(chartArea.right, yPx);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#8b5cf6';
+        ctx.font = '11px sans-serif';
+        ctx.fillText(`Target (${format(target)})`, chartArea.right - 110, yPx - 6);
+        ctx.restore();
+    }
+}]
     });
 }
 
@@ -7656,11 +7680,7 @@ function showKpiChart(kpi, chartData) {
                         label: (ctx) => `Value: ${format(ctx.parsed.y)}`
                     }
                 },
-                // Use your existing plugin with correct options format
-                annotationLine: { 
-                    target: parseFloat(kpi.targetValue) || 100,
-                    format: format
-                }
+                
             },
             scales: {
                 x: {
