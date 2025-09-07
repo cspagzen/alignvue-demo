@@ -7675,6 +7675,7 @@ function closeDataQualityModal() {
 // Fixed openKPIDetailModal function that handles errors gracefully
 async function openKPIDetailModal(kpi) {
     console.log('Opening KPI Detail Modal with live data:', kpi);
+    window.currentKPIForEdit = kpi;
     
     const modal = document.getElementById('kpi-detail-modal');
     const title = document.getElementById('kpi-detail-modal-title');
@@ -7758,7 +7759,7 @@ async function openKPIDetailModal(kpi) {
     </button>
     <span>• Last Updated: ${projectionData.lastUpdated}</span>
 </div>
-                        <button onclick="closeKPIDetailModal(); setTimeout(() => openKPIEditModal('${kpi.title}', '${kpi.currentValue}', '${kpi.targetValue}'), 100);" 
+                        <button onclick="closeKPIDetailModal(); setTimeout(() => openKPIEditModal(window.currentKPIForEdit), 100);" 
                                 class="px-3 py-1 rounded text-xs hover:bg-opacity-90 mt-3" 
                                 style="background: var(--accent-primary); color: white;">
                             Update Current Key Result Value
