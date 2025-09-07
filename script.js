@@ -7150,28 +7150,19 @@ function showKpiChart(kpi, chartData) {
         },
         plugins: [{
     id: 'annotationLine',
-    afterDraw(chart, args, opts) {
-        const target = parseFloat(kpi.targetValue);
-console.log('Plugin sees target:', target, 'type:', typeof target, 'original:', kpi.targetValue);
-        
-        if (!target) return;
-        
+    afterDraw(chart) {
+        console.log('PLUGIN IS RUNNING!');
+        const target = 40; // hardcoded for testing
         const { ctx, chartArea, scales: { y } } = chart;
         const yPx = y.getPixelForValue(target);
-        if (yPx < chartArea.top || yPx > chartArea.bottom) return;
-
+        
         ctx.save();
-        ctx.strokeStyle = '#8b5cf6';
-        ctx.setLineDash([5, 5]);
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ff0000'; // bright red for visibility
+        ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(chartArea.left, yPx);
         ctx.lineTo(chartArea.right, yPx);
         ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = '#8b5cf6';
-        ctx.font = '11px sans-serif';
-        ctx.fillText(`Target (${format(target)})`, chartArea.right - 110, yPx - 6);
         ctx.restore();
     }
 }]
