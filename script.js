@@ -2389,38 +2389,215 @@ function calculateDetailedResourceBreakdown() {
 }
 
 function populateModalDetails(breakdown, metrics) {
-    // Populate above line activities
-    const aboveElement = document.getElementById('above-line-activities');
-    if (aboveElement) {
-        aboveElement.innerHTML = Object.entries(breakdown.aboveLine)
-            .sort(([,a], [,b]) => b - a)
-            .map(([activity, count]) => 
-                `<div class="flex justify-between">
-                    <span>${activity}</span>
-                    <span style="color: var(--accent-green);">${count}</span>
-                </div>`
-            ).join('') || '<div style="color: var(--text-tertiary);">No initiatives above line</div>';
-    }
-    
-    // Populate below line activities
-    const belowElement = document.getElementById('below-line-activities');
-    if (belowElement) {
-        belowElement.innerHTML = Object.entries(breakdown.belowLine)
-            .sort(([,a], [,b]) => b - a)
-            .map(([activity, count]) => 
-                `<div class="flex justify-between">
-                    <span>${activity}</span>
-                    <span style="color: var(--accent-blue);">${count}</span>
-                </div>`
-            ).join('') || '<div style="color: var(--text-tertiary);">No initiatives below line</div>';
-    }
-    
     // Generate recommendations
     const recommendations = generateRecommendations(breakdown, metrics);
     const recElement = document.getElementById('recommendations-list');
     if (recElement) {
         recElement.innerHTML = recommendations.map(rec => `<li>${rec}</li>`).join('');
     }
+}
+
+// Create activity distribution chart in modal
+function createModalActivityChart(breakdown) {
+    const canvas = document.getElementById('modal-activity-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (window.modalActivityChart) {
+        window.modalActivityChart.destroy();
+    }
+    
+    // Activity colors matching your color scheme
+    const activityColors = {
+        'development': '#3b82f6',
+        'go-to-market': '#8b5cf6',
+        'infrastructure': '#06b6d4',
+        'support': '#10b981',
+        'validation': '#f59e0b',
+        'research': '#ef4444',
+        'prototyping': '#ec4899',
+        'planning': '#84cc16',
+        'integration': '#6366f1',
+        'compliance': '#f97316',
+        'community': '#14b8a6',
+        'optimization': '#a855f7',
+        'bugs': '#ef4444'
+    };
+    
+    // Get all unique activities
+    const allActivities = new Set([
+        ...Object.keys(breakdown.aboveLine),
+        ...Object.keys(breakdown.belowLine)
+    ]);
+    
+    const aboveData = [];
+    const belowData = [];
+    const labels = [];
+    const colors = [];
+    
+    allActivities.forEach(activity => {
+        if (activity in breakdown.aboveLine || activity in breakdown.belowLine) {
+            labels.push(activity);
+            aboveData.push(breakdown.aboveLine[activity] || 0);
+            belowData.push(breakdown.belowLine[activity] || 0);
+            colors.push(activityColors[activity] || '#6b7280');
+        }
+    });
+    
+    window.modalActivityChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Above Line',
+                data: aboveData,
+                backgroundColor: colors.map(color => color + '80'),
+                borderColor: colors,
+                borderWidth: 1
+            }, {
+                label: 'Below Line', 
+                data: belowData,
+                backgroundColor: colors.map(color => color + '40'),
+                borderColor: colors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'var(--text-primary)',
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'var(--bg-tertiary)',
+                    titleColor: 'var(--text-primary)',
+                    bodyColor: 'var(--text-secondary)',
+                    borderColor: 'var(--glass-border)',
+                    borderWidth: 1,
+                    callbacks: {
+                        title: function(contexts) {
+                            const activity = contexts[0].label;
+                            const highResourceActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
+                            const isHighResource = highResourceActivities.includes(activity);
+                            const location = contexts[0].datasetIndex === 0 ? 'above' : 'below';
+                            const appropriate = (isHighResource && location === 'above') || 
+                                             (!isHighResource && location === 'below');
+                            return `${activity} (${appropriate ? '✓ Appropriate' : '⚠️ Review'})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: false,
+                    ticks: {
+                        color: 'var(--text-secondary)',
+                        font: { size: 10 }
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    stacked: false,
+                    ticks: {
+                        color: 'var(--text-secondary)',
+                        font: { size: 10 }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Info modal for efficiency calculation explanation
+function showEfficiencyInfoModal() {
+    const modal = document.getElementById('detail-modal');
+    const modalContent = document.getElementById('modal-content');
+    
+    modalContent.innerHTML = `
+        <div class="modal-header">
+            <h2 class="text-xl font-bold" style="color: var(--text-primary);">
+                How Resource Efficiency is Calculated
+            </h2>
+            <button onclick="showMendozaAnalysisModal()" class="text-xl" style="color: var(--text-secondary);">×</button>
+        </div>
+        
+        <div class="p-6 space-y-4">
+            <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
+                <h3 class="text-lg font-semibold mb-3" style="color: var(--accent-blue);">
+                    Resource Efficiency Formula
+                </h3>
+                <div class="text-center p-4 rounded" style="background: var(--bg-quaternary); font-family: monospace;">
+                    <div class="text-lg" style="color: var(--text-primary);">
+                        (High-Resource Work Above Line ÷ Total High-Resource Work) × 100
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 rounded-lg" style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-green);">
+                    <h4 class="font-semibold mb-2" style="color: var(--accent-green);">
+                        High-Resource Activities
+                    </h4>
+                    <p class="text-sm mb-2" style="color: var(--text-secondary);">
+                        These should be <strong>above the line</strong> (priorities 1-14):
+                    </p>
+                    <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
+                        <li>• Development</li>
+                        <li>• Go-to-Market</li>
+                        <li>• Infrastructure</li>
+                        <li>• Support</li>
+                    </ul>
+                </div>
+                
+                <div class="p-4 rounded-lg" style="background: rgba(251, 146, 60, 0.1); border: 1px solid var(--accent-orange);">
+                    <h4 class="font-semibold mb-2" style="color: var(--accent-orange);">
+                        Low-Resource Activities
+                    </h4>
+                    <p class="text-sm mb-2" style="color: var(--text-secondary);">
+                        These should be <strong>below the line</strong> (priorities 15+):
+                    </p>
+                    <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
+                        <li>• Validation</li>
+                        <li>• Research</li>
+                        <li>• Prototyping</li>
+                        <li>• Planning</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">
+                <h4 class="font-semibold mb-2" style="color: var(--accent-blue);">
+                    💡 Interpretation
+                </h4>
+                <ul class="text-sm space-y-2" style="color: var(--text-secondary);">
+                    <li><strong style="color: var(--accent-green);">80%+ (Green):</strong> Excellent resource allocation</li>
+                    <li><strong style="color: var(--accent-orange);">60-79% (Orange):</strong> Good but room for improvement</li>
+                    <li><strong style="color: var(--accent-red);">Below 60% (Red):</strong> Significant resource waste</li>
+                </ul>
+            </div>
+            
+            <div class="text-center">
+                <button onclick="showMendozaAnalysisModal()" class="px-6 py-2 rounded-md text-sm font-medium" style="background: var(--accent-blue); color: white;">
+                    ← Back to Analysis
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 function generateRecommendations(breakdown, metrics) {
@@ -2451,6 +2628,21 @@ function generateRecommendations(breakdown, metrics) {
     }
     
     return recommendations;
+}
+
+// Add this to your transformJiraData function to include activity type
+function enhanceJiraTransformWithActivityType(issue) {
+    // Add activity type extraction to your existing transform
+    const activityType = getFieldValue(issue, 'customfield_10190');
+    
+    return {
+        // ... existing transformation
+        activityType: activityType,
+        jira: {
+            // ... existing jira fields
+            activityType: activityType
+        }
+    };
 }
 
 
