@@ -7131,6 +7131,16 @@ function showKpiChart(kpi, chartData) {
                 },
                 y: {
     beginAtZero: false,
+    suggestedMin: function() {
+        const target = parseFloat(kpi.targetValue) || 0;
+        const dataMin = Math.min(...values);
+        return Math.min(dataMin * 0.9, target * 0.9, 0);
+    },
+    suggestedMax: function() {
+        const target = parseFloat(kpi.targetValue) || 0;
+        const dataMax = Math.max(...values);
+        return Math.max(dataMax * 1.1, target * 1.1);
+    },
     grid: { 
         color: 'rgba(255, 255, 255, 0.08)',
         drawBorder: false
@@ -7142,14 +7152,6 @@ function showKpiChart(kpi, chartData) {
     },
     border: { 
         display: false
-    },
-    afterBuildTicks: function(scale) {
-        const target = parseFloat(kpi.targetValue) || 0;
-        const dataMin = Math.min(...values);
-        const dataMax = Math.max(...values);
-        
-        scale.min = Math.min(dataMin * 0.9, target * 0.9);
-        scale.max = Math.max(dataMax * 1.1, target * 1.1);
     }
 }
             }
