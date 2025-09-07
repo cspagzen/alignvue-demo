@@ -7462,9 +7462,7 @@ function createFallbackChartData(kpi) {
     return chartData;
 }
 
-// Complete Chart.js implementation with all missing functions
-
-// Helper function to normalize 30-day data series
+/ Helper function to normalize 30-day data series
 function normalize30DaySeries(series) {
     console.log('Normalizing data series:', series);
     
@@ -7550,50 +7548,7 @@ function withAlpha(color, alpha) {
     return `rgba(139, 92, 246, ${alpha})`;
 }
 
-// Enhanced target line plugin
-const targetLinePlugin = {
-    id: 'targetLine',
-    afterDraw(chart, _args, opts) {
-        const target = opts && opts.target;
-        if (typeof target !== 'number') return;
-        
-        const format = (opts && opts.format) || ((v) => v);
-        const { ctx, chartArea, scales: { y } } = chart;
-        const yPx = y.getPixelForValue(target);
-        
-        if (yPx < chartArea.top || yPx > chartArea.bottom) return;
-
-        ctx.save();
-        
-        // Draw the target line
-        ctx.strokeStyle = '#8b5cf6'; // accent-primary color
-        ctx.setLineDash([8, 4]);
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, yPx);
-        ctx.lineTo(chartArea.right, yPx);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        
-        // Draw the target label with background
-        const text = `Target: ${format(target)}`;
-        ctx.font = '12px Inter, sans-serif';
-        
-        const textWidth = ctx.measureText(text).width;
-        const labelX = chartArea.right - textWidth - 12;
-        const labelY = yPx - 8;
-        
-        // Label background
-        ctx.fillStyle = 'rgba(139, 92, 246, 0.9)';
-        ctx.fillRect(labelX - 4, labelY - 14, textWidth + 8, 18);
-        
-        // Label text
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(text, labelX, labelY);
-        
-        ctx.restore();
-    }
-};
+// Note: targetLinePlugin already exists in your script.js, so we'll use that one
 
 // Main chart creation function
 function showKpiChart(kpi, chartData) {
