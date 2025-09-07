@@ -6878,7 +6878,244 @@ function getTeamNotes(teamName, teamData) {
     return notes;
 }
 
-// Updated openKPIDetailModal function to work with live Jira data
+content.innerHTML = `
+    <div class="space-y-6" style="min-height: 600px;">
+        <!-- Two Column Layout for Key Metrics and Projections -->
+        <div class="grid gap-6" style="grid-template-columns: 1fr 1.5fr;">
+            <!-- Key Metrics Column -->
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: var(--text-primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m12 14 4-4"/>
+                        <path d="M3.34 19a10 10 0 1 1 17.32 0"/>
+                    </svg>
+                    Key Metrics
+                </h3>
+                
+                <!-- Current Value -->
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <div class="flex justify-between items-end">
+                        <div class="text-lg font-bold leading-tight" style="color: var(--text-secondary);">Current<br>Value</div>
+                        <div class="text-4xl font-bold text-right" style="color: ${kpi.color || 'var(--accent-green)'};">${kpi.currentValue}${kpi.unit || ''}</div>
+                    </div>
+                </div>
+                
+                <!-- Target Value -->
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <div class="flex justify-between items-end">
+                        <div class="text-lg font-bold leading-tight" style="color: var(--text-secondary);">Target<br>Value</div>
+                        <div class="text-4xl font-bold text-right" style="color: var(--accent-primary);">${kpi.targetValue}${kpi.unit || ''}</div>
+                    </div>
+                </div>
+                
+                <!-- Progress Percentage -->
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <div class="flex justify-between items-end">
+                        <div class="text-lg font-bold leading-tight" style="color: var(--text-secondary);">Progress<br>Complete</div>
+                        <div class="text-4xl font-bold text-right" style="color: ${kpi.progress >= 80 ? 'var(--accent-green)' : kpi.progress >= 60 ? 'var(--accent-orange)' : 'var(--accent-red)'};">${Math.round(kpi.progress || 0)}%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Projections Column -->
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color: var(--text-primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 17h6v-6"/>
+                        <path d="m22 17-8.5-8.5-5 5L2 7"/>
+                    </svg>
+                    Live Projections
+                </h3>
+                
+                <!-- Current Velocity -->
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium" style="color: var(--text-secondary);">Current Velocity</span>
+                        <span class="text-lg font-bold" style="color: var(--accent-blue);">${projectionData.velocity}</span>
+                    </div>
+                </div>
+                
+                <!-- Projected Final Value -->
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium" style="color: var(--text-secondary);">Projected Final</span>
+                        <span class="text-lg font-bold" style="color: ${// New function to generate KPI trend chart with PROPER scaling and EXACT card shading
+function generateKPITrendChart(kpi) {
+    console.log('📈 Generating trend chart for:', kpi.title, 'Target:', kpi.targetValue, 'Current:', kpi.currentValue, 'Unit:', kpi.unit);
+    console.log('Raw trendPoints:', kpi.trendPoints);
+    
+    const trendPoints = kpi.trendPoints || '0,35 20,35 40,35'; // Fallback to default
+    const modalIndex = 'modal';
+    
+    // Get actual values for smart scaling
+    const currentValue = parseFloat(kpi.currentValue) || 0;
+    const targetValue = parseFloat(kpi.targetValue) || 100;
+    const valueUnit = kpi.unit || '';
+    
+    // PROPERLY extract actual data values from trendPoints
+    // The trendPoints are coordinates - convert them back to actual values
+    const coordinatePoints = trendPoints.split(' ').map(point => {
+        const [x, y] = point.split(',');
+        return { x: parseInt(x), y: parseInt(y) };
+    });
+    
+    console.log('Coordinate points:', coordinatePoints);
+    
+    // Convert coordinates to actual values based on the KPI type and current/target values
+    let actualDataValues;
+    
+    if (kpi.title === 'Strategic Capabilities') {
+        // For Strategic Capabilities: map coordinates to actual count progression
+        actualDataValues = coordinatePoints.map((point, index) => {
+            // Y coordinate 35 = max value, 0 = min value
+            // Map to actual range between 0 and current/target values
+            const maxValue = Math.max(currentValue, targetValue);
+            return (point.y / 35) * maxValue;
+        });
+    } else if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
+        // For percentages, map coordinates to actual percentage values
+        // Assume the trend shows progression from some starting point to current value
+        const minValue = Math.min(currentValue * 0.7, targetValue * 0.7); // Reasonable starting point
+        const maxValue = Math.max(currentValue, targetValue);
+        actualDataValues = coordinatePoints.map(point => {
+            // Map Y coordinate (0-35) to actual percentage range
+            const normalizedY = point.y / 35; // Normalize to 0-1
+            return minValue + (normalizedY * (maxValue - minValue));
+        });
+    } else {
+        // For counts, scores, days, users - map coordinates to actual values
+        const maxValue = Math.max(currentValue, targetValue);
+        actualDataValues = coordinatePoints.map(point => {
+            return (point.y / 35) * maxValue;
+        });
+    }
+    
+    console.log('Actual data values:', actualDataValues);
+    
+    // CRITICAL: Include target value in range calculation for proper journey visualization
+    const allValues = [...actualDataValues, currentValue, targetValue];
+    const minDataValue = Math.min(...allValues);
+    const maxDataValue = Math.max(...allValues); // This includes target!
+    
+    // SMART Y-AXIS SCALING with target value included
+    let minChartValue, maxChartValue, yAxisValues;
+    
+    if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
+        // For percentages, include target in range with buffer
+        const dataRange = maxDataValue - minDataValue;
+        const padding = Math.max(dataRange * 0.2, 2); // At least 2% padding
+        
+        minChartValue = Math.max(0, Math.floor(minDataValue - padding));
+        maxChartValue = Math.min(100, Math.ceil(maxDataValue + padding)); // Target + buffer
+        
+        const step = (maxChartValue - minChartValue) / 4;
+        yAxisValues = [
+            Math.round(maxChartValue),
+            Math.round(maxChartValue - step),
+            Math.round(maxChartValue - step * 2), 
+            Math.round(maxChartValue - step * 3),
+            Math.round(minChartValue)
+        ];
+    } else {
+        // For counts, include target with buffer
+        const dataRange = maxDataValue - minDataValue;
+        const padding = Math.max(dataRange * 0.2, 0.5); // At least 0.5 unit padding
+        
+        minChartValue = Math.max(0, Math.floor(minDataValue - padding));
+        maxChartValue = Math.ceil(maxDataValue + padding); // Target + buffer
+        
+        const step = (maxChartValue - minChartValue) / 4;
+        yAxisValues = [
+            Math.round(maxChartValue * 10) / 10,
+            Math.round((maxChartValue - step) * 10) / 10,
+            Math.round((maxChartValue - step * 2) * 10) / 10, 
+            Math.round((maxChartValue - step * 3) * 10) / 10,
+            Math.round(minChartValue * 10) / 10
+        ];
+    }
+    
+    // Chart dimensions - FULL WIDTH spanning two columns
+    const chartHeight = 120;
+    const chartTop = 20;
+    const chartBottom = chartTop + chartHeight; // 140
+    const chartLeft = 40;
+    const chartRight = 600; // FULL WIDTH for two columns
+    const chartWidth = chartRight - chartLeft; // 560px wide
+    
+    // Calculate target line Y position using smart scaling that includes target
+    const targetLineY = chartBottom - ((targetValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
+    
+    // Format Y-axis labels based on unit type
+    const formatYLabel = (value) => {
+        if (valueUnit.toLowerCase() === 'percent' || valueUnit === '%') {
+            return `${value}%`;
+        }
+        return value.toString();
+    };
+    
+    console.log(`Dynamic scaling - Min: ${minChartValue}, Max: ${maxChartValue} (includes target), Target Y: ${targetLineY}`);
+    
+    return `
+        <svg width="100%" height="180" viewBox="0 0 650 180" style="background: rgba(255,255,255,0.02); border-radius: 4px;">
+            <!-- Define gradient EXACTLY like cards -->
+            <defs>
+                <linearGradient id="trendGradient${modalIndex}" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:${kpi.color || 'var(--accent-green)'};stop-opacity:0.3" />
+                    <stop offset="100%" style="stop-color:${kpi.color || 'var(--accent-green)'};stop-opacity:0" />
+                </linearGradient>
+            </defs>
+            
+            <!-- Y-axis -->
+            <line x1="${chartLeft}" y1="${chartTop}" x2="${chartLeft}" y2="${chartBottom}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            
+            <!-- X-axis -->
+            <line x1="${chartLeft}" y1="${chartBottom}" x2="${chartRight}" y2="${chartBottom}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            
+            <!-- Grid lines (horizontal) -->
+            <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.25)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.25)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.5)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.5)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <line x1="${chartLeft}" y1="${chartTop + (chartHeight * 0.75)}" x2="${chartRight}" y2="${chartTop + (chartHeight * 0.75)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            
+            <!-- Dynamic Target line based on actual target value and smart scaling -->
+            <line x1="${chartLeft}" y1="${targetLineY}" x2="${chartRight}" y2="${targetLineY}" stroke="var(--accent-primary)" stroke-width="2" stroke-dasharray="5,5" opacity="0.8"/>
+            <text x="${chartRight + 5}" y="${targetLineY + 4}" fill="var(--accent-primary)" font-size="11">Target (${formatYLabel(targetValue)})</text>
+            
+            <!-- Gradient fill area using EXACT card shading logic -->
+            <polygon points="${actualDataValues.map((dataValue, pointIndex) => {
+                const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(actualDataValues.length - 1, 1))); 
+                const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
+                return `${scaledX},${scaledY}`;
+            }).join(' ') + ` ${chartRight},${chartBottom} ${chartLeft},${chartBottom}`}"
+                      fill="url(#trendGradient${modalIndex})" stroke="none"/>
+            
+            <!-- Trend line using actual data values -->
+            <polyline points="${actualDataValues.map((dataValue, pointIndex) => {
+                const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(actualDataValues.length - 1, 1)));
+                const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
+                return `${scaledX},${scaledY}`;
+            }).join(' ')}"
+                      fill="none" stroke="${kpi.color || 'var(--accent-green)'}" stroke-width="3" stroke-linecap="round"/>
+            
+            <!-- Data points using actual data values -->
+            ${actualDataValues.map((dataValue, pointIndex) => {
+                const scaledX = chartLeft + (pointIndex * (chartWidth / Math.max(actualDataValues.length - 1, 1)));
+                const scaledY = chartBottom - ((dataValue - minChartValue) / (maxChartValue - minChartValue)) * chartHeight;
+                return `<circle cx="${scaledX}" cy="${scaledY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>`;
+            }).join('')}
+            
+            <!-- Axis labels -->
+            <text x="${chartLeft}" y="170" fill="rgba(255,255,255,0.6)" font-size="12">30 days ago</text>
+            <text x="${chartRight - 50}" y="170" fill="rgba(255,255,255,0.6)" font-size="12">Today</text>
+            
+            <!-- Dynamic Y-axis labels based on actual data + target range -->
+            <text x="5" y="${chartTop + 5}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[0])}</text>
+            <text x="5" y="${chartTop + (chartHeight * 0.25) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[1])}</text>
+            <text x="5" y="${chartTop + (chartHeight * 0.5) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[2])}</text>
+            <text x="5" y="${chartTop + (chartHeight * 0.75) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[3])}</text>
+            <text x="5" y="${chartBottom + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${formatYLabel(yAxisValues[4])}</text>
+        </svg>
+    `;
+}// Updated openKPIDetailModal function to work with live Jira data
 function openKPIDetailModal(kpi) {
     console.log('📊 Opening KPI Detail Modal with live data:', kpi);
     currentKPIDetail = kpi;
