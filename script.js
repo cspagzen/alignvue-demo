@@ -7030,10 +7030,10 @@ function showKpiChart(kpi, chartData) {
     const ctx = canvas.getContext('2d');
     const gradient = ctx.createLinearGradient(0, 0, 0, 200);
     
-    // Use teal gradient for bright, eye-catching appeal
-    gradient.addColorStop(0, 'rgba(20, 184, 166, 0.4)');
-    gradient.addColorStop(0.5, 'rgba(20, 184, 166, 0.2)');
-    gradient.addColorStop(1, 'rgba(20, 184, 166, 0.05)');
+    // Use indigo gradient - sophisticated and matches your theme
+    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+    gradient.addColorStop(0.5, 'rgba(99, 102, 241, 0.2)');
+    gradient.addColorStop(1, 'rgba(99, 102, 241, 0.05)');
 
     // Calculate Y-axis range to include target
     const target = parseFloat(kpi.targetValue) || 0;
@@ -7051,13 +7051,13 @@ function showKpiChart(kpi, chartData) {
             datasets: [{
                 label: (kpi && kpi.title) || 'KPI',
                 data: values,
-                borderColor: '#14b8a6',  // Teal line
+                borderColor: '#6366f1',  // Indigo line
                 backgroundColor: gradient,
                 tension: 0.4,
                 fill: true,
                 pointRadius: 4,
                 pointHoverRadius: 6,
-                pointBackgroundColor: '#f59e0b',  // Orange data points
+                pointBackgroundColor: '#f59e0b',  // Orange data points for great contrast
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 2,
                 pointHoverBackgroundColor: '#f59e0b',
