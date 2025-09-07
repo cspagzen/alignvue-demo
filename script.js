@@ -7044,14 +7044,29 @@ function openKPIDetailModal(kpi) {
 
 // New function to generate KPI trend chart using the SAME approach as the cards
 function generateKPITrendChart(kpi) {
-    console.log('📈 Generating trend chart for:', kpi.title);
+    console.log('📈 Generating trend chart for:', kpi.title, 'Target:', kpi.targetValue, 'Current:', kpi.currentValue);
     
     // Use the exact same logic as the working cards
     const trendPoints = kpi.trendPoints || '0,35 20,35 40,35'; // Fallback to default
     const modalIndex = 'modal'; // Unique ID for modal chart
     
+    // Calculate dynamic target line position based on actual values
+    const currentValue = parseFloat(kpi.currentValue) || 0;
+    const targetValue = parseFloat(kpi.targetValue) || 100;
+    
+    // Determine the chart's value range (0 to max of target * 1.1)
+    const maxChartValue = Math.max(targetValue * 1.1, currentValue * 1.1, 100);
+    const chartHeight = 160; // Chart area height (200 - 40 for margins)
+    const chartTop = 20; // Top margin
+    const chartBottom = 180; // Bottom of chart area
+    
+    // Calculate target line Y position (inverted since SVG Y increases downward)
+    const targetLineY = chartBottom - ((targetValue / maxChartValue) * chartHeight);
+    
+    console.log(`Chart calculation - Max: ${maxChartValue}, Target Y: ${targetLineY}, Target Value: ${targetValue}`);
+    
     return `
-        <svg width="100%" height="120" viewBox="0 0 300 100" style="background: rgba(255,255,255,0.02); border-radius: 4px;">
+        <svg width="100%" height="220" viewBox="0 0 360 220" style="background: rgba(255,255,255,0.02); border-radius: 4px;">
             <!-- Define gradient for this specific KPI modal -->
             <defs>
                 <linearGradient id="trendGradient${modalIndex}" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -7061,59 +7076,72 @@ function generateKPITrendChart(kpi) {
             </defs>
             
             <!-- Y-axis -->
-            <line x1="20" y1="10" x2="20" y2="85" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            <line x1="40" y1="${chartTop}" x2="40" y2="${chartBottom}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
             
             <!-- X-axis -->
-            <line x1="20" y1="85" x2="280" y2="85" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            <line x1="40" y1="${chartBottom}" x2="340" y2="${chartBottom}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
             
-            <!-- Grid lines -->
-            <line x1="20" y1="30" x2="280" y2="30" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-            <line x1="20" y1="50" x2="280" y2="50" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-            <line x1="20" y1="70" x2="280" y2="70" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <!-- Grid lines (horizontal) -->
+            <line x1="40" y1="${chartTop + (chartHeight * 0.25)}" x2="340" y2="${chartTop + (chartHeight * 0.25)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <line x1="40" y1="${chartTop + (chartHeight * 0.5)}" x2="340" y2="${chartTop + (chartHeight * 0.5)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <line x1="40" y1="${chartTop + (chartHeight * 0.75)}" x2="340" y2="${chartTop + (chartHeight * 0.75)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
             
-            <!-- Target line -->
-            <line x1="20" y1="40" x2="280" y2="40" stroke="var(--accent-primary)" stroke-width="2" stroke-dasharray="5,5" opacity="0.6"/>
-            <text x="285" y="45" fill="var(--accent-primary)" font-size="10">Target</text>
+            <!-- Dynamic Target line based on actual target value -->
+            <line x1="40" y1="${targetLineY}" x2="340" y2="${targetLineY}" stroke="var(--accent-primary)" stroke-width="2" stroke-dasharray="5,5" opacity="0.8"/>
+            <text x="345" y="${targetLineY + 4}" fill="var(--accent-primary)" font-size="12">Target (${targetValue}${kpi.unit || ''})</text>
             
-            <!-- Gradient fill area using same coordinate mapping as cards -->
+            <!-- Gradient fill area using same coordinate mapping as cards but scaled for modal -->
             <polygon points="${trendPoints.split(' ').map((point, pointIndex) => {
                 const [x, y] = point.split(',');
-                return `${20 + (pointIndex * 40)},${85 - (parseInt(y) * 2)}`;
-            }).join(' ') + ' 280,85 20,85'}"
+                const scaledX = 40 + (pointIndex * 50); // Spread points across 300px width
+                const scaledY = chartBottom - (parseInt(y) * (chartHeight / 35)); // Scale based on chart height
+                return `${scaledX},${scaledY}`;
+            }).join(' ') + ` 340,${chartBottom} 40,${chartBottom}`}"
                       fill="url(#trendGradient${modalIndex})" stroke="none"/>
             
-            <!-- Trend line - using exact same logic as cards -->
+            <!-- Trend line - using dynamic scaling -->
             <polyline points="${kpi.title === 'Strategic Capabilities' ? 
-                '20,85 60,85 100,85 140,55 180,55 220,55 260,55' :
+                // Special handling for Strategic Capabilities with proper scaling
+                `40,${chartBottom} 90,${chartBottom} 140,${chartBottom} 190,${targetLineY} 240,${targetLineY} 290,${targetLineY} 340,${targetLineY}` :
+                // Dynamic scaling for other KPIs
                 trendPoints.split(' ').map((point, pointIndex) => {
                     const [x, y] = point.split(',');
-                    return `${20 + (pointIndex * 40)},${85 - (parseInt(y) * 2)}`;
+                    const scaledX = 40 + (pointIndex * 50);
+                    const scaledY = chartBottom - (parseInt(y) * (chartHeight / 35));
+                    return `${scaledX},${scaledY}`;
                 }).join(' ')
             }"
                       fill="none" stroke="${kpi.color || 'var(--accent-green)'}" stroke-width="3" stroke-linecap="round"/>
             
-            <!-- Data points - using exact same logic as cards -->
+            <!-- Data points - using dynamic scaling -->
             ${kpi.title === 'Strategic Capabilities' ? 
-                '<circle cx="20" cy="85" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
-                '<circle cx="60" cy="85" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
-                '<circle cx="100" cy="85" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
-                '<circle cx="140" cy="55" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
-                '<circle cx="180" cy="55" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
-                '<circle cx="220" cy="55" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' +
-                '<circle cx="260" cy="55" r="3" fill="' + (kpi.color || 'var(--accent-green)') + '" stroke="white" stroke-width="1"/>' :
+                // Special data points for Strategic Capabilities
+                `<circle cx="40" cy="${chartBottom}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
+                 <circle cx="90" cy="${chartBottom}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
+                 <circle cx="140" cy="${chartBottom}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
+                 <circle cx="190" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
+                 <circle cx="240" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
+                 <circle cx="290" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>
+                 <circle cx="340" cy="${targetLineY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>` :
+                // Dynamic data points for other KPIs
                 trendPoints.split(' ').map((point, pointIndex) => {
                     const [x, y] = point.split(',');
-                    return `<circle cx="${20 + (pointIndex * 40)}" cy="${85 - (parseInt(y) * 2)}" r="3" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="1"/>`;
+                    const scaledX = 40 + (pointIndex * 50);
+                    const scaledY = chartBottom - (parseInt(y) * (chartHeight / 35));
+                    return `<circle cx="${scaledX}" cy="${scaledY}" r="4" fill="${kpi.color || 'var(--accent-green)'}" stroke="white" stroke-width="2"/>`;
                 }).join('')
             }
             
             <!-- Axis labels -->
-            <text x="20" y="100" fill="rgba(255,255,255,0.6)" font-size="10">30 days ago</text>
-            <text x="240" y="100" fill="rgba(255,255,255,0.6)" font-size="10">Today</text>
+            <text x="40" y="210" fill="rgba(255,255,255,0.6)" font-size="12">30 days ago</text>
+            <text x="280" y="210" fill="rgba(255,255,255,0.6)" font-size="12">Today</text>
             
-            <!-- Value labels -->
-            <text x="5" y="15" fill="rgba(255,255,255,0.6)" font-size="10">${kpi.targetValue}</text>
-            <text x="5" y="90" fill="rgba(255,255,255,0.6)" font-size="10">0</text>
+            <!-- Value labels on Y-axis -->
+            <text x="5" y="${chartTop + 5}" fill="rgba(255,255,255,0.6)" font-size="11">${Math.round(maxChartValue)}</text>
+            <text x="5" y="${chartTop + (chartHeight * 0.25) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${Math.round(maxChartValue * 0.75)}</text>
+            <text x="5" y="${chartTop + (chartHeight * 0.5) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${Math.round(maxChartValue * 0.5)}</text>
+            <text x="5" y="${chartTop + (chartHeight * 0.75) + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${Math.round(maxChartValue * 0.25)}</text>
+            <text x="5" y="${chartBottom + 4}" fill="rgba(255,255,255,0.6)" font-size="11">0</text>
         </svg>
     `;
 }
