@@ -5029,7 +5029,8 @@ function initializeMendozaChart(metrics) {
         }
     }, 100);
 }
-}
+
+
 function getTeamsWorkingOnlyOnHighPriority() {
     // Mock data - replace with actual logic
     return ['Core Platform', 'User Experience', 'Security'];
