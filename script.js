@@ -7462,7 +7462,7 @@ function createFallbackChartData(kpi) {
     return chartData;
 }
 
-/ Helper function to normalize 30-day data series
+// Helper function to normalize 30-day data series
 function normalize30DaySeries(series) {
     console.log('Normalizing data series:', series);
     
