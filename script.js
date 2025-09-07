@@ -7971,7 +7971,7 @@ function decrementKPIValue() {
     input.value = Math.max(0, currentValue - step);
 }
        
-        function init() {
+    async function init() {
     // Cache frequently accessed DOM elements
     const detailModal = document.getElementById('detail-modal');
     
@@ -7985,7 +7985,6 @@ function decrementKPIValue() {
     detailModal.setAttribute('role', 'dialog');
     detailModal.setAttribute('aria-modal', 'true');
     
-            
     generatePyramid();
     generateTeamHealthMatrix();
     generateBentoGrid();
@@ -7995,7 +7994,9 @@ function decrementKPIValue() {
     initFilterDrawers();
     initAccordions();
     initSidebarTooltips();
-    initializeSyncOverlay();
+    
+    // AWAIT the sync overlay initialization
+    await initializeSyncOverlay();
     removeFloatingManualSyncButton();
     setTimeout(addSyncButtonAnimation, 100);
     //initKeyboardNavigation();
@@ -9670,7 +9671,10 @@ class SyncOverlay {
 // Initialize the sync overlay system
 let syncOverlay;
 
-function initializeSyncOverlay() {
+async function initializeSyncOverlay() {
+    // Add a small delay to ensure DOM is fully ready
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     syncOverlay = new SyncOverlay();
     console.log('🚀 Full-screen sync overlay system initialized');
 }
@@ -10034,4 +10038,11 @@ function showSyncIndicator(type) {
     indicator.style.opacity = '1';
 }
 
-        init();
+        (async () => {
+    try {
+        await init();
+        console.log('✅ Application initialized successfully');
+    } catch (error) {
+        console.error('❌ Application initialization failed:', error);
+    }
+})();
