@@ -2271,201 +2271,188 @@ function calculateTeamsPerLowPriorityInitiative() {
     return Math.round((21 / 16) * 10) / 10; // 21 teams below line / 16 initiatives below line = 1.3
 }
 
+// Enhanced modal function for detailed analysis
 function showMendozaAnalysisModal() {
     const modal = document.getElementById('detail-modal');
-    const title = document.getElementById('modal-title');
-    const content = document.getElementById('modal-content');
+    const modalContent = document.getElementById('modal-content');
     
-    // Calculate team distribution for impact analysis (keep existing)
-    const highPriorityOnlyTeams = getTeamsWorkingOnlyOnHighPriority();
-    const lowPriorityOnlyTeams = getTeamsWorkingOnlyOnLowPriority();
-    const mixedTeams = getTeamsWorkingOnMixed();
+    const metrics = calculateResourceAllocation();
+    const detailedBreakdown = calculateDetailedResourceBreakdown();
     
-    // Mock data for below-line work breakdown
-    const activityBreakdown = {
-        validation: 60,
-        prototyping: 25,
-        planning: 10,
-        fullDevelopment: 5
-    };
-    
-    const appropriateWork = [
-        { team: 'Design/UX', activity: 'User research, prototyping', hours: 40 },
-        { team: 'Product Management', activity: 'Market validation, discovery', hours: 25 },
-        { team: 'Analytics', activity: 'Data exploration', hours: 15 }
-    ];
-    
-    const borderlineWork = [
-        { team: 'Engineering', activity: 'Architecture design', hours: 8 },
-        { team: 'DevOps', activity: 'Infrastructure planning', hours: 4 }
-    ];
-    
-    const considerPromotion = [
-        { team: 'Engineering - Mobile App MVP', activity: 'Full feature development', hours: 20 },
-        { team: 'Core Platform', activity: 'Production work', hours: 8 }
-    ];
-    
-    title.textContent = 'Impact Analysis';
-    content.innerHTML = 
-        '<div class="space-y-6">' +
-            // Keep existing impact analysis boxes
-            '<div class="grid grid-cols-3 gap-4">' +
-                '<div class="p-4 rounded-lg text-center" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%); border: 1px solid var(--accent-green);">' +
-                    '<div class="text-3xl font-bold" style="color: var(--accent-green);">' + highPriorityOnlyTeams.length + '</div>' +
-                    '<div class="text-sm font-medium mt-1" style="color: var(--accent-green);">Teams</div>' +
-                    '<div class="text-xs mt-2" style="color: var(--text-secondary);">working ONLY on high-priority initiatives</div>' +
-                '</div>' +
-                
-                '<div class="p-4 rounded-lg text-center" style="background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%); border: 1px solid var(--accent-red);">' +
-                    '<div class="text-3xl font-bold" style="color: var(--accent-red);">' + lowPriorityOnlyTeams.length + '</div>' +
-                    '<div class="text-sm font-medium mt-1" style="color: var(--accent-red);">Teams</div>' +
-                    '<div class="text-xs mt-2" style="color: var(--text-secondary);">working ONLY on low-priority initiatives</div>' +
-                '</div>' +
-                
-                '<div class="p-4 rounded-lg text-center" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid var(--accent-orange);">' +
-                    '<div class="text-3xl font-bold" style="color: var(--accent-orange);">' + mixedTeams.length + '</div>' +
-                    '<div class="text-sm font-medium mt-1" style="color: var(--accent-orange);">Teams</div>' +
-                    '<div class="text-xs mt-2" style="color: var(--text-secondary);">working on both high and low priority initiatives</div>' +
-                '</div>' +
-            '</div>' +
+    modalContent.innerHTML = `
+        <div class="modal-header">
+            <h2 class="text-xl font-bold" style="color: var(--text-primary);">
+                Resource Allocation Analysis
+            </h2>
+            <button onclick="closeModal()" class="text-xl" style="color: var(--text-secondary);">×</button>
+        </div>
+        
+        <div class="p-6 space-y-6">
+            <!-- Efficiency Overview -->
+            <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
+                <h3 class="text-lg font-semibold mb-3" style="color: ${metrics.efficiencyColor};">
+                    ${metrics.efficiencyScore}% Resource Efficiency
+                </h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <div style="color: var(--text-secondary);">Above Line (1-14)</div>
+                        <div class="text-lg font-bold" style="color: var(--accent-green);">${metrics.aboveLineCount} initiatives</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-secondary);">Below Line (15+)</div>
+                        <div class="text-lg font-bold" style="color: var(--accent-blue);">${metrics.belowLineCount} initiatives</div>
+                    </div>
+                </div>
+            </div>
             
-            // Keep existing Mendoza Line info box
-            '<div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">' +
-                '<h5 class="font-medium mb-2 flex items-center gap-2" style="color: var(--accent-blue);">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                        '<circle cx="12" cy="12" r="10"/>' +
-                        '<path d="M12 16v-4"/>' +
-                        '<path d="M12 8h.01"/>' +
-                    '</svg>' +
-                    'Mendoza Line Concept' +
-                '</h5>' +
-                '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">Named after baseball\'s .200 batting average threshold in baseball, the Mendoza Line represents the minimum acceptable performance level. In portfolio management, initiatives below this line may not justify organizational resources and attention.</p>' +
-            '</div>' +
+            <!-- Resource Waste Alert -->
+            ${metrics.wasteLevel > 20 ? `
+            <div class="p-4 rounded-lg" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red);">
+                <h4 class="font-semibold mb-2" style="color: var(--accent-red);">
+                    ⚠️ High Resource Waste Detected
+                </h4>
+                <p class="text-sm" style="color: var(--text-secondary);">
+                    ${metrics.wasteLevel}% of initiatives are high-resource activities below the Mendoza line. 
+                    Consider moving development/go-to-market work above the line.
+                </p>
+            </div>
+            ` : ''}
             
-            // NEW: Below-Line Work Analysis
-            '<div>' +
-                '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                        '<path d="M3 3v5h5"/>' +
-                        '<path d="M6 17a9 9 0 1 0 6-15"/>' +
-                    '</svg>' +
-                    'Below-Line Work Analysis' +
-                '</h3>' +
-                
-                // Activity Breakdown Chart
-                '<div class="grid gap-4" style="grid-template-columns: 200px 1fr;">' +
-                    '<div class="flex justify-center">' +
-                        '<svg width="180" height="180" viewBox="0 0 180 180">' +
-                            '<!-- Validation (60%) - Green -->' +
-                            '<circle cx="90" cy="90" r="70" fill="transparent" stroke="var(--accent-green)" stroke-width="20" stroke-dasharray="264 440" stroke-dashoffset="0" transform="rotate(-90 90 90)"/>' +
-                            '<!-- Prototyping (25%) - Green -->' +
-                            '<circle cx="90" cy="90" r="70" fill="transparent" stroke="var(--accent-green)" stroke-width="20" stroke-dasharray="110 440" stroke-dashoffset="-264" transform="rotate(-90 90 90)"/>' +
-                            '<!-- Planning (10%) - Yellow -->' +
-                            '<circle cx="90" cy="90" r="70" fill="transparent" stroke="var(--accent-orange)" stroke-width="20" stroke-dasharray="44 440" stroke-dashoffset="-374" transform="rotate(-90 90 90)"/>' +
-                            '<!-- Full Development (5%) - Red -->' +
-                            '<circle cx="90" cy="90" r="70" fill="transparent" stroke="var(--accent-red)" stroke-width="20" stroke-dasharray="22 440" stroke-dashoffset="-418" transform="rotate(-90 90 90)"/>' +
-                            '<text x="90" y="95" text-anchor="middle" style="fill: var(--text-primary); font-size: 14px; font-weight: bold;">Activity</text>' +
-                            '<text x="90" y="110" text-anchor="middle" style="fill: var(--text-secondary); font-size: 12px;">Breakdown</text>' +
-                        '</svg>' +
-                    '</div>' +
-                    
-                    // Legend and Details
-                    '<div class="space-y-4">' +
-                        // Legend
-                        '<div class="grid grid-cols-2 gap-2 text-sm">' +
-                            '<div class="flex items-center gap-2">' +
-                                '<div class="w-3 h-3 rounded" style="background: var(--accent-green);"></div>' +
-                                '<span>Validation (60%)</span>' +
-                            '</div>' +
-                            '<div class="flex items-center gap-2">' +
-                                '<div class="w-3 h-3 rounded" style="background: var(--accent-green);"></div>' +
-                                '<span>Prototyping (25%)</span>' +
-                            '</div>' +
-                            '<div class="flex items-center gap-2">' +
-                                '<div class="w-3 h-3 rounded" style="background: var(--accent-orange);"></div>' +
-                                '<span>Planning (10%)</span>' +
-                            '</div>' +
-                            '<div class="flex items-center gap-2">' +
-                                '<div class="w-3 h-3 rounded" style="background: var(--accent-red);"></div>' +
-                                '<span>Full Development (5%)</span>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
-                
-                // Resource Allocation Details
-                '<div class="mt-6 space-y-4">' +
-                    '<h4 class="font-medium" style="color: var(--text-primary);">Resource Allocation Review:</h4>' +
-                    
-                    // Appropriate Work
-                    '<div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%); border: 1px solid var(--accent-green);">' +
-                        '<h5 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-green);">' +
-                            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                '<path d="m9 12 2 2 4-4"/>' +
-                                '<path d="M21 12c.552 0 1-.448 1-1V5l-8-3-8 3v6c0 .552.448 1 1 1z"/>' +
-                            '</svg>' +
-                            'APPROPRIATE WORK (85%)' +
-                        '</h5>' +
-                        '<div class="space-y-2">' +
-                            appropriateWork.map(item => `
-                                <div class="flex justify-between items-center text-sm">
-                                    <span style="color: var(--text-primary);">• ${item.team}: ${item.activity}</span>
-                                    <span style="color: var(--text-tertiary);">(${item.hours} hrs)</span>
-                                </div>
-                            `).join('') +
-                        '</div>' +
-                    '</div>' +
-                    
-                    // Borderline Work
-                    (borderlineWork.length > 0 ? 
-                        '<div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid var(--accent-orange);">' +
-                            '<h5 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-orange);">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                    '<path d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>' +
-                                    '<path d="M12 17h.01"/>' +
-                                '</svg>' +
-                                'REVIEW RECOMMENDED (10%)' +
-                            '</h5>' +
-                            '<div class="space-y-2">' +
-                                borderlineWork.map(item => `
-                                    <div class="flex justify-between items-center text-sm">
-                                        <span style="color: var(--text-primary);">• ${item.team}: ${item.activity}</span>
-                                        <span style="color: var(--text-tertiary);">(${item.hours} hrs)</span>
-                                    </div>
-                                `).join('') +
-                            '</div>' +
-                        '</div>' : ''
-                    ) +
-                    
-                    // Consider Promotion
-                    (considerPromotion.length > 0 ? 
-                        '<div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%); border: 1px solid var(--accent-red);">' +
-                            '<h5 class="font-medium mb-3 flex items-center gap-2" style="color: var(--accent-red);">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                    '<path d="M16 3h5v5"/>' +
-                                    '<path d="M8 3H3v5"/>' +
-                                    '<path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/>' +
-                                    '<path d="m15 9 6-6"/>' +
-                                '</svg>' +
-                                'CONSIDER PROMOTION (5%)' +
-                            '</h5>' +
-                            '<div class="space-y-2 mb-3">' +
-                                considerPromotion.map(item => `
-                                    <div class="flex justify-between items-center text-sm">
-                                        <span style="color: var(--text-primary);">• ${item.team}: ${item.activity}</span>
-                                        <span style="color: var(--text-tertiary);">(${item.hours} hrs)</span>
-                                    </div>
-                                `).join('') +
-                            '</div>' +
-                            '<p class="text-sm" style="color: var(--text-secondary);">Suggestion: Consider promoting these initiatives above the Mendoza line for full development resources.</p>' +
-                        '</div>' : ''
-                    ) +
-                '</div>' +
-            '</div>' +
-        '</div>';
+            <!-- Activity Breakdown -->
+            <div>
+                <h4 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Activity Distribution</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-3 rounded" style="background: var(--bg-quaternary);">
+                        <h5 class="font-medium mb-2" style="color: var(--accent-green);">Above Line (Good)</h5>
+                        <div class="space-y-1 text-sm" id="above-line-activities"></div>
+                    </div>
+                    <div class="p-3 rounded" style="background: var(--bg-quaternary);">
+                        <h5 class="font-medium mb-2" style="color: var(--accent-blue);">Below Line</h5>
+                        <div class="space-y-1 text-sm" id="below-line-activities"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recommendations -->
+            <div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">
+                <h4 class="font-semibold mb-2" style="color: var(--accent-blue);">
+                    💡 Optimization Recommendations
+                </h4>
+                <ul class="text-sm space-y-1" style="color: var(--text-secondary);" id="recommendations-list">
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    // Populate activity breakdowns and recommendations
+    populateModalDetails(detailedBreakdown, metrics);
     
     modal.classList.add('show');
 }
+
+function calculateDetailedResourceBreakdown() {
+    const breakdown = {
+        aboveLine: {},
+        belowLine: {},
+        misallocated: []
+    };
+    
+    const highResourceActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
+    
+    if (boardData?.initiatives) {
+        boardData.initiatives.forEach(initiative => {
+            const priority = initiative.priority;
+            const activityType = getInitiativeActivityType(initiative);
+            
+            if (priority !== 'pipeline') {
+                const isAboveLine = priority <= 14;
+                const isHighResource = highResourceActivities.includes(activityType);
+                
+                const target = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
+                target[activityType] = (target[activityType] || 0) + 1;
+                
+                // Track misallocated initiatives
+                if ((isHighResource && !isAboveLine) || (!isHighResource && isAboveLine && activityType !== 'optimization' && activityType !== 'bugs')) {
+                    breakdown.misallocated.push({
+                        title: initiative.title,
+                        priority,
+                        activityType,
+                        isAboveLine,
+                        issue: isHighResource ? 'High-resource work below line' : 'Discovery work above line'
+                    });
+                }
+            }
+        });
+    }
+    
+    return breakdown;
+}
+
+function populateModalDetails(breakdown, metrics) {
+    // Populate above line activities
+    const aboveElement = document.getElementById('above-line-activities');
+    if (aboveElement) {
+        aboveElement.innerHTML = Object.entries(breakdown.aboveLine)
+            .sort(([,a], [,b]) => b - a)
+            .map(([activity, count]) => 
+                `<div class="flex justify-between">
+                    <span>${activity}</span>
+                    <span style="color: var(--accent-green);">${count}</span>
+                </div>`
+            ).join('') || '<div style="color: var(--text-tertiary);">No initiatives above line</div>';
+    }
+    
+    // Populate below line activities
+    const belowElement = document.getElementById('below-line-activities');
+    if (belowElement) {
+        belowElement.innerHTML = Object.entries(breakdown.belowLine)
+            .sort(([,a], [,b]) => b - a)
+            .map(([activity, count]) => 
+                `<div class="flex justify-between">
+                    <span>${activity}</span>
+                    <span style="color: var(--accent-blue);">${count}</span>
+                </div>`
+            ).join('') || '<div style="color: var(--text-tertiary);">No initiatives below line</div>';
+    }
+    
+    // Generate recommendations
+    const recommendations = generateRecommendations(breakdown, metrics);
+    const recElement = document.getElementById('recommendations-list');
+    if (recElement) {
+        recElement.innerHTML = recommendations.map(rec => `<li>${rec}</li>`).join('');
+    }
+}
+
+function generateRecommendations(breakdown, metrics) {
+    const recommendations = [];
+    
+    if (metrics.wasteLevel > 20) {
+        recommendations.push('Move development and go-to-market initiatives above priority 14');
+    }
+    
+    if (breakdown.belowLine.development > 2) {
+        recommendations.push('Consider promoting high-impact development work to higher priorities');
+    }
+    
+    if (breakdown.aboveLine.validation > 1) {
+        recommendations.push('Move validation activities below the line to preserve development capacity');
+    }
+    
+    if (metrics.efficiencyScore < 60) {
+        recommendations.push('Review initiative prioritization to align resource-intensive work above the line');
+    }
+    
+    if (Object.keys(breakdown.aboveLine).length === 0) {
+        recommendations.push('No initiatives above the line - consider promoting validated initiatives');
+    }
+    
+    if (recommendations.length === 0) {
+        recommendations.push('Resource allocation looks efficient - maintain current prioritization approach');
+    }
+    
+    return recommendations;
+}
+
 
 // Add new function for team allocation modals
 function showTeamAllocationModal(allocationType) {
@@ -4657,84 +4644,246 @@ function ensureTabStyles() {
     }
 }
 
+// Updated updateMendozaCard function for live Jira data integration
+// Uses customfield_10190 (Activity Type) to calculate resource allocation efficiency
+
 function updateMendozaCard() {
     const content = document.getElementById('mendoza-impact-content');
     
-    // Calculate below-line activity breakdown (mock data for now)
-    const activityBreakdown = {
-        validation: 60,
-        prototyping: 25,
-        planning: 10,
-        fullDevelopment: 5
-    };
-    
-    const needsReview = activityBreakdown.planning + activityBreakdown.fullDevelopment;
+    // Calculate resource allocation from live boardData
+    const resourceMetrics = calculateResourceAllocation();
     
     content.innerHTML = `
-        <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" id="mendoza-clickable">
-            <div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Below-Line Activity</div>
+        <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" id="mendoza-clickable" onclick="showMendozaAnalysisModal()">
+            <div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Resource Efficiency</div>
             
-            <!-- Simple Pie Chart -->
-            <!-- Improved Pie Chart with labels -->
-<div class="relative mb-3">
-    <svg width="120" height="120" viewBox="0 0 120 120">
-        <!-- Validation (60%) - Green -->
-        <circle cx="60" cy="60" r="40" fill="transparent" stroke="var(--accent-green)" 
-                stroke-width="20" stroke-dasharray="151 251" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
-        
-        <!-- Prototyping (25%) - Green -->
-        <circle cx="60" cy="60" r="40" fill="transparent" stroke="var(--accent-green)" 
-                stroke-width="20" stroke-dasharray="63 251" stroke-dashoffset="-151" transform="rotate(-90 60 60)"/>
-        
-        <!-- Planning (10%) - Yellow -->
-        <circle cx="60" cy="60" r="40" fill="transparent" stroke="var(--accent-orange)" 
-                stroke-width="20" stroke-dasharray="25 251" stroke-dashoffset="-214" transform="rotate(-90 60 60)"/>
-        
-        <!-- Full Development (5%) - Red -->
-        <circle cx="60" cy="60" r="40" fill="transparent" stroke="var(--accent-red)" 
-                stroke-width="20" stroke-dasharray="13 251" stroke-dashoffset="-239" transform="rotate(-90 60 60)"/>
-        
-        <!-- Labels -->
-        <text x="60" y="30" text-anchor="middle" style="fill: var(--text-primary); font-size: 10px; font-weight: 600;">Validation</text>
-        <text x="60" y="42" text-anchor="middle" style="fill: var(--accent-green); font-size: 9px;">60%</text>
-        
-        <text x="90" y="65" text-anchor="middle" style="fill: var(--text-primary); font-size: 10px; font-weight: 600;">Proto</text>
-        <text x="90" y="75" text-anchor="middle" style="fill: var(--accent-green); font-size: 9px;">25%</text>
-        
-        <text x="75" y="95" text-anchor="middle" style="fill: var(--text-primary); font-size: 10px; font-weight: 600;">Plan</text>
-        <text x="75" y="105" text-anchor="middle" style="fill: var(--accent-orange); font-size: 9px;">10%</text>
-        
-        <text x="40" y="95" text-anchor="middle" style="fill: var(--text-primary); font-size: 10px; font-weight: 600;">Dev</text>
-        <text x="40" y="105" text-anchor="middle" style="fill: var(--accent-red); font-size: 9px;">5%</text>
-    </svg>
-</div>
+            <!-- Chart.js Donut Chart -->
+            <div class="relative mb-3">
+                <canvas id="mendoza-donut-chart" width="120" height="120"></canvas>
+                
+                <!-- Center Metric -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold" style="color: ${resourceMetrics.efficiencyColor};" id="mendoza-efficiency-score">
+                            ${resourceMetrics.efficiencyScore}%
+                        </div>
+                        <div class="text-xs font-medium" style="color: var(--text-tertiary);">
+                            EFFICIENT
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            ${needsReview > 0 ? `
-                <div class="text-xs flex items-center gap-1" style="color: var(--accent-orange);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                        <path d="M12 17h.01"/>
-                    </svg>
-                    ${needsReview}% Needs Review
+            <!-- Quick Stats -->
+            <div class="text-xs" style="color: var(--text-secondary);">
+                <div class="flex justify-between items-center mb-1">
+                    <span>Above Line:</span>
+                    <span style="color: var(--accent-green);">${resourceMetrics.aboveLineCount} initiatives</span>
                 </div>
-            ` : `
-                <div class="text-xs" style="color: var(--accent-green);">
-                    ✓ Optimal Allocation
+                <div class="flex justify-between items-center">
+                    <span>Below Line:</span>
+                    <span style="color: var(--accent-blue);">${resourceMetrics.belowLineCount} initiatives</span>
                 </div>
-            `}
+            </div>
         </div>
     `;
     
-    // Add click handler via JavaScript
-    setTimeout(() => {
-        const clickableElement = document.getElementById('mendoza-clickable');
-        if (clickableElement) {
-            clickableElement.style.cursor = 'pointer';
-            clickableElement.addEventListener('click', function() {
-                showMendozaAnalysisModal();
-            });
+    // Initialize Chart.js donut chart
+    initializeMendozaChart(resourceMetrics);
+}
+
+function calculateResourceAllocation() {
+    // High-resource activities that should be above the line
+    const highResourceActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
+    
+    // Low-resource activities that should be below the line  
+    const lowResourceActivities = ['validation', 'research', 'prototyping', 'planning'];
+    
+    let aboveLineTotal = 0;
+    let belowLineTotal = 0;
+    let aboveLineHighResource = 0;
+    let belowLineHighResource = 0;
+    let aboveLineAppropriate = 0;
+    let belowLineAppropriate = 0;
+    
+    // Process active initiatives
+    if (boardData?.initiatives) {
+        boardData.initiatives.forEach(initiative => {
+            const priority = initiative.priority;
+            const activityType = getInitiativeActivityType(initiative);
+            
+            if (priority !== 'pipeline') {
+                const isAboveLine = priority <= 14;
+                const isHighResource = highResourceActivities.includes(activityType);
+                const isLowResource = lowResourceActivities.includes(activityType);
+                
+                if (isAboveLine) {
+                    aboveLineTotal++;
+                    if (isHighResource) {
+                        aboveLineHighResource++;
+                        aboveLineAppropriate++;
+                    } else if (isLowResource) {
+                        // Low resource work above line - not ideal but not terrible
+                    }
+                } else {
+                    belowLineTotal++;
+                    if (isHighResource) {
+                        belowLineHighResource++;
+                        // High resource work below line - this is waste
+                    } else if (isLowResource) {
+                        belowLineAppropriate++;
+                    }
+                }
+            }
+        });
+    }
+    
+    const totalInitiatives = aboveLineTotal + belowLineTotal;
+    const totalHighResourceWork = aboveLineHighResource + belowLineHighResource;
+    
+    // Calculate efficiency: what % of high-resource work is appropriately above the line
+    let efficiencyScore = 0;
+    if (totalHighResourceWork > 0) {
+        efficiencyScore = Math.round((aboveLineHighResource / totalHighResourceWork) * 100);
+    } else if (totalInitiatives > 0) {
+        // If no high-resource work, base on overall appropriate placement
+        const totalAppropriate = aboveLineAppropriate + belowLineAppropriate;
+        efficiencyScore = Math.round((totalAppropriate / totalInitiatives) * 100);
+    }
+    
+    // Determine efficiency color based on your color palette
+    let efficiencyColor;
+    if (efficiencyScore >= 80) {
+        efficiencyColor = 'var(--accent-green)';
+    } else if (efficiencyScore >= 60) {
+        efficiencyColor = 'var(--accent-orange)';
+    } else {
+        efficiencyColor = 'var(--accent-red)';
+    }
+    
+    // Calculate waste level (high-resource work below line)
+    const wasteLevel = totalInitiatives > 0 ? Math.round((belowLineHighResource / totalInitiatives) * 100) : 0;
+    
+    return {
+        efficiencyScore,
+        efficiencyColor,
+        aboveLineCount: aboveLineTotal,
+        belowLineCount: belowLineTotal,
+        aboveLinePercent: totalInitiatives > 0 ? Math.round((aboveLineTotal / totalInitiatives) * 100) : 0,
+        belowLinePercent: totalInitiatives > 0 ? Math.round((belowLineTotal / totalInitiatives) * 100) : 0,
+        wasteLevel,
+        breakdown: {
+            aboveLineHighResource,
+            belowLineHighResource,
+            aboveLineAppropriate,
+            belowLineAppropriate
         }
-    }, 100);
+    };
+}
+
+function getInitiativeActivityType(initiative) {
+    // Extract activity type from Jira data (customfield_10190)
+    if (initiative.jira?.activityType) {
+        return initiative.jira.activityType;
+    }
+    
+    // If not available in cached data, try to get from live Jira data
+    // This would be populated during the transformJiraData process
+    if (initiative.activityType) {
+        return initiative.activityType;
+    }
+    
+    // Fallback: infer from validation status and type
+    if (initiative.validation === 'not-validated') {
+        return 'validation';
+    } else if (initiative.validation === 'in-validation') {
+        return 'prototyping';
+    } else if (initiative.type === 'strategic') {
+        return 'development';
+    } else if (initiative.type === 'ktlo') {
+        return 'support';
+    }
+    
+    // Default fallback
+    return 'development';
+}
+
+let mendozaChart = null;
+
+function initializeMendozaChart(metrics) {
+    const canvas = document.getElementById('mendoza-donut-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (mendozaChart) {
+        mendozaChart.destroy();
+    }
+    
+    // Create Chart.js donut chart
+    mendozaChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Above Line Resources', 'Below Line Resources'],
+            datasets: [{
+                data: [metrics.aboveLinePercent, metrics.belowLinePercent],
+                backgroundColor: [
+                    metrics.efficiencyScore >= 80 ? 'rgba(16, 185, 129, 0.8)' : 
+                    metrics.efficiencyScore >= 60 ? 'rgba(251, 146, 60, 0.8)' : 
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(59, 130, 246, 0.3)'
+                ],
+                borderColor: [
+                    metrics.efficiencyScore >= 80 ? 'var(--accent-green)' : 
+                    metrics.efficiencyScore >= 60 ? 'var(--accent-orange)' : 
+                    'var(--accent-red)',
+                    'var(--accent-blue)'
+                ],
+                borderWidth: 2,
+                cutout: '65%'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'var(--bg-tertiary)',
+                    titleColor: 'var(--text-primary)',
+                    bodyColor: 'var(--text-secondary)',
+                    borderColor: 'var(--glass-border)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label;
+                            const value = context.parsed;
+                            const count = label.includes('Above') ? metrics.aboveLineCount : metrics.belowLineCount;
+                            return `${label}: ${value}% (${count} initiatives)`;
+                        },
+                        afterBody: function() {
+                            return [
+                                '',
+                                `Efficiency Score: ${metrics.efficiencyScore}%`,
+                                `Resource Waste: ${metrics.wasteLevel}%`
+                            ];
+                        }
+                    }
+                }
+            },
+            onClick: function(evt, elements) {
+                // Handle click to show modal with details
+                showMendozaAnalysisModal();
+            },
+            animation: {
+                animateRotate: true,
+                duration: 1000
+            }
+        }
+    });
 }
 
 function getTeamsWorkingOnlyOnHighPriority() {
@@ -9144,6 +9293,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
         const validationStatus = getFieldValue(issue, 'customfield_10052');
         const teamsAssigned = getFieldValue(issue, 'customfield_10053');
         const initiativeType = getFieldValue(issue, 'customfield_10051');
+        const activityType = getFieldValue(issue, 'customfield_10190');
         
         // Handle numeric Matrix Position
         let priority;
@@ -9232,6 +9382,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
             priority: priority,
             teams: processedTeams,
             progress: finalCompletion.progress,
+            activityType: activityType,
             jira: {
                 key: issue.key,
                 stories: finalCompletion.total,
@@ -9242,7 +9393,8 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
                 status: issue.fields.status.name,
                 assignee: issue.fields.assignee?.displayName || 'Unassigned',
                 updated: issue.fields.updated,
-                hasLiveData: hasChildIssues || hasCachedData
+                hasLiveData: hasChildIssues || hasCachedData,
+                activityType: activityType
             },
             canvas: {
                 outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Outcome to be defined',
