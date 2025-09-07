@@ -7277,9 +7277,10 @@ function calculateLiveKPIProjections(kpi, chartData) {
     const requiredChange = targetValue - currentValue;
     const requiredWeeklyPace = daysRemaining > 0 ? requiredChange / weeksRemaining : 0;
     
-    // Determine if on track (with 5% buffer for near-misses)
-    const onTrackThreshold = targetValue * 0.95;
-    const isOnTrack = projectedValue >= onTrackThreshold;
+    // Determine if on track - projected value must meet or exceed target
+    // Only allow small buffer (1%) for rounding/measurement precision
+    const onTrackThreshold = targetValue * 0.99;
+    const isOnTrack = projectedValue >= targetValue;
     
     // Calculate data quality based on recency and consistency
     const lastUpdateDate = new Date(lastPoint.date);
@@ -7353,6 +7354,94 @@ function calculateConsistencyScore(data) {
     if (coefficientOfVariation <= 15) return 80;
     if (coefficientOfVariation <= 30) return 60;
     return 40;
+}
+
+// Function to show Data Quality explanation modal
+function showDataQualityModal(dataQuality) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('data-quality-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'data-quality-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px;">
+                <div class="modal-header" style="padding: 20px 24px 0; border-bottom: none;">
+                    <h3 style="color: var(--text-primary); margin: 0; font-size: 18px; font-weight: 600;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 8px;">
+                            <path d="M9 12l2 2 4-4"/>
+                            <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+                        </svg>
+                        Data Quality Score: ${dataQuality}%
+                    </h3>
+                    <button onclick="closeDataQualityModal()" class="modal-close" style="position: absolute; top: 16px; right: 20px; background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6L6 18"/>
+                            <path d="M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body" style="padding: 16px 24px 24px;">
+                    <p style="color: var(--text-secondary); margin: 0 0 16px; line-height: 1.5;">
+                        Data Quality measures how reliable our projections are based on three factors:
+                    </p>
+                    <div style="space-y: 12px;">
+                        <div style="display: flex; align-items: start; gap: 12px; margin-bottom: 12px;">
+                            <div style="background: var(--accent-primary); border-radius: 4px; padding: 2px 6px; font-size: 11px; color: white; font-weight: 500; min-width: 35px; text-align: center;">50%</div>
+                            <div>
+                                <div style="color: var(--text-primary); font-weight: 500; margin-bottom: 2px;">Recency</div>
+                                <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.4;">How recently was data last updated. Loses 10 points per day since last update.</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: start; gap: 12px; margin-bottom: 12px;">
+                            <div style="background: var(--accent-green); border-radius: 4px; padding: 2px 6px; font-size: 11px; color: white; font-weight: 500; min-width: 35px; text-align: center;">30%</div>
+                            <div>
+                                <div style="color: var(--text-primary); font-weight: 500; margin-bottom: 2px;">Consistency</div>
+                                <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.4;">How stable the trend is. Lower variance in recent data points = higher score.</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: start; gap: 12px;">
+                            <div style="background: var(--accent-blue); border-radius: 4px; padding: 2px 6px; font-size: 11px; color: white; font-weight: 500; min-width: 35px; text-align: center;">20%</div>
+                            <div>
+                                <div style="color: var(--text-primary); font-weight: 500; margin-bottom: 2px;">Completeness</div>
+                                <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.4;">Number of data points available. Full score at 10+ historical data points.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px; padding: 12px; background: var(--surface-secondary); border-radius: 8px; border-left: 3px solid var(--accent-primary);">
+                        <div style="color: var(--text-primary); font-weight: 500; font-size: 13px; margin-bottom: 4px;">Quality Ranges:</div>
+                        <div style="color: var(--text-secondary); font-size: 12px; line-height: 1.3;">
+                            <strong>90-100%:</strong> Excellent - Very reliable projections<br>
+                            <strong>70-89%:</strong> Good - Reasonably reliable<br>
+                            <strong>50-69%:</strong> Fair - Use with caution<br>
+                            <strong>Below 50%:</strong> Poor - Projections may be inaccurate
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Add click outside to close
+        modal.addEventListener('click', function(e) {
+            if (e.target.id === 'data-quality-modal') {
+                closeDataQualityModal();
+            }
+        });
+    }
+    
+    // Show modal
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+// Function to close Data Quality modal
+function closeDataQualityModal() {
+    const modal = document.getElementById('data-quality-modal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+    }
 }
 
 // Fixed openKPIDetailModal function that handles errors gracefully
