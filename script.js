@@ -7152,6 +7152,8 @@ function showKpiChart(kpi, chartData) {
     id: 'annotationLine',
     afterDraw(chart, args, opts) {
         const target = parseFloat(kpi.targetValue);
+console.log('Plugin sees target:', target, 'type:', typeof target, 'original:', kpi.targetValue);
+        
         if (!target) return;
         
         const { ctx, chartArea, scales: { y } } = chart;
