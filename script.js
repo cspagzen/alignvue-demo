@@ -7163,7 +7163,7 @@ function showKpiChart(kpi, chartData) {
                 const yPx = y.getPixelForValue(target);
                 
                 ctx.save();
-                ctx.strokeStyle = '#8b5cf6';
+                ctx.strokeStyle = '#10b981'; // Green from your palette
                 ctx.setLineDash([5, 5]);
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -7171,7 +7171,7 @@ function showKpiChart(kpi, chartData) {
                 ctx.lineTo(chartArea.right, yPx);
                 ctx.stroke();
                 ctx.setLineDash([]);
-                ctx.fillStyle = '#8b5cf6';
+                ctx.fillStyle = '#10b981';
                 ctx.font = '11px sans-serif';
                 ctx.fillText(`Target (${format(target)})`, chartArea.right - 110, yPx - 6);
                 ctx.restore();
