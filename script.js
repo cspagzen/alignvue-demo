@@ -7643,8 +7643,8 @@ function showKpiChart(kpi, chartData) {
                     backgroundColor: gradient,
                     tension: 0.4,
                     fill: true,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
                     pointBackgroundColor: lineColor,
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
@@ -7685,11 +7685,6 @@ function showKpiChart(kpi, chartData) {
                             },
                             label: (ctx) => `Value: ${format(ctx.parsed.y)}`
                         }
-                    },
-                    // Fix target line plugin reference
-                    targetLine: { 
-                        target: (kpi && typeof kpi.targetValue === 'number') ? parseFloat(kpi.targetValue) : null, 
-                        format 
                     }
                 },
                 scales: {
@@ -7700,7 +7695,7 @@ function showKpiChart(kpi, chartData) {
                         },
                         ticks: { 
                             autoSkip: true, 
-                            maxTicksLimit: 6,
+                            maxTicksLimit: Math.min(labels.length, 8),
                             color: 'rgba(255, 255, 255, 0.6)',
                             font: {
                                 size: 11
@@ -7732,7 +7727,11 @@ function showKpiChart(kpi, chartData) {
             plugins: [targetLinePlugin]
         });
 
-        console.log('Chart created successfully');
+        console.log('Chart created successfully with target line plugin');
+
+        // DEBUG: Log the target value and plugin
+        console.log('Target value for line:', kpi.targetValue);
+        console.log('Target line plugin attached:', targetLinePlugin);
 
     } catch (error) {
         console.error('Error creating chart:', error);
