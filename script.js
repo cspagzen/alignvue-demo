@@ -7995,6 +7995,9 @@ function decrementKPIValue() {
     initFilterDrawers();
     initAccordions();
     initSidebarTooltips();
+    initializeSyncOverlay();
+    removeFloatingManualSyncButton();
+    setTimeout(addSyncButtonAnimation, 100);
     //initKeyboardNavigation();
     // Initialize essential keyboard handling
     initEssentialKeyboard();
@@ -8679,6 +8682,13 @@ setTimeout(() => {
                 }
                 return;
             }
+            
+            if (this.dataset.action === 'manual-sync') {
+    console.log('Manual sync triggered from sidebar');
+    closeSidebar();
+    triggerManualSync();
+    return;
+}
             
             // Handle filter drawer actions - now with navigation and sidebar collapse
 if (this.dataset.action === 'open-portfolio-filter') {
@@ -9490,75 +9500,295 @@ function initSmartSync() {
     // Setup pause handlers
     setupSyncPauseHandlers();
     
-    // Add manual sync button
-    addManualSyncButton();
+    
 }
 
-function addManualSyncButton() {
-    // Remove any existing manual sync button
-    const existingButton = document.getElementById('manual-sync-btn');
-    if (existingButton) existingButton.remove();
-    
-    const syncButton = document.createElement('button');
-    syncButton.id = 'manual-sync-btn';
-    syncButton.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-            <path d="M21 3v5h-5"/>
-            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-            <path d="M3 21v-5h5"/>
-        </svg>
-        Sync
-    `;
-    
-    syncButton.style.cssText = `
-        position: fixed; top: 50px; right: 10px;
-        background: var(--accent-blue); color: white; border: none;
-        padding: 8px 12px; border-radius: 4px; cursor: pointer;
-        display: flex; align-items: center; gap: 6px;
-        font-size: 12px; font-weight: 500; z-index: 1000;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        opacity: 0.7; transition: opacity 0.2s;
-    `;
-    
-    syncButton.addEventListener('mouseenter', () => syncButton.style.opacity = '1');
-    syncButton.addEventListener('mouseleave', () => syncButton.style.opacity = '0.7');
-    syncButton.addEventListener('click', () => {
-        console.log('Manual sync triggered');
-        syncWithJira();
-    });
-    
-    document.body.appendChild(syncButton);
-}
+
 
 // Enhanced sync function with change detection
 async function syncWithJira() {
     if (syncState.isPaused) return;
     
     try {
-        showSyncIndicator('syncing');
-        
-        // Get current data from Jira
-        const newData = await fetchJiraData();
-        
-        // Check if data actually changed
-        if (hasDataChanged(newData)) {
-            updateBoardWithLiveData(newData);
-            syncState.lastSyncData = newData;
-            syncState.lastSyncTime = Date.now();
+        await syncOverlay.syncWithProgress(async () => {
+            console.log('=== ENHANCED SYNC WITH JIRA ===');
             
-            showSyncIndicator('success');
-        } else {
-            showSyncIndicator('no-change');
-        }
+            // Your existing sync logic
+            const newData = await fetchJiraData();
+            
+            // Check if data actually changed
+            if (hasDataChanged(newData)) {
+                console.log('Data has changed, updating board...');
+                updateBoardWithLiveData(newData);
+                syncState.lastSyncData = newData;
+                syncState.lastSyncTime = Date.now();
+                return { updated: true };
+            } else {
+                console.log('No data changes detected');
+                return { updated: false };
+            }
+        }, {
+            title: 'Syncing with Jira',
+            subtitle: 'Updating initiative data...',
+            successTitle: 'Dashboard Updated',
+            successSubtitle: 'All data is current',
+            errorTitle: 'Sync Failed',
+            errorSubtitle: 'Could not connect to Jira'
+        });
         
         // Process any pending updates to Jira
         await processPendingUpdates();
         
     } catch (error) {
         console.error('Smart sync failed:', error);
-        showSyncIndicator('error');
+        // Error handling is already done by syncWithProgress
     }
+}
+
+// Full-Screen Sync Overlay System
+class SyncOverlay {
+    constructor() {
+        this.overlay = document.getElementById('syncOverlay');
+        this.icon = document.getElementById('syncIcon');
+        this.title = document.getElementById('syncTitle');
+        this.subtitle = document.getElementById('syncSubtitle');
+        this.isActive = false;
+    }
+
+    show(options = {}) {
+        const {
+            title = 'Syncing with Jira',
+            subtitle = 'Updating initiative data...',
+            showProgress = true
+        } = options;
+
+        this.title.textContent = title;
+        this.subtitle.textContent = subtitle;
+        
+        // Reset to loading state
+        this.icon.innerHTML = `
+            <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+            </svg>
+        `;
+        this.icon.className = 'sync-icon';
+
+        this.overlay.classList.add('active');
+        this.isActive = true;
+        
+        console.log('🔄 Sync overlay shown:', title);
+    }
+
+    showSuccess(options = {}) {
+        const {
+            title = 'Updated Successfully',
+            subtitle = 'All data is now current',
+            duration = 1500
+        } = options;
+
+        this.title.textContent = title;
+        this.subtitle.textContent = subtitle;
+        
+        // Show success checkmark
+        this.icon.innerHTML = `
+            <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" class="checkmark-circle"/>
+                <path d="m9 12 2 2 4-4"/>
+            </svg>
+        `;
+        this.icon.className = 'sync-icon success';
+
+        console.log('✅ Sync overlay success:', title);
+
+        // Auto-hide after duration
+        setTimeout(() => {
+            this.hide();
+        }, duration);
+    }
+
+    showError(options = {}) {
+        const {
+            title = 'Sync Failed',
+            subtitle = 'Please try again',
+            duration = 2000
+        } = options;
+
+        this.title.textContent = title;
+        this.subtitle.textContent = subtitle;
+        
+        // Show error X icon
+        this.icon.innerHTML = `
+            <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="m15 9-6 6"/>
+                <path d="m9 9 6 6"/>
+            </svg>
+        `;
+        this.icon.className = 'sync-icon';
+        this.icon.style.color = '#ef4444';
+
+        console.log('❌ Sync overlay error:', title);
+
+        // Auto-hide after duration
+        setTimeout(() => {
+            this.hide();
+        }, duration);
+    }
+
+    hide() {
+        this.overlay.classList.remove('active');
+        this.isActive = false;
+        
+        // Reset icon color in case it was changed for error state
+        this.icon.style.color = '';
+        
+        console.log('👁️ Sync overlay hidden');
+    }
+
+    // Method to integrate with your existing sync system
+    async syncWithProgress(syncFunction, options = {}) {
+        try {
+            this.show(options);
+            
+            // Execute the actual sync function
+            const result = await syncFunction();
+            
+            // Show success state
+            this.showSuccess({
+                title: options.successTitle || 'Updated Successfully',
+                subtitle: options.successSubtitle || 'All data is now current',
+                duration: options.successDuration || 1500
+            });
+            
+            return result;
+        } catch (error) {
+            console.error('Sync failed:', error);
+            
+            // Show error state
+            this.showError({
+                title: options.errorTitle || 'Sync Failed',
+                subtitle: options.errorSubtitle || 'Please try again',
+                duration: options.errorDuration || 2000
+            });
+            
+            throw error;
+        }
+    }
+}
+
+// Initialize the sync overlay system
+let syncOverlay;
+
+function initializeSyncOverlay() {
+    syncOverlay = new SyncOverlay();
+    console.log('🚀 Full-screen sync overlay system initialized');
+}
+
+// NEW function for manual sync from sidebar
+async function triggerManualSync() {
+    try {
+        await syncOverlay.syncWithProgress(async () => {
+            console.log('=== MANUAL SYNC TRIGGERED FROM SIDEBAR ===');
+            
+            // Force a fresh sync regardless of pause state
+            const previousPauseState = syncState.isPaused;
+            syncState.isPaused = false;
+            
+            const newData = await fetchJiraData();
+            updateBoardWithLiveData(newData);
+            syncState.lastSyncData = newData;
+            syncState.lastSyncTime = Date.now();
+            
+            // Restore previous pause state
+            syncState.isPaused = previousPauseState;
+            
+            return { synced: true };
+        }, {
+            title: 'Manual Sync',
+            subtitle: 'Refreshing all data...',
+            successTitle: 'Sync Complete',
+            successSubtitle: 'Data refreshed successfully',
+            errorTitle: 'Manual Sync Failed',
+            errorSubtitle: 'Please check your connection'
+        });
+        
+        // Process any pending updates to Jira
+        await processPendingUpdates();
+        
+    } catch (error) {
+        console.error('Manual sync from sidebar failed:', error);
+    }
+}
+
+// NEW function for initial app load with overlay
+async function syncWithJiraOnLoad() {
+    try {
+        await syncOverlay.syncWithProgress(async () => {
+            console.log('=== INITIAL LOAD SYNC ===');
+            
+            // Your existing initial load logic
+            const initialData = await fetchJiraData();
+            updateBoardWithLiveData(initialData);
+            syncState.lastSyncData = initialData;
+            syncState.lastSyncTime = Date.now();
+            
+            return { loaded: true };
+        }, {
+            title: 'Loading Dashboard',
+            subtitle: 'Fetching data from Jira...',
+            successTitle: 'Dashboard Ready',
+            successSubtitle: 'Welcome to your strategic dashboard',
+            errorTitle: 'Load Failed',
+            errorSubtitle: 'Could not load dashboard data'
+        });
+        
+    } catch (error) {
+        console.error('Initial load failed:', error);
+        // Fallback to cached data or show error message
+    }
+}
+
+// Function to remove old floating manual sync button
+function removeFloatingManualSyncButton() {
+    const existingButton = document.getElementById('manual-sync-btn');
+    if (existingButton) {
+        existingButton.remove();
+        console.log('Removed floating manual sync button');
+    }
+}
+
+// Function to add sync button animation
+function addSyncButtonAnimation() {
+    const syncButton = document.getElementById('sidebar-sync-btn');
+    if (!syncButton) return;
+    
+    const syncIcon = syncButton.querySelector('.sidebar-nav-icon');
+    if (!syncIcon) return;
+    
+    // Store original syncWithProgress method
+    const originalSyncWithProgress = syncOverlay.syncWithProgress;
+    
+    // Override to add animation
+    syncOverlay.syncWithProgress = async function(syncFunction, options = {}) {
+        try {
+            // Add spinning animation
+            syncIcon.style.animation = 'spin 2s linear infinite';
+            syncButton.style.opacity = '0.7';
+            
+            const result = await originalSyncWithProgress.call(this, syncFunction, options);
+            
+            // Remove animation on success
+            syncIcon.style.animation = '';
+            syncButton.style.opacity = '';
+            
+            return result;
+        } catch (error) {
+            // Remove animation on error
+            syncIcon.style.animation = '';
+            syncButton.style.opacity = '';
+            throw error;
+        }
+    };
 }
 
 // Detect if data has actually changed
