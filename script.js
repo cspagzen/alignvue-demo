@@ -7971,7 +7971,7 @@ function decrementKPIValue() {
     input.value = Math.max(0, currentValue - step);
 }
        
-    async function init() {
+async function init() {
     // Cache frequently accessed DOM elements
     const detailModal = document.getElementById('detail-modal');
     
@@ -7995,12 +7995,12 @@ function decrementKPIValue() {
     initAccordions();
     initSidebarTooltips();
     
-    // AWAIT the sync overlay initialization
+    // INITIALIZE SYNC OVERLAY FIRST (before any sync calls)
     await initializeSyncOverlay();
     removeFloatingManualSyncButton();
     setTimeout(addSyncButtonAnimation, 100);
-    //initKeyboardNavigation();
-    // Initialize essential keyboard handling
+    // NOW initialize smart sync (which will call syncWithJiraOnLoad)
+    initSmartSync();
     initEssentialKeyboard();
 
     document.addEventListener('click', function(e) {
