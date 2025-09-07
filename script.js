@@ -6987,7 +6987,6 @@ function createFallbackChartData(kpi) {
     return chartData;
 }
 
-// Updated Chart.js implementation with better gradient
 function showKpiChart(kpi, chartData) {
     const container = document.getElementById('kpiModalBody');
     if (!container) {
@@ -7027,31 +7026,14 @@ function showKpiChart(kpi, chartData) {
         window._kpiChart = null;
     }
 
-    // Determine color based on KPI or use accent primary
-    const lineColor = (kpi && kpi.color) || 'var(--accent-primary)';
-    
     // Create gradient that matches your color palette
     const ctx = canvas.getContext('2d');
     const gradient = ctx.createLinearGradient(0, 0, 0, 200);
     
-    // Use CSS variables from your color palette for the gradient
-    if (lineColor.includes('var(--accent-primary)') || lineColor === '#8b5cf6') {
-        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-        gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
-        gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
-    } else if (lineColor.includes('var(--accent-green)') || lineColor === '#10b981') {
-        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
-        gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.2)');
-        gradient.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
-    } else if (lineColor.includes('var(--accent-blue)') || lineColor === '#3b82f6') {
-        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
-        gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.2)');
-        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
-    } else {
-        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-        gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
-        gradient.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
-    }
+    // Use teal gradient for bright, eye-catching appeal
+    gradient.addColorStop(0, 'rgba(20, 184, 166, 0.4)');
+    gradient.addColorStop(0.5, 'rgba(20, 184, 166, 0.2)');
+    gradient.addColorStop(1, 'rgba(20, 184, 166, 0.05)');
 
     // Calculate Y-axis range to include target
     const target = parseFloat(kpi.targetValue) || 0;
@@ -7069,16 +7051,16 @@ function showKpiChart(kpi, chartData) {
             datasets: [{
                 label: (kpi && kpi.title) || 'KPI',
                 data: values,
-                borderColor: lineColor,
+                borderColor: '#14b8a6',  // Teal line
                 backgroundColor: gradient,
                 tension: 0.4,
                 fill: true,
                 pointRadius: 4,
                 pointHoverRadius: 6,
-                pointBackgroundColor: lineColor,
+                pointBackgroundColor: '#f59e0b',  // Orange data points
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 2,
-                pointHoverBackgroundColor: lineColor,
+                pointHoverBackgroundColor: '#f59e0b',
                 pointHoverBorderColor: '#ffffff',
                 pointHoverBorderWidth: 3
             }]
@@ -7163,7 +7145,7 @@ function showKpiChart(kpi, chartData) {
                 const yPx = y.getPixelForValue(target);
                 
                 ctx.save();
-                ctx.strokeStyle = '#10b981'; // Green from your palette
+                ctx.strokeStyle = '#10b981'; // Green target line
                 ctx.setLineDash([5, 5]);
                 ctx.lineWidth = 2;
                 ctx.beginPath();
