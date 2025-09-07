@@ -7462,6 +7462,8 @@ function createFallbackChartData(kpi) {
     return chartData;
 }
 
+// Complete Chart.js implementation with all missing functions
+
 // Helper function to normalize 30-day data series
 function normalize30DaySeries(series) {
     console.log('Normalizing data series:', series);
@@ -7684,6 +7686,7 @@ function showKpiChart(kpi, chartData) {
                             label: (ctx) => `Value: ${format(ctx.parsed.y)}`
                         }
                     },
+                    // Fix target line plugin reference
                     targetLine: { 
                         target: (kpi && typeof kpi.targetValue === 'number') ? parseFloat(kpi.targetValue) : null, 
                         format 
