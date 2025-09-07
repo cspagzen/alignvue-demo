@@ -6441,7 +6441,6 @@ async function saveKPIValue() {
         return;
     }
     
-    // Use the stored KPI object directly - no need to search!
     const kpi = currentEditingKPI;
     if (!kpi) {
         alert('No KPI data available. Please close and reopen the modal.');
@@ -6449,16 +6448,21 @@ async function saveKPIValue() {
     }
     
     console.log(`Updating Key Result ${kpi.key} with new value: ${currentValue}`);
+    console.log('KPI object:', kpi);
     
-    // Show loading state
     const saveButton = document.querySelector('#kpi-edit-modal button[onclick="saveKPIValue()"]');
     const originalText = saveButton.textContent;
     saveButton.textContent = 'Updating...';
     saveButton.disabled = true;
     
     try {
-        // 1. Update the Key Result issue with new Current Value and Change Date
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        const today = new Date().toISOString().split('T')[0];
+        
+        // First, just try updating the Key Result (skip Value History for now)
+        console.log('Updating Key Result with payload:', {
+            "customfield_10048": parseFloat(currentValue),
+            "customfield_10159": today
+        });
         
         const updateResponse = await fetch('/api/jira', {
             method: 'POST',
@@ -6468,68 +6472,43 @@ async function saveKPIValue() {
                 method: 'PUT',
                 body: {
                     fields: {
-                        "customfield_10048": parseFloat(currentValue),  // Current Value (number)
-                        "customfield_10159": today                      // Change Date (YYYY-MM-DD)
+                        "customfield_10048": parseFloat(currentValue),
+                        "customfield_10159": today
                     }
                 }
             })
         });
         
         if (!updateResponse.ok) {
-            const errorData = await updateResponse.json();
-            throw new Error(`Failed to update Key Result: ${errorData.message || 'Unknown error'}`);
+            const errorText = await updateResponse.text();
+            console.error('Update failed. Response:', errorText);
+            let errorData;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch {
+                errorData = { message: errorText };
+            }
+            throw new Error(`Failed to update Key Result: ${errorData.errorMessages ? errorData.errorMessages.join(', ') : errorData.message || 'Unknown error'}`);
         }
         
         console.log('✅ Key Result updated successfully');
         
-        // 2. Create a new Value History record for audit trail
-        try {
-            const valueHistoryResponse = await fetch('/api/jira', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    endpoint: '/rest/api/3/issue',
-                    method: 'POST',
-                    body: {
-                        fields: {
-                            project: { key: "OKRs" },
-                            issuetype: { name: "Value History" },
-                            summary: `${kpi.title} updated to ${currentValue}${kpi.unit || ''}`,
-                            "customfield_10162": kpi.key,              // Parent OKR (link to Key Result)
-                            "customfield_10158": parseFloat(currentValue), // New Value (number)
-                            "customfield_10159": today                     // Change Date (YYYY-MM-DD)
-                        }
-                    }
-                })
-            });
-            
-            if (valueHistoryResponse.ok) {
-                console.log('✅ Value History record created');
-            } else {
-                console.warn('⚠️ Key Result updated but Value History creation failed');
-            }
-        } catch (historyError) {
-            console.warn('⚠️ Value History creation failed:', historyError);
-            // Don't fail the whole operation if history creation fails
-        }
-        
-        // 3. Update local data and refresh UI
+        // Update local data
         updateLocalKPIData(kpi, currentValue, today);
         
-        // 4. Refresh the progress card and any open modals
-        await refreshKPIDisplays();
-        
-        // 5. Close the modal and show success
+        // Close modal and show success
         closeKPIEditModal();
+        alert(`✅ ${kpi.title} updated to ${currentValue}${kpi.unit || ''}`);
         
-        // Show success message with more detail
-        alert(`✅ ${kpi.title} updated to ${currentValue}${kpi.unit || ''} and synced to Jira`);
+        // Refresh displays
+        if (typeof updateProgressCard === 'function') {
+            updateProgressCard();
+        }
         
     } catch (error) {
         console.error('Error updating KPI value:', error);
         alert(`❌ Failed to update ${kpi.title}: ${error.message}`);
         
-        // Restore button state
         saveButton.textContent = originalText;
         saveButton.disabled = false;
     }
