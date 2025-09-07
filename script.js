@@ -6398,30 +6398,29 @@ setTimeout(() => {
       
 let currentEditingKPI = null;
 
-function openKPIEditModal(kpiName, currentValue, targetValue) {
-    currentEditingKPI = kpiName;
+function openKPIEditModal(kpiObject) {
+    // Store the complete KPI object, not just the title
+    currentEditingKPI = kpiObject;
     
     const modal = document.getElementById('kpi-edit-modal');
     const nameDisplay = document.getElementById('kpi-name-display');
     const description = document.getElementById('kpi-description');
     const targetDisplay = document.getElementById('kpi-target-display');
     const currentInput = document.getElementById('kpi-current-value');
-    const unitDisplay = document.getElementById('kpi-unit');
     
-    // Set the content
-    nameDisplay.textContent = kpiName;
-    targetDisplay.textContent = targetValue;
-    currentInput.value = parseFloat(currentValue.toString().replace(/[^\d.]/g, ''));
+    // Set the content using the KPI object
+    nameDisplay.textContent = kpiObject.title;
+    targetDisplay.textContent = kpiObject.targetValue + (kpiObject.unit || '');
+    currentInput.value = parseFloat(kpiObject.currentValue.toString().replace(/[^\d.-]/g, ''));
     
     // Set descriptions based on KPI type
     const descriptions = {
         "Monthly Active Users": "Percentage increase in monthly active users compared to baseline",
-        "System Uptime": "Overall system availability percentage across all services",
+        "System Uptime": "Overall system availability percentage across all services", 
         "Strategic Capabilities": "Number of new strategic product capabilities launched"
     };
     
-    description.textContent = descriptions[kpiName] || "Key performance indicator for organizational success";
-    
+    description.textContent = descriptions[kpiObject.title] || "Key performance indicator for organizational success";
     
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
@@ -6433,14 +6432,7 @@ function openKPIEditModal(kpiName, currentValue, targetValue) {
     }, 100);
 }
 
-function closeKPIEditModal() {
-    const modal = document.getElementById('kpi-edit-modal');
-    modal.classList.remove('show');
-    modal.setAttribute('aria-hidden', 'true');
-    currentEditingKPI = null;
-}
-
-// Updated saveKPIValue function to update live Jira data
+// 2. UPDATE: Replace your saveKPIValue function with this:
 async function saveKPIValue() {
     const currentValue = parseFloat(document.getElementById('kpi-current-value').value);
     
@@ -6449,6 +6441,15 @@ async function saveKPIValue() {
         return;
     }
     
+    // Use the stored KPI object directly - no need to search!
+    const kpi = currentEditingKPI;
+    if (!kpi) {
+        alert('No KPI data available. Please close and reopen the modal.');
+        return;
+    }
+    
+    console.log(`Updating Key Result ${kpi.key} with new value: ${currentValue}`);
+    
     // Show loading state
     const saveButton = document.querySelector('#kpi-edit-modal button[onclick="saveKPIValue()"]');
     const originalText = saveButton.textContent;
@@ -6456,14 +6457,6 @@ async function saveKPIValue() {
     saveButton.disabled = true;
     
     try {
-        // Find the KPI/Key Result we're updating
-        const kpi = findKPIByTitle(currentEditingKPI);
-        if (!kpi || !kpi.key) {
-            throw new Error('Could not find KPI data for updating');
-        }
-        
-        console.log(`Updating Key Result ${kpi.key} with new value: ${currentValue}`);
-        
         // 1. Update the Key Result issue with new Current Value and Change Date
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
         
@@ -6475,8 +6468,8 @@ async function saveKPIValue() {
                 method: 'PUT',
                 body: {
                     fields: {
-                        "customfield_10048": currentValue,      // Current Value
-                        "customfield_10159": today               // Change Date
+                        "customfield_10048": parseFloat(currentValue),  // Current Value (number)
+                        "customfield_10159": today                      // Change Date (YYYY-MM-DD)
                     }
                 }
             })
@@ -6521,7 +6514,7 @@ async function saveKPIValue() {
         }
         
         // 3. Update local data and refresh UI
-        updateLocalKPIData(currentEditingKPI, currentValue, today);
+        updateLocalKPIData(kpi, currentValue, today);
         
         // 4. Refresh the progress card and any open modals
         await refreshKPIDisplays();
@@ -6530,11 +6523,11 @@ async function saveKPIValue() {
         closeKPIEditModal();
         
         // Show success message with more detail
-        alert(`✅ ${currentEditingKPI} updated to ${currentValue}${kpi.unit || ''} and synced to Jira`);
+        alert(`✅ ${kpi.title} updated to ${currentValue}${kpi.unit || ''} and synced to Jira`);
         
     } catch (error) {
         console.error('Error updating KPI value:', error);
-        alert(`❌ Failed to update ${currentEditingKPI}: ${error.message}`);
+        alert(`❌ Failed to update ${kpi.title}: ${error.message}`);
         
         // Restore button state
         saveButton.textContent = originalText;
@@ -6542,51 +6535,132 @@ async function saveKPIValue() {
     }
 }
 
-// Helper function to find KPI data by title
-function findKPIByTitle(title) {
-    // Look in the current KPI data structure
-    const kpis = [
-        { 
-            title: "Monthly Active Users", 
-            key: "OKR-123", // Replace with actual Jira key
-            unit: "%",
-            currentValue: "35"
-        },
-        { 
-            title: "System Uptime", 
-            key: "OKR-124", // Replace with actual Jira key
-            unit: "%",
-            currentValue: "93.1"
-        },
-        { 
-            title: "Strategic Capabilities", 
-            key: "OKR-125", // Replace with actual Jira key
-            unit: "",
-            currentValue: "1"
-        }
-    ];
-    
-    return kpis.find(kpi => kpi.title === title);
+function closeKPIEditModal() {
+    const modal = document.getElementById('kpi-edit-modal');
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    currentEditingKPI = null;
 }
 
-// Helper function to update local KPI data
-function updateLocalKPIData(kpiTitle, newValue, changeDate) {
+// Updated saveKPIValue function to update live Jira data
+async function saveKPIValue() {
+    const currentValue = parseFloat(document.getElementById('kpi-current-value').value);
+    
+    if (isNaN(currentValue)) {
+        alert('Please enter a valid number for the current value.');
+        return;
+    }
+    
+    // Use the stored KPI object directly - no need to search!
+    const kpi = currentEditingKPI;
+    if (!kpi) {
+        alert('No KPI data available. Please close and reopen the modal.');
+        return;
+    }
+    
+    console.log(`Updating Key Result ${kpi.key} with new value: ${currentValue}`);
+    
+    // Show loading state
+    const saveButton = document.querySelector('#kpi-edit-modal button[onclick="saveKPIValue()"]');
+    const originalText = saveButton.textContent;
+    saveButton.textContent = 'Updating...';
+    saveButton.disabled = true;
+    
+    try {
+        // 1. Update the Key Result issue with new Current Value and Change Date
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        
+        const updateResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: `/rest/api/3/issue/${kpi.key}`,
+                method: 'PUT',
+                body: {
+                    fields: {
+                        "customfield_10048": parseFloat(currentValue),  // Current Value (number)
+                        "customfield_10159": today                      // Change Date (YYYY-MM-DD)
+                    }
+                }
+            })
+        });
+        
+        if (!updateResponse.ok) {
+            const errorData = await updateResponse.json();
+            throw new Error(`Failed to update Key Result: ${errorData.message || 'Unknown error'}`);
+        }
+        
+        console.log('✅ Key Result updated successfully');
+        
+        // 2. Create a new Value History record for audit trail
+        try {
+            const valueHistoryResponse = await fetch('/api/jira', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endpoint: '/rest/api/3/issue',
+                    method: 'POST',
+                    body: {
+                        fields: {
+                            project: { key: "OKRs" },
+                            issuetype: { name: "Value History" },
+                            summary: `${kpi.title} updated to ${currentValue}${kpi.unit || ''}`,
+                            "customfield_10162": kpi.key,              // Parent OKR (link to Key Result)
+                            "customfield_10158": parseFloat(currentValue), // New Value (number)
+                            "customfield_10159": today                     // Change Date (YYYY-MM-DD)
+                        }
+                    }
+                })
+            });
+            
+            if (valueHistoryResponse.ok) {
+                console.log('✅ Value History record created');
+            } else {
+                console.warn('⚠️ Key Result updated but Value History creation failed');
+            }
+        } catch (historyError) {
+            console.warn('⚠️ Value History creation failed:', historyError);
+            // Don't fail the whole operation if history creation fails
+        }
+        
+        // 3. Update local data and refresh UI
+        updateLocalKPIData(kpi, currentValue, today);
+        
+        // 4. Refresh the progress card and any open modals
+        await refreshKPIDisplays();
+        
+        // 5. Close the modal and show success
+        closeKPIEditModal();
+        
+        // Show success message with more detail
+        alert(`✅ ${kpi.title} updated to ${currentValue}${kpi.unit || ''} and synced to Jira`);
+        
+    } catch (error) {
+        console.error('Error updating KPI value:', error);
+        alert(`❌ Failed to update ${kpi.title}: ${error.message}`);
+        
+        // Restore button state
+        saveButton.textContent = originalText;
+        saveButton.disabled = false;
+    }
+}
+
+function updateLocalKPIData(kpiObject, newValue, changeDate) {
     // Update the local boardData if it exists
     if (window.boardData && window.boardData.okrs && window.boardData.okrs.issues) {
-        const kpiIssue = window.boardData.okrs.issues.find(issue => {
-            const summary = issue.fields.summary || '';
-            return summary.includes(kpiTitle) || summary === kpiTitle;
-        });
+        const kpiIssue = window.boardData.okrs.issues.find(issue => issue.key === kpiObject.key);
         
         if (kpiIssue) {
             kpiIssue.fields.customfield_10048 = newValue;
             kpiIssue.fields.customfield_10159 = changeDate;
-            console.log(`Updated local data for ${kpiTitle}`);
+            console.log(`Updated local data for ${kpiObject.title} (${kpiObject.key})`);
         }
     }
+    
+    // Also update the KPI object itself
+    kpiObject.currentValue = newValue.toString();
 }
 
-// Helper function to refresh KPI displays after update
 async function refreshKPIDisplays() {
     try {
         // Refresh the progress card
@@ -6598,19 +6672,15 @@ async function refreshKPIDisplays() {
         const kpiDetailModal = document.getElementById('kpi-detail-modal');
         if (kpiDetailModal && kpiDetailModal.classList.contains('show')) {
             // Close and reopen with fresh data
-            const kpiTitle = document.getElementById('kpi-detail-modal-title').textContent;
+            const currentKPI = currentEditingKPI; // The KPI object we just updated
             closeKPIDetailModal();
             
             // Wait a moment then reopen with fresh data
             setTimeout(async () => {
                 try {
-                    // Fetch fresh data
-                    const { keyResults, valueHistory } = await fetchKeyResultsData();
-                    
-                    // Find the updated KPI
-                    const updatedKPI = findKPIByTitle(kpiTitle);
-                    if (updatedKPI) {
-                        openKPIDetailModal(updatedKPI);
+                    // Use the updated KPI object directly
+                    if (currentKPI) {
+                        openKPIDetailModal(currentKPI);
                     }
                 } catch (error) {
                     console.error('Error refreshing KPI modal:', error);
@@ -6623,30 +6693,7 @@ async function refreshKPIDisplays() {
     }
 }
 
-// Enhanced version that also handles offline/error scenarios
-async function saveKPIValueWithFallback() {
-    const currentValue = parseFloat(document.getElementById('kpi-current-value').value);
-    
-    if (isNaN(currentValue)) {
-        alert('Please enter a valid number for the current value.');
-        return;
-    }
-    
-    // Check if we're in demo mode or have live Jira connection
-    const isLiveMode = window.boardData && window.boardData.jiraConnected;
-    
-    if (isLiveMode) {
-        // Use the full Jira integration
-        await saveKPIValue();
-    } else {
-        // Demo mode - just update local display
-        const today = new Date().toISOString().split('T')[0];
-        updateLocalKPIData(currentEditingKPI, currentValue, today);
-        updateProgressCard();
-        closeKPIEditModal();
-        alert(`📊 ${currentEditingKPI} updated to ${currentValue} (Demo mode - not saved to Jira)`);
-    }
-}
+
       
   let currentKPIDetail = null;
       
