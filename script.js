@@ -10363,4 +10363,15 @@ function showSyncIndicator(type) {
     } catch (error) {
         console.error('❌ Application initialization failed:', error);
     }
+            
+            // Add this anywhere in your script.js - outside of any function
+const mendozaTextFixer = setInterval(() => {
+    const centerElement = document.getElementById('mendoza-efficiency-score');
+    if (centerElement && centerElement.textContent === '50%') {
+        const correctMetrics = calculateResourceAllocation();
+        centerElement.textContent = correctMetrics.efficiencyScore + '%';
+        console.log('Nuclear override: Fixed 50% to', correctMetrics.efficiencyScore + '%');
+    }
+}, 100);
+            
 })();
