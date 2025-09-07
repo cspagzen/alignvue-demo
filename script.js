@@ -5022,12 +5022,21 @@ function initializeMendozaChart(metrics) {
         }
     });
     // ADD THIS PART - Force center text to match calculation
-    setTimeout(() => {
-        const centerElement = document.getElementById('mendoza-efficiency-score');
-        if (centerElement) {
-            centerElement.textContent = metrics.efficiencyScore + '%';
-        }
-    }, 100);
+    // Force center text to match calculation - multiple attempts
+const forceCorrectText = () => {
+    const centerElement = document.getElementById('mendoza-efficiency-score');
+    if (centerElement && centerElement.textContent !== metrics.efficiencyScore + '%') {
+        centerElement.textContent = metrics.efficiencyScore + '%';
+        console.log('Fixed center text to', metrics.efficiencyScore + '%');
+    }
+};
+
+// Try immediately and then keep trying
+forceCorrectText();
+setTimeout(forceCorrectText, 50);
+setTimeout(forceCorrectText, 200);
+setTimeout(forceCorrectText, 500);
+setTimeout(forceCorrectText, 1000);
 }
 
 
