@@ -10364,6 +10364,7 @@ function showSyncIndicator(type) {
         console.error('❌ Application initialization failed:', error);
     }
             
+           //DELETE ME
             // Add this anywhere in your script.js - outside of any function
 const mendozaTextFixer = setInterval(() => {
     const centerElement = document.getElementById('mendoza-efficiency-score');
