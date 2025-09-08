@@ -2546,7 +2546,7 @@ function generateRecommendations(breakdown, metrics) {
 }
 
 function createModalActivityChart(breakdown) {
-    console.log('=== CREATING ACTIVITY CHART WITH LIVE DATA ===');
+    console.log('=== CREATING ACTIVITY CHART WITH FIXED COLORS AND DEDUPLICATION ===');
     console.log('Breakdown received:', breakdown);
     
     const canvas = document.getElementById('modal-activity-chart');
@@ -2562,39 +2562,41 @@ function createModalActivityChart(breakdown) {
         window.modalActivityChart.destroy();
     }
     
-    // Enhanced activity colors with more comprehensive mapping
-    const activityColors = {
-        'development': '#3b82f6',        // Blue
-        'go-to-market': '#8b5cf6',       // Purple  
-        'infrastructure': '#06b6d4',     // Cyan
-        'support': '#10b981',            // Green
-        'validation': '#f59e0b',         // Amber
-        'research': '#ef4444',           // Red
-        'prototyping': '#ec4899',        // Pink
-        'planning': '#84cc16',           // Lime
-        'integration': '#6366f1',        // Indigo
-        'compliance': '#f97316',         // Orange
-        'community': '#14b8a6',          // Teal
-        'optimization': '#a855f7',       // Violet
-        'bugs': '#dc2626',               // Red-600
-        'testing': '#059669',            // Emerald-600
-        'design': '#7c3aed',             // Violet-600
-        'documentation': '#0891b2',      // Cyan-600
-        'security': '#dc2626',           // Red-600
-        'analytics': '#1f2937'           // Gray-800
+    // Clean and deduplicate the breakdown data
+    const cleanedBreakdown = {
+        aboveLine: {},
+        belowLine: {},
+        misallocated: breakdown.misallocated || []
     };
     
-    // Get ALL unique activities from BOTH above and below line
+    // Function to normalize activity names (remove duplicates)
+    function normalizeActivity(activity) {
+        if (!activity) return 'unknown';
+        return activity.toLowerCase().trim();
+    }
+    
+    // Consolidate above line activities
+    Object.entries(breakdown.aboveLine || {}).forEach(([activity, count]) => {
+        const normalized = normalizeActivity(activity);
+        cleanedBreakdown.aboveLine[normalized] = (cleanedBreakdown.aboveLine[normalized] || 0) + count;
+    });
+    
+    // Consolidate below line activities  
+    Object.entries(breakdown.belowLine || {}).forEach(([activity, count]) => {
+        const normalized = normalizeActivity(activity);
+        cleanedBreakdown.belowLine[normalized] = (cleanedBreakdown.belowLine[normalized] || 0) + count;
+    });
+    
+    // Get ALL unique activities from BOTH above and below line (after normalization)
     const allActivities = new Set([
-        ...Object.keys(breakdown.aboveLine || {}),
-        ...Object.keys(breakdown.belowLine || {})
+        ...Object.keys(cleanedBreakdown.aboveLine),
+        ...Object.keys(cleanedBreakdown.belowLine)
     ]);
     
-    console.log('All unique activities found:', Array.from(allActivities));
+    console.log('Cleaned unique activities:', Array.from(allActivities));
     
     if (allActivities.size === 0) {
         console.warn('No activities found in breakdown');
-        // Show empty state
         const emptyDiv = document.createElement('div');
         emptyDiv.className = 'flex items-center justify-center h-full text-center';
         emptyDiv.style.color = 'var(--text-secondary)';
@@ -2607,14 +2609,12 @@ function createModalActivityChart(breakdown) {
     const aboveData = [];
     const belowData = [];
     const labels = [];
-    const colors = [];
     
-    // Build chart data
+    // Build chart data with proper capitalization
     allActivities.forEach(activity => {
-        labels.push(activity.charAt(0).toUpperCase() + activity.slice(1)); // Capitalize
-        aboveData.push(breakdown.aboveLine[activity] || 0);
-        belowData.push(breakdown.belowLine[activity] || 0);
-        colors.push(activityColors[activity] || '#6b7280'); // Default gray
+        labels.push(activity.charAt(0).toUpperCase() + activity.slice(1));
+        aboveData.push(cleanedBreakdown.aboveLine[activity] || 0);
+        belowData.push(cleanedBreakdown.belowLine[activity] || 0);
     });
     
     console.log('Chart data prepared:');
@@ -2627,21 +2627,21 @@ function createModalActivityChart(breakdown) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Above the Line',  // FIXED: Removed counts
+                label: 'Above the Line',
                 data: aboveData,
-                backgroundColor: colors.map(color => color + 'E6'), // FIXED: Better opacity (90%)
-                borderColor: colors,
+                backgroundColor: '#14b8a6E6', // Teal with 90% opacity
+                borderColor: '#14b8a6',      // Teal border
                 borderWidth: 2,
-                borderRadius: 4,        // FIXED: Rounded corners
+                borderRadius: 4,
                 borderSkipped: false,
             }, {
-                label: 'Below the Line',  // FIXED: Removed counts
+                label: 'Below the Line',
                 data: belowData,
-                backgroundColor: colors.map(color => color + '80'), // FIXED: Better opacity (50%)
-                borderColor: colors.map(color => color + 'CC'), // FIXED: Better border opacity
+                backgroundColor: '#ec489980', // Pink with 50% opacity  
+                borderColor: '#ec4899CC',     // Pink border with 80% opacity
                 borderWidth: 1,
-                borderDash: [5, 5], // Dashed border for below line
-                borderRadius: 4,        // FIXED: Rounded corners
+                borderDash: [5, 5],
+                borderRadius: 4,
                 borderSkipped: false,
             }]
         },
@@ -2657,7 +2657,7 @@ function createModalActivityChart(breakdown) {
                     display: true,
                     position: 'top',
                     labels: {
-                        color: '#ffffff', // White text for dark theme
+                        color: '#ffffff',
                         font: { 
                             size: 12,
                             family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
@@ -2668,19 +2668,19 @@ function createModalActivityChart(breakdown) {
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 15, 35, 0.95)', // FIXED: Better tooltip styling
+                    backgroundColor: 'rgba(15, 15, 35, 0.95)',
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
                     borderColor: 'rgba(99, 102, 241, 0.3)',
                     borderWidth: 1,
-                    cornerRadius: 8,    // FIXED: Rounded tooltip
+                    cornerRadius: 8,
                     displayColors: true,
                     callbacks: {
                         title: function(context) {
                             return context[0].label + ' Activities';
                         },
                         label: function(context) {
-                            return context.dataset.label + ': ' + context.parsed.y + ' Work Items'; // FIXED: Changed from "initiatives"
+                            return context.dataset.label + ': ' + context.parsed.y + ' Work Items';
                         }
                     }
                 }
@@ -2697,7 +2697,7 @@ function createModalActivityChart(breakdown) {
                         }
                     },
                     ticks: { 
-                        color: '#d1d5db', // Light gray
+                        color: '#d1d5db',
                         font: { 
                             size: 11,
                             family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
@@ -2715,7 +2715,7 @@ function createModalActivityChart(breakdown) {
                 y: {
                     title: {
                         display: true,
-                        text: 'Number of Work Items', // FIXED: Changed from "Initiatives"
+                        text: 'Number of Work Items',
                         color: '#ffffff',
                         font: { 
                             size: 14,
@@ -2723,7 +2723,7 @@ function createModalActivityChart(breakdown) {
                         }
                     },
                     ticks: { 
-                        color: '#d1d5db', // Light gray
+                        color: '#d1d5db',
                         font: { 
                             size: 11,
                             family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
@@ -2739,15 +2739,11 @@ function createModalActivityChart(breakdown) {
                         color: 'rgba(255, 255, 255, 0.1)'
                     }
                 }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
             }
         }
     });
     
-    console.log('Activity chart created successfully');
+    console.log('Activity chart created successfully with teal/pink colors and deduplication');
 }
 
 
