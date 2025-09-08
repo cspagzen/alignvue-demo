@@ -9941,7 +9941,7 @@ async function fetchJiraData() {
                         method: 'POST',
                         body: {
                             jql: parentJQL,
-                            fields: ['parent', 'status', 'key', 'summary'],
+                            fields: ['parent', 'status', 'key', 'summary', 'customfield_10190'],
                             startAt: startAt,
                             maxResults: maxResults
                         }
