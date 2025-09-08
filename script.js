@@ -2516,7 +2516,7 @@ function showActivityInfoModal(type) {
     
     if (type === 'high-cost') {
         modalContent.innerHTML = `
-            <div class="modal-header">
+            <div class="p-6 space-y-4">
                 <h2 class="text-xl font-bold" style="color: var(--accent-red);">High Cost Activities</h2>
                 <button onclick="closeModal()" class="text-2xl" style="color: var(--text-secondary);">&times;</button>
             </div>
