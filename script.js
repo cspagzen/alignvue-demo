@@ -5585,12 +5585,6 @@ function updateMendozaCard() {
                    
                 </svg>
             </div>
-            
-            <div class="text-xs" style="color: ${resourceMetrics.efficiencyColor};">
-                ${resourceMetrics.efficiencyScore >= 85 ? 'Excellent' : 
-                resourceMetrics.efficiencyScore >= 70 ? 'Good' : 
-                resourceMetrics.efficiencyScore >= 55 ? 'Needs Improvement' : 'Poor'}
-            </div>
         </div>
     `;
     
