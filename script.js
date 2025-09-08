@@ -10364,12 +10364,4 @@ function showSyncIndicator(type) {
     indicator.style.opacity = '1';
 }
 
-        (async () => {
-    try {
-        await init();
-        console.log('✅ Application initialized successfully');
-    } catch (error) {
-        console.error('❌ Application initialization failed:', error);
-    }
-            
-})();
+        init();
