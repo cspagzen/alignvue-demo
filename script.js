@@ -2276,7 +2276,12 @@ function showMendozaAnalysisModal() {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.getElementById('modal-content');
     
+    // ALWAYS recalculate from LIVE data when modal opens
     const metrics = calculateResourceAllocation();
+    console.log('=== MODAL OPENING ===');
+    console.log('Modal using LIVE efficiency score:', metrics.efficiencyScore + '%');
+    console.log('Live boardData.initiatives.length:', boardData?.initiatives?.length || 0);
+    
     const detailedBreakdown = calculateDetailedResourceBreakdown();
     
     modalContent.innerHTML = `
@@ -2287,7 +2292,7 @@ function showMendozaAnalysisModal() {
         </div>
         
         <div class="p-6 space-y-6">
-            <!-- Efficiency Overview -->
+            <!-- Efficiency Overview with LIVE DATA -->
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
                 <div class="flex items-center gap-2 mb-3">
                     <h3 class="text-lg font-semibold" style="color: ${metrics.efficiencyColor};">
@@ -2353,31 +2358,111 @@ function showMendozaAnalysisModal() {
     modal.classList.add('show');
 }
 
-function calculateDetailedResourceBreakdown() {
-    const breakdown = {
-        aboveLine: {},
-        belowLine: {},
-        misallocated: []
-    };
+function calculateResourceAllocation() {
+    console.log('=== CALCULATING FROM LIVE DATA ===');
+    console.log('boardData.initiatives.length:', boardData?.initiatives?.length || 0);
     
+    // High-resource activities that should be above the line
     const highResourceActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
     
+    // Low-resource activities that should be below the line  
+    const lowResourceActivities = ['validation', 'research', 'prototyping', 'planning'];
+    
+    let aboveLineTotal = 0;
+    let belowLineTotal = 0;
+    let aboveLineHighResource = 0;
+    let belowLineHighResource = 0;
+    let aboveLineAppropriate = 0;
+    let belowLineAppropriate = 0;
+    
+    // Process LIVE initiatives from pyramid
     if (boardData?.initiatives) {
+        console.log('Processing LIVE initiatives:', boardData.initiatives.length);
+        
         boardData.initiatives.forEach(initiative => {
             const priority = initiative.priority;
             const activityType = getInitiativeActivityType(initiative);
             
+            console.log(`LIVE: ${initiative.title}, Priority: ${priority}, Activity: ${activityType}`);
+            
             if (priority !== 'pipeline') {
                 const isAboveLine = priority <= 14;
                 const isHighResource = highResourceActivities.includes(activityType);
+                const isLowResource = lowResourceActivities.includes(activityType);
                 
-                const target = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
-                target[activityType] = (target[activityType] || 0) + 1;
+                if (isAboveLine) {
+                    aboveLineTotal++;
+                    if (isHighResource) {
+                        aboveLineHighResource++;
+                        aboveLineAppropriate++;
+                    }
+                } else {
+                    belowLineTotal++;
+                    if (isHighResource) {
+                        belowLineHighResource++;
+                    } else if (isLowResource) {
+                        belowLineAppropriate++;
+                    }
+                }
             }
         });
     }
     
-    return breakdown;
+    const totalInitiatives = aboveLineTotal + belowLineTotal;
+    const totalHighResourceWork = aboveLineHighResource + belowLineHighResource;
+    
+    console.log('LIVE calculation details:');
+    console.log('- Above line high resource:', aboveLineHighResource);
+    console.log('- Below line high resource:', belowLineHighResource);
+    console.log('- Total high resource:', totalHighResourceWork);
+    
+    // Calculate efficiency: what % of high-resource work is appropriately above the line
+    let efficiencyScore = 0;
+    if (totalHighResourceWork > 0) {
+        efficiencyScore = Math.round((aboveLineHighResource / totalHighResourceWork) * 100);
+        console.log('LIVE efficiency calculation:', aboveLineHighResource, '/', totalHighResourceWork, '=', efficiencyScore);
+    } else {
+        // If no high-resource work identified, calculate based on proper placement
+        const totalAppropriate = aboveLineAppropriate + belowLineAppropriate;
+        if (totalInitiatives > 0) {
+            efficiencyScore = Math.round((totalAppropriate / totalInitiatives) * 100);
+            console.log('LIVE fallback calculation:', totalAppropriate, '/', totalInitiatives, '=', efficiencyScore);
+        } else {
+            efficiencyScore = 0;
+            console.log('No LIVE initiatives found, setting efficiency to 0');
+        }
+    }
+    
+    // Determine efficiency color
+    let efficiencyColor;
+    if (efficiencyScore >= 80) {
+        efficiencyColor = 'var(--accent-green)';
+    } else if (efficiencyScore >= 60) {
+        efficiencyColor = 'var(--accent-orange)';
+    } else {
+        efficiencyColor = 'var(--accent-red)';
+    }
+    
+    const wasteLevel = totalInitiatives > 0 ? Math.round((belowLineHighResource / totalInitiatives) * 100) : 0;
+    
+    const result = {
+        efficiencyScore,
+        efficiencyColor,
+        aboveLineCount: aboveLineTotal,
+        belowLineCount: belowLineTotal,
+        aboveLinePercent: totalInitiatives > 0 ? Math.round((aboveLineTotal / totalInitiatives) * 100) : 0,
+        belowLinePercent: totalInitiatives > 0 ? Math.round((belowLineTotal / totalInitiatives) * 100) : 0,
+        wasteLevel,
+        breakdown: {
+            aboveLineHighResource,
+            belowLineHighResource,
+            aboveLineAppropriate,
+            belowLineAppropriate
+        }
+    };
+    
+    console.log('LIVE final efficiency score:', result.efficiencyScore);
+    return result;
 }
 
 function populateModalDetails(breakdown, metrics) {
@@ -4785,9 +4870,6 @@ function ensureTabStyles() {
     }
 }
 
-// Updated updateMendozaCard function for live Jira data integration
-// Uses customfield_10190 (Activity Type) to calculate resource allocation efficiency
-
 // FIXED: Remove all DOM-based center text and rely ONLY on Chart.js plugin
 
 function updateMendozaCard() {
@@ -4797,7 +4879,12 @@ function updateMendozaCard() {
     const content = card.querySelector('.bento-card-content');
     if (!content) return;
     
+    // ALWAYS calculate from LIVE data - no caching
     const resourceMetrics = calculateResourceAllocation();
+    
+    console.log('=== LIVE MENDOZA UPDATE ===');
+    console.log('Using LIVE efficiency score:', resourceMetrics.efficiencyScore + '%');
+    console.log('Total initiatives processed:', resourceMetrics.aboveLineCount + resourceMetrics.belowLineCount);
     
     content.innerHTML = `
         <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" id="mendoza-clickable" onclick="showMendozaAnalysisModal()">
@@ -4806,7 +4893,7 @@ function updateMendozaCard() {
             <!-- Chart.js Donut Chart - NO CENTER HTML ELEMENT -->
             <div class="relative mb-3" style="width: 120px; height: 120px;">
                 <canvas id="mendoza-donut-chart" width="120" height="120"></canvas>
-                <!-- REMOVED: No HTML center text element that could conflict -->
+                <!-- Chart.js plugin handles center text -->
             </div>
             
             <!-- Status indicator -->
@@ -4817,11 +4904,12 @@ function updateMendozaCard() {
         </div>
     `;
     
-    // Initialize Chart.js with center text plugin ONLY
+    // Initialize Chart.js with LIVE data (no caching)
     setTimeout(() => {
         initializeMendozaChart(resourceMetrics);
     }, 50);
 }
+
 function calculateResourceAllocation() {
     console.log('=== CALCULATING RESOURCE ALLOCATION ===');
     
@@ -4961,7 +5049,9 @@ function getInitiativeActivityType(initiative) {
 let mendozaChart = null;
 
 function initializeMendozaChart(metrics) {
-    console.log('Chart metrics:', metrics);
+    console.log('Chart initialization with LIVE metrics:', metrics.efficiencyScore + '%');
+    console.log('Live data source - boardData.initiatives.length:', boardData?.initiatives?.length || 0);
+    
     const canvas = document.getElementById('mendoza-donut-chart');
     if (!canvas) return;
     
@@ -4982,10 +5072,7 @@ function initializeMendozaChart(metrics) {
         efficiencyColor = '#ef4444'; // Red
     }
     
-    console.log('Creating chart with efficiency score:', metrics.efficiencyScore + '%');
-    console.log('Using color:', efficiencyColor);
-    
-    // Create Chart.js donut chart
+    // Create Chart.js donut chart with LIVE data
     mendozaChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -5010,9 +5097,7 @@ function initializeMendozaChart(metrics) {
             maintainAspectRatio: false,
             cutout: '65%',
             plugins: {
-                legend: {
-                    display: false
-                },
+                legend: { display: false },
                 tooltip: {
                     enabled: true,
                     callbacks: {
@@ -5036,10 +5121,9 @@ function initializeMendozaChart(metrics) {
                 
                 ctx.save();
                 
-                // GUARANTEED: This will show the live calculation
-                console.log('Drawing center text:', metrics.efficiencyScore + '%');
+                console.log('Drawing center text with LIVE efficiency score:', metrics.efficiencyScore + '%');
                 
-                // Main percentage text
+                // Main percentage text - LIVE DATA
                 ctx.font = 'bold 24px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
                 ctx.fillStyle = efficiencyColor;
                 ctx.textAlign = 'center';
@@ -5057,8 +5141,6 @@ function initializeMendozaChart(metrics) {
             }
         }]
     });
-    
-    // REMOVED: All setTimeout center text manipulation that was causing conflicts
 }
 
 
