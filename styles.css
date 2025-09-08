@@ -3318,3 +3318,35 @@ input[type="number"] {
         font-size: 15px;
     }
 }
+
+/* Scroll Indicator Styles */
+.scroll-indicator {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001;
+    pointer-events: none;
+    color: white;
+    animation: bounce 2s infinite;
+    opacity: 0.8;
+    display: none; /* Hidden by default */
+}
+
+/* Bounce Animation */
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateX(-50%) translateY(0);
+    }
+    40% {
+        transform: translateX(-50%) translateY(-10px);
+    }
+    60% {
+        transform: translateX(-50%) translateY(-5px);
+    }
+}
+
+/* Optional: Add subtle glow effect */
+.scroll-indicator svg {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
+}

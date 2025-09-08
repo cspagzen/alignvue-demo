@@ -2516,6 +2516,28 @@ modalContent.innerHTML = `
     
     createModalActivityChart(detailedBreakdown);
     populateEnhancedModalDetails(detailedBreakdown, metrics, activityBreakdown);
+    
+    
+    // Make modal scrollable with scroll indicator
+    modal.style.maxHeight = '85vh';
+    modal.style.overflow = 'hidden'; // Hide overflow on main modal
+    const modalContentElement = modal.querySelector('.modal-content');
+    if (modalContentElement) {
+        modalContentElement.style.maxHeight = '80vh';
+        modalContentElement.style.overflow = 'auto';
+        modalContentElement.style.paddingRight = '4px';
+        
+        // Add scroll event listener
+        modalContentElement.addEventListener('scroll', handleModalScroll);
+        
+        // Check scroll immediately after modal opens
+        setTimeout(handleModalScroll, 100);
+    }
+    
+    modal.classList.add('show');
+}
+    
+    
     modal.classList.add('show');
         // Make modal scrollable - optimized for 1366×768 minimum resolution
 modal.style.maxHeight = '85vh'; // ~610px on 1366×768, ~720px on 1600×900
@@ -2672,6 +2694,50 @@ function showActivityInfoModal(type) {
                 </div>
             </div>
         `;
+    }
+}
+
+function addScrollIndicator() {
+    // Create indicator element
+    const indicator = document.createElement('div');
+    indicator.id = 'scroll-indicator';
+    indicator.className = 'scroll-indicator';
+    indicator.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v8"/>
+            <path d="m8 12 4 4 4-4"/>
+        </svg>
+    `;
+    
+    document.body.appendChild(indicator);
+    return indicator;
+}
+
+// Function to handle scroll and show/hide indicator
+function handleModalScroll() {
+    const modal = document.getElementById('detail-modal');
+    const modalContent = modal.querySelector('.modal-content');
+    let indicator = document.getElementById('scroll-indicator');
+    
+    if (!modalContent) return;
+    
+    const scrollTop = modalContent.scrollTop;
+    const scrollHeight = modalContent.scrollHeight;
+    const clientHeight = modalContent.clientHeight;
+    const isScrolledToBottom = scrollTop + clientHeight >= scrollHeight - 10; // 10px tolerance
+    
+    if (!isScrolledToBottom && scrollHeight > clientHeight) {
+        // Show indicator if not at bottom and content overflows
+        if (!indicator) {
+            indicator = addScrollIndicator();
+        }
+        indicator.style.display = 'block';
+    } else {
+        // Hide indicator if at bottom or no overflow
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
     }
 }
 
