@@ -2271,6 +2271,53 @@ function calculateTeamsPerLowPriorityInitiative() {
     return Math.round((21 / 16) * 10) / 10; // 21 teams below line / 16 initiatives below line = 1.3
 }
 
+function calculateIssueTypeBreakdown() {
+    console.log('=== CALCULATING ISSUE TYPE BREAKDOWN ===');
+    
+    const breakdown = {
+        aboveLine: { stories: 0, bugs: 0, tasks: 0, other: 0 },
+        belowLine: { stories: 0, bugs: 0, tasks: 0, other: 0 },
+        total: { stories: 0, bugs: 0, tasks: 0, other: 0 }
+    };
+    
+    if (!boardData?.initiatives) {
+        return breakdown;
+    }
+    
+    boardData.initiatives.forEach(initiative => {
+        const priority = initiative.priority;
+        const isAboveLine = priority <= 14;
+        
+        if (initiative.jira?.hasLiveData && initiative.jira?.childIssues) {
+            initiative.jira.childIssues.forEach(childIssue => {
+                const issueType = childIssue.fields?.issuetype?.name?.toLowerCase() || 'other';
+                
+                let category;
+                if (issueType.includes('story') || issueType.includes('feature')) {
+                    category = 'stories';
+                } else if (issueType.includes('bug') || issueType.includes('defect')) {
+                    category = 'bugs'; 
+                } else if (issueType.includes('task') || issueType.includes('subtask')) {
+                    category = 'tasks';
+                } else {
+                    category = 'other';
+                }
+                
+                // Count in appropriate section
+                if (isAboveLine) {
+                    breakdown.aboveLine[category]++;
+                } else {
+                    breakdown.belowLine[category]++;
+                }
+                breakdown.total[category]++;
+            });
+        }
+    });
+    
+    console.log('Issue type breakdown:', breakdown);
+    return breakdown;
+}
+
 // Enhanced modal function for detailed analysis
 function showMendozaAnalysisModal() {
     const modal = document.getElementById('detail-modal');
@@ -2282,6 +2329,7 @@ function showMendozaAnalysisModal() {
     console.log('Modal using stored metrics:', metrics.efficiencyScore + '%');
     
     const detailedBreakdown = calculateDetailedResourceBreakdown();
+    const issueBreakdown = calculateIssueTypeBreakdown(); // NEW: Get issue type breakdown
     
     modalContent.innerHTML = `
         <div class="modal-header">
@@ -2305,65 +2353,93 @@ function showMendozaAnalysisModal() {
                 </div>
             </div>
             
-            <!-- Detailed Breakdown Section -->
+            <!-- UPDATED: Issue Type Breakdown Section -->
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                <h4 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Resource Allocation Breakdown</h4>
+                <h4 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Work Item Allocation</h4>
                 
-                <div class="grid grid-cols-2 gap-6">
-                    <!-- Expensive Work Column -->
+                <div class="grid grid-cols-3 gap-4">
+                    <!-- Stories Column -->
                     <div>
-                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-blue);">Expensive Work (Dev, Go-to-Market, Infrastructure)</h5>
+                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-blue);">Stories & Features</h5>
                         <div class="space-y-2">
                             <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
                                 <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
                                 <span class="font-medium text-sm" style="color: var(--accent-green);">
-                                    ${metrics.breakdown?.expensiveWorkAboveLine || 0} work items
+                                    ${issueBreakdown.aboveLine.stories}
                                 </span>
                             </div>
                             <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
                                 <span class="text-sm" style="color: var(--text-secondary);">Below Line</span>
-                                <span class="font-medium text-sm" style="color: var(--accent-red);">
-                                    ${metrics.breakdown?.expensiveWorkBelowLine || 0} work items
+                                <span class="font-medium text-sm" style="color: ${issueBreakdown.belowLine.stories > issueBreakdown.aboveLine.stories ? 'var(--accent-red)' : 'var(--accent-blue)'};">
+                                    ${issueBreakdown.belowLine.stories}
                                 </span>
                             </div>
                             <div class="text-xs pt-1" style="color: var(--text-tertiary);">
-                                ${metrics.breakdown?.totalExpensiveWork > 0 ? 
-                                    Math.round((metrics.breakdown.expensiveWorkAboveLine / metrics.breakdown.totalExpensiveWork) * 100) : 0}% properly allocated
+                                Total: ${issueBreakdown.total.stories} stories
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Discovery Work Column -->
+                    <!-- Bugs Column -->
                     <div>
-                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-orange);">Discovery Work (Research, Validation, Planning)</h5>
+                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-red);">Bugs & Defects</h5>
                         <div class="space-y-2">
                             <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
                                 <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
-                                <span class="font-medium text-sm" style="color: var(--accent-orange);">
-                                    ${metrics.breakdown?.discoveryWorkAboveLine || 0} work items
+                                <span class="font-medium text-sm" style="color: var(--accent-green);">
+                                    ${issueBreakdown.aboveLine.bugs}
                                 </span>
                             </div>
                             <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
                                 <span class="text-sm" style="color: var(--text-secondary);">Below Line</span>
-                                <span class="font-medium text-sm" style="color: var(--accent-green);">
-                                    ${metrics.breakdown?.discoveryWorkBelowLine || 0} work items
+                                <span class="font-medium text-sm" style="color: var(--accent-blue);">
+                                    ${issueBreakdown.belowLine.bugs}
                                 </span>
                             </div>
                             <div class="text-xs pt-1" style="color: var(--text-tertiary);">
-                                ${metrics.breakdown?.totalDiscoveryWork > 0 ? 
-                                    Math.round((metrics.breakdown.discoveryWorkBelowLine / metrics.breakdown.totalDiscoveryWork) * 100) : 0}% properly allocated
+                                Total: ${issueBreakdown.total.bugs} bugs
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tasks Column -->
+                    <div>
+                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-orange);">Tasks & Support</h5>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
+                                <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
+                                <span class="font-medium text-sm" style="color: var(--accent-green);">
+                                    ${issueBreakdown.aboveLine.tasks}
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
+                                <span class="text-sm" style="color: var(--text-secondary);">Below Line</span>
+                                <span class="font-medium text-sm" style="color: var(--accent-blue);">
+                                    ${issueBreakdown.belowLine.tasks}
+                                </span>
+                            </div>
+                            <div class="text-xs pt-1" style="color: var(--text-tertiary);">
+                                Total: ${issueBreakdown.total.tasks} tasks
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Scoring Details -->
+                <!-- Summary Stats -->
                 <div class="mt-4 pt-4 border-t" style="border-color: var(--border-primary);">
-                    <div class="flex justify-between items-center text-sm">
-                        <span style="color: var(--text-secondary);">Weighted Score:</span>
-                        <span style="color: var(--text-primary);">
-                            ${metrics.breakdown?.weightedScore || 0} / ${metrics.breakdown?.maxPossibleScore || 0} points
-                        </span>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="flex justify-between">
+                            <span style="color: var(--text-secondary);">Total Above Line:</span>
+                            <span style="color: var(--text-primary);">
+                                ${issueBreakdown.aboveLine.stories + issueBreakdown.aboveLine.bugs + issueBreakdown.aboveLine.tasks + issueBreakdown.aboveLine.other} issues
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span style="color: var(--text-secondary);">Total Below Line:</span>
+                            <span style="color: var(--text-primary);">
+                                ${issueBreakdown.belowLine.stories + issueBreakdown.belowLine.bugs + issueBreakdown.belowLine.tasks + issueBreakdown.belowLine.other} issues
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2375,9 +2451,8 @@ function showMendozaAnalysisModal() {
                     Resource Waste Alert
                 </h4>
                 <p class="text-sm" style="color: var(--text-secondary);">
-                    ${metrics.wasteLevel}% of work items are expensive activities below the Mendoza line. 
-                    This represents ${metrics.breakdown?.expensiveWorkBelowLine || 0} development/infrastructure work items 
-                    consuming valuable engineering capacity on low-priority initiatives.
+                    ${issueBreakdown.belowLine.stories} stories and ${issueBreakdown.belowLine.tasks} tasks below the line represent 
+                    ${metrics.wasteLevel}% resource waste. Consider promoting high-value development work above priority 14.
                 </p>
             </div>
             ` : ''}
@@ -2403,7 +2478,7 @@ function showMendozaAnalysisModal() {
     `;
     
     // Populate recommendations and create activity chart
-    populateEnhancedModalDetails(detailedBreakdown, metrics);
+    populateEnhancedModalDetails(detailedBreakdown, metrics, issueBreakdown);
     createModalActivityChart(detailedBreakdown);
     
     modal.classList.add('show');
