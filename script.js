@@ -4788,7 +4788,7 @@ function ensureTabStyles() {
 // Updated updateMendozaCard function for live Jira data integration
 // Uses customfield_10190 (Activity Type) to calculate resource allocation efficiency
 
-/ FIXED: Remove all DOM-based center text and rely ONLY on Chart.js plugin
+// FIXED: Remove all DOM-based center text and rely ONLY on Chart.js plugin
 
 function updateMendozaCard() {
     const card = document.querySelector('.mendoza-card');
