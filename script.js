@@ -5598,8 +5598,9 @@ function updateMendozaCard() {
             </div>
             
             <div class="text-xs" style="color: ${resourceMetrics.efficiencyColor};">
-                ${resourceMetrics.efficiencyScore >= 80 ? 'Optimal' : 
-                  resourceMetrics.efficiencyScore >= 60 ? 'Acceptable' : 'Needs Improvement'}
+                ${resourceMetrics.efficiencyScore >= 85 ? 'Excellent' : 
+                resourceMetrics.efficiencyScore >= 70 ? 'Good' : 
+                resourceMetrics.efficiencyScore >= 55 ? 'Needs Improvement' : 'Poor'}
             </div>
         </div>
     `;
