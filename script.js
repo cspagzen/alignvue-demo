@@ -2665,6 +2665,27 @@ function showActivityInfoModal(type) {
     }
 }
 
+function populateEnhancedModalDetails(breakdown, metrics, activityBreakdown) {
+    const recommendations = generateEnhancedRecommendations(breakdown, metrics);
+    const recElement = document.getElementById('recommendations-list');
+    if (recElement) {
+        recElement.innerHTML = recommendations.map(rec => `
+            <div class="p-3 rounded" style="background: var(--bg-quaternary); border-left: 3px solid ${rec.priority === 'high' ? 'var(--accent-red)' : rec.priority === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};">
+                <div class="flex items-start gap-3">
+                    <div class="text-lg">${rec.icon}</div>
+                    <div class="flex-1">
+                        <div class="font-medium text-sm mb-1" style="color: var(--text-primary);">${rec.title}</div>
+                        <div class="text-xs mb-2" style="color: var(--text-secondary);">${rec.description}</div>
+                        <div class="text-xs font-medium" style="color: ${rec.priority === 'high' ? 'var(--accent-red)' : rec.priority === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};">
+                            ${rec.action}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
 // Enhanced recommendations function
 function generateEnhancedRecommendations(breakdown, metrics) {
     const recommendations = [];
