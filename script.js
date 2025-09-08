@@ -2354,6 +2354,7 @@ function calculateActivityTypeBreakdown() {
 }
 
 // Update the modal to use activity type breakdown instead of issue type
+// Update just the breakdown section in showMendozaAnalysisModal
 function showMendozaAnalysisModal() {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.getElementById('modal-content');
@@ -2362,7 +2363,7 @@ function showMendozaAnalysisModal() {
     console.log('Modal using stored metrics:', metrics.efficiencyScore + '%');
     
     const detailedBreakdown = calculateDetailedResourceBreakdown();
-    const activityBreakdown = calculateActivityTypeBreakdown(); // Use activity breakdown
+    const activityBreakdown = calculateActivityTypeBreakdown();
     
     // Calculate totals for high/low cost activities
     const highCostActivities = ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'];
@@ -2395,58 +2396,50 @@ function showMendozaAnalysisModal() {
                 </div>
             </div>
             
-            <!-- Activity Type Breakdown Section -->
+            <!-- Simplified Activity Type Breakdown -->
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
                 <h4 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Work Item Allocation by Activity Type</h4>
                 
                 <div class="grid grid-cols-2 gap-6">
-                    <!-- High Cost Activities Column -->
+                    <!-- High Cost Activities -->
                     <div>
                         <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-red);">High Cost Activities</h5>
-                        <div class="space-y-2 text-xs">
-                            ${highCostActivities.map(activity => `
-                                <div class="flex justify-between items-center">
-                                    <span style="color: var(--text-secondary); text-transform: capitalize;">${activity}:</span>
-                                    <span style="color: var(--text-primary);">
-                                        ${activityBreakdown.aboveLine[activity]} above, ${activityBreakdown.belowLine[activity]} below
-                                    </span>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <div class="mt-3 p-2 rounded" style="background: var(--bg-quaternary);">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm font-medium" style="color: var(--text-secondary);">Total High Cost:</span>
-                                <span class="text-sm font-medium" style="color: var(--text-primary);">
-                                    ${highCostAbove} above, ${highCostBelow} below
+                        <div class="p-3 rounded" style="background: var(--bg-quaternary);">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
+                                <span class="font-medium" style="color: var(--accent-green);">
+                                    ${highCostAbove} work items
                                 </span>
                             </div>
-                            <div class="text-xs mt-1" style="color: ${highCostBelow > highCostAbove ? 'var(--accent-red)' : 'var(--accent-green)'};">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm" style="color: var(--text-secondary);">Below Line</span>
+                                <span class="font-medium" style="color: var(--accent-red);">
+                                    ${highCostBelow} work items
+                                </span>
+                            </div>
+                            <div class="text-xs mt-2 pt-2 border-t" style="color: ${highCostBelow > highCostAbove ? 'var(--accent-red)' : 'var(--accent-green)'}; border-color: var(--border-primary);">
                                 ${highCostAbove + highCostBelow > 0 ? Math.round((highCostAbove / (highCostAbove + highCostBelow)) * 100) : 0}% properly allocated above line
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Low Cost Activities Column -->
+                    <!-- Low Cost Activities -->
                     <div>
                         <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-green);">Low Cost Activities</h5>
-                        <div class="space-y-2 text-xs">
-                            ${lowCostActivities.map(activity => `
-                                <div class="flex justify-between items-center">
-                                    <span style="color: var(--text-secondary); text-transform: capitalize;">${activity}:</span>
-                                    <span style="color: var(--text-primary);">
-                                        ${activityBreakdown.aboveLine[activity]} above, ${activityBreakdown.belowLine[activity]} below
-                                    </span>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <div class="mt-3 p-2 rounded" style="background: var(--bg-quaternary);">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm font-medium" style="color: var(--text-secondary);">Total Low Cost:</span>
-                                <span class="text-sm font-medium" style="color: var(--text-primary);">
-                                    ${lowCostAbove} above, ${lowCostBelow} below
+                        <div class="p-3 rounded" style="background: var(--bg-quaternary);">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
+                                <span class="font-medium" style="color: var(--accent-orange);">
+                                    ${lowCostAbove} work items
                                 </span>
                             </div>
-                            <div class="text-xs mt-1" style="color: ${lowCostBelow > lowCostAbove ? 'var(--accent-green)' : 'var(--accent-orange)'};">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm" style="color: var(--text-secondary);">Below Line</span>
+                                <span class="font-medium" style="color: var(--accent-green);">
+                                    ${lowCostBelow} work items
+                                </span>
+                            </div>
+                            <div class="text-xs mt-2 pt-2 border-t" style="color: ${lowCostBelow > lowCostAbove ? 'var(--accent-green)' : 'var(--accent-orange)'}; border-color: var(--border-primary);">
                                 ${lowCostAbove + lowCostBelow > 0 ? Math.round((lowCostBelow / (lowCostAbove + lowCostBelow)) * 100) : 0}% properly allocated below line
                             </div>
                         </div>
