@@ -2547,7 +2547,7 @@ if (modalContentElement) {
     modalContentElement.style.maxHeight = '80vh'; // ~580px on 1366×768, ~680px on 1600×900  
     modalContentElement.style.overflow = 'auto';
     modalContentElement.style.paddingRight = '4px'; // Account for scrollbar
-}
+
 }
 
 // Add the activity info modal function
