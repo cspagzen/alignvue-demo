@@ -2358,6 +2358,8 @@ function showMendozaAnalysisModal() {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.getElementById('modal-content');
     
+    document.getElementById('modal-title').textContent = 'Mendoza Line Analysis';
+    
     const metrics = window.currentMendozaMetrics || calculateResourceAllocation();
     console.log('Modal using stored metrics:', metrics.efficiencyScore + '%');
     
@@ -2373,10 +2375,10 @@ function showMendozaAnalysisModal() {
     const lowCostAbove = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
     const lowCostBelow = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
     
-    modalContent.innerHTML = `
-        <h2 class="text-xl font-bold mb-4" style="color: var(--text-primary);">Mendoza Line Analysis</h2>
-        
-        <div class="space-y-6">
+   document.getElementById('modal-title').textContent = 'Mendoza Line Analysis';
+modalContent.innerHTML = `
+    <div class="space-y-6">
+    // rest of content (no H2)
             <!-- Efficiency Score Display -->
             <div class="flex items-center justify-center p-6">
                 <div class="text-center">
