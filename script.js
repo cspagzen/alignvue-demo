@@ -2513,12 +2513,10 @@ function showActivityInfoModal(type) {
     const modalContent = document.getElementById('modal-content');
     
     if (type === 'high-cost') {
+        // Update the existing modal title
+        document.getElementById('modal-title').textContent = 'High Cost Activities';
+        
         modalContent.innerHTML = `
-            <div class="p-6 space-y-4">
-                <h2 class="text-xl font-bold" style="color: var(--accent-red);">High Cost Activities</h2>
-                <button onclick="closeModal()" class="text-2xl" style="color: var(--text-secondary);">&times;</button>
-            </div>
-            
             <div class="p-6 space-y-4">
                 <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-red);">
                     <h3 class="font-semibold mb-3" style="color: var(--accent-red);">Expensive Work That Should Be Above the Line</h3>
@@ -2574,12 +2572,10 @@ function showActivityInfoModal(type) {
             </div>
         `;
     } else {
+        // Update the existing modal title
+        document.getElementById('modal-title').textContent = 'Low Cost Activities';
+        
         modalContent.innerHTML = `
-            <div class="modal-header">
-                <h2 class="text-xl font-bold" style="color: var(--accent-green);">Low Cost Activities</h2>
-                <button onclick="closeModal()" class="text-2xl" style="color: var(--text-secondary);">&times;</button>
-            </div>
-            
             <div class="p-6 space-y-4">
                 <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-green);">
                     <h3 class="font-semibold mb-3" style="color: var(--accent-green);">Cheap Discovery Work That Should Be Below the Line</h3>
