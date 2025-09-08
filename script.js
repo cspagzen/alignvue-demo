@@ -2265,6 +2265,15 @@ function showMisalignedInitiativesModal() {
     `;
     
     modal.classList.add('show');
+    // Make modal scrollable - optimized for 1366×768 minimum resolution
+modal.style.maxHeight = '85vh'; // ~610px on 1366×768, ~720px on 1600×900
+modal.style.overflow = 'auto';
+const modalContentElement = modal.querySelector('.modal-content');
+if (modalContentElement) {
+    modalContentElement.style.maxHeight = '80vh'; // ~580px on 1366×768, ~680px on 1600×900  
+    modalContentElement.style.overflow = 'auto';
+    modalContentElement.style.paddingRight = '4px'; // Account for scrollbar
+}
 }
       
 function calculateTeamsPerLowPriorityInitiative() {
