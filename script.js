@@ -4816,14 +4816,28 @@ function updateMendozaCard() {
     
     // Initialize Chart.js donut chart
     initializeMendozaChart(resourceMetrics);
-    // Set the center text using the same calculation as the modal
+    
+    // In your updateMendozaCard() function, after the initializeMendozaChart() call:
 setTimeout(() => {
-    const freshMetrics = calculateResourceAllocation();
-    const centerElement = document.getElementById('mendoza-efficiency-score');
-    if (centerElement) {
-        centerElement.textContent = freshMetrics.efficiencyScore + '%';
+    // Remove the problematic element entirely
+    const oldElement = document.getElementById('mendoza-efficiency-score');
+    if (oldElement) {
+        oldElement.remove();
     }
-}, 10);
+    
+    // Create a completely new element with fresh data
+    const freshMetrics = calculateResourceAllocation();
+    const newElement = document.createElement('div');
+    newElement.className = 'text-2xl font-bold';
+    newElement.style.color = freshMetrics.efficiencyColor;
+    newElement.textContent = freshMetrics.efficiencyScore + '%';
+    
+    // Find the center container and add our new element
+    const centerContainer = document.querySelector('#mendoza-clickable .text-center');
+    if (centerContainer) {
+        centerContainer.insertBefore(newElement, centerContainer.firstChild);
+    }
+}, 50);
 }
 
 function calculateResourceAllocation() {
