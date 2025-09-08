@@ -5576,7 +5576,7 @@ function updateMendozaCard() {
                         fill="${resourceMetrics.efficiencyColor === 'var(--accent-green)' ? '#10b981' : 
                                resourceMetrics.efficiencyColor === 'var(--accent-orange)' ? '#f59e0b' : '#ef4444'}" 
                         font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
-                        font-size="28" 
+                        font-size="30" 
                         font-weight="bold"
                     >
                         ${resourceMetrics.efficiencyScore}%
