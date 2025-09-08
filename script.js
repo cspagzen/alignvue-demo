@@ -4790,8 +4790,8 @@ function ensureTabStyles() {
 
 function updateMendozaCard() {
     const content = document.getElementById('mendoza-impact-content');
+    if (!content) return;
     
-    // Calculate resource allocation from live boardData
     const resourceMetrics = calculateResourceAllocation();
     
     content.innerHTML = `
@@ -4802,42 +4802,13 @@ function updateMendozaCard() {
             <div class="relative mb-3">
                 <canvas id="mendoza-donut-chart" width="120" height="120"></canvas>
                 
-                <!-- Center Metric -->
-<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-    <div class="text-center">
-        <div class="text-3xl font-bold" style="color: ${resourceMetrics.efficiencyColor};" id="mendoza-efficiency-score">
-            Loading...
-        </div>
-    </div>
-</div>
+                <!-- Center area intentionally left empty - no text -->
             </div>
         </div>
     `;
     
     // Initialize Chart.js donut chart
     initializeMendozaChart(resourceMetrics);
-    
-    // In your updateMendozaCard() function, after the initializeMendozaChart() call:
-setTimeout(() => {
-    // Remove the problematic element entirely
-    const oldElement = document.getElementById('mendoza-efficiency-score');
-    if (oldElement) {
-        oldElement.remove();
-    }
-    
-    // Create a completely new element with fresh data
-    const freshMetrics = calculateResourceAllocation();
-    const newElement = document.createElement('div');
-    newElement.className = 'text-2xl font-bold';
-    newElement.style.color = freshMetrics.efficiencyColor;
-    newElement.textContent = freshMetrics.efficiencyScore + '%';
-    
-    // Find the center container and add our new element
-    const centerContainer = document.querySelector('#mendoza-clickable .text-center');
-    if (centerContainer) {
-        centerContainer.insertBefore(newElement, centerContainer.firstChild);
-    }
-}, 50);
 }
 
 function calculateResourceAllocation() {
@@ -5040,22 +5011,9 @@ function initializeMendozaChart(metrics) {
             }
         }
     });
-    // ADD THIS PART - Force center text to match calculation
-    // Force center text to match calculation - multiple attempts
-const forceCorrectText = () => {
-    const centerElement = document.getElementById('mendoza-efficiency-score');
-    if (centerElement && centerElement.textContent !== metrics.efficiencyScore + '%') {
-        centerElement.textContent = metrics.efficiencyScore + '%';
-        console.log('Fixed center text to', metrics.efficiencyScore + '%');
-    }
-};
-
-// Try immediately and then keep trying
-forceCorrectText();
-setTimeout(forceCorrectText, 50);
-setTimeout(forceCorrectText, 200);
-setTimeout(forceCorrectText, 500);
-setTimeout(forceCorrectText, 1000);
+    
+    // Note: All the setTimeout functions and text forcing logic has been removed
+    // The chart will now display as a clean donut with no center text
 }
 
 
