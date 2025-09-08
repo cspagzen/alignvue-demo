@@ -4805,11 +4805,8 @@ function updateMendozaCard() {
                 <!-- Center Metric -->
 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
     <div class="text-center">
-        <div class="text-2xl font-bold" style="color: ${resourceMetrics.efficiencyColor};" id="mendoza-efficiency-score">
+        <div class="text-3xl font-bold" style="color: ${resourceMetrics.efficiencyColor};" id="mendoza-efficiency-score">
             Loading...
-        </div>
-        <div class="text-xs font-medium" style="color: var(--text-tertiary);">
-            EFFICIENT
         </div>
     </div>
 </div>
