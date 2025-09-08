@@ -2403,15 +2403,14 @@ function showMendozaAnalysisModal() {
                     <!-- High Cost Activities -->
                     <div>
                         <div class="flex items-center gap-2 mb-3">
-                            <h5 class="font-medium text-sm" style="color: var(--accent-red);">High Cost Activities</h5>
-                            <button onclick="showActivityInfoModal('high-cost')" class="flex items-center justify-center w-4 h-4 rounded-full hover:bg-white/10 transition-colors" style="color: white;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <path d="m9 12 2 2 4-4"/>
-                                    <path d="M12 8v4"/>
-                                    <path d="M12 16h.01"/>
-                                </svg>
-                            </button>
+    <h5 class="font-medium text-sm" style="color: var(--accent-red);">High Cost Activities</h5>
+    <button onclick="showActivityInfoModal('high-cost')" class="flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/10 transition-colors" style="color: white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+        </svg>
+    </button>
                         </div>
                         <div class="p-3 rounded" style="background: var(--bg-quaternary);">
                             <div class="flex justify-between items-center mb-2">
@@ -2435,15 +2434,15 @@ function showMendozaAnalysisModal() {
                     <!-- Low Cost Activities -->
                     <div>
                         <div class="flex items-center gap-2 mb-3">
-                            <h5 class="font-medium text-sm" style="color: var(--accent-green);">Low Cost Activities</h5>
-                            <button onclick="showActivityInfoModal('low-cost')" class="flex items-center justify-center w-4 h-4 rounded-full hover:bg-white/10 transition-colors" style="color: white;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <path d="M12 8v4"/>
-                                    <path d="M12 16h.01"/>
-                                </svg>
-                            </button>
-                        </div>
+    <h5 class="font-medium text-sm" style="color: var(--accent-green);">Low Cost Activities</h5>
+    <button onclick="showActivityInfoModal('low-cost')" class="flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/10 transition-colors" style="color: white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+        </svg>
+    </button>
+</div>
                         <div class="p-3 rounded" style="background: var(--bg-quaternary);">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
