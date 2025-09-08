@@ -4788,7 +4788,8 @@ function ensureTabStyles() {
 // Updated updateMendozaCard function for live Jira data integration
 // Uses customfield_10190 (Activity Type) to calculate resource allocation efficiency
 
-// Updated updateMendozaCard function with improved center text handling
+/ FIXED: Remove all DOM-based center text and rely ONLY on Chart.js plugin
+
 function updateMendozaCard() {
     const card = document.querySelector('.mendoza-card');
     if (!card) return;
@@ -4798,39 +4799,29 @@ function updateMendozaCard() {
     
     const resourceMetrics = calculateResourceAllocation();
     
-    // Determine color for efficiency score
-    let efficiencyColor;
-    if (resourceMetrics.efficiencyScore >= 80) {
-        efficiencyColor = '#10b981'; // Green
-    } else if (resourceMetrics.efficiencyScore >= 60) {
-        efficiencyColor = '#f59e0b'; // Amber
-    } else {
-        efficiencyColor = '#ef4444'; // Red
-    }
-    
     content.innerHTML = `
         <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" id="mendoza-clickable" onclick="showMendozaAnalysisModal()">
             <div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Resource Efficiency</div>
             
-            <!-- Chart.js Donut Chart with Center Text -->
+            <!-- Chart.js Donut Chart - NO CENTER HTML ELEMENT -->
             <div class="relative mb-3" style="width: 120px; height: 120px;">
                 <canvas id="mendoza-donut-chart" width="120" height="120"></canvas>
+                <!-- REMOVED: No HTML center text element that could conflict -->
             </div>
             
             <!-- Status indicator -->
-            <div class="text-xs" style="color: ${efficiencyColor};">
+            <div class="text-xs" style="color: ${resourceMetrics.efficiencyColor};">
                 ${resourceMetrics.efficiencyScore >= 80 ? 'Optimal' : 
                   resourceMetrics.efficiencyScore >= 60 ? 'Acceptable' : 'Needs Improvement'}
             </div>
         </div>
     `;
     
-    // Initialize Chart.js donut chart
+    // Initialize Chart.js with center text plugin ONLY
     setTimeout(() => {
         initializeMendozaChart(resourceMetrics);
     }, 50);
 }
-
 function calculateResourceAllocation() {
     console.log('=== CALCULATING RESOURCE ALLOCATION ===');
     
@@ -4969,7 +4960,6 @@ function getInitiativeActivityType(initiative) {
 
 let mendozaChart = null;
 
-// Updated initializeMendozaChart function with center metric display
 function initializeMendozaChart(metrics) {
     console.log('Chart metrics:', metrics);
     const canvas = document.getElementById('mendoza-donut-chart');
@@ -4991,6 +4981,9 @@ function initializeMendozaChart(metrics) {
     } else {
         efficiencyColor = '#ef4444'; // Red
     }
+    
+    console.log('Creating chart with efficiency score:', metrics.efficiencyScore + '%');
+    console.log('Using color:', efficiencyColor);
     
     // Create Chart.js donut chart
     mendozaChart = new Chart(ctx, {
@@ -5015,7 +5008,7 @@ function initializeMendozaChart(metrics) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '65%', // Creates larger center area for text
+            cutout: '65%',
             plugins: {
                 legend: {
                     display: false
@@ -5043,6 +5036,9 @@ function initializeMendozaChart(metrics) {
                 
                 ctx.save();
                 
+                // GUARANTEED: This will show the live calculation
+                console.log('Drawing center text:', metrics.efficiencyScore + '%');
+                
                 // Main percentage text
                 ctx.font = 'bold 24px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
                 ctx.fillStyle = efficiencyColor;
@@ -5054,7 +5050,7 @@ function initializeMendozaChart(metrics) {
                 
                 // Small subtitle
                 ctx.font = '11px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = 'rgba(156, 163, 175, 0.8)'; // text-secondary equivalent
+                ctx.fillStyle = 'rgba(156, 163, 175, 0.8)';
                 ctx.fillText('Efficiency', centerX, centerY + 15);
                 
                 ctx.restore();
@@ -5062,14 +5058,7 @@ function initializeMendozaChart(metrics) {
         }]
     });
     
-    // Update the center text element if it exists (fallback method)
-    setTimeout(() => {
-        const centerTextElement = document.getElementById('mendoza-efficiency-score');
-        if (centerTextElement) {
-            centerTextElement.textContent = metrics.efficiencyScore + '%';
-            centerTextElement.style.color = efficiencyColor;
-        }
-    }, 100);
+    // REMOVED: All setTimeout center text manipulation that was causing conflicts
 }
 
 
