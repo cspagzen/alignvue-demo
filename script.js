@@ -2276,7 +2276,7 @@ function showMendozaAnalysisModal() {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.getElementById('modal-content');
     
-    // USE THE STORED VALUE - DON'T RECALCULATE
+    // USE THE STORED VALUE
     const metrics = window.currentMendozaMetrics || calculateResourceAllocation();
     
     console.log('Modal using stored metrics:', metrics.efficiencyScore + '%');
@@ -2285,33 +2285,246 @@ function showMendozaAnalysisModal() {
     
     modalContent.innerHTML = `
         <div class="modal-header">
-            <h2 class="text-xl font-bold" style="color: var(--text-primary);">
-                Resource Allocation Analysis
-            </h2>
+            <h2 class="text-xl font-bold" style="color: var(--text-primary);">Mendoza Line Analysis</h2>
+            <button onclick="closeModal()" class="text-2xl" style="color: var(--text-secondary);">&times;</button>
         </div>
         
-        <div class="p-6 space-y-6">
-            <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
-                <div class="flex items-center gap-2 mb-3">
-                    <h3 class="text-lg font-semibold" style="color: ${metrics.efficiencyColor};">
-                        ${metrics.efficiencyScore}% Resource Efficiency
-                    </h3>
+        <div class="space-y-6">
+            <!-- Efficiency Score Display -->
+            <div class="flex items-center justify-center p-6">
+                <div class="text-center">
+                    <div class="text-4xl font-bold mb-2" style="color: ${metrics.efficiencyColor};">
+                        ${metrics.efficiencyScore}%
+                    </div>
+                    <div class="text-sm" style="color: var(--text-secondary);">
+                        Resource Allocation Efficiency
+                    </div>
+                    <div class="text-xs mt-1" style="color: ${metrics.efficiencyColor};">
+                        ${metrics.efficiencyDescription || 'Needs Assessment'}
+                    </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4 text-sm">
+            </div>
+            
+            <!-- Detailed Breakdown Section -->
+            <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                <h4 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Resource Allocation Breakdown</h4>
+                
+                <div class="grid grid-cols-2 gap-6">
+                    <!-- Expensive Work Column -->
                     <div>
-                        <div style="color: var(--text-secondary);">Above Line (1-14)</div>
-                        <div class="text-lg font-bold" style="color: var(--accent-green);">${metrics.aboveLineCount} initiatives</div>
+                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-blue);">Expensive Work (Dev, Go-to-Market, Infrastructure)</h5>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
+                                <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
+                                <span class="font-medium text-sm" style="color: var(--accent-green);">
+                                    ${metrics.breakdown?.expensiveWorkAboveLine || 0} work items
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
+                                <span class="text-sm" style="color: var(--text-secondary);">Below Line</span>
+                                <span class="font-medium text-sm" style="color: var(--accent-red);">
+                                    ${metrics.breakdown?.expensiveWorkBelowLine || 0} work items
+                                </span>
+                            </div>
+                            <div class="text-xs pt-1" style="color: var(--text-tertiary);">
+                                ${metrics.breakdown?.totalExpensiveWork > 0 ? 
+                                    Math.round((metrics.breakdown.expensiveWorkAboveLine / metrics.breakdown.totalExpensiveWork) * 100) : 0}% properly allocated
+                            </div>
+                        </div>
                     </div>
+                    
+                    <!-- Discovery Work Column -->
                     <div>
-                        <div style="color: var(--text-secondary);">Below Line (15+)</div>
-                        <div class="text-lg font-bold" style="color: var(--accent-blue);">${metrics.belowLineCount} initiatives</div>
+                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-orange);">Discovery Work (Research, Validation, Planning)</h5>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
+                                <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
+                                <span class="font-medium text-sm" style="color: var(--accent-orange);">
+                                    ${metrics.breakdown?.discoveryWorkAboveLine || 0} work items
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
+                                <span class="text-sm" style="color: var(--text-secondary);">Below Line</span>
+                                <span class="font-medium text-sm" style="color: var(--accent-green);">
+                                    ${metrics.breakdown?.discoveryWorkBelowLine || 0} work items
+                                </span>
+                            </div>
+                            <div class="text-xs pt-1" style="color: var(--text-tertiary);">
+                                ${metrics.breakdown?.totalDiscoveryWork > 0 ? 
+                                    Math.round((metrics.breakdown.discoveryWorkBelowLine / metrics.breakdown.totalDiscoveryWork) * 100) : 0}% properly allocated
+                            </div>
+                        </div>
                     </div>
+                </div>
+                
+                <!-- Scoring Details -->
+                <div class="mt-4 pt-4 border-t" style="border-color: var(--border-primary);">
+                    <div class="flex justify-between items-center text-sm">
+                        <span style="color: var(--text-secondary);">Weighted Score:</span>
+                        <span style="color: var(--text-primary);">
+                            ${metrics.breakdown?.weightedScore || 0} / ${metrics.breakdown?.maxPossibleScore || 0} points
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning for high waste -->
+            ${metrics.wasteLevel > 15 ? `
+            <div class="p-4 rounded-lg" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red);">
+                <h4 class="font-semibold mb-2" style="color: var(--accent-red);">
+                    Resource Waste Alert
+                </h4>
+                <p class="text-sm" style="color: var(--text-secondary);">
+                    ${metrics.wasteLevel}% of work items are expensive activities below the Mendoza line. 
+                    This represents ${metrics.breakdown?.expensiveWorkBelowLine || 0} development/infrastructure work items 
+                    consuming valuable engineering capacity on low-priority initiatives.
+                </p>
+            </div>
+            ` : ''}
+            
+            <!-- Activity Distribution Chart -->
+            <div>
+                <h4 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Activity Distribution</h4>
+                <div class="relative" style="height: 300px;">
+                    <canvas id="modal-activity-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Enhanced Recommendations -->
+            <div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">
+                <h4 class="font-semibold mb-3" style="color: var(--accent-blue);">
+                    Actionable Recommendations
+                </h4>
+                <div class="space-y-3" id="recommendations-list">
+                    <!-- Recommendations will be populated by generateEnhancedRecommendations -->
                 </div>
             </div>
         </div>
     `;
     
+    // Populate recommendations and create activity chart
+    populateEnhancedModalDetails(detailedBreakdown, metrics);
+    createModalActivityChart(detailedBreakdown);
+    
     modal.classList.add('show');
+}
+
+// Enhanced recommendations function
+function populateEnhancedModalDetails(breakdown, metrics) {
+    const recommendations = generateEnhancedRecommendations(breakdown, metrics);
+    const recElement = document.getElementById('recommendations-list');
+    if (recElement) {
+        recElement.innerHTML = recommendations.map(rec => `
+            <div class="p-3 rounded" style="background: var(--bg-quaternary); border-left: 3px solid ${rec.priority === 'high' ? 'var(--accent-red)' : rec.priority === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};">
+                <div class="flex items-start gap-3">
+                    <div class="text-lg">${rec.icon}</div>
+                    <div class="flex-1">
+                        <div class="font-medium text-sm mb-1" style="color: var(--text-primary);">${rec.title}</div>
+                        <div class="text-xs mb-2" style="color: var(--text-secondary);">${rec.description}</div>
+                        <div class="text-xs font-medium" style="color: ${rec.priority === 'high' ? 'var(--accent-red)' : rec.priority === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};">
+                            ${rec.action}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+function generateEnhancedRecommendations(breakdown, metrics) {
+    const recommendations = [];
+    
+    const expensiveWorkBelowLine = metrics.breakdown?.expensiveWorkBelowLine || 0;
+    const discoveryWorkAboveLine = metrics.breakdown?.discoveryWorkAboveLine || 0;
+    const totalExpensiveWork = metrics.breakdown?.totalExpensiveWork || 0;
+    const totalDiscoveryWork = metrics.breakdown?.totalDiscoveryWork || 0;
+    
+    // High priority recommendations for expensive work below line
+    if (expensiveWorkBelowLine > 5) {
+        recommendations.push({
+            priority: 'high',
+            icon: '🚨',
+            title: 'Move Development Work Above the Line',
+            description: `${expensiveWorkBelowLine} expensive work items are below priority 14, wasting engineering capacity.`,
+            action: 'Review initiatives 15-32 and promote high-value development work to positions 1-14.'
+        });
+    } else if (expensiveWorkBelowLine > 2) {
+        recommendations.push({
+            priority: 'medium',
+            icon: '⚠️',
+            title: 'Optimize Development Placement',
+            description: `${expensiveWorkBelowLine} development items below the line could be better prioritized.`,
+            action: 'Evaluate if these development efforts should be promoted or deprecated.'
+        });
+    }
+    
+    // Recommendations for discovery work above line
+    if (discoveryWorkAboveLine > 8) {
+        recommendations.push({
+            priority: 'medium',
+            icon: '🔄',
+            title: 'Move Validation Work Below the Line',
+            description: `${discoveryWorkAboveLine} discovery items are consuming high-priority slots.`,
+            action: 'Move research and validation work to positions 15+ to free up development capacity.'
+        });
+    }
+    
+    // Efficiency-based recommendations
+    if (metrics.efficiencyScore < 60) {
+        recommendations.push({
+            priority: 'high',
+            icon: '📊',
+            title: 'Conduct Priority Rebalancing Session',
+            description: 'Resource allocation efficiency is below 60%, indicating systematic prioritization issues.',
+            action: 'Schedule a leadership session to review and reorder the entire initiative matrix.'
+        });
+    } else if (metrics.efficiencyScore < 75) {
+        recommendations.push({
+            priority: 'medium',
+            icon: '🎯',
+            title: 'Fine-tune Priority Boundaries',
+            description: 'Good allocation overall, but some optimization opportunities remain.',
+            action: 'Focus on edge cases around the priority 14 boundary for maximum impact.'
+        });
+    }
+    
+    // Activity-specific recommendations based on the chart data
+    const totalDevelopment = (breakdown.aboveLine?.development || 0) + (breakdown.belowLine?.development || 0);
+    const totalValidation = (breakdown.aboveLine?.validation || 0) + (breakdown.belowLine?.validation || 0);
+    
+    if (totalDevelopment > totalValidation * 3) {
+        recommendations.push({
+            priority: 'medium',
+            icon: '🔬',
+            title: 'Increase Validation Work',
+            description: 'High ratio of development to validation suggests insufficient discovery work.',
+            action: 'Add more user research and validation activities before committing development resources.'
+        });
+    }
+    
+    // Success case
+    if (metrics.efficiencyScore >= 85 && expensiveWorkBelowLine <= 2) {
+        recommendations.push({
+            priority: 'low',
+            icon: '✅',
+            title: 'Maintain Current Allocation',
+            description: 'Resource allocation is operating efficiently with minimal waste.',
+            action: 'Continue current prioritization process and monitor for any degradation.'
+        });
+    }
+    
+    // Default fallback
+    if (recommendations.length === 0) {
+        recommendations.push({
+            priority: 'low',
+            icon: '📈',
+            title: 'Monitor Resource Allocation',
+            description: 'Current allocation appears balanced.',
+            action: 'Continue tracking efficiency metrics and adjust as new initiatives are added.'
+        });
+    }
+    
+    return recommendations;
 }
 
 function calculateResourceAllocation() {
