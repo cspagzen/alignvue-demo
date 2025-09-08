@@ -2465,6 +2465,46 @@ function calculateResourceAllocation() {
     return result;
 }
 
+// Add this missing function to your script.js
+
+function calculateDetailedResourceBreakdown() {
+    const breakdown = {
+        aboveLine: {},
+        belowLine: {},
+        misallocated: []
+    };
+    
+    const highResourceActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
+    
+    if (boardData?.initiatives) {
+        boardData.initiatives.forEach(initiative => {
+            const priority = initiative.priority;
+            const activityType = getInitiativeActivityType(initiative);
+            
+            if (priority !== 'pipeline') {
+                const isAboveLine = priority <= 14;
+                const isHighResource = highResourceActivities.includes(activityType);
+                
+                const target = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
+                target[activityType] = (target[activityType] || 0) + 1;
+                
+                // Track misallocated high-resource work below the line
+                if (!isAboveLine && isHighResource) {
+                    breakdown.misallocated.push({
+                        title: initiative.title,
+                        activityType: activityType,
+                        priority: priority,
+                        teams: initiative.teams
+                    });
+                }
+            }
+        });
+    }
+    
+    return breakdown;
+}
+
+// Also add the missing populateModalDetails function if it doesn't exist
 function populateModalDetails(breakdown, metrics) {
     // Generate recommendations
     const recommendations = generateRecommendations(breakdown, metrics);
@@ -2547,69 +2587,72 @@ function createModalActivityChart(breakdown) {
     });
     
     window.modalActivityChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: labels,
-        datasets: [{
-            label: 'Above Line (1-14)',
-            data: aboveData,
-            backgroundColor: colors.map(color => color + '80'),
-            borderColor: colors,
-            borderWidth: 1
-        }, {
-            label: 'Below Line (15+)', 
-            data: belowData,
-            backgroundColor: colors.map(color => color + '40'),
-            borderColor: colors,
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: true,
-                position: 'top',
-                labels: {
-                    color: 'var(--text-primary)',
-                    font: { size: 12 }
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Above Line (1-14)',
+                data: aboveData,
+                backgroundColor: colors.map(color => color + '80'),
+                borderColor: colors,
+                borderWidth: 1
+            }, {
+                label: 'Below Line (15+)', 
+                data: belowData,
+                backgroundColor: colors.map(color => color + '40'),
+                borderColor: colors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'var(--text-primary)',
+                        font: { size: 12 }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Activity Type',
+                        color: 'var(--text-primary)',
+                        font: { size: 12 }
+                    },
+                    ticks: { 
+                        color: 'var(--text-secondary)', 
+                        font: { size: 10 },
+                        maxRotation: 45
+                    },
+                    grid: { display: false }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Number of Initiatives',
+                        color: 'var(--text-primary)',
+                        font: { size: 12 }
+                    },
+                    ticks: { 
+                        color: 'var(--text-secondary)', 
+                        font: { size: 10 },
+                        stepSize: 1
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 }
             }
-        },
-        scales: {
-            x: {
-                title: {
-                    display: true,
-                    text: 'Activity Type',
-                    color: 'var(--text-primary)',
-                    font: { size: 12 }
-                },
-                ticks: { 
-                    color: 'var(--text-secondary)', 
-                    font: { size: 10 },
-                    maxRotation: 45
-                },
-                grid: { display: false }
-            },
-            y: {
-                title: {
-                    display: true,
-                    text: 'Number of Initiatives',
-                    color: 'var(--text-primary)',
-                    font: { size: 12 }
-                },
-                ticks: { 
-                    color: 'var(--text-secondary)', 
-                    font: { size: 10 },
-                    stepSize: 1
-                },
-                grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            }
         }
-    }
-});
+    });
 }
+
+
+
 
 function showEfficiencyInfoModal() {
     const modal = document.getElementById('detail-modal');
