@@ -2276,11 +2276,10 @@ function showMendozaAnalysisModal() {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.getElementById('modal-content');
     
-    // ALWAYS recalculate from LIVE data when modal opens
-    const metrics = calculateResourceAllocation();
-    console.log('=== MODAL OPENING ===');
-    console.log('Modal using LIVE efficiency score:', metrics.efficiencyScore + '%');
-    console.log('Live boardData.initiatives.length:', boardData?.initiatives?.length || 0);
+    // USE THE STORED VALUE - DON'T RECALCULATE
+    const metrics = window.currentMendozaMetrics || calculateResourceAllocation();
+    
+    console.log('Modal using stored metrics:', metrics.efficiencyScore + '%');
     
     const detailedBreakdown = calculateDetailedResourceBreakdown();
     
@@ -2292,20 +2291,11 @@ function showMendozaAnalysisModal() {
         </div>
         
         <div class="p-6 space-y-6">
-            <!-- Efficiency Overview with LIVE DATA -->
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
                 <div class="flex items-center gap-2 mb-3">
                     <h3 class="text-lg font-semibold" style="color: ${metrics.efficiencyColor};">
                         ${metrics.efficiencyScore}% Resource Efficiency
                     </h3>
-                    <button onclick="showEfficiencyInfoModal()" class="flex items-center gap-1 text-xs" style="color: var(--accent-blue); cursor: pointer;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M12 16v-4"/>
-                            <path d="M12 8h.01"/>
-                        </svg>
-                        How is this score calculated?
-                    </button>
                 </div>
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
@@ -2318,42 +2308,8 @@ function showMendozaAnalysisModal() {
                     </div>
                 </div>
             </div>
-            
-            <!-- Resource Waste Alert -->
-            ${metrics.wasteLevel > 20 ? `
-            <div class="p-4 rounded-lg" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red);">
-                <h4 class="font-semibold mb-2" style="color: var(--accent-red);">
-                    ⚠️ High Resource Waste Detected
-                </h4>
-                <p class="text-sm" style="color: var(--text-secondary);">
-                    ${metrics.wasteLevel}% of initiatives are high-resource activities below the Mendoza line. 
-                    Consider moving development/go-to-market work above the line.
-                </p>
-            </div>
-            ` : ''}
-            
-            <!-- Activity Distribution Chart -->
-            <div>
-                <h4 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Activity Distribution</h4>
-                <div class="relative" style="height: 300px;">
-                    <canvas id="modal-activity-chart"></canvas>
-                </div>
-            </div>
-            
-            <!-- Recommendations -->
-            <div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">
-                <h4 class="font-semibold mb-2" style="color: var(--accent-blue);">
-                    💡 Optimization Recommendations
-                </h4>
-                <ul class="text-sm space-y-1" style="color: var(--text-secondary);" id="recommendations-list">
-                </ul>
-            </div>
         </div>
     `;
-    
-    // Populate recommendations and create activity chart
-    populateModalDetails(detailedBreakdown, metrics);
-    createModalActivityChart(detailedBreakdown);
     
     modal.classList.add('show');
 }
@@ -4922,24 +4878,22 @@ function updateMendozaCard() {
     const content = card.querySelector('.bento-card-content');
     if (!content) return;
     
-    // ALWAYS calculate from LIVE data - no caching
+    // Get the metrics ONCE
     const resourceMetrics = calculateResourceAllocation();
     
-    console.log('=== LIVE MENDOZA UPDATE ===');
-    console.log('Using LIVE efficiency score:', resourceMetrics.efficiencyScore + '%');
-    console.log('Total initiatives processed:', resourceMetrics.aboveLineCount + resourceMetrics.belowLineCount);
+    // Store it globally so everything can access the SAME value
+    window.currentMendozaMetrics = resourceMetrics;
+    
+    console.log('STORED METRICS:', resourceMetrics.efficiencyScore + '%');
     
     content.innerHTML = `
         <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" id="mendoza-clickable" onclick="showMendozaAnalysisModal()">
             <div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Resource Efficiency</div>
             
-            <!-- Chart.js Donut Chart - NO CENTER HTML ELEMENT -->
             <div class="relative mb-3" style="width: 120px; height: 120px;">
                 <canvas id="mendoza-donut-chart" width="120" height="120"></canvas>
-                <!-- Chart.js plugin handles center text -->
             </div>
             
-            <!-- Status indicator -->
             <div class="text-xs" style="color: ${resourceMetrics.efficiencyColor};">
                 ${resourceMetrics.efficiencyScore >= 80 ? 'Optimal' : 
                   resourceMetrics.efficiencyScore >= 60 ? 'Acceptable' : 'Needs Improvement'}
@@ -4947,7 +4901,6 @@ function updateMendozaCard() {
         </div>
     `;
     
-    // Initialize Chart.js with LIVE data (no caching)
     setTimeout(() => {
         initializeMendozaChart(resourceMetrics);
     }, 50);
@@ -5092,30 +5045,18 @@ function getInitiativeActivityType(initiative) {
 let mendozaChart = null;
 
 function initializeMendozaChart(metrics) {
-    console.log('Chart initialization with LIVE metrics:', metrics.efficiencyScore + '%');
-    console.log('Live data source - boardData.initiatives.length:', boardData?.initiatives?.length || 0);
-    
     const canvas = document.getElementById('mendoza-donut-chart');
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
     
-    // Destroy existing chart if it exists
     if (mendozaChart) {
         mendozaChart.destroy();
     }
     
-    // Determine color for efficiency score
-    let efficiencyColor;
-    if (metrics.efficiencyScore >= 80) {
-        efficiencyColor = '#10b981'; // Green
-    } else if (metrics.efficiencyScore >= 60) {
-        efficiencyColor = '#f59e0b'; // Amber
-    } else {
-        efficiencyColor = '#ef4444'; // Red
-    }
+    let efficiencyColor = metrics.efficiencyScore >= 80 ? '#10b981' : 
+                         metrics.efficiencyScore >= 60 ? '#f59e0b' : '#ef4444';
     
-    // Create Chart.js donut chart with LIVE data
     mendozaChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -5128,10 +5069,7 @@ function initializeMendozaChart(metrics) {
                     'rgba(239, 68, 68, 0.8)',
                     'rgba(59, 130, 246, 0.3)'
                 ],
-                borderColor: [
-                    efficiencyColor,
-                    'rgba(59, 130, 246, 0.6)'
-                ],
+                borderColor: [efficiencyColor, 'rgba(59, 130, 246, 0.6)'],
                 borderWidth: 2
             }]
         },
@@ -5139,44 +5077,31 @@ function initializeMendozaChart(metrics) {
             responsive: true,
             maintainAspectRatio: false,
             cutout: '65%',
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    enabled: true,
-                    callbacks: {
-                        label: function(context) {
-                            return context.label + ': ' + context.parsed + '%';
-                        }
-                    }
-                }
-            },
-            animation: {
-                animateRotate: true,
-                duration: 1000
-            }
+            plugins: { legend: { display: false } }
         },
         plugins: [{
             id: 'centerText',
             beforeDraw: function(chart) {
+                // USE THE STORED VALUE - DON'T RECALCULATE
+                const storedMetrics = window.currentMendozaMetrics;
+                if (!storedMetrics) return;
+                
+                console.log('Drawing center text:', storedMetrics.efficiencyScore + '%');
+                
                 const ctx = chart.ctx;
                 const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
                 const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
                 
                 ctx.save();
-                
-                console.log('Drawing center text with LIVE efficiency score:', metrics.efficiencyScore + '%');
-                
-                // Main percentage text - LIVE DATA
-                ctx.font = 'bold 24px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = efficiencyColor;
+                ctx.font = 'bold 24px Inter';
+                ctx.fillStyle = storedMetrics.efficiencyScore >= 80 ? '#10b981' : 
+                               storedMetrics.efficiencyScore >= 60 ? '#f59e0b' : '#ef4444';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 
-                const percentageText = metrics.efficiencyScore + '%';
-                ctx.fillText(percentageText, centerX, centerY - 5);
+                ctx.fillText(storedMetrics.efficiencyScore + '%', centerX, centerY - 5);
                 
-                // Small subtitle
-                ctx.font = '11px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.font = '11px Inter';
                 ctx.fillStyle = 'rgba(156, 163, 175, 0.8)';
                 ctx.fillText('Efficiency', centerX, centerY + 15);
                 
@@ -5185,7 +5110,6 @@ function initializeMendozaChart(metrics) {
         }]
     });
 }
-
 
 function getTeamsWorkingOnlyOnHighPriority() {
     // Mock data - replace with actual logic
