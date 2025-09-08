@@ -2518,7 +2518,6 @@ function showActivityInfoModal(type) {
         modalContent.innerHTML = `
             <div class="modal-header">
                 <h2 class="text-xl font-bold" style="color: var(--accent-red);">High Cost Activities</h2>
-                
             </div>
             
             <div class="p-6 space-y-4">
@@ -2579,7 +2578,6 @@ function showActivityInfoModal(type) {
         modalContent.innerHTML = `
             <div class="modal-header">
                 <h2 class="text-xl font-bold" style="color: var(--accent-green);">Low Cost Activities</h2>
-               
             </div>
             
             <div class="p-6 space-y-4">
