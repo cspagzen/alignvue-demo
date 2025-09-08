@@ -2374,10 +2374,7 @@ function showMendozaAnalysisModal() {
     const lowCostBelow = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
     
     modalContent.innerHTML = `
-        <div class="modal-header">
-            <h2 class="text-xl font-bold" style="color: var(--text-primary);">Mendoza Line Analysis</h2>
-            <button onclick="closeModal()" class="text-2xl" style="color: var(--text-secondary);">&times;</button>
-        </div>
+        <h2 class="text-xl font-bold mb-4" style="color: var(--text-primary);">Mendoza Line Analysis</h2>
         
         <div class="space-y-6">
             <!-- Efficiency Score Display -->
