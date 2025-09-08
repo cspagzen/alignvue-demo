@@ -5162,110 +5162,15 @@ function updateMendozaCard() {
     }
 }
 
-function calculateResourceAllocation() {
-    console.log('=== CALCULATING RESOURCE ALLOCATION ===');
-    
-    // High-resource activities that should be above the line
-    const highResourceActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
-    
-    // Low-resource activities that should be below the line  
-    const lowResourceActivities = ['validation', 'research', 'prototyping', 'planning'];
-    
-    let aboveLineTotal = 0;
-    let belowLineTotal = 0;
-    let aboveLineHighResource = 0;
-    let belowLineHighResource = 0;
-    let aboveLineAppropriate = 0;
-    let belowLineAppropriate = 0;
-    
-    // Process active initiatives
-    if (boardData?.initiatives) {
-        console.log('Processing initiatives:', boardData.initiatives.length);
-        
-        boardData.initiatives.forEach(initiative => {
-            const priority = initiative.priority;
-            const activityType = getInitiativeActivityType(initiative);
-            
-            console.log(`Initiative: ${initiative.title}, Priority: ${priority}, Activity: ${activityType}`);
-            
-            if (priority !== 'pipeline') {
-                const isAboveLine = priority <= 14;
-                const isHighResource = highResourceActivities.includes(activityType);
-                const isLowResource = lowResourceActivities.includes(activityType);
-                
-                if (isAboveLine) {
-                    aboveLineTotal++;
-                    if (isHighResource) {
-                        aboveLineHighResource++;
-                        aboveLineAppropriate++;
-                    }
-                } else {
-                    belowLineTotal++;
-                    if (isHighResource) {
-                        belowLineHighResource++;
-                    } else if (isLowResource) {
-                        belowLineAppropriate++;
-                    }
-                }
-            }
-        });
-    }
-    
-    const totalInitiatives = aboveLineTotal + belowLineTotal;
-    const totalHighResourceWork = aboveLineHighResource + belowLineHighResource;
-    
-    console.log('Calculation details:');
-    console.log('- Above line high resource:', aboveLineHighResource);
-    console.log('- Below line high resource:', belowLineHighResource);
-    console.log('- Total high resource:', totalHighResourceWork);
-    
-    // Calculate efficiency: what % of high-resource work is appropriately above the line
-    let efficiencyScore = 0;
-    if (totalHighResourceWork > 0) {
-        efficiencyScore = Math.round((aboveLineHighResource / totalHighResourceWork) * 100);
-        console.log('Efficiency calculation:', aboveLineHighResource, '/', totalHighResourceWork, '=', efficiencyScore);
-    } else {
-        // If no high-resource work identified, calculate based on proper placement
-        const totalAppropriate = aboveLineAppropriate + belowLineAppropriate;
-        if (totalInitiatives > 0) {
-            efficiencyScore = Math.round((totalAppropriate / totalInitiatives) * 100);
-            console.log('Fallback calculation:', totalAppropriate, '/', totalInitiatives, '=', efficiencyScore);
-        } else {
-            efficiencyScore = 0;
-            console.log('No initiatives found, setting efficiency to 0');
+// Helper function to classify activities  
+function getActivityClassification(activity, activityClassification) {
+    for (const [type, config] of Object.entries(activityClassification)) {
+        if (config.activities.includes(activity.toLowerCase())) {
+            return { type, ...config };
         }
     }
-    
-    // Determine efficiency color
-    let efficiencyColor;
-    if (efficiencyScore >= 80) {
-        efficiencyColor = 'var(--accent-green)';
-    } else if (efficiencyScore >= 60) {
-        efficiencyColor = 'var(--accent-orange)';
-    } else {
-        efficiencyColor = 'var(--accent-red)';
-    }
-    
-    const wasteLevel = totalInitiatives > 0 ? Math.round((belowLineHighResource / totalInitiatives) * 100) : 0;
-    
-    const result = {
-        efficiencyScore,
-        efficiencyColor,
-        aboveLineCount: aboveLineTotal,
-        belowLineCount: belowLineTotal,
-        aboveLinePercent: totalInitiatives > 0 ? Math.round((aboveLineTotal / totalInitiatives) * 100) : 0,
-        belowLinePercent: totalInitiatives > 0 ? Math.round((belowLineTotal / totalInitiatives) * 100) : 0,
-        wasteLevel,
-        breakdown: {
-            aboveLineHighResource,
-            belowLineHighResource,
-            aboveLineAppropriate,
-            belowLineAppropriate
-        }
-    };
-    
-    console.log('Final efficiency score:', result.efficiencyScore);
-    return result;
+    // Default to neutral if not found
+    return { type: 'neutral', ...activityClassification.neutral };
 }
 
 function getInitiativeActivityType(initiative) {
