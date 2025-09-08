@@ -2516,7 +2516,10 @@ function showActivityInfoModal(type) {
     
     if (type === 'high-cost') {
         modalContent.innerHTML = `
-            <h2 class="text-xl font-bold mb-4" style="color: var(--accent-red);">High Cost Activities</h2>
+            <div class="modal-header">
+                <h2 class="text-xl font-bold" style="color: var(--accent-red);">High Cost Activities</h2>
+                <button onclick="closeModal()" class="text-2xl" style="color: var(--text-secondary);">&times;</button>
+            </div>
             
             <div class="p-6 space-y-4">
                 <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-red);">
@@ -2574,7 +2577,10 @@ function showActivityInfoModal(type) {
         `;
     } else {
         modalContent.innerHTML = `
-            <h2 class="text-xl font-bold mb-4" style="color: var(--accent-green);">Low Cost Activities</h2>
+            <div class="modal-header">
+                <h2 class="text-xl font-bold" style="color: var(--accent-green);">Low Cost Activities</h2>
+                <button onclick="closeModal()" class="text-2xl" style="color: var(--text-secondary);">&times;</button>
+            </div>
             
             <div class="p-6 space-y-4">
                 <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-green);">
