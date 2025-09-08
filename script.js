@@ -2627,26 +2627,34 @@ function createModalActivityChart(breakdown) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Above Line (1-14)',
+                label: 'Above the Line',  // FIXED: Removed counts
                 data: aboveData,
-                backgroundColor: colors.map(color => color + 'CC'), // More opaque
+                backgroundColor: colors.map(color => color + 'E6'), // FIXED: Better opacity (90%)
                 borderColor: colors,
-                borderWidth: 2
+                borderWidth: 2,
+                borderRadius: 4,        // FIXED: Rounded corners
+                borderSkipped: false,
             }, {
-                label: 'Below Line (15+)', 
+                label: 'Below the Line',  // FIXED: Removed counts
                 data: belowData,
-                backgroundColor: colors.map(color => color + '66'), // More transparent
-                borderColor: colors.map(color => color + 'AA'),
+                backgroundColor: colors.map(color => color + '80'), // FIXED: Better opacity (50%)
+                borderColor: colors.map(color => color + 'CC'), // FIXED: Better border opacity
                 borderWidth: 1,
-                borderDash: [5, 5] // Dashed border for below line
+                borderDash: [5, 5], // Dashed border for below line
+                borderRadius: 4,        // FIXED: Rounded corners
+                borderSkipped: false,
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
             plugins: {
                 legend: {
-                    display: true, // ENABLE LEGEND
+                    display: true,
                     position: 'top',
                     labels: {
                         color: '#ffffff', // White text for dark theme
@@ -2660,17 +2668,19 @@ function createModalActivityChart(breakdown) {
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 15, 35, 0.9)',
+                    backgroundColor: 'rgba(15, 15, 35, 0.95)', // FIXED: Better tooltip styling
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
                     borderColor: 'rgba(99, 102, 241, 0.3)',
                     borderWidth: 1,
+                    cornerRadius: 8,    // FIXED: Rounded tooltip
+                    displayColors: true,
                     callbacks: {
                         title: function(context) {
                             return context[0].label + ' Activities';
                         },
                         label: function(context) {
-                            return context.dataset.label + ': ' + context.parsed.y + ' initiatives';
+                            return context.dataset.label + ': ' + context.parsed.y + ' Work Items'; // FIXED: Changed from "initiatives"
                         }
                     }
                 }
@@ -2705,7 +2715,7 @@ function createModalActivityChart(breakdown) {
                 y: {
                     title: {
                         display: true,
-                        text: 'Number of Initiatives',
+                        text: 'Number of Work Items', // FIXED: Changed from "Initiatives"
                         color: '#ffffff',
                         font: { 
                             size: 14,
