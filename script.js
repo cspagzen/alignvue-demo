@@ -2354,7 +2354,6 @@ function calculateActivityTypeBreakdown() {
 }
 
 // Update the modal to use activity type breakdown instead of issue type
-// Update just the breakdown section in showMendozaAnalysisModal
 function showMendozaAnalysisModal() {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.getElementById('modal-content');
@@ -2396,14 +2395,24 @@ function showMendozaAnalysisModal() {
                 </div>
             </div>
             
-            <!-- Simplified Activity Type Breakdown -->
+            <!-- Activity Type Breakdown with Info Icons -->
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
                 <h4 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Work Item Allocation by Activity Type</h4>
                 
                 <div class="grid grid-cols-2 gap-6">
                     <!-- High Cost Activities -->
                     <div>
-                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-red);">High Cost Activities</h5>
+                        <div class="flex items-center gap-2 mb-3">
+                            <h5 class="font-medium text-sm" style="color: var(--accent-red);">High Cost Activities</h5>
+                            <button onclick="showActivityInfoModal('high-cost')" class="flex items-center justify-center w-4 h-4 rounded-full hover:bg-white/10 transition-colors" style="color: white;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="m9 12 2 2 4-4"/>
+                                    <path d="M12 8v4"/>
+                                    <path d="M12 16h.01"/>
+                                </svg>
+                            </button>
+                        </div>
                         <div class="p-3 rounded" style="background: var(--bg-quaternary);">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
@@ -2425,7 +2434,16 @@ function showMendozaAnalysisModal() {
                     
                     <!-- Low Cost Activities -->
                     <div>
-                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-green);">Low Cost Activities</h5>
+                        <div class="flex items-center gap-2 mb-3">
+                            <h5 class="font-medium text-sm" style="color: var(--accent-green);">Low Cost Activities</h5>
+                            <button onclick="showActivityInfoModal('low-cost')" class="flex items-center justify-center w-4 h-4 rounded-full hover:bg-white/10 transition-colors" style="color: white;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 8v4"/>
+                                    <path d="M12 16h.01"/>
+                                </svg>
+                            </button>
+                        </div>
                         <div class="p-3 rounded" style="background: var(--bg-quaternary);">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
@@ -2490,6 +2508,157 @@ function showMendozaAnalysisModal() {
     
     createModalActivityChart(detailedBreakdown);
     modal.classList.add('show');
+}
+
+// Add the activity info modal function
+function showActivityInfoModal(type) {
+    const modal = document.getElementById('detail-modal');
+    const modalContent = document.getElementById('modal-content');
+    
+    if (type === 'high-cost') {
+        modalContent.innerHTML = `
+            <div class="modal-header">
+                <h2 class="text-xl font-bold" style="color: var(--accent-red);">High Cost Activities</h2>
+                <button onclick="showMendozaAnalysisModal()" class="text-2xl" style="color: var(--text-secondary);">&times;</button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-red);">
+                    <h3 class="font-semibold mb-3" style="color: var(--accent-red);">Expensive Work That Should Be Above the Line</h3>
+                    <p class="text-sm mb-4" style="color: var(--text-secondary);">
+                        These activities require expensive development teams, infrastructure resources, or significant market investment. 
+                        They should be prioritized above the Mendoza line (positions 1-14) to ensure valuable resources work on high-impact initiatives.
+                    </p>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-blue);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Development</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">New features, enhancements, technical implementation</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-red);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Defects/Fixes</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">Bug fixes, critical issues, system repairs</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-purple);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Integration</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">System integrations, API development, data connections</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-cyan);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Infrastructure</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">Platform improvements, scalability, performance optimization</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-purple);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Go-to-Market</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">Marketing campaigns, sales enablement, customer acquisition</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button onclick="showMendozaAnalysisModal()" class="px-4 py-2 rounded" style="background: var(--accent-blue); color: white;">
+                        Back to Analysis
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        modalContent.innerHTML = `
+            <div class="modal-header">
+                <h2 class="text-xl font-bold" style="color: var(--accent-green);">Low Cost Activities</h2>
+                <button onclick="showMendozaAnalysisModal()" class="text-2xl" style="color: var(--text-secondary);">&times;</button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-green);">
+                    <h3 class="font-semibold mb-3" style="color: var(--accent-green);">Cheap Discovery Work That Should Be Below the Line</h3>
+                    <p class="text-sm mb-4" style="color: var(--text-secondary);">
+                        These activities are relatively inexpensive and help validate ideas before committing expensive development resources. 
+                        They should typically be positioned below the Mendoza line (positions 15+) where they can inform prioritization decisions.
+                    </p>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-orange);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Validation</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">User testing, market validation, concept proof</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-red);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Research</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">Market research, user interviews, competitive analysis</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-pink);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Prototyping</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">Quick prototypes, mockups, proof of concepts</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-lime);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Planning</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">Strategic planning, roadmap development, requirements gathering</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-green);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Support</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">Customer support, documentation, training</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-orange);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Compliance</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">Regulatory compliance, audits, policy updates</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-teal);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Community</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">Community engagement, developer relations, partnerships</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-violet);"></div>
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">Optimization</div>
+                                <div class="text-xs" style="color: var(--text-secondary);">Process improvements, efficiency gains, cost reduction</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button onclick="showMendozaAnalysisModal()" class="px-4 py-2 rounded" style="background: var(--accent-blue); color: white;">
+                        Back to Analysis
+                    </button>
+                </div>
+            </div>
+        `;
+    }
 }
 
 // Enhanced recommendations function
