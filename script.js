@@ -5570,7 +5570,7 @@ function updateMendozaCard() {
                     <!-- Center Text -->
                     <text 
                         x="60" 
-                        y="55" 
+                        y="65" 
                         text-anchor="middle" 
                         dominant-baseline="middle" 
                         fill="${resourceMetrics.efficiencyColor === 'var(--accent-green)' ? '#10b981' : 
