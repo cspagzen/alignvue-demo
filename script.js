@@ -2500,10 +2500,21 @@ modalContent.innerHTML = `
                     <canvas id="modal-activity-chart"></canvas>
                 </div>
             </div>
+            
+            <!-- Enhanced Recommendations -->
+            <div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">
+                <h4 class="font-semibold mb-3" style="color: var(--accent-blue);">
+                    Actionable Recommendations
+                </h4>
+                <div class="space-y-3" id="recommendations-list">
+                    <!-- Recommendations will be populated by generateEnhancedRecommendations -->
+                </div>
+            </div>
         </div>
     `;
     
     createModalActivityChart(detailedBreakdown);
+    populateEnhancedModalDetails(detailedBreakdown, metrics, activityBreakdown);
     modal.classList.add('show');
 }
 
@@ -2655,27 +2666,6 @@ function showActivityInfoModal(type) {
 }
 
 // Enhanced recommendations function
-function populateEnhancedModalDetails(breakdown, metrics) {
-    const recommendations = generateEnhancedRecommendations(breakdown, metrics);
-    const recElement = document.getElementById('recommendations-list');
-    if (recElement) {
-        recElement.innerHTML = recommendations.map(rec => `
-            <div class="p-3 rounded" style="background: var(--bg-quaternary); border-left: 3px solid ${rec.priority === 'high' ? 'var(--accent-red)' : rec.priority === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};">
-                <div class="flex items-start gap-3">
-                    <div class="text-lg">${rec.icon}</div>
-                    <div class="flex-1">
-                        <div class="font-medium text-sm mb-1" style="color: var(--text-primary);">${rec.title}</div>
-                        <div class="text-xs mb-2" style="color: var(--text-secondary);">${rec.description}</div>
-                        <div class="text-xs font-medium" style="color: ${rec.priority === 'high' ? 'var(--accent-red)' : rec.priority === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};">
-                            ${rec.action}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-}
-
 function generateEnhancedRecommendations(breakdown, metrics) {
     const recommendations = [];
     
@@ -2688,7 +2678,7 @@ function generateEnhancedRecommendations(breakdown, metrics) {
     if (expensiveWorkBelowLine > 5) {
         recommendations.push({
             priority: 'high',
-            icon: '🚨',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>',
             title: 'Move Development Work Above the Line',
             description: `${expensiveWorkBelowLine} expensive work items are below priority 14, wasting engineering capacity.`,
             action: 'Review initiatives 15-32 and promote high-value development work to positions 1-14.'
@@ -2696,7 +2686,7 @@ function generateEnhancedRecommendations(breakdown, metrics) {
     } else if (expensiveWorkBelowLine > 2) {
         recommendations.push({
             priority: 'medium',
-            icon: '⚠️',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
             title: 'Optimize Development Placement',
             description: `${expensiveWorkBelowLine} development items below the line could be better prioritized.`,
             action: 'Evaluate if these development efforts should be promoted or deprecated.'
@@ -2707,7 +2697,7 @@ function generateEnhancedRecommendations(breakdown, metrics) {
     if (discoveryWorkAboveLine > 8) {
         recommendations.push({
             priority: 'medium',
-            icon: '🔄',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 4.9-4 9-9 9s-9-4.1-9-9c0-4.9 4-9 9-9s9 4.1 9 9"/><path d="M9 12l2 2 4-4"/></svg>',
             title: 'Move Validation Work Below the Line',
             description: `${discoveryWorkAboveLine} discovery items are consuming high-priority slots.`,
             action: 'Move research and validation work to positions 15+ to free up development capacity.'
@@ -2718,7 +2708,7 @@ function generateEnhancedRecommendations(breakdown, metrics) {
     if (metrics.efficiencyScore < 60) {
         recommendations.push({
             priority: 'high',
-            icon: '📊',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="3" height="8" x="13" y="2" rx="1.5"/><path d="M19 8.5V10h1.5A1.5 1.5 0 1 0 19 8.5"/><rect width="3" height="8" x="8" y="14" rx="1.5"/><path d="M5 15.5V14H3.5A1.5 1.5 0 1 0 5 15.5"/><rect width="8" height="3" x="14" y="13" rx="1.5"/><path d="M15.5 19H14v1.5a1.5 1.5 0 1 0 1.5-1.5"/><rect width="8" height="3" x="2" y="8" rx="1.5"/><path d="M8.5 5H10V3.5A1.5 1.5 0 1 0 8.5 5"/></svg>',
             title: 'Conduct Priority Rebalancing Session',
             description: 'Resource allocation efficiency is below 60%, indicating systematic prioritization issues.',
             action: 'Schedule a leadership session to review and reorder the entire initiative matrix.'
@@ -2726,24 +2716,10 @@ function generateEnhancedRecommendations(breakdown, metrics) {
     } else if (metrics.efficiencyScore < 75) {
         recommendations.push({
             priority: 'medium',
-            icon: '🎯',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
             title: 'Fine-tune Priority Boundaries',
             description: 'Good allocation overall, but some optimization opportunities remain.',
             action: 'Focus on edge cases around the priority 14 boundary for maximum impact.'
-        });
-    }
-    
-    // Activity-specific recommendations based on the chart data
-    const totalDevelopment = (breakdown.aboveLine?.development || 0) + (breakdown.belowLine?.development || 0);
-    const totalValidation = (breakdown.aboveLine?.validation || 0) + (breakdown.belowLine?.validation || 0);
-    
-    if (totalDevelopment > totalValidation * 3) {
-        recommendations.push({
-            priority: 'medium',
-            icon: '🔬',
-            title: 'Increase Validation Work',
-            description: 'High ratio of development to validation suggests insufficient discovery work.',
-            action: 'Add more user research and validation activities before committing development resources.'
         });
     }
     
@@ -2751,7 +2727,7 @@ function generateEnhancedRecommendations(breakdown, metrics) {
     if (metrics.efficiencyScore >= 85 && expensiveWorkBelowLine <= 2) {
         recommendations.push({
             priority: 'low',
-            icon: '✅',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>',
             title: 'Maintain Current Allocation',
             description: 'Resource allocation is operating efficiently with minimal waste.',
             action: 'Continue current prioritization process and monitor for any degradation.'
@@ -2762,7 +2738,7 @@ function generateEnhancedRecommendations(breakdown, metrics) {
     if (recommendations.length === 0) {
         recommendations.push({
             priority: 'low',
-            icon: '📈',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>',
             title: 'Monitor Resource Allocation',
             description: 'Current allocation appears balanced.',
             action: 'Continue tracking efficiency metrics and adjust as new initiatives are added.'
