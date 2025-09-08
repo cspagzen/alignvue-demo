@@ -2271,13 +2271,44 @@ function calculateTeamsPerLowPriorityInitiative() {
     return Math.round((21 / 16) * 10) / 10; // 21 teams below line / 16 initiatives below line = 1.3
 }
 
-function calculateIssueTypeBreakdown() {
-    console.log('=== CALCULATING ISSUE TYPE BREAKDOWN ===');
+function calculateActivityTypeBreakdown() {
+    console.log('=== CALCULATING ACTIVITY TYPE BREAKDOWN ===');
     
     const breakdown = {
-        aboveLine: { stories: 0, bugs: 0, tasks: 0, other: 0 },
-        belowLine: { stories: 0, bugs: 0, tasks: 0, other: 0 },
-        total: { stories: 0, bugs: 0, tasks: 0, other: 0 }
+        aboveLine: {
+            // High cost activities
+            development: 0,
+            'defects/fixes': 0,
+            integration: 0,
+            infrastructure: 0,
+            'go-to-market': 0,
+            // Low cost activities  
+            compliance: 0,
+            prototyping: 0,
+            validation: 0,
+            optimization: 0,
+            support: 0,
+            research: 0,
+            planning: 0,
+            community: 0
+        },
+        belowLine: {
+            // High cost activities
+            development: 0,
+            'defects/fixes': 0,
+            integration: 0,
+            infrastructure: 0,
+            'go-to-market': 0,
+            // Low cost activities
+            compliance: 0,
+            prototyping: 0,
+            validation: 0,
+            optimization: 0,
+            support: 0,
+            research: 0,
+            planning: 0,
+            community: 0
+        }
     };
     
     if (!boardData?.initiatives) {
@@ -2290,46 +2321,57 @@ function calculateIssueTypeBreakdown() {
         
         if (initiative.jira?.hasLiveData && initiative.jira?.childIssues) {
             initiative.jira.childIssues.forEach(childIssue => {
-                const issueType = childIssue.fields?.issuetype?.name?.toLowerCase() || 'other';
+                // Get activity type from the child issue
+                let activityType = getFieldValue(childIssue, 'customfield_10190');
                 
-                let category;
-                if (issueType.includes('story') || issueType.includes('feature')) {
-                    category = 'stories';
-                } else if (issueType.includes('bug') || issueType.includes('defect')) {
-                    category = 'bugs'; 
-                } else if (issueType.includes('task') || issueType.includes('subtask')) {
-                    category = 'tasks';
+                // Normalize the activity type to match our categories
+                if (activityType) {
+                    activityType = activityType.toLowerCase().trim();
+                    
+                    // Map variations to standard names
+                    if (activityType.includes('defect') || activityType.includes('fix') || activityType.includes('bug')) {
+                        activityType = 'defects/fixes';
+                    } else if (activityType.includes('go-to-market') || activityType.includes('marketing')) {
+                        activityType = 'go-to-market';
+                    }
+                    
+                    // Count in appropriate section if we recognize the activity type
+                    const targetSection = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
+                    if (targetSection.hasOwnProperty(activityType)) {
+                        targetSection[activityType]++;
+                    } else {
+                        console.log(`Unknown activity type: ${activityType} for ${childIssue.key}`);
+                    }
                 } else {
-                    category = 'other';
+                    console.log(`No activity type found for ${childIssue.key}`);
                 }
-                
-                // Count in appropriate section
-                if (isAboveLine) {
-                    breakdown.aboveLine[category]++;
-                } else {
-                    breakdown.belowLine[category]++;
-                }
-                breakdown.total[category]++;
             });
         }
     });
     
-    console.log('Issue type breakdown:', breakdown);
+    console.log('Activity type breakdown:', breakdown);
     return breakdown;
 }
 
-// Enhanced modal function for detailed analysis
+// Update the modal to use activity type breakdown instead of issue type
 function showMendozaAnalysisModal() {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.getElementById('modal-content');
     
-    // USE THE STORED VALUE
     const metrics = window.currentMendozaMetrics || calculateResourceAllocation();
-    
     console.log('Modal using stored metrics:', metrics.efficiencyScore + '%');
     
     const detailedBreakdown = calculateDetailedResourceBreakdown();
-    const issueBreakdown = calculateIssueTypeBreakdown(); // NEW: Get issue type breakdown
+    const activityBreakdown = calculateActivityTypeBreakdown(); // Use activity breakdown
+    
+    // Calculate totals for high/low cost activities
+    const highCostActivities = ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'];
+    const lowCostActivities = ['compliance', 'prototyping', 'validation', 'optimization', 'support', 'research', 'planning', 'community'];
+    
+    const highCostAbove = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
+    const highCostBelow = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
+    const lowCostAbove = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
+    const lowCostBelow = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
     
     modalContent.innerHTML = `
         <div class="modal-header">
@@ -2353,73 +2395,59 @@ function showMendozaAnalysisModal() {
                 </div>
             </div>
             
-            <!-- UPDATED: Issue Type Breakdown Section -->
+            <!-- Activity Type Breakdown Section -->
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                <h4 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Work Item Allocation</h4>
+                <h4 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Work Item Allocation by Activity Type</h4>
                 
-                <div class="grid grid-cols-3 gap-4">
-                    <!-- Stories Column -->
+                <div class="grid grid-cols-2 gap-6">
+                    <!-- High Cost Activities Column -->
                     <div>
-                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-blue);">Stories & Features</h5>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
-                                <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
-                                <span class="font-medium text-sm" style="color: var(--accent-green);">
-                                    ${issueBreakdown.aboveLine.stories}
+                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-red);">High Cost Activities</h5>
+                        <div class="space-y-2 text-xs">
+                            ${highCostActivities.map(activity => `
+                                <div class="flex justify-between items-center">
+                                    <span style="color: var(--text-secondary); text-transform: capitalize;">${activity}:</span>
+                                    <span style="color: var(--text-primary);">
+                                        ${activityBreakdown.aboveLine[activity]} above, ${activityBreakdown.belowLine[activity]} below
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="mt-3 p-2 rounded" style="background: var(--bg-quaternary);">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium" style="color: var(--text-secondary);">Total High Cost:</span>
+                                <span class="text-sm font-medium" style="color: var(--text-primary);">
+                                    ${highCostAbove} above, ${highCostBelow} below
                                 </span>
                             </div>
-                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
-                                <span class="text-sm" style="color: var(--text-secondary);">Below Line</span>
-                                <span class="font-medium text-sm" style="color: ${issueBreakdown.belowLine.stories > issueBreakdown.aboveLine.stories ? 'var(--accent-red)' : 'var(--accent-blue)'};">
-                                    ${issueBreakdown.belowLine.stories}
-                                </span>
-                            </div>
-                            <div class="text-xs pt-1" style="color: var(--text-tertiary);">
-                                Total: ${issueBreakdown.total.stories} stories
+                            <div class="text-xs mt-1" style="color: ${highCostBelow > highCostAbove ? 'var(--accent-red)' : 'var(--accent-green)'};">
+                                ${highCostAbove + highCostBelow > 0 ? Math.round((highCostAbove / (highCostAbove + highCostBelow)) * 100) : 0}% properly allocated above line
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Bugs Column -->
+                    <!-- Low Cost Activities Column -->
                     <div>
-                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-red);">Bugs & Defects</h5>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
-                                <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
-                                <span class="font-medium text-sm" style="color: var(--accent-green);">
-                                    ${issueBreakdown.aboveLine.bugs}
-                                </span>
-                            </div>
-                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
-                                <span class="text-sm" style="color: var(--text-secondary);">Below Line</span>
-                                <span class="font-medium text-sm" style="color: var(--accent-blue);">
-                                    ${issueBreakdown.belowLine.bugs}
-                                </span>
-                            </div>
-                            <div class="text-xs pt-1" style="color: var(--text-tertiary);">
-                                Total: ${issueBreakdown.total.bugs} bugs
-                            </div>
+                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-green);">Low Cost Activities</h5>
+                        <div class="space-y-2 text-xs">
+                            ${lowCostActivities.map(activity => `
+                                <div class="flex justify-between items-center">
+                                    <span style="color: var(--text-secondary); text-transform: capitalize;">${activity}:</span>
+                                    <span style="color: var(--text-primary);">
+                                        ${activityBreakdown.aboveLine[activity]} above, ${activityBreakdown.belowLine[activity]} below
+                                    </span>
+                                </div>
+                            `).join('')}
                         </div>
-                    </div>
-                    
-                    <!-- Tasks Column -->
-                    <div>
-                        <h5 class="font-medium mb-3 text-sm" style="color: var(--accent-orange);">Tasks & Support</h5>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
-                                <span class="text-sm" style="color: var(--text-secondary);">Above Line</span>
-                                <span class="font-medium text-sm" style="color: var(--accent-green);">
-                                    ${issueBreakdown.aboveLine.tasks}
+                        <div class="mt-3 p-2 rounded" style="background: var(--bg-quaternary);">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium" style="color: var(--text-secondary);">Total Low Cost:</span>
+                                <span class="text-sm font-medium" style="color: var(--text-primary);">
+                                    ${lowCostAbove} above, ${lowCostBelow} below
                                 </span>
                             </div>
-                            <div class="flex justify-between items-center p-2 rounded" style="background: var(--bg-quaternary);">
-                                <span class="text-sm" style="color: var(--text-secondary);">Below Line</span>
-                                <span class="font-medium text-sm" style="color: var(--accent-blue);">
-                                    ${issueBreakdown.belowLine.tasks}
-                                </span>
-                            </div>
-                            <div class="text-xs pt-1" style="color: var(--text-tertiary);">
-                                Total: ${issueBreakdown.total.tasks} tasks
+                            <div class="text-xs mt-1" style="color: ${lowCostBelow > lowCostAbove ? 'var(--accent-green)' : 'var(--accent-orange)'};">
+                                ${lowCostAbove + lowCostBelow > 0 ? Math.round((lowCostBelow / (lowCostAbove + lowCostBelow)) * 100) : 0}% properly allocated below line
                             </div>
                         </div>
                     </div>
@@ -2431,13 +2459,13 @@ function showMendozaAnalysisModal() {
                         <div class="flex justify-between">
                             <span style="color: var(--text-secondary);">Total Above Line:</span>
                             <span style="color: var(--text-primary);">
-                                ${issueBreakdown.aboveLine.stories + issueBreakdown.aboveLine.bugs + issueBreakdown.aboveLine.tasks + issueBreakdown.aboveLine.other} issues
+                                ${highCostAbove + lowCostAbove} work items
                             </span>
                         </div>
                         <div class="flex justify-between">
                             <span style="color: var(--text-secondary);">Total Below Line:</span>
                             <span style="color: var(--text-primary);">
-                                ${issueBreakdown.belowLine.stories + issueBreakdown.belowLine.bugs + issueBreakdown.belowLine.tasks + issueBreakdown.belowLine.other} issues
+                                ${highCostBelow + lowCostBelow} work items
                             </span>
                         </div>
                     </div>
@@ -2445,14 +2473,14 @@ function showMendozaAnalysisModal() {
             </div>
 
             <!-- Warning for high waste -->
-            ${metrics.wasteLevel > 15 ? `
+            ${highCostBelow > 20 ? `
             <div class="p-4 rounded-lg" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red);">
                 <h4 class="font-semibold mb-2" style="color: var(--accent-red);">
                     Resource Waste Alert
                 </h4>
                 <p class="text-sm" style="color: var(--text-secondary);">
-                    ${issueBreakdown.belowLine.stories} stories and ${issueBreakdown.belowLine.tasks} tasks below the line represent 
-                    ${metrics.wasteLevel}% resource waste. Consider promoting high-value development work above priority 14.
+                    ${highCostBelow} high-cost work items below the line represent significant resource waste. 
+                    These development, infrastructure, and go-to-market activities should be prioritized above the line.
                 </p>
             </div>
             ` : ''}
@@ -2464,23 +2492,10 @@ function showMendozaAnalysisModal() {
                     <canvas id="modal-activity-chart"></canvas>
                 </div>
             </div>
-            
-            <!-- Enhanced Recommendations -->
-            <div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">
-                <h4 class="font-semibold mb-3" style="color: var(--accent-blue);">
-                    Actionable Recommendations
-                </h4>
-                <div class="space-y-3" id="recommendations-list">
-                    <!-- Recommendations will be populated by generateEnhancedRecommendations -->
-                </div>
-            </div>
         </div>
     `;
     
-    // Populate recommendations and create activity chart
-    populateEnhancedModalDetails(detailedBreakdown, metrics, issueBreakdown);
     createModalActivityChart(detailedBreakdown);
-    
     modal.classList.add('show');
 }
 
