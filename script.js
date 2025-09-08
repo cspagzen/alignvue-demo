@@ -4803,22 +4803,30 @@ function updateMendozaCard() {
                 <canvas id="mendoza-donut-chart" width="120" height="120"></canvas>
                 
                 <!-- Center Metric -->
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div class="text-center">
-                        <div class="text-2xl font-bold" style="color: ${resourceMetrics.efficiencyColor};" id="mendoza-efficiency-score">
-                            ${resourceMetrics.efficiencyScore}%
-                        </div>
-                        <div class="text-xs font-medium" style="color: var(--text-tertiary);">
-                            EFFICIENT
-                        </div>
-                    </div>
-                </div>
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <div class="text-center">
+        <div class="text-2xl font-bold" style="color: ${resourceMetrics.efficiencyColor};" id="mendoza-efficiency-score">
+            Loading...
+        </div>
+        <div class="text-xs font-medium" style="color: var(--text-tertiary);">
+            EFFICIENT
+        </div>
+    </div>
+</div>
             </div>
         </div>
     `;
     
     // Initialize Chart.js donut chart
     initializeMendozaChart(resourceMetrics);
+    // Set the center text using the same calculation as the modal
+setTimeout(() => {
+    const freshMetrics = calculateResourceAllocation();
+    const centerElement = document.getElementById('mendoza-efficiency-score');
+    if (centerElement) {
+        centerElement.textContent = freshMetrics.efficiencyScore + '%';
+    }
+}, 10);
 }
 
 function calculateResourceAllocation() {
@@ -10363,14 +10371,5 @@ function showSyncIndicator(type) {
     } catch (error) {
         console.error('❌ Application initialization failed:', error);
     }
-            // Add this anywhere in your script.js - outside of any function
-const mendozaTextFixer = setInterval(() => {
-    const centerElement = document.getElementById('mendoza-efficiency-score');
-    if (centerElement && centerElement.textContent === '50%') {
-        const correctMetrics = calculateResourceAllocation();
-        centerElement.textContent = correctMetrics.efficiencyScore + '%';
-        console.log('Nuclear override: Fixed 50% to', correctMetrics.efficiencyScore + '%');
-    }
-}, 100);
             
 })();
