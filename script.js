@@ -2378,7 +2378,6 @@ function showMendozaAnalysisModal() {
    document.getElementById('modal-title').textContent = 'Mendoza Line Analysis';
 modalContent.innerHTML = `
     <div class="space-y-6">
-    // rest of content (no H2)
             <!-- Efficiency Score Display -->
             <div class="flex items-center justify-center p-6">
                 <div class="text-center">
