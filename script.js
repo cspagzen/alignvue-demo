@@ -4890,8 +4890,62 @@ function updateMendozaCard() {
         <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" id="mendoza-clickable" onclick="showMendozaAnalysisModal()">
             <div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Resource Efficiency</div>
             
+            <!-- Radial Progress Chart -->
             <div class="relative mb-3" style="width: 120px; height: 120px;">
-                <canvas id="mendoza-donut-chart" width="120" height="120"></canvas>
+                <svg width="120" height="120" viewBox="0 0 120 120" class="radial-progress">
+                    <!-- Background circle -->
+                    <circle 
+                        cx="60" 
+                        cy="60" 
+                        r="50" 
+                        fill="none" 
+                        stroke="rgba(59, 130, 246, 0.2)" 
+                        stroke-width="8"
+                    />
+                    <!-- Progress circle -->
+                    <circle 
+                        cx="60" 
+                        cy="60" 
+                        r="50" 
+                        fill="none" 
+                        stroke="${resourceMetrics.efficiencyColor === 'var(--accent-green)' ? '#10b981' : 
+                                resourceMetrics.efficiencyColor === 'var(--accent-orange)' ? '#f59e0b' : '#ef4444'}" 
+                        stroke-width="8" 
+                        stroke-linecap="round"
+                        stroke-dasharray="${2 * Math.PI * 50}"
+                        stroke-dashoffset="${2 * Math.PI * 50 * (1 - resourceMetrics.efficiencyScore / 100)}"
+                        transform="rotate(-90 60 60)"
+                        class="progress-ring"
+                    />
+                    
+                    <!-- Center Text -->
+                    <text 
+                        x="60" 
+                        y="55" 
+                        text-anchor="middle" 
+                        dominant-baseline="middle" 
+                        fill="${resourceMetrics.efficiencyColor === 'var(--accent-green)' ? '#10b981' : 
+                               resourceMetrics.efficiencyColor === 'var(--accent-orange)' ? '#f59e0b' : '#ef4444'}" 
+                        font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+                        font-size="24" 
+                        font-weight="bold"
+                    >
+                        ${resourceMetrics.efficiencyScore}%
+                    </text>
+                    
+                    <!-- Subtitle -->
+                    <text 
+                        x="60" 
+                        y="75" 
+                        text-anchor="middle" 
+                        dominant-baseline="middle" 
+                        fill="rgba(156, 163, 175, 0.8)" 
+                        font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+                        font-size="11"
+                    >
+                        Efficiency
+                    </text>
+                </svg>
             </div>
             
             <div class="text-xs" style="color: ${resourceMetrics.efficiencyColor};">
@@ -4901,9 +4955,27 @@ function updateMendozaCard() {
         </div>
     `;
     
-    setTimeout(() => {
-        initializeMendozaChart(resourceMetrics);
-    }, 50);
+    // Add CSS animation for the radial progress
+    if (!document.getElementById('radial-progress-styles')) {
+        const style = document.createElement('style');
+        style.id = 'radial-progress-styles';
+        style.textContent = `
+            .progress-ring {
+                transition: stroke-dashoffset 1s ease-in-out;
+            }
+            
+            .radial-progress:hover .progress-ring {
+                stroke-width: 10;
+                transition: stroke-width 0.3s ease;
+            }
+            
+            .kpi-gauge-card:hover {
+                transform: translateY(-2px);
+                transition: transform 0.2s ease;
+            }
+        `;
+        document.head.appendChild(style);
+    }
 }
 
 function calculateResourceAllocation() {
@@ -5045,70 +5117,93 @@ function getInitiativeActivityType(initiative) {
 let mendozaChart = null;
 
 function initializeMendozaChart(metrics) {
-    const canvas = document.getElementById('mendoza-donut-chart');
-    if (!canvas) return;
+    // This function is no longer needed since we're using SVG radial progress
+    console.log('Using radial progress instead of Chart.js - no initialization needed');
+}
+
+function showMendozaAnalysisModal() {
+    const modal = document.getElementById('detail-modal');
+    const modalContent = document.getElementById('modal-content');
     
-    const ctx = canvas.getContext('2d');
+    // USE THE STORED VALUE
+    const metrics = window.currentMendozaMetrics || calculateResourceAllocation();
     
-    if (mendozaChart) {
-        mendozaChart.destroy();
-    }
+    console.log('Modal using stored metrics:', metrics.efficiencyScore + '%');
     
-    let efficiencyColor = metrics.efficiencyScore >= 80 ? '#10b981' : 
-                         metrics.efficiencyScore >= 60 ? '#f59e0b' : '#ef4444';
+    const detailedBreakdown = calculateDetailedResourceBreakdown();
     
-    mendozaChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Above Line Resources', 'Below Line Resources'],
-            datasets: [{
-                data: [metrics.aboveLinePercent, metrics.belowLinePercent],
-                backgroundColor: [
-                    metrics.efficiencyScore >= 80 ? 'rgba(16, 185, 129, 0.8)' : 
-                    metrics.efficiencyScore >= 60 ? 'rgba(245, 158, 11, 0.8)' : 
-                    'rgba(239, 68, 68, 0.8)',
-                    'rgba(59, 130, 246, 0.3)'
-                ],
-                borderColor: [efficiencyColor, 'rgba(59, 130, 246, 0.6)'],
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '65%',
-            plugins: { legend: { display: false } }
-        },
-        plugins: [{
-            id: 'centerText',
-            beforeDraw: function(chart) {
-                // USE THE STORED VALUE - DON'T RECALCULATE
-                const storedMetrics = window.currentMendozaMetrics;
-                if (!storedMetrics) return;
-                
-                console.log('Drawing center text:', storedMetrics.efficiencyScore + '%');
-                
-                const ctx = chart.ctx;
-                const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-                const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
-                
-                ctx.save();
-                ctx.font = 'bold 24px Inter';
-                ctx.fillStyle = storedMetrics.efficiencyScore >= 80 ? '#10b981' : 
-                               storedMetrics.efficiencyScore >= 60 ? '#f59e0b' : '#ef4444';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                
-                ctx.fillText(storedMetrics.efficiencyScore + '%', centerX, centerY - 5);
-                
-                ctx.font = '11px Inter';
-                ctx.fillStyle = 'rgba(156, 163, 175, 0.8)';
-                ctx.fillText('Efficiency', centerX, centerY + 15);
-                
-                ctx.restore();
-            }
-        }]
-    });
+    modalContent.innerHTML = `
+        <div class="modal-header">
+            <h2 class="text-xl font-bold" style="color: var(--text-primary);">
+                Resource Allocation Analysis
+            </h2>
+        </div>
+        
+        <div class="p-6 space-y-6">
+            <!-- Efficiency Overview -->
+            <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
+                <div class="flex items-center gap-2 mb-3">
+                    <h3 class="text-lg font-semibold" style="color: ${metrics.efficiencyColor};">
+                        ${metrics.efficiencyScore}% Resource Efficiency
+                    </h3>
+                    <button onclick="showEfficiencyInfoModal()" class="flex items-center gap-1 text-xs" style="color: var(--accent-blue); cursor: pointer;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 16v-4"/>
+                            <path d="M12 8h.01"/>
+                        </svg>
+                        How is this score calculated?
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <div style="color: var(--text-secondary);">Above Line (1-14)</div>
+                        <div class="text-lg font-bold" style="color: var(--accent-green);">${metrics.aboveLineCount} initiatives</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-secondary);">Below Line (15+)</div>
+                        <div class="text-lg font-bold" style="color: var(--accent-blue);">${metrics.belowLineCount} initiatives</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resource Waste Alert -->
+            ${metrics.wasteLevel > 20 ? `
+            <div class="p-4 rounded-lg" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red);">
+                <h4 class="font-semibold mb-2" style="color: var(--accent-red);">
+                    ⚠️ High Resource Waste Detected
+                </h4>
+                <p class="text-sm" style="color: var(--text-secondary);">
+                    ${metrics.wasteLevel}% of initiatives are high-resource activities below the Mendoza line. 
+                    Consider moving development/go-to-market work above the line.
+                </p>
+            </div>
+            ` : ''}
+            
+            <!-- Activity Distribution Chart -->
+            <div>
+                <h4 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Activity Distribution</h4>
+                <div class="relative" style="height: 300px;">
+                    <canvas id="modal-activity-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Recommendations -->
+            <div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">
+                <h4 class="font-semibold mb-2" style="color: var(--accent-blue);">
+                    💡 Optimization Recommendations
+                </h4>
+                <ul class="text-sm space-y-1" style="color: var(--text-secondary);" id="recommendations-list">
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    // Populate recommendations and create activity chart
+    populateModalDetails(detailedBreakdown, metrics);
+    createModalActivityChart(detailedBreakdown);
+    
+    modal.classList.add('show');
 }
 
 function getTeamsWorkingOnlyOnHighPriority() {
