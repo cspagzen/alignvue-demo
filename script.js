@@ -2424,6 +2424,8 @@ function calculateResourceAllocation() {
 // Add this missing function to your script.js
 
 function calculateDetailedResourceBreakdown() {
+    console.log('=== CALCULATING ACTIVITY BREAKDOWN FROM LIVE DATA ===');
+    
     const breakdown = {
         aboveLine: {},
         belowLine: {},
@@ -2433,14 +2435,19 @@ function calculateDetailedResourceBreakdown() {
     const highResourceActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
     
     if (boardData?.initiatives) {
+        console.log('Processing initiatives for activity breakdown:', boardData.initiatives.length);
+        
         boardData.initiatives.forEach(initiative => {
             const priority = initiative.priority;
             const activityType = getInitiativeActivityType(initiative);
+            
+            console.log(`Activity breakdown - ${initiative.title}: Priority ${priority}, Activity: ${activityType}`);
             
             if (priority !== 'pipeline') {
                 const isAboveLine = priority <= 14;
                 const isHighResource = highResourceActivities.includes(activityType);
                 
+                // Add to appropriate section
                 const target = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
                 target[activityType] = (target[activityType] || 0) + 1;
                 
@@ -2456,6 +2463,10 @@ function calculateDetailedResourceBreakdown() {
             }
         });
     }
+    
+    console.log('Activity breakdown result:', breakdown);
+    console.log('Above line activities:', Object.keys(breakdown.aboveLine));
+    console.log('Below line activities:', Object.keys(breakdown.belowLine));
     
     return breakdown;
 }
@@ -2497,8 +2508,14 @@ function generateRecommendations(breakdown, metrics) {
 }
 
 function createModalActivityChart(breakdown) {
+    console.log('=== CREATING ACTIVITY CHART WITH LIVE DATA ===');
+    console.log('Breakdown received:', breakdown);
+    
     const canvas = document.getElementById('modal-activity-chart');
-    if (!canvas) return;
+    if (!canvas) {
+        console.error('Canvas element not found');
+        return;
+    }
     
     const ctx = canvas.getContext('2d');
     
@@ -2507,40 +2524,65 @@ function createModalActivityChart(breakdown) {
         window.modalActivityChart.destroy();
     }
     
-    // Activity colors
+    // Enhanced activity colors with more comprehensive mapping
     const activityColors = {
-        'development': '#3b82f6',
-        'go-to-market': '#8b5cf6',
-        'infrastructure': '#06b6d4',
-        'support': '#10b981',
-        'validation': '#f59e0b',
-        'research': '#ef4444',
-        'prototyping': '#ec4899',
-        'planning': '#84cc16',
-        'integration': '#6366f1',
-        'compliance': '#f97316',
-        'community': '#14b8a6',
-        'optimization': '#a855f7',
-        'bugs': '#ef4444'
+        'development': '#3b82f6',        // Blue
+        'go-to-market': '#8b5cf6',       // Purple  
+        'infrastructure': '#06b6d4',     // Cyan
+        'support': '#10b981',            // Green
+        'validation': '#f59e0b',         // Amber
+        'research': '#ef4444',           // Red
+        'prototyping': '#ec4899',        // Pink
+        'planning': '#84cc16',           // Lime
+        'integration': '#6366f1',        // Indigo
+        'compliance': '#f97316',         // Orange
+        'community': '#14b8a6',          // Teal
+        'optimization': '#a855f7',       // Violet
+        'bugs': '#dc2626',               // Red-600
+        'testing': '#059669',            // Emerald-600
+        'design': '#7c3aed',             // Violet-600
+        'documentation': '#0891b2',      // Cyan-600
+        'security': '#dc2626',           // Red-600
+        'analytics': '#1f2937'           // Gray-800
     };
     
-    // Get all unique activities
+    // Get ALL unique activities from BOTH above and below line
     const allActivities = new Set([
-        ...Object.keys(breakdown.aboveLine),
-        ...Object.keys(breakdown.belowLine)
+        ...Object.keys(breakdown.aboveLine || {}),
+        ...Object.keys(breakdown.belowLine || {})
     ]);
+    
+    console.log('All unique activities found:', Array.from(allActivities));
+    
+    if (allActivities.size === 0) {
+        console.warn('No activities found in breakdown');
+        // Show empty state
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'flex items-center justify-center h-full text-center';
+        emptyDiv.style.color = 'var(--text-secondary)';
+        emptyDiv.innerHTML = '<div>No activity data available</div>';
+        canvas.parentElement.appendChild(emptyDiv);
+        canvas.style.display = 'none';
+        return;
+    }
     
     const aboveData = [];
     const belowData = [];
     const labels = [];
     const colors = [];
     
+    // Build chart data
     allActivities.forEach(activity => {
-        labels.push(activity);
+        labels.push(activity.charAt(0).toUpperCase() + activity.slice(1)); // Capitalize
         aboveData.push(breakdown.aboveLine[activity] || 0);
         belowData.push(breakdown.belowLine[activity] || 0);
-        colors.push(activityColors[activity] || '#6b7280');
+        colors.push(activityColors[activity] || '#6b7280'); // Default gray
     });
+    
+    console.log('Chart data prepared:');
+    console.log('Labels:', labels);
+    console.log('Above data:', aboveData);
+    console.log('Below data:', belowData);
     
     window.modalActivityChart = new Chart(ctx, {
         type: 'bar',
@@ -2549,15 +2591,16 @@ function createModalActivityChart(breakdown) {
             datasets: [{
                 label: 'Above Line (1-14)',
                 data: aboveData,
-                backgroundColor: colors.map(color => color + '80'),
+                backgroundColor: colors.map(color => color + 'CC'), // More opaque
                 borderColor: colors,
-                borderWidth: 1
+                borderWidth: 2
             }, {
                 label: 'Below Line (15+)', 
                 data: belowData,
-                backgroundColor: colors.map(color => color + '40'),
-                borderColor: colors,
-                borderWidth: 1
+                backgroundColor: colors.map(color => color + '66'), // More transparent
+                borderColor: colors.map(color => color + 'AA'),
+                borderWidth: 1,
+                borderDash: [5, 5] // Dashed border for below line
             }]
         },
         options: {
@@ -2565,11 +2608,32 @@ function createModalActivityChart(breakdown) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: true,
+                    display: true, // ENABLE LEGEND
                     position: 'top',
                     labels: {
-                        color: 'var(--text-primary)',
-                        font: { size: 12 }
+                        color: '#ffffff', // White text for dark theme
+                        font: { 
+                            size: 12,
+                            family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                        },
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'rect'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 15, 35, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(99, 102, 241, 0.3)',
+                    borderWidth: 1,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label + ' Activities';
+                        },
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y + ' initiatives';
+                        }
                     }
                 }
             },
@@ -2578,33 +2642,64 @@ function createModalActivityChart(breakdown) {
                     title: {
                         display: true,
                         text: 'Activity Type',
-                        color: 'var(--text-primary)',
-                        font: { size: 12 }
+                        color: '#ffffff',
+                        font: { 
+                            size: 14,
+                            family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                        }
                     },
                     ticks: { 
-                        color: 'var(--text-secondary)', 
-                        font: { size: 10 },
-                        maxRotation: 45
+                        color: '#d1d5db', // Light gray
+                        font: { 
+                            size: 11,
+                            family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                        },
+                        maxRotation: 45,
+                        minRotation: 0
                     },
-                    grid: { display: false }
+                    grid: { 
+                        display: false 
+                    },
+                    border: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
                 },
                 y: {
                     title: {
                         display: true,
                         text: 'Number of Initiatives',
-                        color: 'var(--text-primary)',
-                        font: { size: 12 }
+                        color: '#ffffff',
+                        font: { 
+                            size: 14,
+                            family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                        }
                     },
                     ticks: { 
-                        color: 'var(--text-secondary)', 
-                        font: { size: 10 },
-                        stepSize: 1
+                        color: '#d1d5db', // Light gray
+                        font: { 
+                            size: 11,
+                            family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                        },
+                        stepSize: 1,
+                        beginAtZero: true
                     },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        lineWidth: 0.5
+                    },
+                    border: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
                 }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
+    
+    console.log('Activity chart created successfully');
 }
 
 
