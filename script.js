@@ -2424,7 +2424,7 @@ function calculateResourceAllocation() {
 // Add this missing function to your script.js
 
 function calculateDetailedResourceBreakdown() {
-    console.log('=== CALCULATING ACTIVITY BREAKDOWN FROM LIVE DATA ===');
+    console.log('=== CALCULATING ACTIVITY BREAKDOWN FROM CHILD ISSUES ===');
     
     const breakdown = {
         aboveLine: {},
@@ -2435,38 +2435,76 @@ function calculateDetailedResourceBreakdown() {
     const highResourceActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
     
     if (boardData?.initiatives) {
-        console.log('Processing initiatives for activity breakdown:', boardData.initiatives.length);
+        console.log('Processing initiatives for child issue activity breakdown:', boardData.initiatives.length);
         
         boardData.initiatives.forEach(initiative => {
             const priority = initiative.priority;
-            const activityType = getInitiativeActivityType(initiative);
+            const isAboveLine = priority <= 14;
             
-            console.log(`Activity breakdown - ${initiative.title}: Priority ${priority}, Activity: ${activityType}`);
+            console.log(`Processing initiative: ${initiative.title}, Priority: ${priority}, Above line: ${isAboveLine}`);
             
-            if (priority !== 'pipeline') {
-                const isAboveLine = priority <= 14;
-                const isHighResource = highResourceActivities.includes(activityType);
+            // Check if this initiative has live Jira data with child issues
+            if (initiative.jira?.hasLiveData && initiative.jira?.childIssues) {
+                console.log(`  - Has ${initiative.jira.childIssues.length} child issues`);
                 
-                // Add to appropriate section
-                const target = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
-                target[activityType] = (target[activityType] || 0) + 1;
+                // Process each child issue for activity types
+                initiative.jira.childIssues.forEach(childIssue => {
+                    // Get Activity Type from child issue's customfield_10190
+                    const activityType = getFieldValue(childIssue, 'customfield_10190');
+                    
+                    if (activityType) {
+                        console.log(`    Child ${childIssue.key}: Activity Type = ${activityType}`);
+                        
+                        // Add to appropriate section based on parent initiative's priority
+                        const target = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
+                        target[activityType] = (target[activityType] || 0) + 1;
+                        
+                        // Track misallocated high-resource work below the line
+                        const isHighResource = highResourceActivities.includes(activityType);
+                        if (!isAboveLine && isHighResource) {
+                            breakdown.misallocated.push({
+                                title: childIssue.fields.summary,
+                                parentTitle: initiative.title,
+                                activityType: activityType,
+                                priority: priority,
+                                teams: initiative.teams,
+                                childKey: childIssue.key
+                            });
+                        }
+                    } else {
+                        console.log(`    Child ${childIssue.key}: No Activity Type found`);
+                    }
+                });
+            } else {
+                console.log(`  - No child issues data available (using fallback)`);
                 
-                // Track misallocated high-resource work below the line
-                if (!isAboveLine && isHighResource) {
-                    breakdown.misallocated.push({
-                        title: initiative.title,
-                        activityType: activityType,
-                        priority: priority,
-                        teams: initiative.teams
-                    });
+                // Fallback: Use parent initiative activity type if no child data
+                const activityType = getInitiativeActivityType(initiative);
+                
+                if (priority !== 'pipeline') {
+                    const target = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
+                    target[activityType] = (target[activityType] || 0) + 1;
+                    
+                    const isHighResource = highResourceActivities.includes(activityType);
+                    if (!isAboveLine && isHighResource) {
+                        breakdown.misallocated.push({
+                            title: initiative.title,
+                            activityType: activityType,
+                            priority: priority,
+                            teams: initiative.teams
+                        });
+                    }
                 }
             }
         });
     }
     
-    console.log('Activity breakdown result:', breakdown);
-    console.log('Above line activities:', Object.keys(breakdown.aboveLine));
-    console.log('Below line activities:', Object.keys(breakdown.belowLine));
+    console.log('Activity breakdown result from child issues:');
+    console.log('Above line activities:', breakdown.aboveLine);
+    console.log('Below line activities:', breakdown.belowLine);
+    console.log('Total above line items:', Object.values(breakdown.aboveLine).reduce((a, b) => a + b, 0));
+    console.log('Total below line items:', Object.values(breakdown.belowLine).reduce((a, b) => a + b, 0));
+    console.log('Misallocated items:', breakdown.misallocated.length);
     
     return breakdown;
 }
@@ -9698,7 +9736,7 @@ function findOKRAlignment(issue, okrIssues) {
 
 // Transform Jira data to board format
 function transformJiraData(initiativesResponse, okrsResponse, completedInitiatives) {
-    console.log('Transforming Jira data with live completion...');
+    console.log('Transforming Jira data with child issues for activity tracking...');
     
     const transformedInitiatives = initiativesResponse.issues.map((issue, index) => {
         const project = issue.fields.project.key;
@@ -9809,7 +9847,9 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
                 assignee: issue.fields.assignee?.displayName || 'Unassigned',
                 updated: issue.fields.updated,
                 hasLiveData: hasChildIssues || hasCachedData,
-                activityType: activityType
+                activityType: activityType,
+                // IMPORTANT: Store child issues for activity breakdown
+                childIssues: issue.childIssues || []
             },
             canvas: {
                 outcome: extractTextFromDoc(getFieldValue(issue, 'customfield_10054')) || 'Outcome to be defined',
@@ -9828,14 +9868,20 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
     const activeInitiatives = transformedInitiatives.filter(i => i.priority !== 'pipeline');
     const pipelineInitiatives = transformedInitiatives.filter(i => i.priority === 'pipeline');
     
-    // Log completion statistics
-    const liveDataCount = activeInitiatives.filter(i => i.jira.hasLiveData).length;
-    const cachedDataCount = activeInitiatives.filter(i => i.jira.hasLiveData && !calculateLiveCompletion(initiativesResponse.issues.find(issue => issue.key === i.jira.key)?.childIssues || []).total).length;
+    // Log child issues statistics
+    let totalChildIssues = 0;
+    let initiativesWithChildIssues = 0;
     
-    console.log(`Active initiatives: ${activeInitiatives.length}`);
-    console.log(`  - With live data: ${liveDataCount - cachedDataCount}`);
-    console.log(`  - With cached data: ${cachedDataCount}`);
-    console.log(`  - With mock data: ${activeInitiatives.length - liveDataCount}`);
+    activeInitiatives.forEach(init => {
+        if (init.jira.childIssues && init.jira.childIssues.length > 0) {
+            totalChildIssues += init.jira.childIssues.length;
+            initiativesWithChildIssues++;
+        }
+    });
+    
+    console.log(`Child Issues Summary:`);
+    console.log(`  - Total child issues: ${totalChildIssues}`);
+    console.log(`  - Initiatives with child issues: ${initiativesWithChildIssues}/${activeInitiatives.length}`);
     
     return {
         initiatives: activeInitiatives,
