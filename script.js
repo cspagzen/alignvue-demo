@@ -2931,19 +2931,56 @@ function showExpensiveInitiativesBelowLineModal() {
     
     modalContent.innerHTML = `
         <div class="space-y-4">
-            <!-- Add the close button in the header -->
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Expensive Initiatives Below the Line</h2>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <!-- Rest of your modal content -->
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                <!-- Your existing content -->
+                <h4 class="font-semibold mb-3" style="color: var(--accent-red);">
+                    ${expensiveInitiatives.length} Initiatives with Expensive Work Below Priority 14
+                </h4>
+                <p class="text-sm mb-4" style="color: var(--text-secondary);">
+                    These initiatives contain development, infrastructure, or go-to-market work that requires expensive specialized teams. 
+                    Consider promoting them above the Mendoza line or deprecating them to free up engineering capacity.
+                </p>
+                
+                <div class="space-y-3">
+                    ${expensiveInitiatives.map(initiative => `
+                        <div class="p-3 rounded-lg" style="background: var(--bg-quaternary); border-left: 3px solid var(--accent-red);">
+                            <div class="flex justify-between items-start mb-2">
+                                <h5 class="font-medium" style="color: var(--text-primary);">${initiative.title}</h5>
+                                <div class="flex gap-2">
+                                    <span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">
+                                        Priority ${initiative.priority}
+                                    </span>
+                                    <span class="text-xs px-2 py-1 rounded" style="background: var(--accent-orange); color: white;">
+                                        ${initiative.expensiveWorkCount} Expensive Items
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-xs mb-2" style="color: var(--text-secondary);">
+                                Teams: ${initiative.teams.join(', ') || 'Not assigned'}
+                            </div>
+                            
+                            <div class="space-y-1">
+                                ${initiative.expensiveWorkDetails.slice(0, 3).map(item => `
+                                    <div class="text-xs flex justify-between" style="color: var(--text-tertiary);">
+                                        <span>${item.key}: ${item.summary.substring(0, 50)}${item.summary.length > 50 ? '...' : ''}</span>
+                                        <span class="capitalize" style="color: var(--accent-orange);">${item.activityType}</span>
+                                    </div>
+                                `).join('')}
+                                ${initiative.expensiveWorkDetails.length > 3 ? `
+                                    <div class="text-xs" style="color: var(--text-muted);">
+                                        +${initiative.expensiveWorkDetails.length - 3} more expensive items...
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <button onclick="showMendozaAnalysisModal()" class="px-4 py-2 rounded" style="background: var(--accent-blue); color: white;">
+                        Back to Analysis
+                    </button>
+                </div>
             </div>
         </div>
     `;
