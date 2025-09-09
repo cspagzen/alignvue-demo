@@ -2506,24 +2506,27 @@ modalContent.innerHTML = `
             </div>
             ` : ''}
             
-            <!-- Activity Distribution Chart -->
-            <div>
-                <h4 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Activity Distribution</h4>
-                <div class="relative" style="height: 300px;">
-                    <canvas id="modal-activity-chart"></canvas>
-                </div>
-            </div>
+           <!-- Activity Distribution Chart -->
+<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+    <h4 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Work Item Allocation by Activity Type</h4>
+    
+    <div>
+        <h4 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Activity Distribution</h4>
+        <div class="relative" style="height: 300px;">
+            <canvas id="modal-activity-chart"></canvas>
+        </div>
+    </div>
+</div>
             
             <!-- Enhanced Recommendations -->
-            <div class="p-4 rounded-lg" style="background: var(--status-info-bg); border: 1px solid var(--accent-blue);">
-                <h4 class="font-semibold mb-3" style="color: var(--accent-blue);">
-                    Actionable Recommendations
-                </h4>
-                <div class="space-y-3" id="recommendations-list">
-                    <!-- Recommendations will be populated by generateEnhancedRecommendations -->
-                </div>
-            </div>
-        </div>
+<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+    <h4 class="font-semibold mb-3" style="color: var(--text-primary);">
+        Actionable Recommendations
+    </h4>
+    <div class="space-y-3" id="recommendations-list">
+        <!-- Recommendations will be populated by generateEnhancedRecommendations -->
+    </div>
+</div>
     `;
     
     // Update efficiency display with actual values
