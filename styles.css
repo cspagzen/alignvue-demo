@@ -3424,7 +3424,6 @@ input[type="number"] {
 
 .efficiency-indicator {
     position: absolute;
-    top: -8px;
     width: 16px;
     height: 16px;
     background: var(--accent-orange);
