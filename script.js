@@ -2390,7 +2390,7 @@ modalContent.innerHTML = `
 
     <div class="sweet-spot-section">
         <h4 class="sweet-spot-title" id="efficiency-zone-title">Needs Improvement</h4>
-        <div class="efficiency-value-large" id="efficiency-value">65%</div>
+        <div class="efficiency-value-large" id="efficiency-value"></div>
     </div>
 
     <div class="efficiency-bar-container">
