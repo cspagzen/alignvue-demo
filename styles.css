@@ -3424,14 +3424,17 @@ input[type="number"] {
 
 .efficiency-indicator {
     position: absolute;
-    width: 22px;
-    height: 22px;
+    top: -8px;
+    width: 16px;
+    height: 16px;
     background: var(--accent-orange);
-    border: 4px solid black; /* Thick black border */
+    border: none;
     border-radius: 50%;
     transform: translateX(-50%);
-    z-index: 2;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    box-shadow: 
+        0 0 0 4px black, /* Black "border" using shadow */
+        0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .efficiency-description {
