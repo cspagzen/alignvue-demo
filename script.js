@@ -2355,7 +2355,31 @@ function calculateActivityTypeBreakdown() {
 }
 
 // Update the modal to use activity type breakdown instead of issue type
-function <!-- Training Load Style Efficiency Display -->
+function showMendozaAnalysisModal() {
+    const modal = document.getElementById('detail-modal');
+    const modalContent = document.getElementById('modal-content');
+    
+    document.getElementById('modal-title').textContent = 'Mendoza Line Analysis';
+    
+    const metrics = window.currentMendozaMetrics || calculateResourceAllocation();
+    console.log('Modal using stored metrics:', metrics.efficiencyScore + '%');
+    
+    const detailedBreakdown = calculateDetailedResourceBreakdown();
+    const activityBreakdown = calculateActivityTypeBreakdown();
+    
+    // Calculate totals for high/low cost activities
+    const highCostActivities = ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'];
+    const lowCostActivities = ['compliance', 'prototyping', 'validation', 'optimization', 'support', 'research', 'planning', 'community'];
+    
+    const highCostAbove = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
+    const highCostBelow = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
+    const lowCostAbove = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
+    const lowCostBelow = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
+    
+   document.getElementById('modal-title').textContent = 'Mendoza Line Analysis';
+modalContent.innerHTML = `
+    <div class="space-y-6">
+            <!-- Training Load Style Efficiency Display -->
 <div class="efficiency-display">
     <div class="efficiency-header">
         <h3 class="efficiency-title">Resource Allocation Efficiency</h3>
@@ -2500,6 +2524,49 @@ function <!-- Training Load Style Efficiency Display -->
             </div>
         </div>
     `;
+    
+    // Update efficiency display with actual values
+const efficiencyScore = metrics.efficiencyScore; // Use your actual efficiency score
+const valueElement = document.getElementById('efficiency-value');
+const titleElement = document.getElementById('efficiency-zone-title');
+const indicatorElement = document.getElementById('efficiency-indicator');
+
+// Update the value
+valueElement.textContent = `${efficiencyScore}%`;
+
+// Determine color and description based on your thresholds
+let color, description;
+if (efficiencyScore >= 85) {
+    color = 'var(--accent-green)';
+    description = 'Excellent';
+} else if (efficiencyScore >= 70) {
+    color = 'var(--accent-blue)';
+    description = 'Good';
+} else if (efficiencyScore >= 55) {
+    color = 'var(--accent-orange)';
+    description = 'Needs Improvement';
+} else {
+    color = 'var(--accent-red)';
+    description = 'Poor';
+}
+
+// Apply colors
+valueElement.style.color = color;
+titleElement.textContent = description;
+titleElement.style.color = color;
+indicatorElement.style.borderBottomColor = color;
+
+// Position the indicator
+indicatorElement.style.left = `${efficiencyScore}%`;
+
+// Update the indicator line color
+const style = document.createElement('style');
+style.textContent = `
+    .efficiency-indicator::after {
+        background: ${color} !important;
+    }
+`;
+document.head.appendChild(style);
     
     createModalActivityChart(detailedBreakdown);
     populateEnhancedModalDetails(detailedBreakdown, metrics, activityBreakdown);
@@ -2659,51 +2726,6 @@ function showActivityInfoModal(type) {
                 </div>
             </div>
         `;
-        const efficiencyScore = metrics.efficiencyScore; // Use your actual efficiency score
-    const valueElement = document.getElementById('efficiency-value');
-    const titleElement = document.getElementById('efficiency-zone-title');
-    const indicatorElement = document.getElementById('efficiency-indicator');
-
-    // Update the value
-    valueElement.textContent = `${efficiencyScore}%`;
-
-    // Determine color and description based on your thresholds
-    let color, description;
-    if (efficiencyScore >= 85) {
-        color = 'var(--accent-green)';
-        description = 'Excellent';
-    } else if (efficiencyScore >= 70) {
-        color = 'var(--accent-blue)';
-        description = 'Good';
-    } else if (efficiencyScore >= 55) {
-        color = 'var(--accent-orange)';
-        description = 'Needs Improvement';
-    } else {
-        color = 'var(--accent-red)';
-        description = 'Poor';
-    }
-
-    // Apply colors
-    valueElement.style.color = color;
-    titleElement.textContent = description;
-    titleElement.style.color = color;
-    indicatorElement.style.borderBottomColor = color;
-
-    // Position the indicator
-    indicatorElement.style.left = `${efficiencyScore}%`;
-
-    // Update the indicator line color
-    const style = document.createElement('style');
-    style.textContent = `
-        .efficiency-indicator::after {
-            background: ${color} !important;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Show the modal
-    modal.style.display = 'block';
-}
     }
 }
 
