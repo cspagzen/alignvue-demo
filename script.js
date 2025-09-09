@@ -2783,35 +2783,95 @@ function populateEnhancedModalDetails(breakdown, metrics, activityBreakdown) {
     }
 }
 
+function getExpensiveInitiativesBelowLine() {
+    const expensiveActivities = ['development', 'defects/fixes', 'infrastructure', 'go-to-market'];
+    const expensiveInitiatives = [];
+    
+    if (!boardData?.initiatives) return [];
+    
+    boardData.initiatives.forEach(initiative => {
+        // Only check initiatives below the Mendoza line (priority > 14)
+        if (initiative.priority > 14) {
+            let expensiveWorkCount = 0;
+            const expensiveWorkDetails = [];
+            
+            // Count expensive work items in this initiative
+            if (initiative.jira?.hasLiveData && initiative.jira?.childIssues) {
+                initiative.jira.childIssues.forEach(childIssue => {
+                    let activityType = getFieldValue(childIssue, 'customfield_10190');
+                    
+                    if (activityType) {
+                        activityType = activityType.toLowerCase().trim();
+                        
+                        // Normalize activity type
+                        if (activityType.includes('defect') || activityType.includes('fix') || activityType.includes('bug')) {
+                            activityType = 'defects/fixes';
+                        } else if (activityType.includes('go-to-market') || activityType.includes('marketing')) {
+                            activityType = 'go-to-market';
+                        }
+                        
+                        // Check if this is an expensive activity
+                        if (expensiveActivities.includes(activityType)) {
+                            expensiveWorkCount++;
+                            expensiveWorkDetails.push({
+                                key: childIssue.key,
+                                summary: childIssue.fields?.summary || 'No summary',
+                                activityType: activityType
+                            });
+                        }
+                    }
+                });
+            }
+            
+            // Only include initiatives that have expensive work
+            if (expensiveWorkCount > 0) {
+                expensiveInitiatives.push({
+                    title: initiative.title,
+                    priority: initiative.priority,
+                    teams: initiative.teams || [],
+                    expensiveWorkCount: expensiveWorkCount,
+                    expensiveWorkDetails: expensiveWorkDetails,
+                    totalWorkItems: initiative.jira?.childIssues?.length || 0
+                });
+            }
+        }
+    });
+    
+    // Sort by number of expensive work items (descending)
+    return expensiveInitiatives.sort((a, b) => b.expensiveWorkCount - a.expensiveWorkCount);
+}
+
 // Enhanced recommendations function
 function generateEnhancedRecommendations(breakdown, metrics) {
     const recommendations = [];
     
-    const expensiveWorkBelowLine = metrics.breakdown?.expensiveWorkBelowLine || 0;
-    const discoveryWorkAboveLine = metrics.breakdown?.discoveryWorkAboveLine || 0;
-    const totalExpensiveWork = metrics.breakdown?.totalExpensiveWork || 0;
-    const totalDiscoveryWork = metrics.breakdown?.totalDiscoveryWork || 0;
+    // Get expensive initiatives below the line
+    const expensiveInitiativesBelowLine = getExpensiveInitiativesBelowLine();
+    const totalExpensiveWorkBelowLine = expensiveInitiativesBelowLine.reduce((sum, init) => sum + init.expensiveWorkCount, 0);
     
-    // High priority recommendations for expensive work below line
-    if (expensiveWorkBelowLine > 5) {
+    // High priority recommendations for expensive initiatives below line
+    if (expensiveInitiativesBelowLine.length > 3) {
         recommendations.push({
             priority: 'high',
             icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>',
             title: 'Move Development Work Above the Line',
-            description: `${expensiveWorkBelowLine} expensive work items are below priority 14, wasting engineering capacity.`,
-            action: 'Review initiatives 15-32 and promote high-value development work to positions 1-14.'
+            description: `${expensiveInitiativesBelowLine.length} initiatives with expensive work (${totalExpensiveWorkBelowLine} items total) are below priority 14, wasting engineering capacity.`,
+            action: 'Review initiatives 15-32 and promote high-value development work to positions 1-14.',
+            clickable: true,
+            modalFunction: 'showExpensiveInitiativesBelowLineModal'
         });
-    } else if (expensiveWorkBelowLine > 2) {
+    } else if (expensiveInitiativesBelowLine.length > 0) {
         recommendations.push({
             priority: 'medium',
-            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
             title: 'Optimize Development Placement',
-            description: `${expensiveWorkBelowLine} development items below the line could be better prioritized.`,
+            description: `${expensiveInitiativesBelowLine.length} initiatives with expensive work could be better prioritized.`,
             action: 'Evaluate if these development efforts should be promoted or deprecated.'
         });
     }
     
-    // Recommendations for discovery work above line
+    // Discovery work above line recommendations
+    const discoveryWorkAboveLine = metrics.breakdown?.discoveryWorkAboveLine || 0;
     if (discoveryWorkAboveLine > 8) {
         recommendations.push({
             priority: 'medium',
@@ -2842,28 +2902,87 @@ function generateEnhancedRecommendations(breakdown, metrics) {
     }
     
     // Success case
-    if (metrics.efficiencyScore >= 85 && expensiveWorkBelowLine <= 2) {
+    if (metrics.efficiencyScore >= 85 && expensiveInitiativesBelowLine.length <= 2) {
         recommendations.push({
             priority: 'low',
-            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>',
             title: 'Maintain Current Allocation',
             description: 'Resource allocation is operating efficiently with minimal waste.',
             action: 'Continue current prioritization process and monitor for any degradation.'
         });
     }
     
-    // Default fallback
-    if (recommendations.length === 0) {
-        recommendations.push({
-            priority: 'low',
-            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>',
-            title: 'Monitor Resource Allocation',
-            description: 'Current allocation appears balanced.',
-            action: 'Continue tracking efficiency metrics and adjust as new initiatives are added.'
-        });
-    }
+    // Store for modal use
+    window.expensiveInitiativesBelowLine = expensiveInitiativesBelowLine;
     
     return recommendations;
+}
+
+function showExpensiveInitiativesBelowLineModal() {
+    const modal = document.getElementById('detail-modal');
+    const modalContent = document.getElementById('modal-content');
+    
+    const expensiveInitiatives = window.expensiveInitiativesBelowLine || [];
+    
+    document.getElementById('modal-title').textContent = 'Expensive Initiatives Below the Line';
+    
+    modalContent.innerHTML = `
+        <div class="space-y-4">
+            <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                <h4 class="font-semibold mb-3" style="color: var(--accent-red);">
+                    ${expensiveInitiatives.length} Initiatives with Expensive Work Below Priority 14
+                </h4>
+                <p class="text-sm mb-4" style="color: var(--text-secondary);">
+                    These initiatives contain development, infrastructure, or go-to-market work that requires expensive specialized teams. 
+                    Consider promoting them above the Mendoza line or deprecating them to free up engineering capacity.
+                </p>
+                
+                <div class="space-y-3">
+                    ${expensiveInitiatives.map(initiative => `
+                        <div class="p-3 rounded-lg" style="background: var(--bg-quaternary); border-left: 3px solid var(--accent-red);">
+                            <div class="flex justify-between items-start mb-2">
+                                <h5 class="font-medium" style="color: var(--text-primary);">${initiative.title}</h5>
+                                <div class="flex gap-2">
+                                    <span class="text-xs px-2 py-1 rounded" style="background: var(--accent-red); color: white;">
+                                        Priority ${initiative.priority}
+                                    </span>
+                                    <span class="text-xs px-2 py-1 rounded" style="background: var(--accent-orange); color: white;">
+                                        ${initiative.expensiveWorkCount} Expensive Items
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-xs mb-2" style="color: var(--text-secondary);">
+                                Teams: ${initiative.teams.join(', ') || 'Not assigned'}
+                            </div>
+                            
+                            <div class="space-y-1">
+                                ${initiative.expensiveWorkDetails.slice(0, 3).map(item => `
+                                    <div class="text-xs flex justify-between" style="color: var(--text-tertiary);">
+                                        <span>${item.key}: ${item.summary.substring(0, 50)}${item.summary.length > 50 ? '...' : ''}</span>
+                                        <span class="capitalize" style="color: var(--accent-orange);">${item.activityType}</span>
+                                    </div>
+                                `).join('')}
+                                ${initiative.expensiveWorkDetails.length > 3 ? `
+                                    <div class="text-xs" style="color: var(--text-muted);">
+                                        +${initiative.expensiveWorkDetails.length - 3} more expensive items...
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <button onclick="showMendozaAnalysisModal()" class="px-4 py-2 rounded" style="background: var(--accent-blue); color: white;">
+                        Back to Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.style.display = 'block';
 }
 
 function calculateResourceAllocation() {
