@@ -5738,88 +5738,103 @@ function updateMendozaCard() {
     const content = card.querySelector('.bento-card-content');
     if (!content) return;
     
-    // Get the metrics ONCE
-    const resourceMetrics = calculateResourceAllocation();
-    
-    // Store it globally so everything can access the SAME value
-    window.currentMendozaMetrics = resourceMetrics;
-    
-    console.log('STORED METRICS:', resourceMetrics.efficiencyScore + '%');
-    
-    content.innerHTML = `
-        <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" id="mendoza-clickable" onclick="showMendozaAnalysisModal()">
-            <div class="text-sm font-bold mb-2" style="color: var(--text-secondary);">Resource Efficiency</div>
-            
-            <!-- Radial Progress Chart -->
-            <div class="relative mb-3" style="width: 120px; height: 120px;">
-                <svg width="120" height="120" viewBox="0 0 120 120" class="radial-progress">
-                    <!-- Background circle -->
-                    <circle 
-                        cx="60" 
-                        cy="60" 
-                        r="50" 
-                        fill="none" 
-                        stroke="rgba(59, 130, 246, 0.2)" 
-                        stroke-width="8"
-                    />
-                    <!-- Progress circle -->
-                    <circle 
-                        cx="60" 
-                        cy="60" 
-                        r="50" 
-                        fill="none" 
-                        stroke="${resourceMetrics.efficiencyColor === 'var(--accent-green)' ? '#10b981' : 
-                                resourceMetrics.efficiencyColor === 'var(--accent-orange)' ? '#f59e0b' : '#ef4444'}" 
-                        stroke-width="8" 
-                        stroke-linecap="round"
-                        stroke-dasharray="${2 * Math.PI * 50}"
-                        stroke-dashoffset="${2 * Math.PI * 50 * (1 - resourceMetrics.efficiencyScore / 100)}"
-                        transform="rotate(-90 60 60)"
-                        class="progress-ring"
-                    />
-                    
-                    <!-- Center Text -->
-                    <text 
-                        x="60" 
-                        y="65" 
-                        text-anchor="middle" 
-                        dominant-baseline="middle" 
-                        fill="${resourceMetrics.efficiencyColor === 'var(--accent-green)' ? '#10b981' : 
-                               resourceMetrics.efficiencyColor === 'var(--accent-orange)' ? '#f59e0b' : '#ef4444'}" 
-                        font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
-                        font-size="32" 
-                        font-weight="bold"
-                    >
-                        ${resourceMetrics.efficiencyScore}%
-                    </text>
-                    
-                   
-                </svg>
-            </div>
-        </div>
-    `;
-    
-    // Add CSS animation for the radial progress
-    if (!document.getElementById('radial-progress-styles')) {
+    // Add CSS animation for the gauge progress
+    if (!document.getElementById('mendoza-gauge-styles')) {
         const style = document.createElement('style');
-        style.id = 'radial-progress-styles';
+        style.id = 'mendoza-gauge-styles';
         style.textContent = `
-            .progress-ring {
-                transition: stroke-dashoffset 1s ease-in-out;
+            .mendoza-gauge-arc {
+                transition: d 1s ease-in-out, stroke 0.3s ease;
             }
             
-            .radial-progress:hover .progress-ring {
+            .mendoza-gauge-needle {
+                transition: x2 1s ease-in-out, y2 1s ease-in-out;
+            }
+            
+            .mendoza-card:hover .mendoza-gauge-arc {
                 stroke-width: 10;
-                transition: stroke-width 0.3s ease;
+                transition: stroke-width 0.3s ease, d 1s ease-in-out, stroke 0.3s ease;
             }
             
-            .kpi-gauge-card:hover {
+            .mendoza-card:hover {
                 transform: translateY(-2px);
                 transition: transform 0.2s ease;
+            }
+            
+            .mendoza-efficiency-text {
+                transition: color 0.3s ease;
             }
         `;
         document.head.appendChild(style);
     }
+    
+    // Get the live metrics
+    const resourceMetrics = calculateResourceAllocation();
+    
+    // Store it globally 
+    window.currentMendozaMetrics = resourceMetrics;
+    
+    // Calculate the SVG path for the actual efficiency score
+    const efficiency = resourceMetrics.efficiencyScore;
+    const degrees = (efficiency / 100) * 180;
+    const radians = (degrees * Math.PI) / 180;
+    const x = 80 + 60 * Math.cos(radians - Math.PI);
+    const y = 60 - 60 * Math.sin(radians - Math.PI);
+    
+    // Determine color based on efficiency
+    let pathColor;
+    if (efficiency >= 85) pathColor = "#10b981"; // Green
+    else if (efficiency >= 70) pathColor = "#3b82f6"; // Blue  
+    else if (efficiency >= 55) pathColor = "#f59e0b"; // Orange
+    else pathColor = "#ef4444"; // Red
+    
+    content.innerHTML = `
+        <!-- Gauge Visual -->
+        <div class="flex flex-col items-center justify-center h-full space-y-3">
+            <!-- Gauge SVG -->
+            <div class="relative w-32 h-20">
+                <svg viewBox="0 0 160 80" class="w-full h-full">
+                    <!-- Background arc -->
+                    <path
+                        d="M 20 60 A 60 60 0 0 1 140 60"
+                        stroke="#e5e7eb"
+                        stroke-width="8"
+                        fill="none"
+                    />
+                    <!-- Dynamic progress arc with animation -->
+                    <path
+                        class="mendoza-gauge-arc"
+                        d="M 20 60 A 60 60 0 ${degrees > 90 ? 1 : 0} 1 ${x} ${y}"
+                        stroke="${pathColor}"
+                        stroke-width="8"
+                        fill="none"
+                        stroke-linecap="round"
+                    />
+                    <!-- Needle with animation -->
+                    <line
+                        class="mendoza-gauge-needle"
+                        x1="80"
+                        y1="60"
+                        x2="${x}"
+                        y2="${y}"
+                        stroke="#374151"
+                        stroke-width="2"
+                    />
+                    <circle cx="80" cy="60" r="3" fill="#374151" />
+                </svg>
+                
+                <!-- Gauge labels -->
+                <div class="absolute bottom-0 left-0 text-xs text-gray-500">0%</div>
+                <div class="absolute bottom-0 right-0 text-xs text-gray-500">100%</div>
+            </div>
+            
+            <!-- Main metric -->
+            <div class="text-center">
+                <div class="mendoza-efficiency-text text-2xl font-bold" style="color: ${pathColor};">${efficiency}%</div>
+                <div class="text-sm" style="color: var(--text-secondary);">Resource Efficiency</div>
+            </div>
+        </div>
+    `;
 }
 
 // Helper function to classify activities  
