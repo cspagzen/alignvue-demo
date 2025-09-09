@@ -2511,7 +2511,6 @@ modalContent.innerHTML = `
     <h4 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Work Item Allocation by Activity Type</h4>
     
     <div>
-        <h4 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Activity Distribution</h4>
         <div class="relative" style="height: 300px;">
             <canvas id="modal-activity-chart"></canvas>
         </div>
