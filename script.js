@@ -10223,12 +10223,18 @@ function extractTextFromDoc(docField) {
 // Make sure getFieldValue handles the object format properly
 function getFieldValue(issue, fieldId) {
     const fieldValue = issue.fields[fieldId];
-    if (!fieldValue) return null;
     
-    if (typeof fieldValue === 'object') {
-        if (fieldValue.value) return fieldValue.value;
-        if (Array.isArray(fieldValue)) return fieldValue.map(item => item.value || item);
+    // Handle custom field objects with value property (most Jira custom fields)
+    if (fieldValue && typeof fieldValue === 'object' && fieldValue.value !== undefined) {
+        return fieldValue.value;
     }
+    
+    // Handle arrays of objects with value property (multi-select fields)
+    if (Array.isArray(fieldValue) && fieldValue.length > 0 && fieldValue[0]?.value !== undefined) {
+        return fieldValue.map(item => item.value);
+    }
+    
+    // Return as-is for simple values
     return fieldValue;
 }
 
