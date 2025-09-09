@@ -2927,6 +2927,7 @@ function showExpensiveInitiativesBelowLineModal() {
     
     const expensiveInitiatives = window.expensiveInitiativesBelowLine || [];
     
+    // Only update the title and content, don't replace the entire modal structure
     document.getElementById('modal-title').textContent = 'Expensive Initiatives Below the Line';
     
     modalContent.innerHTML = `
@@ -2985,7 +2986,8 @@ function showExpensiveInitiativesBelowLineModal() {
         </div>
     `;
     
-    modal.style.display = 'block';
+    // The modal is already open, so we don't need to show it again
+    // modal.classList.add('show'); // Remove this line
 }
 
 function calculateResourceAllocation() {

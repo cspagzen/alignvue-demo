@@ -3495,11 +3495,9 @@ input[type="number"] {
     }
 }
 
-#detail-modal {
-    position: fixed !important;
-    left: 50% !important;
-    top: 50% !important;
-    transform: translate(-50%, -50%) !important;
+#detail-modal .modal-content {
     max-width: 700px !important;
     width: 90% !important;
+    padding: 20px !important; /* Reduce from 24px */
+    margin: 0 !important; /* Remove any margin */
 }
