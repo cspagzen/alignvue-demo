@@ -2767,19 +2767,22 @@ function populateEnhancedModalDetails(breakdown, metrics, activityBreakdown) {
     const recElement = document.getElementById('recommendations-list');
     if (recElement) {
         recElement.innerHTML = recommendations.map(rec => `
-            <div class="p-3 rounded" style="background: var(--bg-quaternary); border-left: 3px solid ${rec.priority === 'high' ? 'var(--accent-red)' : rec.priority === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};">
-                <div class="flex items-start gap-3">
-                    <div class="text-lg">${rec.icon}</div>
-                    <div class="flex-1">
-                        <div class="font-medium text-sm mb-1" style="color: var(--text-primary);">${rec.title}</div>
-                        <div class="text-xs mb-2" style="color: var(--text-secondary);">${rec.description}</div>
-                        <div class="text-xs font-medium" style="color: ${rec.priority === 'high' ? 'var(--accent-red)' : rec.priority === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};">
-                            ${rec.action}
-                        </div>
-                    </div>
+    <div class="p-3 rounded-lg ${rec.clickable ? 'cursor-pointer hover:opacity-80' : ''}" 
+         style="background: var(--bg-quaternary); border-left: 3px solid ${rec.priority === 'high' ? 'var(--accent-red)' : rec.priority === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};"
+         ${rec.clickable ? `onclick="${rec.modalFunction}()"` : ''}>
+        <div class="flex items-start gap-3">
+            <div class="text-lg">${rec.icon}</div>
+            <div class="flex-1">
+                <div class="font-medium text-sm mb-1" style="color: var(--text-primary);">${rec.title}</div>
+                <div class="text-xs mb-2" style="color: var(--text-secondary);">${rec.description}</div>
+                <div class="text-xs font-medium" style="color: ${rec.priority === 'high' ? 'var(--accent-red)' : rec.priority === 'medium' ? 'var(--accent-orange)' : 'var(--accent-blue)'};">
+                    ${rec.action}
+                    ${rec.clickable ? '<span style="text-decoration: underline; margin-left: 8px;">Click to view details</span>' : ''}
                 </div>
             </div>
-        `).join('');
+        </div>
+    </div>
+`).join('');
     }
 }
 
