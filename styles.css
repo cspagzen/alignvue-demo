@@ -3406,6 +3406,40 @@ input[type="number"] {
     position: relative;
 }
 
+/* Tooltip styles */
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+    transform: translateY(-35px);
+}
+
+.tooltip.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+/* Update your efficiency bar to include cursor pointer */
 .efficiency-bar {
     height: 20px;
     border-radius: 10px;
@@ -3420,6 +3454,7 @@ input[type="number"] {
         #22c55e 100%);
     position: relative;
     overflow: hidden;
+    cursor: pointer; /* Add this */
 }
 
 .efficiency-indicator {

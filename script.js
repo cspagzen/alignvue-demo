@@ -2394,10 +2394,11 @@ modalContent.innerHTML = `
     </div>
 
     <div class="efficiency-bar-container">
-        <div class="efficiency-bar">
-            <div class="efficiency-indicator" id="efficiency-indicator"></div>
-        </div>
+    <div class="efficiency-bar" onmousemove="showEfficiencyTooltip(event, this)" onmouseleave="hideEfficiencyTooltip()">
+        <div class="efficiency-indicator" id="efficiency-indicator"></div>
     </div>
+    <div class="tooltip" id="efficiency-tooltip"></div>
+</div>
 
     <div class="efficiency-description">
         Measures how well your organization allocates resources<br>
@@ -2580,6 +2581,34 @@ if (modalContentElement) {
     modalContentElement.style.overflow = 'auto';
     modalContentElement.style.paddingRight = '4px'; // Account for scrollbar
 }
+}
+
+function getZoneInfo(percentage) {
+    if (percentage < 55) return { name: 'Poor', range: '0-54%' };
+    if (percentage < 70) return { name: 'Needs Improvement', range: '55-69%' };
+    if (percentage < 85) return { name: 'Good', range: '70-84%' };
+    return { name: 'Excellent', range: '85-100%' };
+}
+
+function showEfficiencyTooltip(event, barElement) {
+    const rect = barElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const percentage = Math.round((x / rect.width) * 100);
+    const clampedPercentage = Math.max(0, Math.min(100, percentage));
+    
+    const zoneInfo = getZoneInfo(clampedPercentage);
+    
+    const tooltip = document.getElementById('efficiency-tooltip');
+    tooltip.textContent = `${zoneInfo.name} (${zoneInfo.range})`;
+    tooltip.style.left = `${x}px`;
+    tooltip.classList.add('show');
+}
+
+function hideEfficiencyTooltip() {
+    const tooltip = document.getElementById('efficiency-tooltip');
+    if (tooltip) {
+        tooltip.classList.remove('show');
+    }
 }
 
 // Add the activity info modal function
