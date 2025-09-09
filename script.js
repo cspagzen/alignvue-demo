@@ -2355,44 +2355,31 @@ function calculateActivityTypeBreakdown() {
 }
 
 // Update the modal to use activity type breakdown instead of issue type
-function showMendozaAnalysisModal() {
-    const modal = document.getElementById('detail-modal');
-    const modalContent = document.getElementById('modal-content');
-    
-    document.getElementById('modal-title').textContent = 'Mendoza Line Analysis';
-    
-    const metrics = window.currentMendozaMetrics || calculateResourceAllocation();
-    console.log('Modal using stored metrics:', metrics.efficiencyScore + '%');
-    
-    const detailedBreakdown = calculateDetailedResourceBreakdown();
-    const activityBreakdown = calculateActivityTypeBreakdown();
-    
-    // Calculate totals for high/low cost activities
-    const highCostActivities = ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'];
-    const lowCostActivities = ['compliance', 'prototyping', 'validation', 'optimization', 'support', 'research', 'planning', 'community'];
-    
-    const highCostAbove = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
-    const highCostBelow = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
-    const lowCostAbove = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
-    const lowCostBelow = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
-    
-   document.getElementById('modal-title').textContent = 'Mendoza Line Analysis';
-modalContent.innerHTML = `
-    <div class="space-y-6">
-            <!-- Efficiency Score Display -->
-            <div class="flex items-center justify-center p-6">
-                <div class="text-center">
-                    <div class="text-4xl font-bold mb-2" style="color: ${metrics.efficiencyColor};">
-                        ${metrics.efficiencyScore}%
-                    </div>
-                    <div class="text-sm" style="color: var(--text-secondary);">
-                        Resource Allocation Efficiency
-                    </div>
-                    <div class="text-xs mt-1" style="color: ${metrics.efficiencyColor};">
-                        ${metrics.efficiencyDescription || 'Needs Assessment'}
-                    </div>
-                </div>
-            </div>
+function <!-- Training Load Style Efficiency Display -->
+<div class="efficiency-display">
+    <div class="efficiency-header">
+        <h3 class="efficiency-title">Resource Allocation Efficiency</h3>
+        <svg class="pulse-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 13h2l2-7 4 14 4-14 2 7h4v-2H3v2z"/>
+        </svg>
+    </div>
+
+    <div class="sweet-spot-section">
+        <h4 class="sweet-spot-title" id="efficiency-zone-title">Needs Improvement</h4>
+        <div class="efficiency-value-large" id="efficiency-value">65%</div>
+    </div>
+
+    <div class="efficiency-bar-container">
+        <div class="efficiency-bar">
+            <div class="efficiency-indicator" id="efficiency-indicator"></div>
+        </div>
+    </div>
+
+    <div class="efficiency-description">
+        Measures how well your organization allocates resources<br>
+        as the percentage of maximum possible optimal allocation.
+    </div>
+</div>
             
             <!-- Activity Type Breakdown with Info Icons -->
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
@@ -2672,6 +2659,51 @@ function showActivityInfoModal(type) {
                 </div>
             </div>
         `;
+        const efficiencyScore = metrics.efficiencyScore; // Use your actual efficiency score
+    const valueElement = document.getElementById('efficiency-value');
+    const titleElement = document.getElementById('efficiency-zone-title');
+    const indicatorElement = document.getElementById('efficiency-indicator');
+
+    // Update the value
+    valueElement.textContent = `${efficiencyScore}%`;
+
+    // Determine color and description based on your thresholds
+    let color, description;
+    if (efficiencyScore >= 85) {
+        color = 'var(--accent-green)';
+        description = 'Excellent';
+    } else if (efficiencyScore >= 70) {
+        color = 'var(--accent-blue)';
+        description = 'Good';
+    } else if (efficiencyScore >= 55) {
+        color = 'var(--accent-orange)';
+        description = 'Needs Improvement';
+    } else {
+        color = 'var(--accent-red)';
+        description = 'Poor';
+    }
+
+    // Apply colors
+    valueElement.style.color = color;
+    titleElement.textContent = description;
+    titleElement.style.color = color;
+    indicatorElement.style.borderBottomColor = color;
+
+    // Position the indicator
+    indicatorElement.style.left = `${efficiencyScore}%`;
+
+    // Update the indicator line color
+    const style = document.createElement('style');
+    style.textContent = `
+        .efficiency-indicator::after {
+            background: ${color} !important;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Show the modal
+    modal.style.display = 'block';
+}
     }
 }
 

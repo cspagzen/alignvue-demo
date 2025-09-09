@@ -3350,3 +3350,121 @@ input[type="number"] {
 .scroll-indicator svg {
     filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
 }
+
+/* Training Load Style Efficiency Display */
+.efficiency-display {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.efficiency-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.efficiency-title {
+    color: var(--accent-orange);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.pulse-icon {
+    width: 24px;
+    height: 24px;
+    color: #666;
+}
+
+.sweet-spot-section {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.sweet-spot-title {
+    color: var(--accent-green);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+.efficiency-value-large {
+    color: var(--accent-green);
+    font-size: 4rem;
+    font-weight: 900;
+    margin: 0;
+    line-height: 1;
+}
+
+.efficiency-bar-container {
+    margin: 24px 0;
+    position: relative;
+}
+
+.efficiency-bar {
+    height: 20px;
+    border-radius: 10px;
+    background: linear-gradient(to right, 
+        #ef4444 0%, 
+        #ef4444 55%, 
+        #f97316 55%, 
+        #f97316 70%, 
+        #3b82f6 70%, 
+        #3b82f6 85%, 
+        #22c55e 85%, 
+        #22c55e 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.efficiency-indicator {
+    position: absolute;
+    top: -8px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 16px solid var(--accent-orange);
+    left: 65%;
+    transform: translateX(-50%);
+    z-index: 2;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.efficiency-indicator::after {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 12px;
+    background: var(--accent-orange);
+}
+
+.efficiency-description {
+    color: var(--text-primary);
+    font-size: 1rem;
+    text-align: center;
+    margin: 20px 0 0 0;
+    line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1366px) {
+    .efficiency-value-large {
+        font-size: 3.5rem;
+    }
+    
+    .efficiency-title {
+        font-size: 1.3rem;
+    }
+    
+    .sweet-spot-title {
+        font-size: 1.5rem;
+    }
+}
