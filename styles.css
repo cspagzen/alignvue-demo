@@ -3494,3 +3494,12 @@ input[type="number"] {
         font-size: 1.5rem;
     }
 }
+
+#detail-modal {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-width: 700px !important;
+    width: 90% !important;
+}
