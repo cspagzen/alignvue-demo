@@ -2382,11 +2382,16 @@ modalContent.innerHTML = `
             <!-- Training Load Style Efficiency Display -->
 <div class="efficiency-display">
     <div class="efficiency-header">
-        <h3 class="efficiency-title">Resource Allocation Efficiency</h3>
-        <svg class="pulse-icon" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 13h2l2-7 4 14 4-14 2 7h4v-2H3v2z"/>
+    <h3 class="efficiency-title">Resource Allocation Efficiency</h3>
+    <button class="info-button" onclick="showEfficiencyCalculationModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-icon">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
         </svg>
-    </div>
+        How is this calculated and what does it mean?
+    </button>
+</div>
 
     <div class="sweet-spot-section">
         <h4 class="sweet-spot-title" id="efficiency-zone-title">Needs Improvement</h4>
@@ -2611,6 +2616,128 @@ function hideEfficiencyTooltip() {
     if (tooltip) {
         tooltip.classList.remove('show');
     }
+}
+
+function showEfficiencyCalculationModal() {
+    const modal = document.getElementById('detail-modal');
+    const modalContent = document.getElementById('modal-content');
+    
+    // Get current metrics
+    const metrics = window.currentMendozaMetrics || calculateResourceAllocation();
+    const totalItems = metrics.aboveLineCount + metrics.belowLineCount;
+    const expensiveWastePercent = Math.round((metrics.breakdown.expensiveWorkBelowLine / metrics.breakdown.totalExpensiveWork) * 100);
+    const discoveryMisallocationPercent = metrics.breakdown.totalDiscoveryWork > 0 ? 
+        Math.round((metrics.breakdown.discoveryWorkAboveLine / metrics.breakdown.totalDiscoveryWork) * 100) : 0;
+    
+    document.getElementById('modal-title').textContent = 'How Resource Allocation Efficiency is Calculated';
+    
+    modalContent.innerHTML = `
+        <div class="calculation-modal-content">
+            <!-- Your Current Numbers -->
+            <div class="section">
+                <h3 class="section-title">Your Current Numbers</h3>
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <span class="metric-label">Total Work Items</span>
+                        <span class="metric-value">${totalItems}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Efficiency Score</span>
+                        <span class="metric-value efficiency-score">${metrics.efficiencyScore}%</span>
+                    </div>
+                    <div class="metric-item expensive-work">
+                        <span class="metric-label">Expensive Work Above Line</span>
+                        <span class="metric-value">${metrics.breakdown.expensiveWorkAboveLine} items</span>
+                    </div>
+                    <div class="metric-item expensive-work">
+                        <span class="metric-label">Expensive Work Below Line</span>
+                        <span class="metric-value">${metrics.breakdown.expensiveWorkBelowLine} items (${expensiveWastePercent}% waste)</span>
+                    </div>
+                    <div class="metric-item discovery-work">
+                        <span class="metric-label">Discovery Work Above Line</span>
+                        <span class="metric-value">${metrics.breakdown.discoveryWorkAboveLine} items (${discoveryMisallocationPercent}% misallocation)</span>
+                    </div>
+                    <div class="metric-item discovery-work">
+                        <span class="metric-label">Discovery Work Below Line</span>
+                        <span class="metric-value">${metrics.breakdown.discoveryWorkBelowLine} items</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How It Works -->
+            <div class="section">
+                <h3 class="section-title">How It Works</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
+                    The efficiency score measures how optimally your organization allocates work items above and below the "Mendoza Line" (priority threshold). Each type of work has different weights based on strategic importance.
+                </p>
+                
+                <div class="weight-explanation">
+                    <h4 style="color: var(--text-primary); margin: 0 0 12px 0; font-size: 1rem;">Activity Weights & Ideal Placement:</h4>
+                    <div class="weight-item">
+                        <span style="color: var(--text-secondary);">Expensive Work (Development, Integration, Infrastructure)</span>
+                        <span style="color: var(--accent-red); font-weight: 600;">Weight: 3.0 → Should be Above Line</span>
+                    </div>
+                    <div class="weight-item">
+                        <span style="color: var(--text-secondary);">Discovery Work (Research, Prototyping, Validation)</span>
+                        <span style="color: var(--accent-orange); font-weight: 600;">Weight: 1.5 → Should be Below Line</span>
+                    </div>
+                    <div class="weight-item">
+                        <span style="color: var(--text-secondary);">Support Work (Compliance, Documentation)</span>
+                        <span style="color: var(--text-secondary); font-weight: 600;">Weight: 0.5 → Either Position OK</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculation Formula -->
+            <div class="section">
+                <h3 class="section-title">Calculation Formula</h3>
+                <div class="formula-box">
+Efficiency = (Actual Weighted Score / Maximum Possible Score) × 100
+
+Where:
+- Expensive work above line = Full points (weight × count)
+- Expensive work below line = Zero points (pure waste)
+- Discovery work below line = Full points (weight × count)  
+- Discovery work above line = Partial points (weight × count × 0.6)
+- Support work = Full points regardless of position
+                </div>
+                
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 12px;">
+                    <strong>Your calculation:</strong> ${metrics.breakdown.weightedScore.toFixed(1)} points earned out of ${metrics.breakdown.maxPossibleScore} maximum possible = ${metrics.efficiencyScore}%
+                </p>
+            </div>
+
+            <!-- What This Means -->
+            <div class="section">
+                <h3 class="section-title">What Your ${metrics.efficiencyScore}% Means</h3>
+                <div class="interpretation-grid">
+                    <div class="score-range excellent">85-100%</div>
+                    <div style="color: var(--text-secondary);">Excellent allocation with minimal waste</div>
+                    
+                    <div class="score-range good">70-84%</div>
+                    <div style="color: var(--text-secondary);">Good allocation with some optimization opportunities</div>
+                    
+                    <div class="score-range needs-improvement">55-69%</div>
+                    <div style="color: var(--text-secondary);">Needs improvement, significant misallocation</div>
+                    
+                    <div class="score-range poor">0-54%</div>
+                    <div style="color: var(--text-secondary);"><strong>Your score:</strong> ${metrics.efficiencyDescription} allocation ${metrics.efficiencyScore < 55 ? 'requiring urgent attention' : ''}</div>
+                </div>
+                
+                <p style="color: var(--text-secondary); line-height: 1.6; margin-top: 16px; font-size: 0.875rem;">
+                    <strong>Key Issues:</strong> ${expensiveWastePercent}% of expensive development work is below the priority line (${metrics.breakdown.expensiveWorkBelowLine} out of ${metrics.breakdown.totalExpensiveWork} items), and ${discoveryMisallocationPercent}% of discovery work is consuming high-priority slots. Moving expensive work above the line and discovery work below would significantly improve efficiency.
+                </p>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <button onclick="showMendozaAnalysisModal()" class="px-4 py-2 rounded" style="background: var(--accent-blue); color: white;">
+                    Back to Analysis
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Modal is already open, no need to show it again
 }
 
 // Add the activity info modal function
