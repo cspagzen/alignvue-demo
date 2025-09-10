@@ -390,221 +390,165 @@ function injectAtRiskModalStyles() {
 }
 
 function showAtRiskAnalysisModal(initiative) {
-    injectAtRiskModalStyles();
-    
-    const modal = document.getElementById('detail-modal');
-    const title = document.getElementById('modal-title');
-    const content = document.getElementById('modal-content');
-    
-    const riskAnalysis = analyzeInitiativeRisk(initiative);
-    const riskLevel = getRiskLevel(riskAnalysis.riskScore);
-    
-    title.textContent = `At-Risk Analysis: ${initiative.title}`;
-    
-    content.innerHTML = `
-        <div class="space-y-4">
-            <div class="flex items-center justify-between p-4 rounded-lg" style="background: linear-gradient(135deg, ${riskLevel.bgColor} 0%, ${riskLevel.bgColorLight} 100%); border: 1px solid ${riskLevel.borderColor};">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: ${riskLevel.color}; color: white;">
-                        ${riskLevel.icon}
-                    </div>
-                    <div>
-                        <div class="font-bold text-lg" style="color: ${riskLevel.color};">${riskLevel.label}</div>
-                        <div class="text-sm" style="color: var(--text-secondary);">Priority ${initiative.priority} • ${initiative.type.toUpperCase()}</div>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="text-3xl font-bold" style="color: ${riskLevel.color};">${riskAnalysis.riskScore}/50</div>
-                    <button onclick="showRiskScoreInfoModal()" class="text-xs underline hover:opacity-75 transition-opacity" style="color: var(--accent-blue); background: none; border: none; padding: 0; cursor: pointer;">
-                        How is Risk Score calculated?
-                    </button>
-                </div>
-            </div>
+   injectAtRiskModalStyles();
+   
+   const modal = document.getElementById('detail-modal');
+   const title = document.getElementById('modal-title');
+   const content = document.getElementById('modal-content');
+   
+   const riskAnalysis = analyzeInitiativeRisk(initiative);
+   const riskLevel = getRiskLevel(riskAnalysis.riskScore);
+   
+   title.textContent = `At-Risk Analysis: ${initiative.title}`;
+   
+   content.innerHTML = `
+       <div class="space-y-4">
+           <div class="flex items-center justify-between p-4 rounded-lg" style="background: linear-gradient(135deg, ${riskLevel.bgColor} 0%, ${riskLevel.bgColorLight} 100%); border: 1px solid ${riskLevel.borderColor};">
+               <div class="flex items-center gap-4">
+                   <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: ${riskLevel.color}; color: white;">
+                       ${riskLevel.icon}
+                   </div>
+                   <div>
+                       <div class="font-bold text-lg" style="color: ${riskLevel.color};">${riskLevel.label}</div>
+                       <div class="text-sm" style="color: var(--text-secondary);">Priority ${initiative.priority} • ${initiative.type.toUpperCase()}</div>
+                   </div>
+               </div>
+               <div class="text-right">
+                   <div class="text-3xl font-bold" style="color: ${riskLevel.color};">${riskAnalysis.riskScore}/50</div>
+                   <button onclick="showRiskScoreInfoModal()" class="text-xs underline hover:opacity-75 transition-opacity" style="color: var(--accent-blue); background: none; border: none; padding: 0; cursor: pointer;">
+                       How is Risk Score calculated?
+                   </button>
+               </div>
+           </div>
 
-            <div class="border-b" style="border-color: var(--border-primary);">
-                <div class="flex space-x-6 overflow-x-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
-                    <button onclick="switchAtRiskTab('factors')" 
-                            id="factors-tab" 
-                            class="at-risk-tab active py-2 px-1 border-b-2 font-medium text-sm transition-colors flex-shrink-0"
-                            style="border-color: var(--accent-primary); color: var(--accent-primary);">
-                        Risk Factors
-                        <span class="ml-2 px-2 py-1 rounded-full text-xs" style="background: var(--accent-primary); color: white;">
-                            ${riskAnalysis.riskFactors.length}
-                        </span>
-                    </button>
-                    <button onclick="switchAtRiskTab('teams')" 
-                            id="teams-tab" 
-                            class="at-risk-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors flex-shrink-0"
-                            style="border-color: transparent; color: var(--text-secondary);">
-                        Impacted Teams
-                        <span class="ml-2 px-2 py-1 rounded-full text-xs" style="background: var(--text-tertiary); color: var(--text-secondary);">
-                            ${riskAnalysis.impactedTeams.length}
-                        </span>
-                    </button>
-                    <button onclick="switchAtRiskTab('blocked-work')" 
-                        id="tab-blocked-work" 
-                        class="risk-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors"
-                        style="border-color: transparent; color: var(--text-secondary);">
-                        Blocked Work (${initiative.jira?.flagged || 0})
-                    </button>
-                    <button onclick="switchAtRiskTab('recommendations')" 
-                            id="recommendations-tab" 
-                            class="at-risk-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors flex-shrink-0"
-                            style="border-color: transparent; color: var(--text-secondary);">
-                        Recommendations
-                        <span class="ml-2 px-2 py-1 rounded-full text-xs" style="background: var(--text-tertiary); color: var(--text-secondary);">
-                            ${riskAnalysis.recommendations.length}
-                        </span>
-                    </button>
-                </div>
-            </div>
+           <div class="border-b" style="border-color: var(--border-primary);">
+               <div class="flex space-x-6 overflow-x-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
+                   <button onclick="switchAtRiskTab('factors')" 
+                           id="factors-tab" 
+                           class="at-risk-tab active py-2 px-1 border-b-2 font-medium text-sm transition-colors flex-shrink-0"
+                           style="border-color: var(--accent-primary); color: var(--accent-primary);">
+                       Risk Factors
+                       <span class="ml-2 px-2 py-1 rounded-full text-xs" style="background: var(--accent-primary); color: white;">
+                           ${riskAnalysis.riskFactors.length}
+                       </span>
+                   </button>
+                   <button onclick="switchAtRiskTab('teams')" 
+                           id="teams-tab" 
+                           class="at-risk-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors flex-shrink-0"
+                           style="border-color: transparent; color: var(--text-secondary);">
+                       Impacted Teams
+                       <span class="ml-2 px-2 py-1 rounded-full text-xs" style="background: var(--text-tertiary); color: var(--text-secondary);">
+                           ${riskAnalysis.impactedTeams.length}
+                       </span>
+                   </button>
+                   <button onclick="switchAtRiskTab('blocked-work')" 
+                           id="blocked-work-tab" 
+                           class="at-risk-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors flex-shrink-0"
+                           style="border-color: transparent; color: var(--text-secondary);">
+                       Blocked Work
+                       <span class="ml-2 px-2 py-1 rounded-full text-xs" style="background: var(--text-tertiary); color: var(--text-secondary);">
+                           ${initiative.jira?.flagged || 0}
+                       </span>
+                   </button>
+                   <button onclick="switchAtRiskTab('recommendations')" 
+                           id="recommendations-tab" 
+                           class="at-risk-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors flex-shrink-0"
+                           style="border-color: transparent; color: var(--text-secondary);">
+                       Recommendations
+                       <span class="ml-2 px-2 py-1 rounded-full text-xs" style="background: var(--text-tertiary); color: var(--text-secondary);">
+                           ${riskAnalysis.recommendations.length}
+                       </span>
+                   </button>
+               </div>
+           </div>
 
-            <div id="at-risk-tab-content" style="max-height: 400px; overflow-y: auto;">
-                <div id="factors-content" class="tab-content">
-                    ${riskAnalysis.riskFactors.length > 0 ? `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            ${riskAnalysis.riskFactors.map(factor => `
-                                <div class="p-3 rounded-lg border" style="background: var(--bg-tertiary); border-color: ${factor.color};">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="font-semibold text-sm" style="color: var(--text-primary);">${factor.name}</div>
-                                        <div class="px-2 py-1 rounded text-xs font-bold" style="background: ${factor.color}; color: white;">
-                                            ${factor.severity}
-                                        </div>
-                                    </div>
-                                    <div class="text-xs mb-2" style="color: var(--text-secondary);">${factor.description}</div>
-                                    <div class="text-xs font-medium" style="color: ${factor.color};">Impact: ${factor.impact}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : `
-                        <div class="text-center py-8" style="color: var(--text-secondary);">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 opacity-50">
-                                <path d="M22 11v1a10 10 0 1 1-9-10"/>
-                                <path d="m9 11 3 3L22 4"/>
-                            </svg>
-                            <p>No specific risk factors identified</p>
-                        </div>
-                    `}
-                </div>
-
-                <div id="teams-content" class="tab-content hidden">
-                    ${riskAnalysis.impactedTeams.length > 0 ? `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            ${riskAnalysis.impactedTeams.map(team => {
-                                const fullTeamData = boardData.teams[team.name] || {};
-                                const jiraData = fullTeamData.jira || {};
-                                
-                                return `
-                                    <div class="team-detail-card" style="border-color: ${team.riskColor};">
-                                        <div class="flex items-center justify-between mb-3">
-                                            <div class="font-bold text-lg" style="color: var(--text-primary);">${team.name}</div>
-                                            <div class="px-2 py-1 rounded text-xs font-bold" style="background: ${team.riskColor}; color: white;">
-                                                ${team.riskFactors.length} Risk${team.riskFactors.length !== 1 ? 's' : ''}
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="mb-4">
-                                            <div class="text-sm font-medium mb-2" style="color: var(--text-primary);">Health Status</div>
-                                            <div class="grid grid-cols-2 gap-1">
-                                                <div class="health-indicator ${fullTeamData.capacity === 'at-risk' ? 'at-risk' : 'healthy'}">
-                                                    <span>Capacity</span>
-                                                    <span>${fullTeamData.capacity === 'at-risk' ? '⚠️' : '✅'}</span>
-                                                </div>
-                                                <div class="health-indicator ${fullTeamData.skillset === 'at-risk' ? 'at-risk' : 'healthy'}">
-                                                    <span>Skillset</span>
-                                                    <span>${fullTeamData.skillset === 'at-risk' ? '⚠️' : '✅'}</span>
-                                                </div>
-                                                <div class="health-indicator ${fullTeamData.vision === 'at-risk' ? 'at-risk' : 'healthy'}">
-                                                    <span>Vision</span>
-                                                    <span>${fullTeamData.vision === 'at-risk' ? '⚠️' : '✅'}</span>
-                                                </div>
-                                                <div class="health-indicator ${fullTeamData.support === 'at-risk' ? 'at-risk' : 'healthy'}">
-                                                    <span>Support</span>
-                                                    <span>${fullTeamData.support === 'at-risk' ? '⚠️' : '✅'}</span>
-                                                </div>
-                                                <div class="health-indicator ${fullTeamData.teamwork === 'at-risk' ? 'at-risk' : 'healthy'}">
-                                                    <span>Teamwork</span>
-                                                    <span>${fullTeamData.teamwork === 'at-risk' ? '⚠️' : '✅'}</span>
-                                                </div>
-                                                <div class="health-indicator ${fullTeamData.autonomy === 'at-risk' ? 'at-risk' : 'healthy'}">
-                                                    <span>Autonomy</span>
-                                                    <span>${fullTeamData.autonomy === 'at-risk' ? '⚠️' : '✅'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <div class="text-sm font-medium mb-2" style="color: var(--text-primary);">Sprint Metrics</div>
-                                            <div class="grid grid-cols-3 gap-2 text-xs">
-                                                <div class="text-center p-2 rounded" style="background: var(--bg-quaternary);">
-                                                    <div class="font-bold" style="color: var(--text-primary);">${jiraData.utilization || 0}%</div>
-                                                    <div style="color: var(--text-secondary);">Utilization</div>
-                                                </div>
-                                                <div class="text-center p-2 rounded" style="background: var(--bg-quaternary);">
-                                                    <div class="font-bold" style="color: var(--text-primary);">${jiraData.velocity || 0}</div>
-                                                    <div style="color: var(--text-secondary);">Velocity</div>
-                                                </div>
-                                                <div class="text-center p-2 rounded" style="background: var(--bg-quaternary);">
-                                                    <div class="font-bold" style="color: var(--text-primary);">${jiraData.blockers || 0}</div>
-                                                    <div style="color: var(--text-secondary);">Blockers</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div>
-                                            <div class="text-sm font-medium mb-2" style="color: var(--text-primary);">Risk Factors</div>
-                                            <div class="flex flex-wrap gap-1">
-                                                ${team.riskFactors.map(factor => `
-                                                    <span class="px-2 py-1 rounded text-xs" style="background: ${team.riskColor}; color: white;">
-                                                        ${factor}
-                                                    </span>
-                                                `).join('')}
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    ` : `
-                        <div class="text-center py-8" style="color: var(--text-secondary);">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 opacity-50">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            </svg>
-                            <p>No teams are at risk for this initiative</p>
-                        </div>
-                    `}
-                </div>
-
-                <div id="recommendations-content" class="tab-content hidden">
-                    ${riskAnalysis.recommendations.length > 0 ? `
-                        <div class="space-y-3">
-                            ${riskAnalysis.recommendations.map((rec, index) => `
-                                <div class="flex items-start gap-3 p-3 rounded-lg" style="background: var(--bg-tertiary);">
-                                    <div class="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style="background: var(--accent-blue); color: white;">
-                                        ${index + 1}
-                                    </div>
-                                    <div class="text-sm leading-relaxed" style="color: var(--text-primary);">${rec}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : `
-                        <div class="text-center py-8" style="color: var(--text-secondary);">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 opacity-50">
-                                <path d="M9 12l2 2 4-4"/>
-                                <circle cx="12" cy="12" r="10"/>
-                            </svg>
-                            <p>No recommendations needed</p>
-                        </div>
-                    `}
-                </div>
-            </div>
-        </div>
-    `;
-    
-    modal.classList.add('show');
+           <div id="at-risk-tab-content" style="max-height: 400px; overflow-y: auto;">
+               <div id="factors-content" class="tab-content">
+                   ${riskAnalysis.riskFactors.length > 0 ?
+                       `<div class="space-y-3">
+                           ${riskAnalysis.riskFactors.map(factor => `
+                               <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border-left: 4px solid ${factor.color};">
+                                   <div class="flex items-start justify-between mb-2">
+                                       <h4 class="font-semibold" style="color: var(--text-primary);">${factor.name}</h4>
+                                       <span class="px-2 py-1 rounded text-xs font-medium" style="background: ${factor.color}; color: white;">
+                                           ${factor.severity}
+                                       </span>
+                                   </div>
+                                   <p class="text-sm mb-2" style="color: var(--text-secondary);">${factor.description}</p>
+                                   <div class="text-xs" style="color: var(--text-secondary);">
+                                       <strong>Impact:</strong> ${factor.impact}
+                                   </div>
+                               </div>
+                           `).join('')}
+                       </div>` : 
+                       `<div class="text-center py-8" style="color: var(--text-secondary);">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 opacity-50">
+                               <path d="M9 12l2 2 4-4"/>
+                               <circle cx="12" cy="12" r="10"/>
+                           </svg>
+                           <p>No significant risk factors detected</p>
+                       </div>`
+                   }
+               </div>
+               <div id="teams-content" class="tab-content hidden">
+                   ${riskAnalysis.impactedTeams.length > 0 ?
+                       `<div class="space-y-3">
+                           ${riskAnalysis.impactedTeams.map(team => `
+                               <div class="team-detail-card" style="border-left: 4px solid ${team.riskColor};">
+                                   <div class="flex items-center justify-between mb-3">
+                                       <h4 class="font-semibold" style="color: var(--text-primary);">${team.name}</h4>
+                                       <div class="w-3 h-3 rounded-full" style="background: ${team.riskColor};"></div>
+                                   </div>
+                                   <div class="space-y-2">
+                                       ${team.riskFactors.map(factor => `
+                                           <div class="health-indicator at-risk">
+                                               <span>${factor}</span>
+                                               <span>At Risk</span>
+                                           </div>
+                                       `).join('')}
+                                   </div>
+                               </div>
+                           `).join('')}
+                       </div>` :
+                       `<div class="text-center py-8" style="color: var(--text-secondary);">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 opacity-50">
+                               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                               <circle cx="9" cy="7" r="4"/>
+                               <path d="m22 21-3-3m0-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                           </svg>
+                           <p>No teams at risk</p>
+                       </div>`
+                   }
+               </div>
+               <div id="blocked-work-content" class="tab-content hidden">
+                   <!-- Content populated by switchAtRiskTab -->
+               </div>
+               <div id="recommendations-content" class="tab-content hidden">
+                   ${riskAnalysis.recommendations.length > 0 ?
+                       `<div class="space-y-3">
+                           ${riskAnalysis.recommendations.map((rec, index) => `
+                               <div class="flex items-start gap-3 p-3 rounded-lg" style="background: var(--bg-tertiary);">
+                                   <div class="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style="background: var(--accent-blue); color: white;">
+                                       ${index + 1}
+                                   </div>
+                                   <div class="text-sm leading-relaxed" style="color: var(--text-primary);">${rec}</div>
+                               </div>
+                           `).join('')}
+                       </div>` : 
+                       `<div class="text-center py-8" style="color: var(--text-secondary);">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 opacity-50">
+                               <path d="M9 12l2 2 4-4"/>
+                               <circle cx="12" cy="12" r="10"/>
+                           </svg>
+                           <p>No recommendations needed</p>
+                       </div>`
+                   }
+               </div>
+           </div>
+       </div>
+   `;
+   
+   modal.classList.add('show');
 }
 
 function switchAtRiskTab(tabName) {
