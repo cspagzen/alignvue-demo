@@ -2368,13 +2368,13 @@ function showMendozaAnalysisModal() {
     const activityBreakdown = calculateActivityTypeBreakdown();
     
     // Calculate totals for high/low cost activities
-    const highCostActivities = ['development', 'go-to-market', 'infrastructure', 'support'];
-    const lowCostActivities = ['validation', 'research', 'prototyping', 'planning', 'defects/fixes', 'integration', 'compliance', 'optimization', 'community'];
-    
-    const highCostAbove = metrics.breakdown.expensiveWorkAboveLine;
-    const highCostBelow = metrics.breakdown.expensiveWorkBelowLine;
-    const lowCostAbove = metrics.breakdown.discoveryWorkAboveLine;
-    const lowCostBelow = metrics.breakdown.discoveryWorkBelowLine;
+    const highCostActivities = ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'];
+const lowCostActivities = ['compliance', 'prototyping', 'validation', 'optimization', 'support', 'research', 'planning', 'community'];
+
+const highCostAbove = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
+const highCostBelow = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
+const lowCostAbove = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
+const lowCostBelow = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
     
    document.getElementById('modal-title').textContent = 'Mendoza Line Analysis';
 modalContent.innerHTML = `
