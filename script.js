@@ -3150,7 +3150,8 @@ function calculateResourceAllocation() {
     let totalDiscoveryWork = 0;
     
     // Use the correct activity breakdown (with 407 Jira items)
-    const activityBreakdown = calculateActivityTypeBreakdown();
+    // Use the correct activity breakdown (with 407 Jira items)
+const activityBreakdown = calculateDetailedResourceBreakdown();
     
     // Process above-line activities
     Object.entries(activityBreakdown.aboveLine).forEach(([activity, count]) => {
