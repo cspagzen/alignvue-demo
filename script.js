@@ -2985,7 +2985,7 @@ const totalExpensiveWorkBelowLine = highCostActivities.reduce((sum, activity) =>
             priority: 'high',
             icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>',
             title: 'Move Development Work Above the Line',
-            description: `${expensiveInitiativesBelowLine.length} initiatives with expensive work (${totalExpensiveWorkBelowLine} items total) are below priority 14, wasting engineering capacity.`,
+            description: `${expensiveInitiativesBelowLine.length} initiatives with expensive work (${totalExpensiveWorkBelowLine} items total) are below priority 15, wasting engineering capacity.`,
             action: 'Review initiatives 15-32 and promote high-value development work to positions 1-14.',
             clickable: true,
             modalFunction: 'showExpensiveInitiativesBelowLineModal'
@@ -3061,7 +3061,7 @@ function showExpensiveInitiativesBelowLineModal() {
         <div class="space-y-4">
             <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
                 <h4 class="font-semibold mb-3" style="color: var(--accent-red);">
-                    ${expensiveInitiatives.length} Initiatives with Expensive Work Below Priority 14
+                    ${expensiveInitiatives.length} Initiatives with Expensive Work Below Priority 15
                 </h4>
                 <p class="text-sm mb-4" style="color: var(--text-secondary);">
                     These initiatives contain development, infrastructure, or go-to-market work that requires expensive specialized teams. 
