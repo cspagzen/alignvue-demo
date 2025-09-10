@@ -2746,7 +2746,6 @@ function showActivityInfoModal(type) {
     const modalContent = document.getElementById('modal-content');
     
     if (type === 'high-cost') {
-        // Update the existing modal title
         document.getElementById('modal-title').textContent = 'High Cost Activities';
         
         modalContent.innerHTML = `
@@ -2767,28 +2766,28 @@ function showActivityInfoModal(type) {
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-red);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-blue);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Defects/Fixes</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">Bug fixes, critical issues, system repairs</div>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-purple);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-blue);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Integration</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">System integrations, API development, data connections</div>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-cyan);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-blue);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Infrastructure</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">Platform improvements, scalability, performance optimization</div>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-purple);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-blue);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Go-to-Market</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">Marketing campaigns, sales enablement, customer acquisition</div>
@@ -2805,7 +2804,6 @@ function showActivityInfoModal(type) {
             </div>
         `;
     } else {
-        // Update the existing modal title
         document.getElementById('modal-title').textContent = 'Low Cost Activities';
         
         modalContent.innerHTML = `
@@ -2819,28 +2817,28 @@ function showActivityInfoModal(type) {
                     
                     <div class="space-y-3">
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-orange);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-green);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Validation</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">User testing, market validation, concept proof</div>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-red);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-green);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Research</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">Market research, user interviews, competitive analysis</div>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-pink);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-green);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Prototyping</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">Quick prototypes, mockups, proof of concepts</div>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-lime);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-green);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Planning</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">Strategic planning, roadmap development, requirements gathering</div>
@@ -2854,21 +2852,21 @@ function showActivityInfoModal(type) {
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-orange);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-green);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Compliance</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">Regulatory compliance, audits, policy updates</div>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-teal);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-green);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Community</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">Community engagement, developer relations, partnerships</div>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-violet);"></div>
+                            <div class="w-2 h-2 rounded-full mt-2" style="background: var(--accent-green);"></div>
                             <div>
                                 <div class="font-medium text-sm" style="color: var(--text-primary);">Optimization</div>
                                 <div class="text-xs" style="color: var(--text-secondary);">Process improvements, efficiency gains, cost reduction</div>
