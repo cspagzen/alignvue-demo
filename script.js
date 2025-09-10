@@ -3438,10 +3438,14 @@ function createModalActivityChart(breakdown) {
     });
     
     // Get ALL unique activities from BOTH above and below line (after normalization)
-    const allActivities = new Set([
-        ...Object.keys(cleanedBreakdown.aboveLine),
-        ...Object.keys(cleanedBreakdown.belowLine)
-    ]);
+    const allActivities = Array.from(new Set([
+    ...Object.keys(cleanedBreakdown.aboveLine),
+    ...Object.keys(cleanedBreakdown.belowLine)
+])).sort((a, b) => {
+    const totalA = (cleanedBreakdown.aboveLine[a] || 0) + (cleanedBreakdown.belowLine[a] || 0);
+    const totalB = (cleanedBreakdown.aboveLine[b] || 0) + (cleanedBreakdown.belowLine[b] || 0);
+    return totalB - totalA; // Descending order by total count
+});
     
     console.log('Cleaned unique activities:', Array.from(allActivities));
     
