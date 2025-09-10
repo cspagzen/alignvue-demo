@@ -2318,7 +2318,7 @@ function calculateActivityTypeBreakdown() {
     
     boardData.initiatives.forEach(initiative => {
         const priority = initiative.priority;
-        const isAboveLine = priority <= 14;
+        const isAboveLine = priority <= 15;
         
         if (initiative.jira?.hasLiveData && initiative.jira?.childIssues) {
             initiative.jira.childIssues.forEach(childIssue => {
@@ -2919,7 +2919,7 @@ function getExpensiveInitiativesBelowLine() {
     
     boardData.initiatives.forEach(initiative => {
         // Only check initiatives below the Mendoza line (priority > 14)
-        if (initiative.priority > 14) {
+        if (initiative.priority > 15) {
             let expensiveWorkCount = 0;
             const expensiveWorkDetails = [];
             
@@ -3289,7 +3289,7 @@ function calculateDetailedResourceBreakdown() {
         
         boardData.initiatives.forEach(initiative => {
             const priority = initiative.priority;
-            const isAboveLine = priority <= 14;
+            const isAboveLine = priority <= 15;
             
             console.log(`Processing initiative: ${initiative.title}, Priority: ${priority}, Above line: ${isAboveLine}`);
             
