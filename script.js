@@ -635,9 +635,6 @@ function generateBlockedWorkTab(initiative) {
                         <div class="font-medium text-sm" style="color: var(--text-primary);">
                             ${story.key}: ${story.fields.summary}
                         </div>
-                        <div class="text-xs mt-1" style="color: var(--text-secondary);">
-                            ${story.fields.issuetype?.name || 'Unknown'}
-                        </div>
                     </div>
                 `).join('')}
             </div>
