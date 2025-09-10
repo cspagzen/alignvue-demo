@@ -10647,9 +10647,9 @@ function calculateFlaggedCount(childIssues) {
     }
     
     return childIssues.filter(issue => {
-        const flaggedValue = issue.fields.flagged;
-        return flaggedValue === true || flaggedValue === "true" || 
-               (Array.isArray(flaggedValue) && flaggedValue.length > 0);
+        const flaggedValue = issue.fields.customfield_10021;
+        // Flagged field returns array like [{"value": "Impediment"}] or null/empty
+        return flaggedValue && Array.isArray(flaggedValue) && flaggedValue.length > 0;
     }).length;
 }
 
@@ -10702,7 +10702,7 @@ async function fetchJiraData() {
                         method: 'POST',
                         body: {
                             jql: parentJQL,
-                            fields: ['parent', 'status', 'key', 'summary', 'customfield_10190', 'flagged'],
+                            fields: ['parent', 'status', 'key', 'summary', 'customfield_10190', 'customfield_10021'],
                             startAt: startAt,
                             maxResults: maxResults
                         }
