@@ -10187,6 +10187,12 @@ function updateBoardWithLiveData(newData) {
     if (typeof updateAtRiskCard === 'function') {
         updateAtRiskCard();
     }  
+    
+    // Update Mendoza card with live efficiency calculation
+    if (typeof updateMendozaCard === 'function') {
+        updateMendozaCard();
+    }
+    
 }
 
 // Smart Bidirectional Sync State
@@ -10197,7 +10203,6 @@ let syncState = {
     lastSyncTime: null,
     syncInterval: null,
     updateQueue: []
-    
     
 };
 
