@@ -642,8 +642,10 @@ function switchAtRiskTab(tabName) {
         
         // Handle blocked-work tab content
 if (tabName === 'blocked-work') {
-    // You'll need to get the current initiative - adjust this based on how you store it
-    const initiative = window.currentModalInitiative || getCurrentInitiative();
+    // Find the initiative that opened this modal by looking at the modal title
+    const modalTitle = document.getElementById('modal-title').textContent;
+    const initiativeTitle = modalTitle.replace('At-Risk Analysis: ', '');
+    const initiative = boardData.initiatives.find(i => i.title === initiativeTitle);
     activeContent.innerHTML = generateBlockedWorkTab(initiative);
 }
     }
