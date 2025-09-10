@@ -820,7 +820,7 @@ function analyzeInitiativeRisk(initiative) {
 }
 
 function getRiskLevel(riskScore) {
-    if (riskScore <= 10) {
+    if (riskScore <= 12) {
         return {
             label: 'Low Risk Initiative',
             color: 'var(--accent-green)',
@@ -833,7 +833,7 @@ function getRiskLevel(riskScore) {
                 <circle cx="12" cy="12" r="10"/>
             </svg>`
         };
-    } else if (riskScore <= 20) {
+    } else if (riskScore <= 22) {
         return {
             label: 'Moderate Risk Initiative',
             color: 'var(--accent-orange)',
@@ -869,10 +869,7 @@ function getRiskLevel(riskScore) {
             bgColorLight: 'rgba(239, 68, 68, 0.05)',
             description: 'This initiative has critical risk factors across multiple teams that pose serious threats to delivery and require immediate escalation.',
             icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 9v4"/>
-                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                <path d="M12 17h.01"/>
-                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>`
         };
     }
@@ -1092,15 +1089,15 @@ const initiative = window.currentModalInitiative;
                     <div class="grid grid-cols-2 gap-2 text-sm">
                         <div class="flex items-center gap-2">
                             <div class="w-3 h-3 rounded-full" style="background: var(--accent-green);"></div>
-                            <span>0-10: Low Risk</span>
+                            <span>0-12: Low Risk</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="w-3 h-3 rounded-full" style="background: var(--accent-orange);"></div>
-                            <span>11-20: Moderate Risk</span>
+                            <span>13-22: Moderate Risk</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="w-3 h-3 rounded-full" style="background: #f97316;"></div>
-                            <span>21-35: High Risk</span>
+                            <span>23-35: High Risk</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="w-3 h-3 rounded-full" style="background: var(--accent-red);"></div>
@@ -4684,8 +4681,8 @@ function updateAtRiskCard() {
                         </div>
                         
                         <!-- Risk Score text -->
-<div class="text-xs opacity-90 mb-2" style="font-weight: 500;">
-    Risk Score: ${analyzeInitiativeRisk(initiative).riskScore}
+<div class="text-xs opacity-90 mb-2" style="font-weight: 500; color: ${getRiskLevelColor(analyzeInitiativeRisk(initiative).riskScore)};">
+    Risk: ${analyzeInitiativeRisk(initiative).riskScore}/50
 </div>
                         
                         <!-- Type badge (styled like pipeline items) -->
@@ -4717,9 +4714,9 @@ function updateAtRiskCard() {
 
 // UPDATE: getRiskLevelColor function for 50-point scale
 function getRiskLevelColor(riskScore) {
-    if (riskScore <= 10) return 'var(--accent-green)';      // 0-10: Low Risk
-    if (riskScore <= 20) return 'var(--accent-orange)';     // 11-20: Moderate Risk
-    if (riskScore <= 35) return '#f97316';                  // 21-35: High Risk
+    if (riskScore <= 12) return 'var(--accent-green)';      // 0-12: Low Risk
+    if (riskScore <= 22) return 'var(--accent-orange)';     // 13-22: Moderate Risk
+    if (riskScore <= 35) return '#f97316';                  // 23-35: High Risk
     return 'var(--accent-red)';                            // 36-50: Critical Risk
 }
 
