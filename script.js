@@ -4475,6 +4475,7 @@ function updateAtRiskCard() {
 }
 
 // Simplified risk calculation for cards (doesn't need full analysis object)
+// Update calculateSimpleRiskScore function
 function calculateSimpleRiskScore(initiative) {
     let riskScore = 0;
     
@@ -4483,54 +4484,48 @@ function calculateSimpleRiskScore(initiative) {
         const team = boardData.teams[teamName];
         if (!team) return;
 
-        // NEW 6-ATTRIBUTE RISK SCORING:
-        
-        // Check capacity risk
-        if (team.capacity === 'at-risk') riskScore += 2;
-        
-        // Check skillset risk  
-        if (team.skillset === 'at-risk') riskScore += 2;
-        
-        // Check vision risk
+        // UPDATED TEAM HEALTH RISK SCORING:
+        if (team.capacity === 'at-risk') riskScore += 3;        // Increased from 2
+        if (team.skillset === 'at-risk') riskScore += 3;        // Increased from 2
+        if (team.support === 'at-risk') riskScore += 2;         // Increased from 1
+        if (team.jira && team.jira.utilization > 95) riskScore += 2; // Increased from 1
         if (team.vision === 'at-risk') riskScore += 1;
-        
-        // Check support risk
-        if (team.support === 'at-risk') riskScore += 1;
-        
-        // Check teamwork risk
         if (team.teamwork === 'at-risk') riskScore += 1;
-        
-        // Check autonomy risk
         if (team.autonomy === 'at-risk') riskScore += 1;
+    });
+
+    // UPDATED FLAGGED WORK RISK SCORING (percentage-based)
+    if (initiative.jira && initiative.jira.flagged > 0) {
+        const totalStories = initiative.jira.stories || 0;
+        const flaggedStories = initiative.jira.flagged || 0;
+        const flaggedPercentage = totalStories > 0 ? (flaggedStories / totalStories) * 100 : 0;
         
-        // Check utilization
-    if (team.jira && team.jira.utilization > 95) riskScore += 1;
-});
-
-// ADD FLAGGED WORK RISK SCORING
-if (initiative.jira && initiative.jira.flagged > 0) {
-    const totalStories = initiative.jira.stories || 0;
-    const flaggedStories = initiative.jira.flagged || 0;
-    const flaggedPercentage = totalStories > 0 ? (flaggedStories / totalStories) * 100 : 0;
-    
-    if (flaggedPercentage >= 50) {
-        riskScore += 8;
-    } else if (flaggedPercentage >= 30) {
-        riskScore += 5;
-    } else if (flaggedPercentage >= 15) {
-        riskScore += 3;
-    } else if (flaggedStories >= 5) {
-        riskScore += 2;
-    } else {
-        riskScore += 1;
+        if (flaggedPercentage >= 50) {
+            riskScore += 8;
+        } else if (flaggedPercentage >= 25) {
+            riskScore += 5;
+        } else if (flaggedPercentage >= 15) {
+            riskScore += 3;
+        } else if (flaggedPercentage >= 5) {
+            riskScore += 2;
+        } else {
+            riskScore += 1; // Any flagged stories up to 5%
+        }
     }
-}
 
-// Priority-based risk factors
-const row = getRowColFromSlot(initiative.priority).row;
-    if (row <= 2 && riskScore > 4) riskScore += 2;
+    // NEW: VALIDATION RISK FACTORS (above-the-line only)
+    if (initiative.priority >= 1 && initiative.priority <= 15 && initiative.validation === 'not-validated') {
+        if (initiative.type === 'strategic') {
+            riskScore += 2;
+        } else if (initiative.type === 'ktlo' || initiative.type === 'emergent') {
+            riskScore += 1;
+        }
+    }
 
-    // NEW: Cap at 50 instead of 10
+    // UPDATED: Priority-based risk amplification (reduced from +2 to +1)
+    const row = getRowColFromSlot(initiative.priority).row;
+    if (row <= 2 && riskScore > 4) riskScore += 1;
+
     return Math.min(riskScore, 50);
 }
 
