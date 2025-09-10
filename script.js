@@ -441,6 +441,12 @@ function showAtRiskAnalysisModal(initiative) {
                             ${riskAnalysis.impactedTeams.length}
                         </span>
                     </button>
+                    <button onclick="switchAtRiskTab('blocked-work')" 
+                        id="tab-blocked-work" 
+                        class="risk-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors"
+                        style="border-color: transparent; color: var(--text-secondary);">
+                        Blocked Work (${initiative.jira?.flagged || 0})
+                    </button>
                     <button onclick="switchAtRiskTab('recommendations')" 
                             id="recommendations-tab" 
                             class="at-risk-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors flex-shrink-0"
@@ -633,7 +639,53 @@ function switchAtRiskTab(tabName) {
         }
         
         activeContent.classList.remove('hidden');
+        
+        // Handle blocked-work tab content
+if (tabName === 'blocked-work') {
+    // You'll need to get the current initiative - adjust this based on how you store it
+    const initiative = window.currentModalInitiative || getCurrentInitiative();
+    activeContent.innerHTML = generateBlockedWorkTab(initiative);
+}
     }
+}
+
+function generateBlockedWorkTab(initiative) {
+    const jira = initiative.jira || {};
+    const flaggedCount = jira.flagged || 0;
+    
+    if (flaggedCount === 0) {
+        return `
+            <div class="text-center py-8">
+                <h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">No Flagged Work</h3>
+                <p style="color: var(--text-secondary);">All ${jira.stories || 0} stories are progressing normally.</p>
+            </div>
+        `;
+    }
+    
+    const flaggedStories = (jira.childIssues || []).filter(issue => {
+        const flaggedValue = issue.fields.flagged;
+        return flaggedValue === true || flaggedValue === "true" || 
+               (Array.isArray(flaggedValue) && flaggedValue.length > 0);
+    });
+    
+    return `
+        <div class="space-y-4">
+            <div class="grid grid-cols-3 gap-4">
+                <div class="text-center p-4 rounded-lg" style="background: var(--bg-tertiary);">
+                    <div class="text-2xl font-bold mb-1" style="color: var(--accent-red);">${flaggedCount}</div>
+                    <div class="text-sm" style="color: var(--text-secondary);">Flagged Stories</div>
+                </div>
+            </div>
+            <div class="space-y-2">
+                ${flaggedStories.map(story => `
+                    <div class="p-3 rounded" style="background: var(--bg-tertiary); border-left: 4px solid var(--accent-red);">
+                        <div class="font-medium text-sm">${story.key}: ${story.fields.summary}</div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Status: ${story.fields.status.name}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
 }
 
 function analyzeInitiativeRisk(initiative) {
@@ -4498,11 +4550,30 @@ function calculateSimpleRiskScore(initiative) {
         if (team.autonomy === 'at-risk') riskScore += 1;
         
         // Check utilization
-        if (team.jira && team.jira.utilization > 95) riskScore += 1;
-    });
+    if (team.jira && team.jira.utilization > 95) riskScore += 1;
+});
 
-    // Priority-based risk factors
-    const row = getRowColFromSlot(initiative.priority).row;
+// ADD FLAGGED WORK RISK SCORING
+if (initiative.jira && initiative.jira.flagged > 0) {
+    const totalStories = initiative.jira.stories || 0;
+    const flaggedStories = initiative.jira.flagged || 0;
+    const flaggedPercentage = totalStories > 0 ? (flaggedStories / totalStories) * 100 : 0;
+    
+    if (flaggedPercentage >= 50) {
+        riskScore += 8;
+    } else if (flaggedPercentage >= 30) {
+        riskScore += 5;
+    } else if (flaggedPercentage >= 15) {
+        riskScore += 3;
+    } else if (flaggedStories >= 5) {
+        riskScore += 2;
+    } else {
+        riskScore += 1;
+    }
+}
+
+// Priority-based risk factors
+const row = getRowColFromSlot(initiative.priority).row;
     if (row <= 2 && riskScore > 4) riskScore += 2;
 
     // NEW: Cap at 50 instead of 10
@@ -10519,6 +10590,7 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
                 completed: finalCompletion.completed,
                 inProgress: finalCompletion.inProgress,
                 blocked: finalCompletion.blocked,
+                flagged: calculateFlaggedCount(issue.childIssues),
                 velocity: finalCompletion.velocity,
                 status: issue.fields.status.name,
                 assignee: issue.fields.assignee?.displayName || 'Unassigned',
@@ -10567,6 +10639,18 @@ function transformJiraData(initiativesResponse, okrsResponse, completedInitiativ
         okrs: { issues: okrsResponse?.issues || [] },
         recentlyCompleted: completedInitiatives || []
     };
+}
+
+function calculateFlaggedCount(childIssues) {
+    if (!childIssues || childIssues.length === 0) {
+        return 0;
+    }
+    
+    return childIssues.filter(issue => {
+        const flaggedValue = issue.fields.flagged;
+        return flaggedValue === true || flaggedValue === "true" || 
+               (Array.isArray(flaggedValue) && flaggedValue.length > 0);
+    }).length;
 }
 
 // Updated fetchJiraData function to include Key Results
@@ -10618,7 +10702,7 @@ async function fetchJiraData() {
                         method: 'POST',
                         body: {
                             jql: parentJQL,
-                            fields: ['parent', 'status', 'key', 'summary', 'customfield_10190'],
+                            fields: ['parent', 'status', 'key', 'summary', 'customfield_10190', 'flagged'],
                             startAt: startAt,
                             maxResults: maxResults
                         }
