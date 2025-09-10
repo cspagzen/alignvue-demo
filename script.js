@@ -2562,7 +2562,7 @@ if (efficiencyScore >= 85) {
 valueElement.style.color = color;
 titleElement.textContent = description;
 titleElement.style.color = color;
-indicatorElement.style.borderBottomColor = color;
+indicatorElement.style.background = color;
 
 // Position the indicator
 indicatorElement.style.left = `${efficiencyScore}%`;
