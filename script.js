@@ -3131,7 +3131,7 @@ function calculateResourceAllocation() {
     return result;
 }
 
-// Helper function to classify activities
+// Helper function to classify activities - do we still need this
 function getActivityClassification(activity, activityClassification) {
     for (const [type, config] of Object.entries(activityClassification)) {
         if (config.activities.includes(activity.toLowerCase())) {
