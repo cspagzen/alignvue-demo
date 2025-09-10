@@ -1240,7 +1240,7 @@ function showRiskScoreInfoModal() {
         '<span style="color: ' + getRiskLevelColor(analyzeInitiativeRisk(initiative).riskScore) + ';">' +
             analyzeInitiativeRisk(initiative).riskScore + '/50' +
         '</span>' +
-        '<button onclick="window.currentModalInitiative = JSON.parse(\'' + JSON.stringify(initiative).replace(/'/g, "\\'") + '\'); showRiskScoreInfoModal()" ' +
+        '<button onclick="showRiskScoreInfoModalForInitiative(' + initiative.id + ')" ' +
                 'class="w-4 h-4 rounded-full flex items-center justify-center hover:bg-opacity-20 transition-colors" ' +
                 'style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);" ' +
                 'title="How is Risk Score calculated?">' +
@@ -1315,6 +1315,14 @@ function showRiskScoreInfoModal() {
     }, 100);
     
     announceToScreenReader(`Opened details for ${initiative.title} initiative`);
+}
+
+function showRiskScoreInfoModalForInitiative(initiativeId) {
+    const initiative = boardData.initiatives.find(i => i.id === initiativeId);
+    if (!initiative) return;
+    
+    window.currentModalInitiative = initiative;
+    showRiskScoreInfoModal();
 }
 
 function openJiraEpic(epicKey) {
