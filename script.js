@@ -835,72 +835,241 @@ function showRiskScoreInfoModal() {
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
     
+    // Get the current initiative being analyzed
+    const modalTitle = title.textContent;
+    const initiativeTitle = modalTitle.replace('At-Risk Analysis: ', '');
+    const initiative = boardData.initiatives.find(i => i.title === initiativeTitle);
+    
+    // Calculate actual values for this initiative
+    let actualValues = {
+        teamHealth: { capacity: 0, skillset: 0, support: 0, utilization: 0, vision: 0, teamwork: 0, autonomy: 0 },
+        flaggedWork: { percentage: 0, count: 0, points: 0 },
+        validation: { points: 0, reason: '' },
+        priority: { points: 0, applied: false },
+        totalScore: 0
+    };
+    
+    if (initiative) {
+        // Calculate team health points
+        initiative.teams.forEach(teamName => {
+            const team = boardData.teams[teamName];
+            if (!team) return;
+            
+            if (team.capacity === 'at-risk') actualValues.teamHealth.capacity += 3;
+            if (team.skillset === 'at-risk') actualValues.teamHealth.skillset += 3;
+            if (team.support === 'at-risk') actualValues.teamHealth.support += 2;
+            if (team.jira && team.jira.utilization > 95) actualValues.teamHealth.utilization += 2;
+            if (team.vision === 'at-risk') actualValues.teamHealth.vision += 1;
+            if (team.teamwork === 'at-risk') actualValues.teamHealth.teamwork += 1;
+            if (team.autonomy === 'at-risk') actualValues.teamHealth.autonomy += 1;
+        });
+        
+        // Calculate flagged work points
+        if (initiative.jira && initiative.jira.flagged > 0) {
+            const totalStories = initiative.jira.stories || 0;
+            const flaggedStories = initiative.jira.flagged || 0;
+            const flaggedPercentage = totalStories > 0 ? (flaggedStories / totalStories) * 100 : 0;
+            
+            actualValues.flaggedWork.percentage = Math.round(flaggedPercentage * 10) / 10;
+            actualValues.flaggedWork.count = flaggedStories;
+            
+            if (flaggedPercentage >= 50) actualValues.flaggedWork.points = 8;
+            else if (flaggedPercentage >= 25) actualValues.flaggedWork.points = 5;
+            else if (flaggedPercentage >= 15) actualValues.flaggedWork.points = 3;
+            else if (flaggedPercentage >= 5) actualValues.flaggedWork.points = 2;
+            else actualValues.flaggedWork.points = 1;
+        }
+        
+        // Calculate validation points
+        if (initiative.priority >= 1 && initiative.priority <= 15 && initiative.validation === 'not-validated') {
+            if (initiative.type === 'strategic') {
+                actualValues.validation.points = 2;
+                actualValues.validation.reason = 'Strategic initiative above-the-line, not validated';
+            } else if (initiative.type === 'ktlo' || initiative.type === 'emergent') {
+                actualValues.validation.points = 1;
+                actualValues.validation.reason = `${initiative.type.toUpperCase()} initiative above-the-line, not validated`;
+            }
+        }
+        
+        // Calculate priority amplification
+        const riskScoreBeforePriority = Object.values(actualValues.teamHealth).reduce((a, b) => a + b, 0) + 
+                                       actualValues.flaggedWork.points + actualValues.validation.points;
+        const row = getRowColFromSlot(initiative.priority).row;
+        if (row <= 2 && riskScoreBeforePriority > 4) {
+            actualValues.priority.points = 1;
+            actualValues.priority.applied = true;
+        }
+        
+        actualValues.totalScore = riskScoreBeforePriority + actualValues.priority.points;
+    }
+    
     title.textContent = 'Risk Score Calculation';
     
     content.innerHTML = `
-        <div class="space-y-4">
-            <div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid var(--accent-blue);">
-                <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">
-                    Risk scores analyze <strong>6 team health dimensions</strong> plus utilization and priority. Scores range from <strong>0-50</strong> to properly reflect initiatives with multiple troubled teams.
-                </p>
-            </div>
-            
-            <div class="space-y-3">
-                <h3 class="font-semibold" style="color: var(--text-primary);">Scoring Rules</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <div class="text-sm font-medium mb-2" style="color: var(--accent-red);">High Impact (+2 each)</div>
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
-                                <div class="w-2 h-2 rounded-full" style="background: var(--accent-red);"></div>
-                                Capacity, Skillset At-Risk
-                            </div>
-                            <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
-                                <div class="w-2 h-2 rounded-full" style="background: var(--accent-red);"></div>
-                                High Priority Initiative
-                            </div>
+        <div class="space-y-6" style="max-height: 70vh; overflow-y: auto;">
+            <!-- Current Initiative Score -->
+            ${initiative ? `
+                <div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid var(--accent-blue);">
+                    <h3 class="font-semibold mb-2" style="color: var(--text-primary);">${initiative.title} - Risk Score: ${actualValues.totalScore}/50</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <strong>Team Health:</strong> ${Object.values(actualValues.teamHealth).reduce((a, b) => a + b, 0)} pts
                         </div>
-                    </div>
-                    
-                    <div>
-                        <div class="text-sm font-medium mb-2" style="color: var(--accent-orange);">Medium Impact (+1 each)</div>
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
-                                <div class="w-2 h-2 rounded-full" style="background: var(--accent-orange);"></div>
-                                Vision, Support, Teamwork, Autonomy
-                            </div>
-                            <div class="flex items-center gap-2 p-2 rounded text-sm" style="background: var(--bg-tertiary);">
-                                <div class="w-2 h-2 rounded-full" style="background: var(--accent-orange);"></div>
-                                Over-Utilization (>95%)
-                            </div>
+                        <div>
+                            <strong>Flagged Work:</strong> ${actualValues.flaggedWork.points} pts (${actualValues.flaggedWork.percentage}%)
+                        </div>
+                        <div>
+                            <strong>Validation Risk:</strong> ${actualValues.validation.points} pts
+                        </div>
+                        <div>
+                            <strong>Priority Amplification:</strong> ${actualValues.priority.points} pts
                         </div>
                     </div>
                 </div>
-
-                <div class="mt-4 p-3 rounded" style="background: var(--bg-tertiary); border-left: 4px solid var(--accent-blue);">
-                    <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">Risk Scale:</div>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div><span style="color: var(--accent-green);">●</span> 0-10: Low Risk</div>
-                        <div><span style="color: var(--accent-orange);">●</span> 11-20: Moderate Risk</div>
-                        <div><span style="color: #f97316;">●</span> 21-35: High Risk</div>
-                        <div><span style="color: var(--accent-red);">●</span> 36-50: Critical Risk</div>
+            ` : ''}
+            
+            <!-- Scoring Model -->
+            <div class="space-y-4">
+                <h3 class="font-semibold" style="color: var(--text-primary);">Scoring Model (Max: 50 points)</h3>
+                
+                <!-- Team Health Factors -->
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <h4 class="font-medium mb-3" style="color: var(--text-primary);">Team Health Risk Factors (Per Team)</h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div class="flex justify-between">
+                            <span>Capacity at-risk:</span>
+                            <span class="font-medium" style="color: var(--accent-red);">+3 pts ${initiative ? `(${actualValues.teamHealth.capacity} actual)` : ''}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Skillset at-risk:</span>
+                            <span class="font-medium" style="color: var(--accent-red);">+3 pts ${initiative ? `(${actualValues.teamHealth.skillset} actual)` : ''}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Support at-risk:</span>
+                            <span class="font-medium" style="color: var(--accent-orange);">+2 pts ${initiative ? `(${actualValues.teamHealth.support} actual)` : ''}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Over-utilization (>95%):</span>
+                            <span class="font-medium" style="color: var(--accent-orange);">+2 pts ${initiative ? `(${actualValues.teamHealth.utilization} actual)` : ''}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Vision at-risk:</span>
+                            <span class="font-medium">+1 pt ${initiative ? `(${actualValues.teamHealth.vision} actual)` : ''}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Teamwork at-risk:</span>
+                            <span class="font-medium">+1 pt ${initiative ? `(${actualValues.teamHealth.teamwork} actual)` : ''}</span>
+                        </div>
+                        <div class="flex justify-between" style="grid-column: span 2;">
+                            <span>Autonomy at-risk:</span>
+                            <span class="font-medium">+1 pt ${initiative ? `(${actualValues.teamHealth.autonomy} actual)` : ''}</span>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="p-3 rounded text-center" style="background: rgba(59, 130, 246, 0.05); border: 1px solid var(--accent-blue);">
-                    <div class="text-sm" style="color: var(--text-secondary);">
-                        <strong style="color: var(--accent-blue);">Max Score:</strong> 50 points • Scores compound across multiple troubled teams
+                <!-- Flagged Work Factors -->
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <h4 class="font-medium mb-3" style="color: var(--text-primary);">Flagged Work Risk Factors</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>≥50% flagged stories:</span>
+                            <span class="font-medium" style="color: var(--accent-red);">+8 pts</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>≥25% flagged stories:</span>
+                            <span class="font-medium" style="color: var(--accent-red);">+5 pts</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>≥15% flagged stories:</span>
+                            <span class="font-medium" style="color: var(--accent-orange);">+3 pts</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>≥5% flagged stories:</span>
+                            <span class="font-medium">+2 pts</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Any flagged stories (up to 5%):</span>
+                            <span class="font-medium">+1 pt</span>
+                        </div>
+                        ${initiative && actualValues.flaggedWork.points > 0 ? `
+                            <div class="mt-2 p-2 rounded" style="background: rgba(59, 130, 246, 0.1);">
+                                <strong>This Initiative:</strong> ${actualValues.flaggedWork.count} flagged (${actualValues.flaggedWork.percentage}%) = ${actualValues.flaggedWork.points} pts
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <!-- Validation Risk Factors -->
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <h4 class="font-medium mb-3" style="color: var(--text-primary);">Validation Risk Factors (Above-the-Line Only)</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>Strategic initiative, Priority 1-15, Not Validated:</span>
+                            <span class="font-medium" style="color: var(--accent-red);">+2 pts</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>KTLO initiative, Priority 1-15, Not Validated:</span>
+                            <span class="font-medium">+1 pt</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Emergent initiative, Priority 1-15, Not Validated:</span>
+                            <span class="font-medium">+1 pt</span>
+                        </div>
+                        ${initiative && actualValues.validation.points > 0 ? `
+                            <div class="mt-2 p-2 rounded" style="background: rgba(239, 68, 68, 0.1);">
+                                <strong>This Initiative:</strong> ${actualValues.validation.reason} = ${actualValues.validation.points} pts
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <!-- Priority Amplification -->
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <h4 class="font-medium mb-3" style="color: var(--text-primary);">Priority-Based Risk Amplification</h4>
+                    <div class="text-sm">
+                        <div class="flex justify-between">
+                            <span>Critical/High priority initiatives (rows 1-2) with existing risk >4:</span>
+                            <span class="font-medium">+1 pt</span>
+                        </div>
+                        ${initiative ? `
+                            <div class="mt-2 p-2 rounded" style="background: ${actualValues.priority.applied ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'};">
+                                <strong>This Initiative:</strong> Priority ${initiative.priority} (Row ${getRowColFromSlot(initiative.priority).row}) 
+                                ${actualValues.priority.applied ? `with ${actualValues.totalScore - actualValues.priority.points} base risk > 4 = +1 pt` : '- No amplification applied'}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <!-- Risk Level Scale -->
+                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <h4 class="font-medium mb-3" style="color: var(--text-primary);">Risk Level Classifications</h4>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full" style="background: var(--accent-green);"></div>
+                            <span>0-10: Low Risk</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full" style="background: var(--accent-orange);"></div>
+                            <span>11-20: Moderate Risk</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full" style="background: #f97316;"></div>
+                            <span>21-35: High Risk</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full" style="background: var(--accent-red);"></div>
+                            <span>36-50: Critical Risk</span>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <button onclick="closeModal()" 
-                    class="w-full px-4 py-2 rounded font-medium transition-colors" 
-                    style="background: var(--accent-primary); color: white;">
-                Close
-            </button>
         </div>
+        
+        <button onclick="closeModal()" 
+                class="w-full px-4 py-2 rounded font-medium transition-colors mt-4" 
+                style="background: var(--accent-primary); color: white;">
+            Close
+        </button>
     `;
     
     modal.classList.add('show');
