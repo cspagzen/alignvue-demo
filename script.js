@@ -2997,19 +2997,19 @@ function calculateResourceAllocation() {
     const activityClassification = {
         // Expensive work that should be above the line (weight = high impact on score)
         'expensive': {
-            activities: ['development', 'go-to-market', 'infrastructure', 'support'],
+            activities: ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'],
             correctPlacement: 'above',
             weight: 3.0  // High weight - these misallocations hurt the score significantly
         },
         // Cheap discovery that should be below the line (weight = medium impact)
         'discovery': {
-            activities: ['validation', 'research', 'prototyping', 'planning', 'design'],
+            activities: ['validation', 'research', 'prototyping', 'planning', 'optimization'],
             correctPlacement: 'below', 
             weight: 1.5  // Medium weight - less critical but still matters
         },
         // Neutral activities that can be either place (weight = low impact)
         'neutral': {
-            activities: ['bugs', 'testing', 'compliance', 'documentation', 'analytics'],
+            activities: ['compliance', 'support', 'community'],
             correctPlacement: 'either',
             weight: 0.5  // Low weight - placement doesn't matter much
         }
@@ -3024,11 +3024,11 @@ function calculateResourceAllocation() {
     let totalExpensiveWork = 0;
     let totalDiscoveryWork = 0;
     
-    // Get detailed breakdown from child issues
-    const detailedBreakdown = calculateDetailedResourceBreakdown();
+    // Use the correct activity breakdown (with 407 Jira items)
+    const activityBreakdown = calculateActivityTypeBreakdown();
     
     // Process above-line activities
-    Object.entries(detailedBreakdown.aboveLine).forEach(([activity, count]) => {
+    Object.entries(activityBreakdown.aboveLine).forEach(([activity, count]) => {
         aboveLineTotal += count;
         
         const classification = getActivityClassification(activity, activityClassification);
@@ -3050,7 +3050,7 @@ function calculateResourceAllocation() {
     });
     
     // Process below-line activities  
-    Object.entries(detailedBreakdown.belowLine).forEach(([activity, count]) => {
+    Object.entries(activityBreakdown.belowLine).forEach(([activity, count]) => {
         belowLineTotal += count;
         
         const classification = getActivityClassification(activity, activityClassification);
