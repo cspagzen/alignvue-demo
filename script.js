@@ -884,9 +884,7 @@ function showRiskScoreInfoModal() {
     const content = document.getElementById('modal-content');
     
     // Get the current initiative being analyzed
-    const modalTitle = title.textContent;
-    const initiativeTitle = modalTitle.replace('At-Risk Analysis: ', '');
-    const initiative = boardData.initiatives.find(i => i.title === initiativeTitle);
+const initiative = window.currentModalInitiative;
     
     // Calculate actual values for this initiative
     let actualValues = {
