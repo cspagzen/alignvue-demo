@@ -616,24 +616,28 @@ function generateBlockedWorkTab(initiative) {
     }
     
     const flaggedStories = (jira.childIssues || []).filter(issue => {
-        const flaggedValue = issue.fields.flagged;
-        return flaggedValue === true || flaggedValue === "true" || 
-               (Array.isArray(flaggedValue) && flaggedValue.length > 0);
+        const flaggedValue = issue.fields.customfield_10021;
+        return flaggedValue && Array.isArray(flaggedValue) && flaggedValue.length > 0;
     });
     
     return `
         <div class="space-y-4">
-            <div class="grid grid-cols-3 gap-4">
-                <div class="text-center p-4 rounded-lg" style="background: var(--bg-tertiary);">
-                    <div class="text-2xl font-bold mb-1" style="color: var(--accent-red);">${flaggedCount}</div>
-                    <div class="text-sm" style="color: var(--text-secondary);">Flagged Stories</div>
-                </div>
+            <div class="text-center p-4 rounded-lg" style="background: var(--bg-tertiary);">
+                <div class="text-2xl font-bold mb-1" style="color: var(--accent-red);">${flaggedCount}</div>
+                <div class="text-sm" style="color: var(--text-secondary);">Flagged Stories</div>
             </div>
+
             <div class="space-y-2">
                 ${flaggedStories.map(story => `
-                    <div class="p-3 rounded" style="background: var(--bg-tertiary); border-left: 4px solid var(--accent-red);">
-                        <div class="font-medium text-sm">${story.key}: ${story.fields.summary}</div>
-                        <div class="text-xs" style="color: var(--text-secondary);">Status: ${story.fields.status.name}</div>
+                    <div class="p-3 rounded cursor-pointer transition-colors hover:bg-opacity-80" 
+                         style="background: var(--bg-tertiary); border-left: 4px solid var(--accent-red);"
+                         onclick="window.open('https://alignvue.atlassian.net/browse/${story.key}', '_blank')">
+                        <div class="font-medium text-sm" style="color: var(--text-primary);">
+                            ${story.key}: ${story.fields.summary}
+                        </div>
+                        <div class="text-xs mt-1" style="color: var(--text-secondary);">
+                            ${story.fields.issuetype?.name || 'Unknown'}
+                        </div>
                     </div>
                 `).join('')}
             </div>
