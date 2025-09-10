@@ -2978,6 +2978,7 @@ function generateEnhancedRecommendations(breakdown, metrics) {
     const activityBreakdown = calculateActivityTypeBreakdown();
 const highCostActivities = ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'];
 const totalExpensiveWorkBelowLine = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
+
     
     // High priority recommendations for expensive initiatives below line
     if (expensiveInitiativesBelowLine.length > 3) {
@@ -2986,7 +2987,7 @@ const totalExpensiveWorkBelowLine = highCostActivities.reduce((sum, activity) =>
             icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>',
             title: 'Move Development Work Above the Line',
             description: `${expensiveInitiativesBelowLine.length} initiatives with expensive work (${totalExpensiveWorkBelowLine} items total) are below priority 15, wasting engineering capacity.`,
-            action: 'Review initiatives 15-32 and promote high-value development work to positions 1-14.',
+            action: 'Review initiatives 16-32 and promote high-value development work to positions 1-15.',
             clickable: true,
             modalFunction: 'showExpensiveInitiativesBelowLineModal'
         });
@@ -3008,7 +3009,7 @@ const totalExpensiveWorkBelowLine = highCostActivities.reduce((sum, activity) =>
             icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 4.9-4 9-9 9s-9-4.1-9-9c0-4.9 4-9 9-9s9 4.1 9 9"/><path d="M9 12l2 2 4-4"/></svg>',
             title: 'Move Validation Work Below the Line',
             description: `${discoveryWorkAboveLine} discovery items are consuming high-priority slots.`,
-            action: 'Move research and validation work to positions 15+ to free up development capacity.'
+            action: 'Move research and validation work to positions 16+ to free up development capacity.'
         });
     }
     
