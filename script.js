@@ -1235,9 +1235,24 @@ function showRiskScoreInfoModal() {
                                     '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.status : 'N/A') + '</div>' +
                                 '</div>' +
                                 '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Assignee</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.assignee : 'N/A') + '</div>' +
-                                '</div>' +
+    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Risk Score</div>' +
+    '<div class="text-sm font-bold flex items-center gap-2">' +
+        '<span style="color: ' + getRiskLevelColor(analyzeInitiativeRisk(initiative).riskScore) + ';">' +
+            analyzeInitiativeRisk(initiative).riskScore + '/50' +
+        '</span>' +
+        '<button onclick="showRiskScoreInfoModal(); window.currentModalInitiative = \'' + initiative.title + '\'" ' +
+                'class="w-4 h-4 rounded-full flex items-center justify-center hover:bg-opacity-20 transition-colors" ' +
+                'style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);" ' +
+                'title="How is Risk Score calculated?">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" ' +
+                 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<circle cx="12" cy="12" r="10"/>' +
+                '<path d="M12 16v-4"/>' +
+                '<path d="M12 8h.01"/>' +
+            '</svg>' +
+        '</button>' +
+    '</div>' +
+'</div>' +
                                 '<div>' +
                                     '<div class="text-xs font-medium" style="color: var(--text-secondary);">Updated</div>' +
                                     '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? new Date(initiative.jira.updated).toLocaleDateString() : 'N/A') + '</div>' +
