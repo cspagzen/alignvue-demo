@@ -4656,12 +4656,13 @@ function updateHealthCard() {
       
 function updateAtRiskCard() {
     const content = document.getElementById('at-risk-content');
-    const atRiskInitiatives = getTopAtRiskInitiatives().slice(0, 3);
+    const atRiskInitiatives = getTopAtRiskInitiatives()
+    .sort((a, b) => analyzeInitiativeRisk(b).riskScore - analyzeInitiativeRisk(a).riskScore)
+    .slice(0, 3);
     
     content.innerHTML = '<div class="flex gap-3 h-full">' + 
         atRiskInitiatives.map(initiative => {
-            // Get the dynamic priority number from the initiative's position
-            const priorityText = initiative.priority === 'bullpen' ? 'Bullpen' : initiative.priority;
+            
             
             // Calculate risk level and get colors (simplified version for cards)
             const riskScore = analyzeInitiativeRisk(initiative).riskScore;
@@ -4682,10 +4683,10 @@ function updateAtRiskCard() {
                             </div>
                         </div>
                         
-                        <!-- Priority text -->
-                        <div class="text-xs opacity-90 mb-2" style="font-weight: 500;">
-                            Priority: ${priorityText}
-                        </div>
+                        <!-- Risk Score text -->
+<div class="text-xs opacity-90 mb-2" style="font-weight: 500;">
+    Risk Score: ${analyzeInitiativeRisk(initiative).riskScore}
+</div>
                         
                         <!-- Type badge (styled like pipeline items) -->
                         <div class="flex justify-start">
