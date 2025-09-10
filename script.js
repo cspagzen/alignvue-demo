@@ -647,11 +647,11 @@ function analyzeInitiativeRisk(initiative) {
         riskScore: 0,
         riskFactors: [],
         impactedTeams: [],
-        primaryRiskFactors: [],
-        recommendations: []
+        recommendations: [],
+        primaryRiskFactors: []
     };
 
-    // Analyze teams working on this initiative
+    // UPDATED TEAM HEALTH RISK SCORING (matching calculateSimpleRiskScore)
     initiative.teams.forEach(teamName => {
         const team = boardData.teams[teamName];
         if (!team) return;
@@ -659,48 +659,47 @@ function analyzeInitiativeRisk(initiative) {
         const teamRiskFactors = [];
         let teamRiskColor = 'var(--accent-green)';
 
-        // Check all 6 health attributes
+        // NEW SCORING MODEL - same as calculateSimpleRiskScore
         if (team.capacity === 'at-risk') {
             teamRiskFactors.push('Capacity');
-            analysis.riskScore += 2;
+            analysis.riskScore += 3; // Updated from 2
         }
-
+        
         if (team.skillset === 'at-risk') {
             teamRiskFactors.push('Skillset');
-            analysis.riskScore += 2;
+            analysis.riskScore += 3; // Updated from 2
         }
-
+        
+        if (team.support === 'at-risk') {
+            teamRiskFactors.push('Support');
+            analysis.riskScore += 2; // Updated from 1
+        }
+        
+        if (team.jira && team.jira.utilization > 95) {
+            teamRiskFactors.push('Over-utilized');
+            analysis.riskScore += 2; // Updated from 1
+        }
+        
         if (team.vision === 'at-risk') {
             teamRiskFactors.push('Vision');
             analysis.riskScore += 1;
         }
-
-        if (team.support === 'at-risk') {
-            teamRiskFactors.push('Support');
-            analysis.riskScore += 1;
-        }
-
+        
         if (team.teamwork === 'at-risk') {
             teamRiskFactors.push('Teamwork');
             analysis.riskScore += 1;
         }
-
+        
         if (team.autonomy === 'at-risk') {
             teamRiskFactors.push('Autonomy');
             analysis.riskScore += 1;
         }
 
-        // Check utilization
-        if (team.jira && team.jira.utilization > 95) {
-            teamRiskFactors.push('Over-utilized');
-            analysis.riskScore += 1;
-        }
-
         // Determine team risk color based on number of risk factors
-        if (teamRiskFactors.length >= 4) teamRiskColor = 'var(--accent-red)';     // Critical
-        else if (teamRiskFactors.length >= 3) teamRiskColor = '#f97316';          // High Risk  
-        else if (teamRiskFactors.length >= 2) teamRiskColor = 'var(--accent-orange)'; // Medium Risk
-        else if (teamRiskFactors.length >= 1) teamRiskColor = '#eab308';          // Low Risk
+        if (teamRiskFactors.length >= 4) teamRiskColor = 'var(--accent-red)';
+        else if (teamRiskFactors.length >= 3) teamRiskColor = '#f97316';
+        else if (teamRiskFactors.length >= 2) teamRiskColor = 'var(--accent-orange)';
+        else if (teamRiskFactors.length >= 1) teamRiskColor = '#eab308';
 
         if (teamRiskFactors.length > 0) {
             analysis.impactedTeams.push({
@@ -711,40 +710,76 @@ function analyzeInitiativeRisk(initiative) {
         }
     });
 
-    // Add risk factors and recommendations (same as before but with updated scoring)
-    const capacityIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Capacity')).length;
-    const skillsetIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Skillset')).length;
-    const visionIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Vision')).length;
-    const supportIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Support')).length;
-    const teamworkIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Teamwork')).length;
-    const autonomyIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Autonomy')).length;
-
-    // Generate risk factors (same logic, different descriptions for higher scores)
-    if (capacityIssues > 0) {
+    // UPDATED FLAGGED WORK RISK SCORING (percentage-based, matching calculateSimpleRiskScore)
+    if (initiative.jira && initiative.jira.flagged > 0) {
+        const totalStories = initiative.jira.stories || 0;
+        const flaggedStories = initiative.jira.flagged || 0;
+        const flaggedPercentage = totalStories > 0 ? (flaggedStories / totalStories) * 100 : 0;
+        
+        let flaggedRiskScore = 0;
+        if (flaggedPercentage >= 50) {
+            flaggedRiskScore = 8;
+        } else if (flaggedPercentage >= 25) { // Updated from 30
+            flaggedRiskScore = 5;
+        } else if (flaggedPercentage >= 15) {
+            flaggedRiskScore = 3;
+        } else if (flaggedPercentage >= 5) { // Updated to percentage from absolute
+            flaggedRiskScore = 2;
+        } else {
+            flaggedRiskScore = 1;
+        }
+        
+        analysis.riskScore += flaggedRiskScore;
+        
         analysis.riskFactors.push({
-            name: 'Team Capacity',
-            severity: capacityIssues > 2 ? 'CRITICAL' : capacityIssues > 1 ? 'HIGH' : 'MODERATE',
-            color: capacityIssues > 2 ? 'var(--accent-red)' : capacityIssues > 1 ? '#f97316' : 'var(--accent-orange)',
-            description: `${capacityIssues} team(s) are operating at or beyond capacity, risking burnout and delivery delays.`,
-            impact: 'Potential delivery delays and team burnout'
+            name: 'Flagged Work',
+            severity: flaggedPercentage >= 50 ? 'CRITICAL' : 
+                     flaggedPercentage >= 25 ? 'HIGH' : 
+                     flaggedPercentage >= 15 ? 'MODERATE' : 'LOW',
+            color: flaggedPercentage >= 50 ? 'var(--accent-red)' : 
+                   flaggedPercentage >= 25 ? '#f97316' : 
+                   flaggedPercentage >= 15 ? 'var(--accent-orange)' : '#eab308',
+            description: `${flaggedStories} of ${totalStories} stories (${Math.round(flaggedPercentage * 10) / 10}%) are flagged for attention`,
+            impact: flaggedPercentage >= 25 ? 'Severe delivery delays likely' : 
+                   flaggedPercentage >= 15 ? 'Moderate delivery impact' : 
+                   'Minor delivery impact'
         });
-        analysis.primaryRiskFactors.push('capacity');
+        
+        analysis.primaryRiskFactors.push('flagged-work');
     }
 
-    if (skillsetIssues > 0) {
-        analysis.riskFactors.push({
-            name: 'Skillset Gaps',
-            severity: skillsetIssues > 2 ? 'CRITICAL' : skillsetIssues > 1 ? 'HIGH' : 'MODERATE',
-            color: skillsetIssues > 2 ? 'var(--accent-red)' : skillsetIssues > 1 ? '#f97316' : 'var(--accent-orange)',
-            description: `${skillsetIssues} team(s) lack required skills, potentially impacting delivery quality and timelines.`,
-            impact: 'Quality issues and extended development time'
-        });
-        analysis.primaryRiskFactors.push('skillset');
+    // NEW: VALIDATION RISK FACTORS (matching calculateSimpleRiskScore)
+    if (initiative.priority >= 1 && initiative.priority <= 15 && initiative.validation === 'not-validated') {
+        let validationPoints = 0;
+        let validationSeverity = 'LOW';
+        let validationDescription = '';
+        
+        if (initiative.type === 'strategic') {
+            validationPoints = 2;
+            validationSeverity = 'HIGH';
+            validationDescription = 'Strategic initiative above-the-line without validation poses significant market risk';
+        } else if (initiative.type === 'ktlo' || initiative.type === 'emergent') {
+            validationPoints = 1;
+            validationSeverity = 'MODERATE';
+            validationDescription = `${initiative.type.toUpperCase()} initiative above-the-line without validation creates delivery uncertainty`;
+        }
+        
+        if (validationPoints > 0) {
+            analysis.riskScore += validationPoints;
+            
+            analysis.riskFactors.push({
+                name: 'Validation Risk',
+                severity: validationSeverity,
+                color: validationSeverity === 'HIGH' ? '#f97316' : 'var(--accent-orange)',
+                description: validationDescription,
+                impact: validationSeverity === 'HIGH' ? 'Potential market misalignment' : 'Delivery uncertainty'
+            });
+            
+            analysis.primaryRiskFactors.push('validation');
+        }
     }
 
-    // Add other risk factors (vision, support, teamwork, autonomy) with similar patterns...
-
-    // Priority-based risk factors
+    // UPDATED: Priority-based risk amplification (reduced from +2 to +1)
     const row = getRowColFromSlot(initiative.priority).row;
     if (row <= 2 && analysis.riskScore > 4) {
         analysis.riskFactors.push({
@@ -754,18 +789,31 @@ function analyzeInitiativeRisk(initiative) {
             description: 'High-risk factors on a critical priority initiative pose significant organizational risk.',
             impact: 'Major impact on strategic objectives'
         });
-        analysis.riskScore += 2;
+        analysis.riskScore += 1; // Updated from 2
     }
 
-    // Generate recommendations based on severity
-    if (capacityIssues > 0) {
-        analysis.recommendations.push('Consider redistributing workload or bringing in additional resources to overloaded teams.');
-        if (capacityIssues > 2) {
-            analysis.recommendations.push('URGENT: Multiple teams are at capacity - consider delaying lower priority work or bringing in external resources.');
+    // Generate recommendations
+    if (analysis.impactedTeams.length > 0) {
+        const capacityIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Capacity')).length;
+        const skillsetIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Skillset')).length;
+        
+        if (capacityIssues > 0) {
+            analysis.recommendations.push('Consider redistributing workload or bringing in additional resources to overloaded teams.');
+        }
+        if (skillsetIssues > 0) {
+            analysis.recommendations.push('Provide training or augment teams with required skills to prevent quality issues.');
         }
     }
 
-    // NEW: Cap at 50 instead of 10
+    if (analysis.primaryRiskFactors.includes('flagged-work')) {
+        analysis.recommendations.push('Review and resolve flagged work items to prevent delivery delays.');
+    }
+
+    if (analysis.primaryRiskFactors.includes('validation')) {
+        analysis.recommendations.push('Prioritize validation activities to reduce market and delivery risks.');
+    }
+
+    // Cap at 50 points
     analysis.riskScore = Math.min(analysis.riskScore, 50);
 
     return analysis;
@@ -4595,7 +4643,7 @@ function updateAtRiskCard() {
             const priorityText = initiative.priority === 'bullpen' ? 'Bullpen' : initiative.priority;
             
             // Calculate risk level and get colors (simplified version for cards)
-            const riskScore = calculateSimpleRiskScore(initiative);
+            const riskScore = analyzeInitiativeRisk(initiative).riskScore;
             const riskColor = getRiskLevelColor(riskScore);
             
             return `
@@ -4643,60 +4691,7 @@ function updateAtRiskCard() {
     }, 10);
 }
 
-// Simplified risk calculation for cards (doesn't need full analysis object)
-// Update calculateSimpleRiskScore function
-function calculateSimpleRiskScore(initiative) {
-    let riskScore = 0;
-    
-    // Analyze teams working on this initiative
-    initiative.teams.forEach(teamName => {
-        const team = boardData.teams[teamName];
-        if (!team) return;
 
-        // UPDATED TEAM HEALTH RISK SCORING:
-        if (team.capacity === 'at-risk') riskScore += 3;        // Increased from 2
-        if (team.skillset === 'at-risk') riskScore += 3;        // Increased from 2
-        if (team.support === 'at-risk') riskScore += 2;         // Increased from 1
-        if (team.jira && team.jira.utilization > 95) riskScore += 2; // Increased from 1
-        if (team.vision === 'at-risk') riskScore += 1;
-        if (team.teamwork === 'at-risk') riskScore += 1;
-        if (team.autonomy === 'at-risk') riskScore += 1;
-    });
-
-    // UPDATED FLAGGED WORK RISK SCORING (percentage-based)
-    if (initiative.jira && initiative.jira.flagged > 0) {
-        const totalStories = initiative.jira.stories || 0;
-        const flaggedStories = initiative.jira.flagged || 0;
-        const flaggedPercentage = totalStories > 0 ? (flaggedStories / totalStories) * 100 : 0;
-        
-        if (flaggedPercentage >= 50) {
-            riskScore += 8;
-        } else if (flaggedPercentage >= 25) {
-            riskScore += 5;
-        } else if (flaggedPercentage >= 15) {
-            riskScore += 3;
-        } else if (flaggedPercentage >= 5) {
-            riskScore += 2;
-        } else {
-            riskScore += 1; // Any flagged stories up to 5%
-        }
-    }
-
-    // NEW: VALIDATION RISK FACTORS (above-the-line only)
-    if (initiative.priority >= 1 && initiative.priority <= 15 && initiative.validation === 'not-validated') {
-        if (initiative.type === 'strategic') {
-            riskScore += 2;
-        } else if (initiative.type === 'ktlo' || initiative.type === 'emergent') {
-            riskScore += 1;
-        }
-    }
-
-    // UPDATED: Priority-based risk amplification (reduced from +2 to +1)
-    const row = getRowColFromSlot(initiative.priority).row;
-    if (row <= 2 && riskScore > 4) riskScore += 1;
-
-    return Math.min(riskScore, 50);
-}
 
 // UPDATE: getRiskLevelColor function for 50-point scale
 function getRiskLevelColor(riskScore) {
