@@ -2371,10 +2371,10 @@ function showMendozaAnalysisModal() {
     const highCostActivities = ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'];
     const lowCostActivities = ['compliance', 'prototyping', 'validation', 'optimization', 'support', 'research', 'planning', 'community'];
     
-    const highCostAbove = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
-    const highCostBelow = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
-    const lowCostAbove = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.aboveLine[activity] || 0), 0);
-    const lowCostBelow = lowCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
+const highCostAbove = metrics.breakdown.expensiveWorkAboveLine;
+const highCostBelow = metrics.breakdown.expensiveWorkBelowLine;
+const lowCostAbove = metrics.breakdown.discoveryWorkAboveLine;
+const lowCostBelow = metrics.breakdown.discoveryWorkBelowLine;
     
    document.getElementById('modal-title').textContent = 'Mendoza Line Analysis';
 modalContent.innerHTML = `
