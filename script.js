@@ -2975,7 +2975,9 @@ function generateEnhancedRecommendations(breakdown, metrics) {
     
     // Get expensive initiatives below the line
     const expensiveInitiativesBelowLine = getExpensiveInitiativesBelowLine();
-    const totalExpensiveWorkBelowLine = expensiveInitiativesBelowLine.reduce((sum, init) => sum + init.expensiveWorkCount, 0);
+    const activityBreakdown = calculateActivityTypeBreakdown();
+const highCostActivities = ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'];
+const totalExpensiveWorkBelowLine = highCostActivities.reduce((sum, activity) => sum + (activityBreakdown.belowLine[activity] || 0), 0);
     
     // High priority recommendations for expensive initiatives below line
     if (expensiveInitiativesBelowLine.length > 3) {
