@@ -2273,7 +2273,7 @@ function calculateTeamsPerLowPriorityInitiative() {
 }
 
 function calculateActivityTypeBreakdown() {
-    console.log('=== CALCULATING ACTIVITY TYPE BREAKDOWN (ACTIVE INITIATIVES ONLY) ===');
+    console.log('=== CALCULATING ACTIVITY TYPE BREAKDOWN ===');
     
     const breakdown = {
         aboveLine: {
@@ -2312,35 +2312,32 @@ function calculateActivityTypeBreakdown() {
         }
     };
     
-    // CRITICAL: Only process boardData.initiatives (active board initiatives)
-    // Do NOT include boardData.bullpen (pipeline) or boardData.recentlyCompleted
     if (!boardData?.initiatives) {
-        console.log('No boardData.initiatives found, returning empty breakdown');
         return breakdown;
     }
-    
-    console.log(`Processing ${boardData.initiatives.length} ACTIVE board initiatives only`);
-    console.log('EXCLUDING pipeline and completed initiatives from calculation');
-    
-    let totalChildIssuesProcessed = 0;
-    let initiativesWithChildIssues = 0;
     
     boardData.initiatives.forEach(initiative => {
         const priority = initiative.priority;
         const isAboveLine = priority <= 14;
         
-        // Only process initiatives with live Jira data and child issues
         if (initiative.jira?.hasLiveData && initiative.jira?.childIssues) {
-            initiativesWithChildIssues++;
-            console.log(`Processing initiative: ${initiative.title} (Priority: ${priority}, Above line: ${isAboveLine})`);
-            
             initiative.jira.childIssues.forEach(childIssue => {
-                const activityType = getFieldValue(childIssue, 'customfield_10190');
+                // Get activity type from the child issue
+                let activityType = getFieldValue(childIssue, 'customfield_10190');
                 
-                if (activityType && activityType.toLowerCase() !== 'none') {
-                    totalChildIssuesProcessed++;
-                    const targetSection = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
+                // Normalize the activity type to match our categories
+                if (activityType) {
+                    activityType = activityType.toLowerCase().trim();
                     
+                    // Map variations to standard names
+                    if (activityType.includes('defect') || activityType.includes('fix') || activityType.includes('bug')) {
+                        activityType = 'defects/fixes';
+                    } else if (activityType.includes('go-to-market') || activityType.includes('marketing')) {
+                        activityType = 'go-to-market';
+                    }
+                    
+                    // Count in appropriate section if we recognize the activity type
+                    const targetSection = isAboveLine ? breakdown.aboveLine : breakdown.belowLine;
                     if (targetSection.hasOwnProperty(activityType)) {
                         targetSection[activityType]++;
                     } else {
@@ -2353,46 +2350,9 @@ function calculateActivityTypeBreakdown() {
         }
     });
     
-    console.log(`SCOPE VERIFICATION:`);
-    console.log(`- Processed ${initiativesWithChildIssues} active initiatives with child issues`);
-    console.log(`- Total child issues processed: ${totalChildIssuesProcessed}`);
-    console.log(`- EXCLUDED: pipeline initiatives (${boardData?.bullpen?.length || 0} items)`);
-    console.log(`- EXCLUDED: completed initiatives (${boardData?.recentlyCompleted?.length || 0} items)`);
-    
-    // Calculate totals for verification
-    const highCostActivities = ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'];
-    const expensiveBelowLine = highCostActivities.reduce((sum, activity) => 
-        sum + (breakdown.belowLine[activity] || 0), 0);
-    
-    console.log(`RESULT: ${expensiveBelowLine} expensive items below line (should be ~154)`);
     console.log('Activity type breakdown:', breakdown);
-    
     return breakdown;
 }
-
-function verifyCalculationScope() {
-    console.log('=== VERIFYING CALCULATION SCOPE ===');
-    
-    // Check what data is being processed
-    const activeInitiatives = boardData?.initiatives?.length || 0;
-    const pipelineItems = boardData?.bullpen?.length || 0;
-    const completedItems = boardData?.recentlyCompleted?.length || 0;
-    
-    console.log(`Active initiatives: ${activeInitiatives}`);
-    console.log(`Pipeline items: ${pipelineItems} (should NOT be included)`);
-    console.log(`Completed items: ${completedItems} (should NOT be included)`);
-    
-    // Run the calculation and verify results
-    const metrics = calculateResourceAllocation();
-    
-    console.log(`\nRESULT VERIFICATION:`);
-    console.log(`- Expensive below line: ${metrics.breakdown.expensiveWorkBelowLine} (should be ~154, not 194)`);
-    console.log(`- Efficiency score: ${metrics.efficiencyScore}% (should be ~47%, not 43%)`);
-    
-    return metrics;
-}
-
-
 
 // Update the modal to use activity type breakdown instead of issue type
 function showMendozaAnalysisModal() {
@@ -3156,104 +3116,139 @@ function showExpensiveInitiativesBelowLineModal() {
 }
 
 function calculateResourceAllocation() {
-    console.log('=== CALCULATING WEIGHTED RESOURCE ALLOCATION (ACTIVE INITIATIVES ONLY) ===');
-    
-    // Get activity breakdown from ACTIVE initiatives only
-    const activityBreakdown = calculateActivityTypeBreakdown();
+    console.log('=== CALCULATING WEIGHTED RESOURCE ALLOCATION ===');
     
     // Define activity classifications with weights
     const activityClassification = {
+        // Expensive work that should be above the line (weight = high impact on score)
         'expensive': {
             activities: ['development', 'defects/fixes', 'integration', 'infrastructure', 'go-to-market'],
             correctPlacement: 'above',
-            weight: 3.0
+            weight: 3.0  // High weight - these misallocations hurt the score significantly
         },
+        // Cheap discovery that should be below the line (weight = medium impact)
         'discovery': {
-            activities: ['compliance', 'prototyping', 'validation', 'optimization', 'support', 'research', 'planning', 'community'],
-            correctPlacement: 'below',
-            weight: 1.5
+            activities: ['validation', 'research', 'prototyping', 'planning', 'optimization'],
+            correctPlacement: 'below', 
+            weight: 1.5  // Medium weight - less critical but still matters
+        },
+        // Neutral activities that can be either place (weight = low impact)
+        'neutral': {
+            activities: ['compliance', 'support', 'community'],
+            correctPlacement: 'either',
+            weight: 0.5  // Low weight - placement doesn't matter much
         }
     };
     
     let totalWeightedScore = 0;
     let maxPossibleScore = 0;
-    
-    // Calculate expensive work metrics
-    let expensiveWorkAboveLine = 0;
+    let aboveLineTotal = 0;
+    let belowLineTotal = 0;
     let expensiveWorkBelowLine = 0;
-    
-    activityClassification.expensive.activities.forEach(activity => {
-        const aboveCount = activityBreakdown.aboveLine[activity] || 0;
-        const belowCount = activityBreakdown.belowLine[activity] || 0;
-        
-        expensiveWorkAboveLine += aboveCount;
-        expensiveWorkBelowLine += belowCount;
-        
-        // Score: Full points for expensive work above line, zero for below line
-        totalWeightedScore += aboveCount * activityClassification.expensive.weight;
-        maxPossibleScore += (aboveCount + belowCount) * activityClassification.expensive.weight;
-    });
-    
-    // Calculate discovery work metrics
     let discoveryWorkAboveLine = 0;
-    let discoveryWorkBelowLine = 0;
+    let totalExpensiveWork = 0;
+    let totalDiscoveryWork = 0;
     
-    activityClassification.discovery.activities.forEach(activity => {
-        const aboveCount = activityBreakdown.aboveLine[activity] || 0;
-        const belowCount = activityBreakdown.belowLine[activity] || 0;
+    // Use the correct activity breakdown (with 407 Jira items)
+    const activityBreakdown = calculateActivityTypeBreakdown();
+    
+    // Process above-line activities
+    Object.entries(activityBreakdown.aboveLine).forEach(([activity, count]) => {
+        aboveLineTotal += count;
         
-        discoveryWorkAboveLine += aboveCount;
-        discoveryWorkBelowLine += belowCount;
+        const classification = getActivityClassification(activity, activityClassification);
+        const weight = classification.weight;
+        maxPossibleScore += count * weight;
         
-        // Score: Full points for discovery below line, partial for above line
-        totalWeightedScore += belowCount * activityClassification.discovery.weight;
-        totalWeightedScore += aboveCount * activityClassification.discovery.weight * 0.6; // Partial credit
-        maxPossibleScore += (aboveCount + belowCount) * activityClassification.discovery.weight;
+        if (classification.type === 'expensive') {
+            totalExpensiveWork += count;
+            totalWeightedScore += count * weight; // Full points for expensive work above line
+        } else if (classification.type === 'discovery') {
+            totalDiscoveryWork += count;
+            discoveryWorkAboveLine += count;
+            // Partial points for discovery work above line (not ideal but not terrible)
+            totalWeightedScore += count * weight * 0.6;
+        } else {
+            // Neutral work gets full points regardless of placement
+            totalWeightedScore += count * weight;
+        }
     });
     
-    // Calculate final metrics
-    const totalExpensiveWork = expensiveWorkAboveLine + expensiveWorkBelowLine;
-    const totalDiscoveryWork = discoveryWorkAboveLine + discoveryWorkBelowLine;
-    const totalWork = totalExpensiveWork + totalDiscoveryWork;
+    // Process below-line activities  
+    Object.entries(activityBreakdown.belowLine).forEach(([activity, count]) => {
+        belowLineTotal += count;
+        
+        const classification = getActivityClassification(activity, activityClassification);
+        const weight = classification.weight;
+        maxPossibleScore += count * weight;
+        
+        if (classification.type === 'expensive') {
+            totalExpensiveWork += count;
+            expensiveWorkBelowLine += count;
+            // No points for expensive work below line (this is waste)
+            totalWeightedScore += 0;
+        } else if (classification.type === 'discovery') {
+            totalDiscoveryWork += count;
+            totalWeightedScore += count * weight; // Full points for discovery work below line
+        } else {
+            // Neutral work gets full points regardless of placement
+            totalWeightedScore += count * weight;
+        }
+    });
     
+    // Calculate efficiency score
     const efficiencyScore = maxPossibleScore > 0 ? 
         Math.round((totalWeightedScore / maxPossibleScore) * 100) : 0;
     
-    const expensiveWastePercent = totalExpensiveWork > 0 ? 
-        Math.round((expensiveWorkBelowLine / totalExpensiveWork) * 100) : 0;
+    // Calculate waste percentages
+    const totalWork = aboveLineTotal + belowLineTotal;
+    const expensiveWastePercent = totalWork > 0 ? 
+        Math.round((expensiveWorkBelowLine / totalWork) * 100) : 0;
+    const discoveryMisallocationPercent = totalWork > 0 ? 
+        Math.round((discoveryWorkAboveLine / totalWork) * 100) : 0;
     
-    const discoveryMisallocationPercent = totalDiscoveryWork > 0 ? 
-        Math.round((discoveryWorkAboveLine / totalDiscoveryWork) * 100) : 0;
+    // Determine efficiency color and description
+    let efficiencyColor, efficiencyDescription;
+    if (efficiencyScore >= 85) {
+        efficiencyColor = 'var(--accent-green)';
+        efficiencyDescription = 'Excellent';
+    } else if (efficiencyScore >= 70) {
+        efficiencyColor = 'var(--accent-blue)';
+        efficiencyDescription = 'Good';
+    } else if (efficiencyScore >= 55) {
+        efficiencyColor = 'var(--accent-orange)';
+        efficiencyDescription = 'Needs Improvement';
+    } else {
+        efficiencyColor = 'var(--accent-red)';
+        efficiencyDescription = 'Poor';
+    }
     
-    const efficiencyDescription = 
-        efficiencyScore >= 85 ? 'Excellent' :
-        efficiencyScore >= 70 ? 'Good' :
-        efficiencyScore >= 55 ? 'Needs Improvement' : 'Poor';
+    console.log('=== WEIGHTED ALLOCATION RESULTS ===');
+    console.log(`Efficiency Score: ${efficiencyScore}% (${efficiencyDescription})`);
+    console.log(`Expensive work below line: ${expensiveWorkBelowLine}/${totalExpensiveWork} (${expensiveWastePercent}% waste)`);
+    console.log(`Discovery work above line: ${discoveryWorkAboveLine}/${totalDiscoveryWork} (${discoveryMisallocationPercent}% misallocation)`);
+    console.log(`Weighted score: ${totalWeightedScore}/${maxPossibleScore}`);
     
     const result = {
         efficiencyScore,
+        efficiencyColor,
         efficiencyDescription,
-        aboveLinePercent: totalWork > 0 ? Math.round(((totalExpensiveWork - expensiveWorkBelowLine + discoveryWorkAboveLine) / totalWork) * 100) : 0,
-        belowLinePercent: totalWork > 0 ? Math.round(((expensiveWorkBelowLine + discoveryWorkBelowLine) / totalWork) * 100) : 0,
+        aboveLineCount: aboveLineTotal,
+        belowLineCount: belowLineTotal,
+        aboveLinePercent: totalWork > 0 ? Math.round((aboveLineTotal / totalWork) * 100) : 0,
+        belowLinePercent: totalWork > 0 ? Math.round((belowLineTotal / totalWork) * 100) : 0,
         wasteLevel: expensiveWastePercent,
         breakdown: {
-            expensiveWorkAboveLine,
-            expensiveWorkBelowLine,
-            discoveryWorkAboveLine,
-            discoveryWorkBelowLine,
+            expensiveWorkAboveLine: totalExpensiveWork - expensiveWorkBelowLine,
+            expensiveWorkBelowLine: expensiveWorkBelowLine,
+            discoveryWorkAboveLine: discoveryWorkAboveLine,
+            discoveryWorkBelowLine: totalDiscoveryWork - discoveryWorkAboveLine,
             totalExpensiveWork,
             totalDiscoveryWork,
             weightedScore: totalWeightedScore,
             maxPossibleScore
         }
     };
-    
-    console.log('=== CORRECTED ALLOCATION RESULTS (ACTIVE INITIATIVES ONLY) ===');
-    console.log(`Efficiency Score: ${efficiencyScore}% (${efficiencyDescription})`);
-    console.log(`Expensive work below line: ${expensiveWorkBelowLine}/${totalExpensiveWork} (${expensiveWastePercent}% waste)`);
-    console.log(`Discovery work above line: ${discoveryWorkAboveLine}/${totalDiscoveryWork} (${discoveryMisallocationPercent}% misallocation)`);
-    console.log(`Weighted score: ${totalWeightedScore.toFixed(1)}/${maxPossibleScore}`);
-    console.log(`VERIFICATION: Should show ~154 expensive below line, not 194`);
     
     // Store for modal use
     window.currentMendozaMetrics = result;
