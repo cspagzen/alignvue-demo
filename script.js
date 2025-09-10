@@ -646,7 +646,14 @@ if (tabName === 'blocked-work') {
     const modalTitle = document.getElementById('modal-title').textContent;
     const initiativeTitle = modalTitle.replace('At-Risk Analysis: ', '');
     const initiative = boardData.initiatives.find(i => i.title === initiativeTitle);
-    activeContent.innerHTML = generateBlockedWorkTab(initiative);
+    
+    // Insert content directly into activeContent (which exists and is the correct element)
+    if (initiative && activeContent) {
+        activeContent.innerHTML = generateBlockedWorkTab(initiative);
+        console.log('Content inserted into activeContent');
+    } else {
+        console.log('Missing initiative or activeContent:', {initiative: !!initiative, activeContent: !!activeContent});
+    }
 }
     }
 }
