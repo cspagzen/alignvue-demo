@@ -672,7 +672,7 @@ function analyzeInitiativeRisk(initiative) {
             analysis.riskScore += 3;
             teamHealthIssues.atRiskTeams.push(`${teamName} (Capacity)`);
         } else if (team.capacity === 'Critical' || team.capacity === 'critical') {
-            teamRiskFactors.push('Capacity (Critical)');
+            teamRiskFactors.push('Capacity'); // FIXED: Remove (Critical) suffix
             analysis.riskScore += 6;
             teamHealthIssues.criticalTeams.push(`${teamName} (Capacity)`);
         }
@@ -683,7 +683,7 @@ function analyzeInitiativeRisk(initiative) {
             analysis.riskScore += 3;
             teamHealthIssues.atRiskTeams.push(`${teamName} (Skillset)`);
         } else if (team.skillset === 'Critical' || team.skillset === 'critical') {
-            teamRiskFactors.push('Skillset (Critical)');
+            teamRiskFactors.push('Skillset'); // FIXED: Remove (Critical) suffix
             analysis.riskScore += 6;
             teamHealthIssues.criticalTeams.push(`${teamName} (Skillset)`);
         }
@@ -739,25 +739,39 @@ function analyzeInitiativeRisk(initiative) {
             teamHealthIssues.criticalTeams.push(`${teamName} (Autonomy)`);
         }
 
-        // Determine team risk color based on number and severity of risk factors
-        const criticalFactors = teamRiskFactors.filter(f => f.includes('Critical')).length;
+        // FIXED: Determine team risk color based on actual critical factors in the data
+        const hasCriticalCapacity = team.capacity === 'Critical' || team.capacity === 'critical';
+        const hasCriticalSkillset = team.skillset === 'Critical' || team.skillset === 'critical';
+        const hasCriticalSupport = team.support === 'Critical' || team.support === 'critical';
+        const hasCriticalVision = team.vision === 'Critical' || team.vision === 'critical';
+        const hasCriticalTeamwork = team.teamwork === 'Critical' || team.teamwork === 'critical';
+        const hasCriticalAutonomy = team.autonomy === 'Critical' || team.autonomy === 'critical';
+        
+        const criticalCount = [hasCriticalCapacity, hasCriticalSkillset, hasCriticalSupport, 
+                              hasCriticalVision, hasCriticalTeamwork, hasCriticalAutonomy]
+                              .filter(Boolean).length;
         const totalFactors = teamRiskFactors.length;
         
-        if (criticalFactors >= 2) teamRiskColor = 'var(--accent-red)';
-        else if (criticalFactors >= 1 || totalFactors >= 4) teamRiskColor = '#f97316';
+        if (criticalCount >= 2) teamRiskColor = 'var(--accent-red)';
+        else if (criticalCount >= 1 || totalFactors >= 4) teamRiskColor = '#f97316';
         else if (totalFactors >= 3) teamRiskColor = 'var(--accent-orange)';
         else if (totalFactors >= 1) teamRiskColor = '#eab308';
 
         if (teamRiskFactors.length > 0) {
             analysis.impactedTeams.push({
                 name: teamName,
-                riskFactors: teamRiskFactors,
+                riskFactors: teamRiskFactors.map(factor => {
+                    // FIXED: Show "Critical" status in the display, not just the factor name
+                    if (factor === 'Capacity' && hasCriticalCapacity) return 'Capacity (Critical)';
+                    if (factor === 'Skillset' && hasCriticalSkillset) return 'Skillset (Critical)';
+                    return factor; // Keep other factors as-is
+                }),
                 riskColor: teamRiskColor
             });
         }
     });
 
-    // CREATE RISK FACTORS FOR THE MODAL (This was missing!)
+    // CREATE RISK FACTORS FOR THE MODAL
     
     // Critical Team Health Risk Factor
     if (teamHealthIssues.criticalTeams.length > 0) {
