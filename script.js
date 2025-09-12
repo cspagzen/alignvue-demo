@@ -1585,6 +1585,32 @@ function showTeamModal(teamName, teamData) {
     }, 100);
 }
 
+/**
+ * UPDATED: Calculate overall team health with 4-state support
+ * Advanced calculation treating Critical as "worth 2 points"
+ */
+function getTeamOverallHealth(teamData) {
+    let riskScore = 0;
+    
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    
+    dimensions.forEach(dim => {
+        const value = teamData[dim];
+        
+        if (value === 'At Risk' || value === 'at-risk') {
+            riskScore += 1;  // At Risk = 1 point
+        } else if (value === 'Critical' || value === 'critical') {
+            riskScore += 2;  // Critical = 2 points (more severe)
+        }
+    });
+    
+    // Risk score interpretation
+    if (riskScore === 0) return 'HEALTHY';
+    if (riskScore <= 2) return 'LOW RISK';
+    if (riskScore <= 6) return 'HIGH RISK'; 
+    return 'CRITICAL';  // 7+ points = critical team
+}
+
         function showAddInitiativeModal(row, col) {
             const modal = document.getElementById('detail-modal');
             const title = document.getElementById('modal-title');
