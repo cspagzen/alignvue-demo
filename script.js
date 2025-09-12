@@ -1321,14 +1321,14 @@ function showRiskScoreInfoModal() {
         <div class="section-subtitle">
             Overall risk assessment for this specific initiative based on team health, work complexity, and validation state.
         </div>
-        <div class="two-column-info">
-            <div class="info-box">
-                <div class="info-label">Risk Score</div>
-                <div class="info-value">${actualValues.totalScore}/50</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Risk Score:</div>
+                <div style="font-size: 18px; font-weight: bold; color: var(--accent-orange);">${actualValues.totalScore}/50</div>
             </div>
-            <div class="info-box">
-                <div class="info-label">Risk Level</div>
-                <div class="info-value">${getRiskLevel(actualValues.totalScore).label}</div>
+            <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Risk Level:</div>
+                <div style="font-size: 18px; font-weight: bold; color: var(--accent-orange);">${getRiskLevel(actualValues.totalScore).label}</div>
             </div>
         </div>
         <div class="formula-box">
@@ -1339,6 +1339,7 @@ function showRiskScoreInfoModal() {
             Priority Amplification: ${actualValues.priority.points} pts<br>
             <hr style="margin: 8px 0; border: 1px solid #ccc;">
             <strong>Total: ${actualValues.totalScore}/50 pts</strong><br>
+            <strong>Risk Level: ${getRiskLevel(actualValues.totalScore).label}</strong>
         </div>
     </div>
 ` : ''}
