@@ -1087,10 +1087,9 @@ function showRiskScoreInfoModal() {
         if (initiative.jira && initiative.jira.flagged > 0) {
             const totalStories = initiative.jira.stories || 0;
             const flaggedStories = initiative.jira.flagged || 0;
-            const flaggedPercentage = totalStories > 0 ? 
-                (flaggedStories / totalStories) * 100 : 0;
+            const flaggedPercentage = totalStories > 0 ? (flaggedStories / totalStories) * 100 : 0;
             
-            actualValues.flaggedWork.percentage = Math.round(flaggedPercentage * 10) / 10;
+            actualValues.flaggedWork.percentage = flaggedPercentage;
             actualValues.flaggedWork.count = flaggedStories;
             
             if (flaggedPercentage >= 50) actualValues.flaggedWork.points = 8;
@@ -1104,207 +1103,214 @@ function showRiskScoreInfoModal() {
         if (initiative.priority >= 1 && initiative.priority <= 15 && initiative.validation === 'not-validated') {
             if (initiative.type === 'strategic') {
                 actualValues.validation.points = 2;
-                actualValues.validation.reason = 'Strategic initiative above-the-line, not validated';
+                actualValues.validation.reason = 'Strategic initiative above-the-line without validation';
             } else if (initiative.type === 'ktlo' || initiative.type === 'emergent') {
                 actualValues.validation.points = 1;
-                actualValues.validation.reason = `${initiative.type.toUpperCase()} initiative above-the-line, not validated`;
+                actualValues.validation.reason = `${initiative.type} initiative above-the-line without validation`;
             }
         }
         
         // Calculate priority amplification
-        const riskScoreBeforePriority = Object.values(actualValues.teamHealth).reduce((a, b) => a + b, 0) + 
-                                       actualValues.flaggedWork.points + actualValues.validation.points;
+        const baseScore = Object.values(actualValues.teamHealth).reduce((a, b) => a + b, 0) + actualValues.flaggedWork.points + actualValues.validation.points;
         const row = getRowColFromSlot(initiative.priority).row;
-        if (row <= 2 && riskScoreBeforePriority > 4) {
+        if (row <= 2 && baseScore > 4) {
             actualValues.priority.points = 1;
             actualValues.priority.applied = true;
         }
         
-        actualValues.totalScore = riskScoreBeforePriority + actualValues.priority.points;
+        actualValues.totalScore = baseScore + actualValues.priority.points;
+        actualValues.totalScore = Math.min(actualValues.totalScore, 50);
     }
     
     title.textContent = 'Risk Score Calculation';
     
     content.innerHTML = `
-        <div class="space-y-6" style="max-height: 70vh; overflow-y: auto;">
-            <!-- Current Initiative Score -->
-            ${initiative ? `
-                <div class="p-4 rounded-lg" style="background: linear-gradient(135deg, ${getRiskLevel(actualValues.totalScore).color}, ${getRiskLevel(actualValues.totalScore).color}); color: white;">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-lg font-bold">${initiative.title}</div>
-                            <div class="text-sm opacity-90">Current Risk Score</div>
-                        </div>
-                        <div class="text-3xl font-bold">${actualValues.totalScore}/50</div>
-                    </div>
-                </div>
-            ` : ''}
+        <div style="max-height: 70vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(156, 163, 175, 0.5) transparent;">
+            <style>
+                .section {
+                    margin-bottom: 24px;
+                }
+                .section-title {
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin-bottom: 12px;
+                    color: var(--text-primary);
+                }
+                .formula-box {
+                    background: var(--bg-tertiary);
+                    border: 1px solid var(--border-primary);
+                    border-radius: 8px;
+                    padding: 16px;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: var(--text-secondary);
+                }
+                .score-breakdown {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 8px;
+                    margin: 12px 0;
+                }
+                .score-item {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 12px;
+                    background: var(--bg-quaternary);
+                    border-radius: 4px;
+                    font-size: 14px;
+                }
+                .score-excellent { color: var(--accent-green); }
+                .score-good { color: var(--accent-blue); }
+                .score-needs-improvement { color: var(--accent-orange); }
+                .score-poor { color: var(--accent-red); }
+                .interpretation-grid {
+                    display: grid;
+                    grid-template-columns: 120px 1fr;
+                    gap: 12px 16px;
+                    align-items: center;
+                    margin: 16px 0;
+                }
+                .score-range {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    text-align: center;
+                    font-size: 12px;
+                }
+                .score-range.excellent { background: var(--accent-green); color: white; }
+                .score-range.good { background: var(--accent-blue); color: white; }
+                .score-range.needs-improvement { background: var(--accent-orange); color: white; }
+                .score-range.poor { background: var(--accent-red); color: white; }
+            </style>
             
-            <!-- Team Health Risk Factors -->
-<div class="section">
-    <div class="section-title">Team Health Risk Factors</div>
-    
-    <!-- Actual Scores Grid -->
-    <div class="grid grid-cols-2 gap-3 mb-4">
-        <div class="score-card">
-            <div class="score-label">Capacity at-risk:</div>
-            <div class="score-value ${actualValues.teamHealth.capacity > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.capacity} pts</div>
-        </div>
-        
-        <div class="score-card">
-            <div class="score-label">Skillset at-risk:</div>
-            <div class="score-value ${actualValues.teamHealth.skillset > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.skillset} pts</div>
-        </div>
-        
-        <div class="score-card">
-            <div class="score-label">Support at-risk:</div>
-            <div class="score-value ${actualValues.teamHealth.support > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.support} pts</div>
-        </div>
-        
-        <div class="score-card">
-            <div class="score-label">Over-utilization (>95%):</div>
-            <div class="score-value ${actualValues.teamHealth.utilization > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.utilization} pts</div>
-        </div>
-        
-        <div class="score-card">
-            <div class="score-label">Vision at-risk:</div>
-            <div class="score-value ${actualValues.teamHealth.vision > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.vision} pts</div>
-        </div>
-        
-        <div class="score-card">
-            <div class="score-label">Team Cohesion at-risk:</div>
-            <div class="score-value ${actualValues.teamHealth.teamwork > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.teamwork} pts</div>
-        </div>
-        
-        <div class="score-card">
-            <div class="score-label">Autonomy at-risk:</div>
-            <div class="score-value ${actualValues.teamHealth.autonomy > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.autonomy} pts</div>
-        </div>
-    </div>
-    
-    <!-- Scoring Model in Black Box -->
-    <div class="formula-box" style="background: #000; color: #00ff00; font-family: 'Courier New', monospace; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.4;">
-        <strong>Updated 4-State Scoring:</strong> Critical dimensions receive double points to reflect their severity.<br>
-        <strong>• High Impact:</strong> Capacity/Skillset - 3 pts (At Risk), 6 pts (Critical)<br>
-        <strong>• Medium Impact:</strong> Support - 2 pts (At Risk), 4 pts (Critical)<br>
-        <strong>• Lower Impact:</strong> Vision/Cohesion/Autonomy - 1 pt (At Risk), 2 pts (Critical)<br>
-        <strong>• Over-utilization:</strong> 2 pts (if >95% capacity)
-    </div>
-</div>
-            </div>
-
-            <!-- Flagged Work Factors -->
-            <div class="section">
-                <div class="section-title">Flagged Work Factors</div>
-                <div class="text-sm mb-3" style="color: var(--text-secondary);">
-                    Stories marked as flagged, blocked, or requiring attention indicate execution risk.
-                </div>
-                
-                <div class="metric-grid">
-                    <div class="metric-item">
-                        <span class="metric-label">Flagged Work:</span>
-                        <span class="metric-value discovery-work">${initiative ? `${actualValues.flaggedWork.percentage}% (${actualValues.flaggedWork.count} stories)` : 'Based on percentage'}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Risk Points:</span>
-                        <span class="metric-value discovery-work">${initiative ? `${actualValues.flaggedWork.points} pts` : 'Variable'}</span>
-                    </div>
-                </div>
-                
-                <div class="formula-box">
-                    <strong>Flagged Work Scoring:</strong><br>
-                    • 50%+ flagged = 8 points<br>
-                    • 25-49% flagged = 5 points<br>
-                    • 15-24% flagged = 3 points<br>
-                    • 5-14% flagged = 2 points<br>
-                    • 1-4% flagged = 1 point
-                </div>
-            </div>
-
-            <!-- Validation Factors -->
-            <div class="section">
-                <div class="section-title">Validation Factors</div>
-                <div class="text-sm mb-3" style="color: var(--text-secondary);">
-                    Initiatives above-the-line that haven't been validated carry market and delivery risk.
-                </div>
-                
-                <div class="metric-grid">
-                    <div class="metric-item">
-                        <span class="metric-label">Validation Status:</span>
-                        <span class="metric-value discovery-work">${initiative ? (actualValues.validation.points > 0 ? actualValues.validation.reason : 'Validated') : 'Varies by initiative'}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Risk Points:</span>
-                        <span class="metric-value discovery-work">${initiative ? `${actualValues.validation.points} pts` : 'Variable'}</span>
-                    </div>
-                </div>
-                
-                <div class="formula-box">
-                    <strong>Validation Scoring:</strong><br>
-                    • Strategic not validated = 2 points<br>
-                    • KTLO/Emergent not validated = 1 point<br>
-                    • Validated initiatives = 0 points
-                </div>
-            </div>
-
-            <!-- Priority Amplification -->
-            <div class="section">
-                <div class="section-title">Priority Amplification</div>
-                <div class="text-sm mb-3" style="color: var(--text-secondary);">
-                    High-priority initiatives with existing risk factors receive additional scrutiny.
-                </div>
-                
-                <div class="metric-grid">
-                    <div class="metric-item">
-                        <span class="metric-label">Priority Amplification:</span>
-                        <span class="metric-value efficiency-score">${initiative ? (actualValues.priority.applied ? 'Applied (+1 pt)' : 'Not Applied') : 'Conditional'}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Risk Points:</span>
-                        <span class="metric-value efficiency-score">${initiative ? `${actualValues.priority.points} pts` : '0-1 pts'}</span>
-                    </div>
-                </div>
-                
-                <div class="formula-box">
-                    <strong>Priority Amplification Logic:</strong><br>
-                    IF (Row ≤ 2 AND Base Risk Score > 4) THEN +1 point<br>
-                    This ensures high-priority initiatives with risk factors get extra attention.
-                </div>
-            </div>
-
-            <!-- Risk Level Interpretation -->
-            <div class="section">
-                <div class="section-title">Risk Level Interpretation</div>
-                <div class="interpretation-grid">
-                    <div class="score-range excellent">0-12 pts</div>
-                    <div><strong>Low Risk:</strong> Minimal risk factors, likely to deliver on schedule.</div>
-                    
-                    <div class="score-range good">13-22 pts</div>
-                    <div><strong>Moderate Risk:</strong> Some risk factors requiring monitoring and possible intervention.</div>
-                    
-                    <div class="score-range needs-improvement">23-35 pts</div>
-                    <div><strong>High Risk:</strong> Significant risk factors requiring active management and mitigation.</div>
-                    
-                    <div class="score-range poor">36-50 pts</div>
-                    <div><strong>Critical Risk:</strong> Severe risk factors across multiple areas requiring immediate attention.</div>
-                </div>
-            </div>
-
-            ${initiative ? `
+            <div class="space-y-6">
+                <!-- Team Health Risk Factors -->
                 <div class="section">
-                    <div class="section-title">Current Initiative Summary</div>
-                    <div class="formula-box">
-                        <strong>Total Risk Score Breakdown:</strong><br>
-                        Team Health: ${Object.values(actualValues.teamHealth).reduce((a, b) => a + b, 0)} pts<br>
-                        Flagged Work: ${actualValues.flaggedWork.points} pts<br>
-                        Validation: ${actualValues.validation.points} pts<br>
-                        Priority Amplification: ${actualValues.priority.points} pts<br>
-                        <hr style="margin: 8px 0; border: 1px solid #ccc;">
-                        <strong>Total: ${actualValues.totalScore}/50 pts</strong><br>
-                        <strong>Risk Level: ${getRiskLevel(actualValues.totalScore).label}</strong>
+                    <div class="section-title">Team Health Risk Factors</div>
+                    
+                    <div class="score-breakdown">
+                        <div class="score-item">
+                            <span>Capacity at-risk:</span>
+                            <span style="color: ${actualValues.teamHealth.capacity > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.capacity} pts</span>
+                        </div>
+                        <div class="score-item">
+                            <span>Skillset at-risk:</span>
+                            <span style="color: ${actualValues.teamHealth.skillset > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.skillset} pts</span>
+                        </div>
+                        <div class="score-item">
+                            <span>Support at-risk:</span>
+                            <span style="color: ${actualValues.teamHealth.support > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.support} pts</span>
+                        </div>
+                        <div class="score-item">
+                            <span>Over-utilization (>95%):</span>
+                            <span style="color: ${actualValues.teamHealth.utilization > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.utilization} pts</span>
+                        </div>
+                        <div class="score-item">
+                            <span>Vision at-risk:</span>
+                            <span style="color: ${actualValues.teamHealth.vision > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.vision} pts</span>
+                        </div>
+                        <div class="score-item">
+                            <span>Team Cohesion at-risk:</span>
+                            <span style="color: ${actualValues.teamHealth.teamwork > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.teamwork} pts</span>
+                        </div>
+                        <div class="score-item" style="grid-column: 1 / -1;">
+                            <span>Autonomy at-risk:</span>
+                            <span style="color: ${actualValues.teamHealth.autonomy > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.autonomy} pts</span>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #000; color: #00ff00; font-family: 'Courier New', monospace; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.4;">
+                        <strong>Updated 4-State Scoring:</strong> Critical dimensions receive double points to reflect their severity.<br>
+                        <strong>• High Impact:</strong> Capacity/Skillset - 3 pts (At Risk), 6 pts (Critical)<br>
+                        <strong>• Medium Impact:</strong> Support - 2 pts (At Risk), 4 pts (Critical)<br>
+                        <strong>• Lower Impact:</strong> Vision/Cohesion/Autonomy - 1 pt (At Risk), 2 pts (Critical)<br>
+                        <strong>• Over-utilization:</strong> 2 pts (if >95% capacity)
                     </div>
                 </div>
-            ` : ''}
+
+                <!-- Flagged Work Factors -->
+                <div class="section">
+                    <div class="section-title">Flagged Work Factors</div>
+                    <div style="color: var(--text-secondary); margin-bottom: 12px;">
+                        Stories marked as flagged, blocked, or requiring attention indicate execution risk.
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; text-align: center;">
+                            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Flagged Work:</div>
+                            <div style="color: #f59e0b; font-size: 18px; font-weight: 600;">
+                                ${actualValues.flaggedWork.percentage.toFixed(1)}% (${actualValues.flaggedWork.count} stories)
+                            </div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; text-align: center;">
+                            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Risk Points:</div>
+                            <div style="color: #f59e0b; font-size: 18px; font-weight: 600;">${actualValues.flaggedWork.points} pts</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #000; color: #00ff00; font-family: 'Courier New', monospace; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.4;">
+                        <strong>Flagged Work Scoring:</strong><br>
+                        • 50%+ flagged = 8 points<br>
+                        • 25-49% flagged = 5 points<br>
+                        • 15-24% flagged = 3 points<br>
+                        • 5-14% flagged = 2 points<br>
+                        • 1-4% flagged = 1 point
+                    </div>
+                </div>
+
+                <!-- Validation Risk -->
+                <div class="section">
+                    <div class="section-title">Validation Risk</div>
+                    <div class="formula-box">
+                        <strong>Validation Status:</strong> ${actualValues.validation.points > 0 ? actualValues.validation.reason : 'Initiative is validated or below-the-line'}<br>
+                        <strong>Risk Points:</strong> <span style="color: ${actualValues.validation.points > 0 ? '#f59e0b' : 'var(--accent-green)'};">${actualValues.validation.points > 0 ? `${actualValues.validation.points} pts` : '0 pts'}</span>
+                    </div>
+                </div>
+                
+                <!-- Priority Amplification -->
+                <div class="section">
+                    <div class="section-title">Priority Amplification</div>
+                    <div class="formula-box">
+                        <strong>Amplification Applied:</strong> ${actualValues.priority.applied ? 'Yes' : 'No'}<br>
+                        <strong>Logic:</strong> High-priority initiatives (Rows 1-2) with existing risk factors receive +1 point<br>
+                        <strong>Risk Points:</strong> <span style="color: ${actualValues.priority.points > 0 ? '#f59e0b' : 'var(--accent-green)'};">${actualValues.priority.points > 0 ? `${actualValues.priority.points} pts` : '0 pts'}</span>
+                    </div>
+                </div>
+
+                <!-- Risk Level Interpretation -->
+                <div class="section">
+                    <div class="section-title">Risk Level Interpretation</div>
+                    <div class="interpretation-grid">
+                        <div class="score-range excellent">0-12 pts</div>
+                        <div><strong>Low Risk:</strong> Minimal risk factors, likely to deliver on schedule.</div>
+                        
+                        <div class="score-range good">13-22 pts</div>
+                        <div><strong>Moderate Risk:</strong> Some risk factors requiring monitoring and possible intervention.</div>
+                        
+                        <div class="score-range needs-improvement">23-35 pts</div>
+                        <div><strong>High Risk:</strong> Significant risk factors requiring active management and mitigation.</div>
+                        
+                        <div class="score-range poor">36-50 pts</div>
+                        <div><strong>Critical Risk:</strong> Severe risk factors across multiple areas requiring immediate attention.</div>
+                    </div>
+                </div>
+
+                ${initiative ? `
+                    <div class="section">
+                        <div class="section-title">Current Initiative Summary</div>
+                        <div class="formula-box">
+                            <strong>Total Risk Score Breakdown:</strong><br>
+                            Team Health: ${Object.values(actualValues.teamHealth).reduce((a, b) => a + b, 0)} pts<br>
+                            Flagged Work: ${actualValues.flaggedWork.points} pts<br>
+                            Validation: ${actualValues.validation.points} pts<br>
+                            Priority Amplification: ${actualValues.priority.points} pts<br>
+                            <hr style="margin: 8px 0; border: 1px solid #ccc;">
+                            <strong>Total: ${actualValues.totalScore}/50 pts</strong><br>
+                            <strong>Risk Level: ${getRiskLevel(actualValues.totalScore).label}</strong>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
         </div>
     `;
     
