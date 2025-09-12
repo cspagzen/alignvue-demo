@@ -807,76 +807,7 @@ function analyzeInitiativeRisk(initiative) {
     return analysis;
 }
 
-    // NEW: VALIDATION RISK FACTORS (matching calculateSimpleRiskScore)
-    if (initiative.priority >= 1 && initiative.priority <= 15 && initiative.validation === 'not-validated') {
-        let validationPoints = 0;
-        let validationSeverity = 'LOW';
-        let validationDescription = '';
-        
-        if (initiative.type === 'strategic') {
-            validationPoints = 2;
-            validationSeverity = 'HIGH';
-            validationDescription = 'Strategic initiative above-the-line without validation poses significant market risk';
-        } else if (initiative.type === 'ktlo' || initiative.type === 'emergent') {
-            validationPoints = 1;
-            validationSeverity = 'MODERATE';
-            validationDescription = `${initiative.type.toUpperCase()} initiative above-the-line without validation creates delivery uncertainty`;
-        }
-        
-        if (validationPoints > 0) {
-            analysis.riskScore += validationPoints;
-            
-            analysis.riskFactors.push({
-                name: 'Validation Risk',
-                severity: validationSeverity,
-                color: validationSeverity === 'HIGH' ? '#f97316' : 'var(--accent-orange)',
-                description: validationDescription,
-                impact: validationSeverity === 'HIGH' ? 'Potential market misalignment' : 'Delivery uncertainty'
-            });
-            
-            analysis.primaryRiskFactors.push('validation');
-        }
-    }
-
-    // UPDATED: Priority-based risk amplification (reduced from +2 to +1)
-    const row = getRowColFromSlot(initiative.priority).row;
-    if (row <= 2 && analysis.riskScore > 4) {
-        analysis.riskFactors.push({
-            name: 'Critical Priority Risk',
-            severity: 'CRITICAL',
-            color: 'var(--accent-red)',
-            description: 'High-risk factors on a critical priority initiative pose significant organizational risk.',
-            impact: 'Major impact on strategic objectives'
-        });
-        analysis.riskScore += 1; // Updated from 2
-    }
-
-    // Generate recommendations
-    if (analysis.impactedTeams.length > 0) {
-        const capacityIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Capacity')).length;
-        const skillsetIssues = analysis.impactedTeams.filter(t => t.riskFactors.includes('Skillset')).length;
-        
-        if (capacityIssues > 0) {
-            analysis.recommendations.push('Consider redistributing workload or bringing in additional resources to overloaded teams.');
-        }
-        if (skillsetIssues > 0) {
-            analysis.recommendations.push('Provide training or augment teams with required skills to prevent quality issues.');
-        }
-    }
-
-    if (analysis.primaryRiskFactors.includes('flagged-work')) {
-        analysis.recommendations.push('Review and resolve flagged work items to prevent delivery delays.');
-    }
-
-    if (analysis.primaryRiskFactors.includes('validation')) {
-        analysis.recommendations.push('Prioritize validation activities to reduce market and delivery risks.');
-    }
-
-    // Cap at 50 points
-    analysis.riskScore = Math.min(analysis.riskScore, 50);
-
-    return analysis;
-}
+    
 
 function getRiskLevel(riskScore) {
     if (riskScore <= 12) {
