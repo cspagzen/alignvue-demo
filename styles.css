@@ -3755,6 +3755,32 @@ input[type="number"] {
     text-transform: uppercase;
 }
 
+.score-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.score-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.score-value {
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.score-has-points {
+    color: #f59e0b !important;
+}
+
 
 /* =============================================================================
    END OF 4-STATE TEAM HEALTH ADDITIONS

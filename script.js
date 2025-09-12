@@ -1141,45 +1141,56 @@ function showRiskScoreInfoModal() {
             ` : ''}
             
             <!-- Team Health Risk Factors -->
-            <div class="section">
-                <div class="section-title">Team Health Risk Factors</div>
-                <div class="text-sm mb-3" style="color: var(--text-secondary);">
-                    <strong>Updated 4-State Scoring:</strong> Critical dimensions receive double points to reflect their severity.
-                    <br>• <strong>High Impact:</strong> Capacity/Skillset - 3 pts (At Risk), 6 pts (Critical)
-                    <br>• <strong>Medium Impact:</strong> Support - 2 pts (At Risk), 4 pts (Critical)
-                    <br>• <strong>Lower Impact:</strong> Vision/Cohesion/Autonomy - 1 pt (At Risk), 2 pts (Critical)
-                </div>
-                
-                <div class="metric-grid">
-                    <div class="metric-item">
-                        <span class="metric-label">Capacity at-risk:</span>
-                        <span class="metric-value expensive-work">${initiative ? `${actualValues.teamHealth.capacity} pts` : '3 pts (At Risk), 6 pts (Critical)'}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Skillset at-risk:</span>
-                        <span class="metric-value expensive-work">${initiative ? `${actualValues.teamHealth.skillset} pts` : '3 pts (At Risk), 6 pts (Critical)'}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Support at-risk:</span>
-                        <span class="metric-value discovery-work">${initiative ? `${actualValues.teamHealth.support} pts` : '2 pts (At Risk), 4 pts (Critical)'}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Over-utilization (>95%):</span>
-                        <span class="metric-value discovery-work">${initiative ? `${actualValues.teamHealth.utilization} pts` : '2 pts (if applicable)'}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Vision at-risk:</span>
-                        <span class="metric-value efficiency-score">${initiative ? `${actualValues.teamHealth.vision} pts` : '1 pt (At Risk), 2 pts (Critical)'}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Team Cohesion at-risk:</span>
-                        <span class="metric-value efficiency-score">${initiative ? `${actualValues.teamHealth.teamwork} pts` : '1 pt (At Risk), 2 pts (Critical)'}</span>
-                    </div>
-                    <div class="metric-item" style="grid-column: span 2;">
-                        <span class="metric-label">Autonomy at-risk:</span>
-                        <span class="metric-value efficiency-score">${initiative ? `${actualValues.teamHealth.autonomy} pts` : '1 pt (At Risk), 2 pts (Critical)'}</span>
-                    </div>
-                </div>
+<div class="section">
+    <div class="section-title">Team Health Risk Factors</div>
+    
+    <!-- Actual Scores Grid -->
+    <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="score-card">
+            <div class="score-label">Capacity at-risk:</div>
+            <div class="score-value ${actualValues.teamHealth.capacity > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.capacity} pts</div>
+        </div>
+        
+        <div class="score-card">
+            <div class="score-label">Skillset at-risk:</div>
+            <div class="score-value ${actualValues.teamHealth.skillset > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.skillset} pts</div>
+        </div>
+        
+        <div class="score-card">
+            <div class="score-label">Support at-risk:</div>
+            <div class="score-value ${actualValues.teamHealth.support > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.support} pts</div>
+        </div>
+        
+        <div class="score-card">
+            <div class="score-label">Over-utilization (>95%):</div>
+            <div class="score-value ${actualValues.teamHealth.utilization > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.utilization} pts</div>
+        </div>
+        
+        <div class="score-card">
+            <div class="score-label">Vision at-risk:</div>
+            <div class="score-value ${actualValues.teamHealth.vision > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.vision} pts</div>
+        </div>
+        
+        <div class="score-card">
+            <div class="score-label">Team Cohesion at-risk:</div>
+            <div class="score-value ${actualValues.teamHealth.teamwork > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.teamwork} pts</div>
+        </div>
+        
+        <div class="score-card">
+            <div class="score-label">Autonomy at-risk:</div>
+            <div class="score-value ${actualValues.teamHealth.autonomy > 0 ? 'score-has-points' : ''}">${actualValues.teamHealth.autonomy} pts</div>
+        </div>
+    </div>
+    
+    <!-- Scoring Model in Black Box -->
+    <div class="formula-box" style="background: #000; color: #00ff00; font-family: 'Courier New', monospace; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.4;">
+        <strong>Updated 4-State Scoring:</strong> Critical dimensions receive double points to reflect their severity.<br>
+        <strong>• High Impact:</strong> Capacity/Skillset - 3 pts (At Risk), 6 pts (Critical)<br>
+        <strong>• Medium Impact:</strong> Support - 2 pts (At Risk), 4 pts (Critical)<br>
+        <strong>• Lower Impact:</strong> Vision/Cohesion/Autonomy - 1 pt (At Risk), 2 pts (Critical)<br>
+        <strong>• Over-utilization:</strong> 2 pts (if >95% capacity)
+    </div>
+</div>
             </div>
 
             <!-- Flagged Work Factors -->
