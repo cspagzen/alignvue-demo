@@ -1323,15 +1323,15 @@ function showRiskScoreInfoModal() {
             Overall risk assessment for this specific initiative.
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-            <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
-                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Risk Score:</div>
-                <div style="font-size: 18px; font-weight: bold; color: var(--accent-orange);">${actualValues.totalScore}/50</div>
-            </div>
-            <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
-                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Risk Level:</div>
-                <div style="font-size: 18px; font-weight: bold; color: var(--accent-orange);">${getRiskLevel(actualValues.totalScore).label}</div>
-            </div>
-        </div>
+    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; text-align: center; border: 1px solid var(--border-secondary);">
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Risk Score:</div>
+        <div style="font-size: 18px; font-weight: bold; color: var(--accent-orange);">${actualValues.totalScore}/50</div>
+    </div>
+    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; text-align: center; border: 1px solid var(--border-secondary);">
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Risk Level:</div>
+        <div style="font-size: 18px; font-weight: bold; color: var(--accent-orange);">${getRiskLevel(actualValues.totalScore).label}</div>
+    </div>
+</div>
         <div class="formula-box">
             <strong>Total Risk Score Breakdown:</strong><br>
             Team Health: ${Object.values(actualValues.teamHealth).reduce((a, b) => a + b, 0)} pts<br>

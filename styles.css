@@ -3581,7 +3581,7 @@ input[type="number"] {
     padding: 12px;
     background: var(--bg-secondary);
     border-radius: 8px;
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--border-secondary);
 }
 
 .metric-label {
