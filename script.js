@@ -1125,7 +1125,7 @@ function showRiskScoreInfoModal() {
     title.textContent = 'Risk Score Calculation';
     
     content.innerHTML = `
-        <div style="max-height: 70vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(156, 163, 175, 0.5) transparent;">
+        <div class="risk-modal-content" style="max-height: 70vh; overflow-y: auto; padding-right: 12px;">
             <style>
                 .section {
                     margin-bottom: 24px;
