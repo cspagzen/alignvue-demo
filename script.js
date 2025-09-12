@@ -1382,7 +1382,7 @@ function showTeamModal(teamName, teamData) {
             notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-teal);"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg><span>Support Issues: Team may need better tools, resources, or organizational backing to be effective.</span></div>');
         }
         
-        if (teamData.teamwork === 'at-risk') {
+        if (isDimensionAtRisk(teamData.teamwork)) {
             notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-pink);"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Team Cohesion Concerns: Communication and collaboration may need improvement. Consider team building or process changes.</span></div>');
         }
         
@@ -7114,26 +7114,26 @@ function matchesTeamCriteria(teamData, filters) {
 }
 
 // Main function to calculate overall team health based on new 6-dimension system
-function getTeamOverallHealth(teamData) {
-    let atRiskCount = 0;
+function getTeamOverallHealthAdvanced(teamData) {
+    let riskScore = 0;
     
-    // Count all 6 dimensions that are "at-risk"
-    if (teamData.capacity === 'at-risk') atRiskCount++;
-    if (teamData.skillset === 'at-risk') atRiskCount++;
-    if (teamData.vision === 'at-risk') atRiskCount++;
-    if (teamData.support === 'at-risk') atRiskCount++;
-    if (teamData.teamwork === 'at-risk') atRiskCount++;
-    if (teamData.autonomy === 'at-risk') atRiskCount++;
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
     
-    // New health status mapping:
-    // 0 at-risk = "Healthy" (green)
-    // 1-2 at-risk = "Low Risk" (amber) 
-    // 3-4 at-risk = "High Risk" (orange)
-    // 5-6 at-risk = "Critical" (red)
-    if (atRiskCount === 0) return 'healthy';
-    if (atRiskCount <= 2) return 'low-risk';
-    if (atRiskCount <= 4) return 'high-risk';
-    return 'critical'; // 5-6 at-risk
+    dimensions.forEach(dim => {
+        const value = teamData[dim];
+        
+        if (value === 'At Risk' || value === 'at-risk') {
+            riskScore += 1;  // At Risk = 1 point
+        } else if (value === 'Critical' || value === 'critical') {
+            riskScore += 2;  // Critical = 2 points (more severe)
+        }
+    });
+    
+    // Risk score interpretation
+    if (riskScore === 0) return 'HEALTHY';
+    if (riskScore <= 2) return 'LOW RISK';
+    if (riskScore <= 6) return 'HIGH RISK'; 
+    return 'CRITICAL';  // 7+ points = critical team
 }
 
 function clearTeamFilters() {
