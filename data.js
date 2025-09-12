@@ -169,10 +169,10 @@ const boardData = {
 
     teams: {
         "Core Platform": { 
-            capacity: "healthy", 
+            capacity: "at-risk", 
             skillset: "healthy", 
             vision: "healthy", 
-            support: "at-risk", 
+            support: "healthy", 
             teamwork: "healthy", 
             autonomy: "healthy", 
             jira: { sprint: "Sprint 23", velocity: 24, utilization: 92, stories: 35, bugs: 3, blockers: 1 } 
@@ -189,7 +189,7 @@ const boardData = {
         },
         
         "Security": { 
-            capacity: "at-risk", 
+            capacity: "critical", 
             skillset: "at-risk", 
             vision: "healthy", 
             support: "healthy", 
@@ -199,10 +199,10 @@ const boardData = {
         },
         
         "Data Engineering": { 
-            capacity: "at-risk", 
+            capacity: "critical", 
             skillset: "healthy", 
             vision: "healthy", 
-            support: "at-risk", 
+            support: "critical", 
             teamwork: "healthy", 
             autonomy: "at-risk", 
             jira: { sprint: "Sprint 23", velocity: 32, utilization: 98, stories: 25, bugs: 5, blockers: 2 } 
@@ -219,7 +219,7 @@ const boardData = {
         },
         
         "Site Reliability": { 
-            capacity: "healthy", 
+            capacity: "at-risk", 
             skillset: "healthy", 
             vision: "at-risk", 
             support: "healthy", 
@@ -249,7 +249,7 @@ const boardData = {
         },
         
         "Business Operations": { 
-            capacity: "at-risk", 
+            capacity: "critical", 
             skillset: "healthy", 
             vision: "healthy", 
             support: "at-risk", 
@@ -259,7 +259,7 @@ const boardData = {
         },
         
         "Developer Relations": { 
-            capacity: "at-risk", 
+            capacity: "healthy", 
             skillset: "healthy", 
             vision: "healthy", 
             support: "healthy", 
@@ -274,7 +274,7 @@ const boardData = {
             vision: "at-risk", 
             support: "healthy", 
             teamwork: "healthy", 
-            autonomy: "at-risk", 
+            autonomy: "critical", 
             jira: { sprint: "Sprint 23", velocity: 14, utilization: 86, stories: 28, bugs: 2, blockers: 1 } 
         },
         
@@ -299,7 +299,7 @@ const boardData = {
         },
         
         "Claims Operations": { 
-            capacity: "at-risk", 
+            capacity: "critical", 
             skillset: "healthy", 
             vision: "healthy", 
             support: "healthy", 
