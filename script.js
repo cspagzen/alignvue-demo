@@ -1335,12 +1335,12 @@ function showTeamModal(teamName, teamData) {
     let atRiskCount = 0;
     
     // Count all 6 dimensions that are at-risk
-    if (teamData.capacity === 'at-risk') atRiskCount++;
-    if (teamData.skillset === 'at-risk') atRiskCount++;
-    if (teamData.vision === 'at-risk') atRiskCount++;
-    if (teamData.support === 'at-risk') atRiskCount++;
-    if (teamData.teamwork === 'at-risk') atRiskCount++;
-    if (teamData.autonomy === 'at-risk') atRiskCount++;
+    if (isDimensionAtRisk(teamData.capacity)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.skillset)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.vision)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.support)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.teamwork)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.autonomy)) atRiskCount++;
 
     // New health status mapping
     let healthText = 'HEALTHY';
@@ -1366,19 +1366,19 @@ function showTeamModal(teamName, teamData) {
     const generateTeamNotes = (teamName, teamData) => {
         const notes = [];
         
-        if (teamData.capacity === 'at-risk') {
+        if (isDimensionAtRisk(teamData.capacity)) {
             notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-orange);"><path d="M12 6v6l1.56.78"/><circle cx="12" cy="12" r="10"/></svg><span>Capacity Risk: Team is operating at ' + teamData.jira.utilization + '% utilization. Consider redistributing workload or adding resources.</span></div>');
         }
         
-        if (teamData.skillset === 'at-risk') {
+        if (isDimensionAtRisk(teamData.skillset)) {
             notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-blue);"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Skillset Gap: Team may need training or expertise in emerging technologies relevant to their initiatives.</span></div>');
         }
         
-        if (teamData.vision === 'at-risk') {
+        if (isDimensionAtRisk(teamData.vision)) {
             notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-purple);"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span>Vision Gap: Team may lack clarity on goals and strategic direction. Consider alignment sessions with leadership.</span></div>');
         }
         
-        if (teamData.support === 'at-risk') {
+        if (isDimensionAtRisk(teamData.support)) {
             notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-teal);"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg><span>Support Issues: Team may need better tools, resources, or organizational backing to be effective.</span></div>');
         }
         
@@ -1386,7 +1386,7 @@ function showTeamModal(teamName, teamData) {
             notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-pink);"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Team Cohesion Concerns: Communication and collaboration may need improvement. Consider team building or process changes.</span></div>');
         }
         
-        if (teamData.autonomy === 'at-risk') {
+        if (isDimensionAtRisk(teamData.autonomy)) {
             notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-indigo);"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span>Autonomy Issues: Team may have limited decision-making authority. Consider empowering team leads or reducing approval bottlenecks.</span></div>');
         }
         
@@ -1420,10 +1420,10 @@ function showTeamModal(teamName, teamData) {
                 <!-- All 6 Health Dimensions -->
                 <div class="space-y-3">
                     <!-- Capacity -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${teamData.capacity === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.capacity) ? 'var(--accent-red)' : 'var(--accent-green)'};">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${teamData.capacity === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.capacity) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 6v6l1.56.78"/>
                                     <circle cx="12" cy="12" r="10"/>
                                 </svg>
@@ -1432,15 +1432,15 @@ function showTeamModal(teamName, teamData) {
                                     <div class="text-xs" style="color: var(--text-secondary);">Workload & Resources</div>
                                 </div>
                             </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${teamData.capacity === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.capacity.replace('-', ' ')}</div>
+                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.capacity) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.capacity.replace('-', ' ')}</div>
                         </div>
                     </div>
                     
                     <!-- Skillset -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${teamData.skillset === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.skillset) ? 'var(--accent-red)' : 'var(--accent-green)'};">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${teamData.skillset === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.skillset) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
                                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                                 </svg>
@@ -1449,15 +1449,15 @@ function showTeamModal(teamName, teamData) {
                                     <div class="text-xs" style="color: var(--text-secondary);">Technical Capabilities</div>
                                 </div>
                             </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${teamData.skillset === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.skillset.replace('-', ' ')}</div>
+                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.skillset) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.skillset.replace('-', ' ')}</div>
                         </div>
                     </div>
                     
                     <!-- Vision -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${teamData.vision === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.vision) ? 'var(--accent-red)' : 'var(--accent-green)'};">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${teamData.vision === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.vision) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                                     <circle cx="12" cy="12" r="3"/>
                                 </svg>
@@ -1466,15 +1466,15 @@ function showTeamModal(teamName, teamData) {
                                     <div class="text-xs" style="color: var(--text-secondary);">Clarity & Alignment</div>
                                 </div>
                             </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${teamData.vision === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.vision.replace('-', ' ')}</div>
+                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.vision) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.vision.replace('-', ' ')}</div>
                         </div>
                     </div>
                     
                     <!-- Support -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${teamData.support === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.support) ? 'var(--accent-red)' : 'var(--accent-green)'};">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${teamData.support === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.support) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M7 10v12"/>
                                     <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/>
                                 </svg>
@@ -1483,15 +1483,15 @@ function showTeamModal(teamName, teamData) {
                                     <div class="text-xs" style="color: var(--text-secondary);">Tools & Org Backing</div>
                                 </div>
                             </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${teamData.support === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.support.replace('-', ' ')}</div>
+                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.support) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.support.replace('-', ' ')}</div>
                         </div>
                     </div>
                     
                     <!-- Team Cohesion -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${teamData.teamwork === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.teamwork) ? 'var(--accent-red)' : 'var(--accent-green)'};">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${teamData.teamwork === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.teamwork) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                                     <circle cx="9" cy="7" r="4"/>
                                     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
@@ -1502,15 +1502,15 @@ function showTeamModal(teamName, teamData) {
                                     <div class="text-xs" style="color: var(--text-secondary);">Collaboration & Communication</div>
                                 </div>
                             </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${teamData.teamwork === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.teamwork.replace('-', ' ')}</div>
+                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.teamwork) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.teamwork.replace('-', ' ')}</div>
                         </div>
                     </div>
                     
                     <!-- Autonomy -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${teamData.autonomy === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.autonomy) ? 'var(--accent-red)' : 'var(--accent-green)'};">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${teamData.autonomy === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.autonomy) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                                     <path d="M2 17l10 5 10-5"/>
                                     <path d="M2 12l10 5 10-5"/>
@@ -1520,7 +1520,7 @@ function showTeamModal(teamName, teamData) {
                                     <div class="text-xs" style="color: var(--text-secondary);">Decision-making Independence</div>
                                 </div>
                             </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${teamData.autonomy === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.autonomy.replace('-', ' ')}</div>
+                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.autonomy) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.autonomy.replace('-', ' ')}</div>
                         </div>
                     </div>
                 </div>
@@ -2053,12 +2053,12 @@ rowDiv.appendChild(rowNumber);
         // Updated function to get team health status class
 function getTeamHealthStatus(teamData) {
     let atRiskCount = 0;
-    if (teamData.capacity === 'at-risk') atRiskCount++;
-    if (teamData.skillset === 'at-risk') atRiskCount++;
-    if (teamData.vision === 'at-risk') atRiskCount++;
-    if (teamData.support === 'at-risk') atRiskCount++;
-    if (teamData.teamwork === 'at-risk') atRiskCount++;
-    if (teamData.autonomy === 'at-risk') atRiskCount++;
+    if (isDimensionAtRisk(teamData.capacity)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.skillset)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.vision)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.support)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.teamwork)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.autonomy)) atRiskCount++;
     
     if (atRiskCount === 0) return 'team-health-white'; // Healthy
     if (atRiskCount <= 2) return 'team-health-yellow'; // Low Risk  
@@ -2069,12 +2069,12 @@ function getTeamHealthStatus(teamData) {
         // Updated function to get health icon (keeping same Lucide icons)
 function getHealthIcon(teamData) {
     let atRiskCount = 0;
-    if (teamData.capacity === 'at-risk') atRiskCount++;
-    if (teamData.skillset === 'at-risk') atRiskCount++;
-    if (teamData.vision === 'at-risk') atRiskCount++;
-    if (teamData.support === 'at-risk') atRiskCount++;
-    if (teamData.teamwork === 'at-risk') atRiskCount++;
-    if (teamData.autonomy === 'at-risk') atRiskCount++;
+    if (isDimensionAtRisk(teamData.capacity)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.skillset)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.vision)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.support)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.teamwork)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.autonomy)) atRiskCount++;
     
     if (atRiskCount === 0) {
         // Healthy - Green checkmark
@@ -2096,12 +2096,12 @@ function getTeamHealthPillStyle(teamData) {
     if (!teamData) return 'bg-gray-100 text-gray-800 border-gray-300';
     
     let atRiskCount = 0;
-    if (teamData.capacity === 'at-risk') atRiskCount++;
-    if (teamData.skillset === 'at-risk') atRiskCount++;
-    if (teamData.vision === 'at-risk') atRiskCount++;
-    if (teamData.support === 'at-risk') atRiskCount++;
-    if (teamData.teamwork === 'at-risk') atRiskCount++;
-    if (teamData.autonomy === 'at-risk') atRiskCount++;
+    if (isDimensionAtRisk(teamData.capacity)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.skillset)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.vision)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.support)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.teamwork)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.autonomy)) atRiskCount++;
     
     if (atRiskCount === 0) {
         return 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200';
@@ -2120,6 +2120,13 @@ function getTeamHealthPillStyle(teamData) {
     } else {
         return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.876 18.99-1.368 1.323a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5a5.2 5.2 0 0 1-.244 1.572"/><path d="M15 15h6"/></svg>';
     }
+}
+
+function isDimensionAtRisk(dimensionValue) {
+    return dimensionValue === 'At Risk' || 
+           dimensionValue === 'at-risk' || 
+           dimensionValue === 'Critical' || 
+           dimensionValue === 'critical';
 }
         
         function generateTeamHealthMatrix() {
@@ -2181,12 +2188,12 @@ const getUtilizationColor = (utilization) => {
 const getHealthStatusIndicator = (teamData) => {
     let atRiskCount = 0;
     // Count all 6 dimensions instead of just 3
-    if (teamData.capacity === 'at-risk') atRiskCount++;
-    if (teamData.skillset === 'at-risk') atRiskCount++;
-    if (teamData.vision === 'at-risk') atRiskCount++;
-    if (teamData.support === 'at-risk') atRiskCount++;
-    if (teamData.teamwork === 'at-risk') atRiskCount++;
-    if (teamData.autonomy === 'at-risk') atRiskCount++;
+    if (isDimensionAtRisk(teamData.capacity)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.skillset)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.vision)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.support)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.teamwork)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.autonomy)) atRiskCount++;
     
     // Updated status mapping
     if (atRiskCount === 0) return { text: 'HEALTHY', icon: '✓', color: 'text-green-700' };
@@ -7124,12 +7131,12 @@ function matchesTeamCriteria(teamData, filters) {
                 case 'support-healthy': return teamData.support === 'healthy';
                 case 'teamwork-healthy': return teamData.teamwork === 'healthy';
                 case 'autonomy-healthy': return teamData.autonomy === 'healthy';
-                case 'capacity-risk': return teamData.capacity === 'at-risk';
-                case 'skillset-risk': return teamData.skillset === 'at-risk';
-                case 'vision-risk': return teamData.vision === 'at-risk';
-                case 'support-risk': return teamData.support === 'at-risk';
-                case 'teamwork-risk': return teamData.teamwork === 'at-risk';
-                case 'autonomy-risk': return teamData.autonomy === 'at-risk';
+                case 'capacity-risk': return isDimensionAtRisk(teamData.capacity);
+                case 'skillset-risk': return isDimensionAtRisk(teamData.skillset);
+                case 'vision-risk': return isDimensionAtRisk(teamData.vision);
+                case 'support-risk': return isDimensionAtRisk(teamData.support);
+                case 'teamwork-risk': return isDimensionAtRisk(teamData.teamwork);
+                case 'autonomy-risk': return isDimensionAtRisk(teamData.autonomy);
                 default: return false;
             }
         });
@@ -8453,11 +8460,11 @@ function getTeamNotes(teamName, teamData) {
     const notes = [];
     
     // Check for at-risk conditions and add relevant notes
-    if (teamData.capacity === 'at-risk') {
+    if (isDimensionAtRisk(teamData.capacity)) {
         notes.push('Capacity Risk: Team operating at high utilization. Consider redistributing workload.');
     }
     
-    if (teamData.skillset === 'at-risk') {
+    if (isDimensionAtRisk(teamData.skillset)) {
         notes.push('Skillset Gap: Team may need training in emerging technologies.');
     }
     
