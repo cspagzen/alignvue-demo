@@ -3650,15 +3650,40 @@ input[type="number"] {
     border: 1px solid #92400e;
 }
 
+/* NEW 4-STATE CLASSES - ADD THESE */
 .dimension-cell.critical {
     background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #dc2626 100%);
     border: 1px solid #450a0a;
+    position: relative;
+}
+
+.dimension-cell.critical::after {
+    content: "!";
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    font-size: 8px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.8);
 }
 
 .dimension-cell.not-set {
     background: linear-gradient(135deg, #6b7280 0%, #4b5563 50%, #374151 100%);
     border: 1px solid #374151;
     opacity: 0.8;
+    position: relative;
+}
+
+.dimension-cell.not-set::after {
+    content: "?";
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    font-size: 8px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.8);
 }
 
 /* Enhanced tooltip styles for 4-state system */
