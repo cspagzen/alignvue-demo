@@ -490,7 +490,7 @@ function showAtRiskAnalysisModal(initiative) {
                        </div>`
                    }
                </div>
-               <div id="teams-content" class="tab-content hidden">
+              <div id="teams-content" class="tab-content hidden">
                    ${riskAnalysis.impactedTeams.length > 0 ?
                        `<div class="space-y-3">
                            ${riskAnalysis.impactedTeams.map(team => `
@@ -500,12 +500,19 @@ function showAtRiskAnalysisModal(initiative) {
                                        <div class="w-3 h-3 rounded-full" style="background: ${team.riskColor};"></div>
                                    </div>
                                    <div class="space-y-2">
-                                       ${team.riskFactors.map(factor => `
-                                           <div class="health-indicator at-risk">
-                                               <span>${factor}</span>
-                                               <span>At Risk</span>
-                                           </div>
-                                       `).join('')}
+                                       ${team.riskFactors.map(factor => {
+                                           // Handle both old string format and new object format
+                                           const factorName = typeof factor === 'string' ? factor : factor.name;
+                                           const factorState = typeof factor === 'string' ? 'At Risk' : factor.state;
+                                           const cssClass = factorState === 'Critical' ? 'health-indicator critical' : 'health-indicator at-risk';
+                                           
+                                           return `
+                                               <div class="${cssClass}">
+                                                   <span>${factorName}</span>
+                                                   <span>${factorState}</span>
+                                               </div>
+                                           `;
+                                       }).join('')}
                                    </div>
                                </div>
                            `).join('')}
@@ -694,7 +701,7 @@ function analyzeInitiativeRisk(initiative) {
             analysis.riskScore += 2;
             teamHealthIssues.atRiskTeams.push(`${teamName} (Support)`);
         } else if (team.support === 'Critical' || team.support === 'critical') {
-            teamRiskFactors.push('Support (Critical)');
+            teamRiskFactors.push('Support');
             analysis.riskScore += 4;
             teamHealthIssues.criticalTeams.push(`${teamName} (Support)`);
         }
@@ -712,7 +719,7 @@ function analyzeInitiativeRisk(initiative) {
             analysis.riskScore += 1;
             teamHealthIssues.atRiskTeams.push(`${teamName} (Vision)`);
         } else if (team.vision === 'Critical' || team.vision === 'critical') {
-            teamRiskFactors.push('Vision (Critical)');
+            teamRiskFactors.push('Vision');
             analysis.riskScore += 2;
             teamHealthIssues.criticalTeams.push(`${teamName} (Vision)`);
         }
@@ -723,7 +730,7 @@ function analyzeInitiativeRisk(initiative) {
             analysis.riskScore += 1;
             teamHealthIssues.atRiskTeams.push(`${teamName} (Team Cohesion)`);
         } else if (team.teamwork === 'Critical' || team.teamwork === 'critical') {
-            teamRiskFactors.push('Team Cohesion (Critical)');
+            teamRiskFactors.push('Team Cohesion');
             analysis.riskScore += 2;
             teamHealthIssues.criticalTeams.push(`${teamName} (Team Cohesion)`);
         }
@@ -734,7 +741,7 @@ function analyzeInitiativeRisk(initiative) {
             analysis.riskScore += 1;
             teamHealthIssues.atRiskTeams.push(`${teamName} (Autonomy)`);
         } else if (team.autonomy === 'Critical' || team.autonomy === 'critical') {
-            teamRiskFactors.push('Autonomy (Critical)');
+            teamRiskFactors.push('Autonomy');
             analysis.riskScore += 2;
             teamHealthIssues.criticalTeams.push(`${teamName} (Autonomy)`);
         }
@@ -758,14 +765,35 @@ function analyzeInitiativeRisk(initiative) {
         else if (totalFactors >= 1) teamRiskColor = '#eab308';
 
         if (teamRiskFactors.length > 0) {
+            // Create proper factor objects with state information
+            const enhancedRiskFactors = teamRiskFactors.map(factor => {
+                // Determine the actual state for each factor
+                let state = 'At Risk'; // default
+                
+                if (factor === 'Capacity') {
+                    state = (team.capacity === 'Critical' || team.capacity === 'critical') ? 'Critical' : 'At Risk';
+                } else if (factor === 'Skillset') {
+                    state = (team.skillset === 'Critical' || team.skillset === 'critical') ? 'Critical' : 'At Risk';
+                } else if (factor === 'Support') {
+                    state = (team.support === 'Critical' || team.support === 'critical') ? 'Critical' : 'At Risk';
+                } else if (factor === 'Vision') {
+                    state = (team.vision === 'Critical' || team.vision === 'critical') ? 'Critical' : 'At Risk';
+                } else if (factor === 'Team Cohesion') {
+                    state = (team.teamwork === 'Critical' || team.teamwork === 'critical') ? 'Critical' : 'At Risk';
+                } else if (factor === 'Autonomy') {
+                    state = (team.autonomy === 'Critical' || team.autonomy === 'critical') ? 'Critical' : 'At Risk';
+                }
+                
+                return {
+                    name: factor.replace(' (Critical)', ''), // Clean up the name
+                    state: state,
+                    severity: state === 'Critical' ? 'CRITICAL' : 'HIGH'
+                };
+            });
+
             analysis.impactedTeams.push({
                 name: teamName,
-                riskFactors: teamRiskFactors.map(factor => {
-                    // FIXED: Show "Critical" status in the display, not just the factor name
-                    if (factor === 'Capacity' && hasCriticalCapacity) return 'Capacity (Critical)';
-                    if (factor === 'Skillset' && hasCriticalSkillset) return 'Skillset (Critical)';
-                    return factor; // Keep other factors as-is
-                }),
+                riskFactors: enhancedRiskFactors,
                 riskColor: teamRiskColor
             });
         }
