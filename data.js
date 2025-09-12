@@ -168,13 +168,14 @@ const boardData = {
     ],
 
     teams: {
+       // data.js - Board Data with Updated Team Health Dimensions
         "Core Platform": { 
-            capacity: "healthy", 
-            skillset: "healthy", 
-            vision: "healthy", 
-            support: "at-risk", 
-            teamwork: "healthy", 
-            autonomy: "healthy", 
+            capacity: "Healthy",      // Green - should work already
+            skillset: "At Risk",      // Red - should work already  
+        vision: "Critical",       // Dark red with "!" - NEW
+        support: null,            // Grey with "?" - NEW
+        teamwork: "Healthy",      // Green
+        autonomy: "Not Set",      // Grey with "?" - NEW
             jira: { sprint: "Sprint 23", velocity: 24, utilization: 92, stories: 35, bugs: 3, blockers: 1 } 
         },
         
