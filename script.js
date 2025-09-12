@@ -415,8 +415,8 @@ function showAtRiskAnalysisModal(initiative) {
                </div>
                <div class="text-right">
                    <div class="text-3xl font-bold" style="color: ${riskLevel.color};">${riskAnalysis.riskScore}/50</div>
-                   <button onclick="showRiskScoreInfoModal()" class="text-xs underline hover:opacity-75 transition-opacity" style="color: var(--accent-blue); background: none; border: none; padding: 0; cursor: pointer;">
-                       How is Risk Score calculated?
+                   <button onclick="showRiskScoreInfoModalForInitiative(${initiative.id})" class="text-xs underline hover:opacity-75 transition-opacity" style="color: var(--accent-blue); background: none; border: none; padding: 0; cursor: pointer;">
+    How is Risk Score calculated?
                    </button>
                </div>
            </div>
