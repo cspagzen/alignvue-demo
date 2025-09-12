@@ -1191,36 +1191,36 @@ function showRiskScoreInfoModal() {
                         Critical dimensions receive double points to reflect their severity.
                     </div>
                     
-                    <div class="score-breakdown">
-                        <div class="score-item">
-                            <span>Capacity Risk:</span>
-                            <span style="color: ${actualValues.teamHealth.capacity > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.capacity} pts</span>
-                        </div>
-                        <div class="score-item">
-                            <span>Skillset Risk:</span>
-                            <span style="color: ${actualValues.teamHealth.skillset > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.skillset} pts</span>
-                        </div>
-                        <div class="score-item">
-                            <span>Support Risk:</span>
-                            <span style="color: ${actualValues.teamHealth.support > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.support} pts</span>
-                        </div>
-                        <div class="score-item">
-                            <span>Over-utilization (>95%):</span>
-                            <span style="color: ${actualValues.teamHealth.utilization > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.utilization} pts</span>
-                        </div>
-                        <div class="score-item">
-                            <span>Vision RIsk:</span>
-                            <span style="color: ${actualValues.teamHealth.vision > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.vision} pts</span>
-                        </div>
-                        <div class="score-item">
-                            <span>Team Cohesion Risk:</span>
-                            <span style="color: ${actualValues.teamHealth.teamwork > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.teamwork} pts</span>
-                        </div>
-                        <div class="score-item">
-                            <span>Autonomy Risk:</span>
-                            <span style="color: ${actualValues.teamHealth.autonomy > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.autonomy} pts</span>
-                        </div>
-                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+    <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span>Capacity Risk:</span>
+        <span style="color: ${actualValues.teamHealth.capacity > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.capacity} pts</span>
+    </div>
+    <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span>Skillset Risk:</span>
+        <span style="color: ${actualValues.teamHealth.skillset > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.skillset} pts</span>
+    </div>
+    <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span>Support Risk:</span>
+        <span style="color: ${actualValues.teamHealth.support > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.support} pts</span>
+    </div>
+    <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span>Over-utilization (>95%):</span>
+        <span style="color: ${actualValues.teamHealth.utilization > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.utilization} pts</span>
+    </div>
+    <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span>Vision Risk:</span>
+        <span style="color: ${actualValues.teamHealth.vision > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.vision} pts</span>
+    </div>
+    <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span>Team Cohesion Risk:</span>
+        <span style="color: ${actualValues.teamHealth.teamwork > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.teamwork} pts</span>
+    </div>
+    <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span>Autonomy Risk:</span>
+        <span style="color: ${actualValues.teamHealth.autonomy > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.autonomy} pts</span>
+    </div>
+</div>
                     
                     <div class="formula-box">
                         <strong>Team Health Scoring:</strong><br>
@@ -1323,14 +1323,14 @@ function showRiskScoreInfoModal() {
             Overall risk assessment for this specific initiative.
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; text-align: center; border: 1px solid var(--border-secondary);">
-        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Risk Score:</div>
-        <div style="font-size: 18px; font-weight: bold; color: var(--accent-orange);">${actualValues.totalScore}/50</div>
-    </div>
-    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; text-align: center; border: 1px solid var(--border-secondary);">
-        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Risk Level:</div>
-        <div style="font-size: 18px; font-weight: bold; color: var(--accent-orange);">${getRiskLevel(actualValues.totalScore).label}</div>
-    </div>
+    <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; text-align: center;">
+    <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Risk Score:</div>
+    <div style="color: #f59e0b; font-size: 18px; font-weight: 600;">${actualValues.totalScore}/50</div>
+</div>
+<div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; text-align: center;">
+    <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Risk Level:</div>
+    <div style="color: #f59e0b; font-size: 18px; font-weight: 600;">${getRiskLevel(actualValues.totalScore).label}</div>
+</div>
 </div>
         <div class="formula-box">
             <strong>Total Risk Score Breakdown:</strong><br>
