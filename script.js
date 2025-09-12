@@ -416,7 +416,7 @@ function showAtRiskAnalysisModal(initiative) {
                <div class="text-right">
                    <div class="text-3xl font-bold" style="color: ${riskLevel.color};">${riskAnalysis.riskScore}/50</div>
                    <button onclick="showRiskScoreInfoModalForInitiative(${initiative.id})" class="text-xs underline hover:opacity-75 transition-opacity" style="color: var(--accent-blue); background: none; border: none; padding: 0; cursor: pointer;">
-    How is Risk Score calculated?
+    See the full risk score breakdown for this initiative
                    </button>
                </div>
            </div>
@@ -1186,22 +1186,22 @@ function showRiskScoreInfoModal() {
             <div class="space-y-6">
                 <!-- Team Health Risk Factors -->
                 <div class="section">
-                    <div class="section-title">Team Health Risk Factors</div>
+                    <div class="section-title">Team Health Risk Dimensions</div>
                     <div style="color: var(--text-secondary); margin-bottom: 12px;">
-                        Updated 4-State Scoring: Critical dimensions receive double points to reflect their severity.
+                        Critical dimensions receive double points to reflect their severity.
                     </div>
                     
                     <div class="score-breakdown">
                         <div class="score-item">
-                            <span>Capacity at-risk:</span>
+                            <span>Capacity Risk:</span>
                             <span style="color: ${actualValues.teamHealth.capacity > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.capacity} pts</span>
                         </div>
                         <div class="score-item">
-                            <span>Skillset at-risk:</span>
+                            <span>Skillset Risk:</span>
                             <span style="color: ${actualValues.teamHealth.skillset > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.skillset} pts</span>
                         </div>
                         <div class="score-item">
-                            <span>Support at-risk:</span>
+                            <span>Support Risk:</span>
                             <span style="color: ${actualValues.teamHealth.support > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.support} pts</span>
                         </div>
                         <div class="score-item">
@@ -1209,24 +1209,25 @@ function showRiskScoreInfoModal() {
                             <span style="color: ${actualValues.teamHealth.utilization > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.utilization} pts</span>
                         </div>
                         <div class="score-item">
-                            <span>Vision at-risk:</span>
+                            <span>Vision RIsk:</span>
                             <span style="color: ${actualValues.teamHealth.vision > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.vision} pts</span>
                         </div>
                         <div class="score-item">
-                            <span>Team Cohesion at-risk:</span>
+                            <span>Team Cohesion Risk:</span>
                             <span style="color: ${actualValues.teamHealth.teamwork > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.teamwork} pts</span>
                         </div>
                         <div class="score-item">
-                            <span>Autonomy at-risk:</span>
+                            <span>Autonomy Risk:</span>
                             <span style="color: ${actualValues.teamHealth.autonomy > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.autonomy} pts</span>
                         </div>
                     </div>
                     
                     <div class="formula-box">
                         <strong>Team Health Scoring:</strong><br>
-                        • High Impact: Capacity/Skillset - 3 pts (At Risk), 6 pts (Critical)<br>
-                        • Medium Impact: Support - 2 pts (At Risk), 4 pts (Critical)<br>
-                        • Lower Impact: Vision/Cohesion/Autonomy - 1 pt (At Risk), 2 pts (Critical)
+                        • Capacity/Skillset = 3 pts if At Risk, 6 pts if Critical<br>
+                        • Support = 2 pts if At Risk, 4 pts if Critical<br>
+                        • Vision/Cohesion/Autonomy = 1 pt if At Risk, 2 pts if Critical<br>
+                        • Over Utilization = 1 pt if over utilized<br>
                     </div>
                 </div>
 
@@ -1234,7 +1235,7 @@ function showRiskScoreInfoModal() {
                 <div class="section">
                     <div class="section-title">Flagged Work Factors</div>
                     <div style="color: var(--text-secondary); margin-bottom: 12px;">
-                        Stories marked as flagged, blocked, or requiring attention indicate execution risk.
+                        Stories marked as flagged, blocked, or requiring attention.
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -1264,7 +1265,7 @@ function showRiskScoreInfoModal() {
                 <div class="section">
                     <div class="section-title">Validation Risk</div>
                     <div style="color: var(--text-secondary); margin-bottom: 12px;">
-                        Above-the-line initiatives without validation pose market and delivery alignment risks.
+                        Above-the-line initiatives without validation.
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -1319,7 +1320,7 @@ function showRiskScoreInfoModal() {
     <div class="section">
         <div class="section-title">Current Initiative Summary</div>
         <div class="section-subtitle">
-            Overall risk assessment for this specific initiative based on team health, work complexity, and validation state.
+            Overall risk assessment for this specific initiative.
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
             <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
