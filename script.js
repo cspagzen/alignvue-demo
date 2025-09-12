@@ -1315,6 +1315,22 @@ function showRiskScoreInfoModal() {
                     </div>
                 </div>
 
+                ${initiative ? `
+                    <div class="section">
+                        <div class="section-title">Current Initiative Summary</div>
+                        <div class="formula-box">
+                            <strong>Total Risk Score Breakdown:</strong><br>
+                            Team Health: ${Object.values(actualValues.teamHealth).reduce((a, b) => a + b, 0)} pts<br>
+                            Flagged Work: ${actualValues.flaggedWork.points} pts<br>
+                            Validation: ${actualValues.validation.points} pts<br>
+                            Priority Amplification: ${actualValues.priority.points} pts<br>
+                            <hr style="margin: 8px 0; border: 1px solid #ccc;">
+                            <strong>Total: ${actualValues.totalScore}/50 pts</strong><br>
+                            <strong>Risk Level: ${getRiskLevel(actualValues.totalScore).label}</strong>
+                        </div>
+                    </div>
+                ` : ''}
+
                 <!-- Risk Level Interpretation -->
                 <div class="section">
                     <div class="section-title">Risk Level Interpretation</div>
@@ -1332,22 +1348,6 @@ function showRiskScoreInfoModal() {
                         <div><strong>Critical Risk:</strong> Severe risk factors across multiple areas requiring immediate attention.</div>
                     </div>
                 </div>
-
-                ${initiative ? `
-                    <div class="section">
-                        <div class="section-title">Current Initiative Summary</div>
-                        <div class="formula-box">
-                            <strong>Total Risk Score Breakdown:</strong><br>
-                            Team Health: ${Object.values(actualValues.teamHealth).reduce((a, b) => a + b, 0)} pts<br>
-                            Flagged Work: ${actualValues.flaggedWork.points} pts<br>
-                            Validation: ${actualValues.validation.points} pts<br>
-                            Priority Amplification: ${actualValues.priority.points} pts<br>
-                            <hr style="margin: 8px 0; border: 1px solid #ccc;">
-                            <strong>Total: ${actualValues.totalScore}/50 pts</strong><br>
-                            <strong>Risk Level: ${getRiskLevel(actualValues.totalScore).label}</strong>
-                        </div>
-                    </div>
-                ` : ''}
             </div>
         </div>
     `;
