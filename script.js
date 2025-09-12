@@ -1187,13 +1187,8 @@ function showRiskScoreInfoModal() {
                 <!-- Team Health Risk Factors -->
                 <div class="section">
                     <div class="section-title">Team Health Risk Factors</div>
-                    
-                    <!-- Updated 4-State Scoring Info -->
                     <div style="color: var(--text-secondary); margin-bottom: 12px;">
                         Updated 4-State Scoring: Critical dimensions receive double points to reflect their severity.
-                        <br>• High Impact: Capacity/Skillset - 3 pts (At Risk), 6 pts (Critical)
-                        <br>• Medium Impact: Support - 2 pts (At Risk), 4 pts (Critical)
-                        <br>• Lower Impact: Vision/Cohesion/Autonomy - 1 pt (At Risk), 2 pts (Critical)
                     </div>
                     
                     <div class="score-breakdown">
@@ -1225,6 +1220,13 @@ function showRiskScoreInfoModal() {
                             <span>Autonomy at-risk:</span>
                             <span style="color: ${actualValues.teamHealth.autonomy > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.autonomy} pts</span>
                         </div>
+                    </div>
+                    
+                    <div class="formula-box">
+                        <strong>Team Health Scoring:</strong><br>
+                        • High Impact: Capacity/Skillset - 3 pts (At Risk), 6 pts (Critical)<br>
+                        • Medium Impact: Support - 2 pts (At Risk), 4 pts (Critical)<br>
+                        • Lower Impact: Vision/Cohesion/Autonomy - 1 pt (At Risk), 2 pts (Critical)
                     </div>
                 </div>
 
