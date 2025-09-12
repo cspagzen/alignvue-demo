@@ -3634,3 +3634,93 @@ input[type="number"] {
         grid-template-columns: 1fr;
     }
 }
+
+/* =============================================================================
+   TEAM HEALTH 4-STATE DIMENSION CELLS - PHASE 1 UPDATE
+   ============================================================================= */
+
+/* Existing 2-state classes (keep these as-is) */
+.dimension-cell.healthy {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #14532d 100%);
+    border: 1px solid #14532d;
+}
+
+.dimension-cell.at-risk {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+    border: 1px solid #7f1d1d;
+}
+
+/* NEW 4-STATE CLASSES - ADD THESE */
+.dimension-cell.critical {
+    background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #dc2626 100%);
+    border: 1px solid #450a0a;
+    position: relative;
+}
+
+.dimension-cell.critical::after {
+    content: "!";
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    font-size: 8px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.8);
+}
+
+.dimension-cell.not-set {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 50%, #374151 100%);
+    border: 1px solid #374151;
+    opacity: 0.8;
+    position: relative;
+}
+
+.dimension-cell.not-set::after {
+    content: "?";
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    font-size: 8px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.8);
+}
+
+/* Enhanced tooltip styles for 4-state system */
+.dimension-cell[title*="Not Set"] {
+    cursor: help;
+}
+
+.dimension-cell[title*="Critical"] {
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(220, 38, 38, 0.4);
+}
+
+/* Make dimensions-grid-2x3 clickable */
+.dimensions-grid-2x3 {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.dimensions-grid-2x3:hover {
+    transform: scale(1.02);
+}
+
+.dimensions-grid-2x3:active {
+    transform: scale(0.98);
+}
+
+/* Update for better visual feedback */
+.dimension-cell {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.dimension-cell:hover {
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+/* =============================================================================
+   END OF 4-STATE TEAM HEALTH ADDITIONS
+   ============================================================================= */

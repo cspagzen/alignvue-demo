@@ -686,7 +686,7 @@ function analyzeInitiativeRisk(initiative) {
         }
         
         if (team.teamwork === 'at-risk') {
-            teamRiskFactors.push('Teamwork');
+            teamRiskFactors.push('Team Cohesion');
             analysis.riskScore += 1;
         }
         
@@ -1000,7 +1000,7 @@ const initiative = window.currentModalInitiative;
                             <span class="font-medium">+1 pt ${initiative ? `(${actualValues.teamHealth.vision} actual)` : ''}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span>Teamwork at-risk:</span>
+                            <span>Team Cohesion at-risk:</span>
                             <span class="font-medium">+1 pt ${initiative ? `(${actualValues.teamHealth.teamwork} actual)` : ''}</span>
                         </div>
                         <div class="flex justify-between" style="grid-column: span 2;">
@@ -1383,7 +1383,7 @@ function showTeamModal(teamName, teamData) {
         }
         
         if (teamData.teamwork === 'at-risk') {
-            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-pink);"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Teamwork Concerns: Communication and collaboration may need improvement. Consider team building or process changes.</span></div>');
+            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-pink);"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Team Cohesion Concerns: Communication and collaboration may need improvement. Consider team building or process changes.</span></div>');
         }
         
         if (teamData.autonomy === 'at-risk') {
@@ -1487,7 +1487,7 @@ function showTeamModal(teamName, teamData) {
                         </div>
                     </div>
                     
-                    <!-- Teamwork -->
+                    <!-- Team Cohesion -->
                     <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${teamData.teamwork === 'at-risk' ? 'var(--accent-red)' : 'var(--accent-green)'};">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
@@ -1498,7 +1498,7 @@ function showTeamModal(teamName, teamData) {
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                                 </svg>
                                 <div>
-                                    <div class="text-sm font-bold" style="color: var(--text-primary);">Teamwork</div>
+                                    <div class="text-sm font-bold" style="color: var(--text-primary);">Team Cohesion</div>
                                     <div class="text-xs" style="color: var(--text-secondary);">Collaboration & Communication</div>
                                 </div>
                             </div>
@@ -2197,18 +2197,18 @@ teamCard.innerHTML =
             '<div class="dimensions-grid-2x3">' +
                 // First column: C, Su
                 '<div class="grid-column">' +
-                    '<div class="dimension-cell ' + (teamData.capacity === 'at-risk' ? 'at-risk' : 'healthy') + '" title="Capacity - Workload & Resources">C</div>' +
-                    '<div class="dimension-cell ' + (teamData.support === 'at-risk' ? 'at-risk' : 'healthy') + '" title="Support - Tools & Organizational Backing">Su</div>' +
+                    '<div class="dimension-cell ' + getDimensionCellClass(teamData.capacity) + '" title="Capacity - Workload & Resources">C</div>' +
+                    '<div class="dimension-cell ' + getDimensionCellClass(teamData.support) + '" title="Support - Tools & Organizational Backing">Su</div>' +
                 '</div>' +
                 // Second column: S, T  
                 '<div class="grid-column">' +
-                    '<div class="dimension-cell ' + (teamData.skillset === 'at-risk' ? 'at-risk' : 'healthy') + '" title="Skillset - Technical Capabilities">S</div>' +
-                    '<div class="dimension-cell ' + (teamData.teamwork === 'at-risk' ? 'at-risk' : 'healthy') + '" title="Teamwork - Collaboration & Communication">T</div>' +
+                    '<div class="dimension-cell ' + getDimensionCellClass(teamData.skillset) + '" title="Skillset - Technical Capabilities">S</div>' +
+                    '<div class="dimension-cell ' + getDimensionCellClass(teamData.teamwork) + '" title="Team Cohesion - Collaboration & Communication">T</div>' +
                 '</div>' +
                 // Third column: V, A
                 '<div class="grid-column">' +
-                    '<div class="dimension-cell ' + (teamData.vision === 'at-risk' ? 'at-risk' : 'healthy') + '" title="Vision - Clarity & Alignment">V</div>' +
-                    '<div class="dimension-cell ' + (teamData.autonomy === 'at-risk' ? 'at-risk' : 'healthy') + '" title="Autonomy - Decision-making Independence">A</div>' +
+                    '<div class="dimension-cell ' + getDimensionCellClass(teamData.vision) + '" title="Vision - Clarity & Alignment">V</div>' +
+                    '<div class="dimension-cell ' + getDimensionCellClass(teamData.autonomy) + '" title="Autonomy - Decision-making Authority">A</div>' +
                 '</div>' +
             '</div>' +
         '</div>' +
@@ -4590,12 +4590,12 @@ function updateHealthCard() {
             <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Support</div>
         </div>
         
-        <!-- Teamwork -->
+        <!-- Team Cohesion -->
         <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
             <div style="flex: 1; display: flex; align-items: end; width: 100%;">
                 <div class="cursor-pointer kpi-gauge-card"
                      onclick="showHealthIndicatorModal('teamwork')"
-                     title="Teamwork Issues: ${indicatorCounts.teamwork} teams"
+                     title="Team Cohesion Issues: ${indicatorCounts.teamwork} teams"
                      style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
                             border: 1px solid #581c87;
                             width: 100%; 
@@ -4608,7 +4608,7 @@ function updateHealthCard() {
                     ${indicatorCounts.teamwork}
                 </div>
             </div>
-            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Teamwork</div>
+            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Team Cohesion</div>
         </div>
         
         <!-- Autonomy -->
@@ -7051,6 +7051,26 @@ function applyCombinedFilters() {
     }
     updateFilterChipBar();
 }
+
+function getDimensionCellClass(dimensionValue) {
+    switch(dimensionValue) {
+        case 'Healthy': 
+        case 'healthy':
+            return 'healthy';
+        case 'At Risk': 
+        case 'at-risk':
+            return 'at-risk';
+        case 'Critical': 
+        case 'critical':
+            return 'critical';
+        case null:
+        case undefined:
+        case '':
+            return 'not-set';
+        default: 
+            return 'not-set';
+    }
+}
     
 
 // Updated function to match team criteria for filtering
@@ -8269,7 +8289,7 @@ function showHealthIndicatorModal(indicator) {
         'skillset': 'Teams with Skillset Risks',
         'vision': 'Teams with Vision Risks',
         'support': 'Teams with Support Risks',
-        'teamwork': 'Teams with Teamwork Risks',
+        'teamwork': 'Teams with Team Cohesion Risks',
         'autonomy': 'Teams with Autonomy Risks'
     };
     
@@ -8364,7 +8384,7 @@ function createMiniTeamCard(teamName) {
                     ${getHealthIndicatorIcon(teamData.support)}
                 </div>
                 <div class="flex items-center justify-between text-xs">
-                    <span>Teamwork</span>
+                    <span>Team Cohesion</span>
                     ${getHealthIndicatorIcon(teamData.teamwork)}
                 </div>
                 <div class="flex items-center justify-between text-xs">
