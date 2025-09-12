@@ -1263,19 +1263,55 @@ function showRiskScoreInfoModal() {
                 <!-- Validation Risk -->
                 <div class="section">
                     <div class="section-title">Validation Risk</div>
+                    <div style="color: var(--text-secondary); margin-bottom: 12px;">
+                        Above-the-line initiatives without validation pose market and delivery alignment risks.
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; text-align: center;">
+                            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Validation Status:</div>
+                            <div style="color: ${actualValues.validation.points > 0 ? '#f59e0b' : 'var(--accent-green)'}; font-size: 18px; font-weight: 600;">
+                                ${actualValues.validation.points > 0 ? 'Not Validated' : 'Validated'}
+                            </div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; text-align: center;">
+                            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Risk Points:</div>
+                            <div style="color: ${actualValues.validation.points > 0 ? '#f59e0b' : 'var(--accent-green)'}; font-size: 18px; font-weight: 600;">${actualValues.validation.points} pts</div>
+                        </div>
+                    </div>
+                    
                     <div class="formula-box">
-                        <strong>Validation Status:</strong> ${actualValues.validation.points > 0 ? actualValues.validation.reason : 'Initiative is validated or below-the-line'}<br>
-                        <strong>Risk Points:</strong> <span style="color: ${actualValues.validation.points > 0 ? '#f59e0b' : 'var(--accent-green)'};">${actualValues.validation.points > 0 ? `${actualValues.validation.points} pts` : '0 pts'}</span>
+                        <strong>Validation Scoring:</strong><br>
+                        • Strategic initiatives above-the-line without validation = 2 points<br>
+                        • KTLO/Emergent initiatives above-the-line without validation = 1 point<br>
+                        • Below-the-line or validated initiatives = 0 points
                     </div>
                 </div>
                 
                 <!-- Priority Amplification -->
                 <div class="section">
                     <div class="section-title">Priority Amplification</div>
+                    <div style="color: var(--text-secondary); margin-bottom: 12px;">
+                        High-priority initiatives with existing risk factors receive additional scrutiny.
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; text-align: center;">
+                            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Amplification Applied:</div>
+                            <div style="color: ${actualValues.priority.applied ? '#f59e0b' : 'var(--accent-green)'}; font-size: 18px; font-weight: 600;">
+                                ${actualValues.priority.applied ? 'Yes' : 'No'}
+                            </div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; text-align: center;">
+                            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Risk Points:</div>
+                            <div style="color: ${actualValues.priority.points > 0 ? '#f59e0b' : 'var(--accent-green)'}; font-size: 18px; font-weight: 600;">${actualValues.priority.points} pts</div>
+                        </div>
+                    </div>
+                    
                     <div class="formula-box">
-                        <strong>Amplification Applied:</strong> ${actualValues.priority.applied ? 'Yes' : 'No'}<br>
-                        <strong>Logic:</strong> High-priority initiatives (Rows 1-2) with existing risk factors receive +1 point<br>
-                        <strong>Risk Points:</strong> <span style="color: ${actualValues.priority.points > 0 ? '#f59e0b' : 'var(--accent-green)'};">${actualValues.priority.points > 0 ? `${actualValues.priority.points} pts` : '0 pts'}</span>
+                        <strong>Priority Amplification Logic:</strong><br>
+                        • High-priority initiatives (Rows 1-2) with existing risk factors receive +1 point<br>
+                        • Ensures critical initiatives with risk factors get extra attention
                     </div>
                 </div>
 
