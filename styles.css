@@ -3658,7 +3658,6 @@ input[type="number"] {
 }
 
 .dimension-cell.critical::after {
-    content: "!";
     position: absolute;
     top: 1px;
     right: 2px;
@@ -3676,7 +3675,6 @@ input[type="number"] {
 }
 
 .dimension-cell.not-set::after {
-    content: "?";
     position: absolute;
     top: 1px;
     right: 2px;

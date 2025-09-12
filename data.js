@@ -168,174 +168,185 @@ const boardData = {
     ],
 
     teams: {
-    "Core Platform": {
-        capacity: "Healthy",
-        skillset: "Critical",      // Was at-risk, now Critical
-        vision: "Healthy", 
-        support: "Healthy", 
-        teamwork: "At Risk",       // Was at-risk, now At Risk
-        autonomy: "Healthy",
-        jira: { 
-            sprint: "Sprint 23", 
-            velocity: 12, 
-            utilization: 87, 
-            stories: 28, 
-            bugs: 4, 
-            blockers: 2 
+       // data.js - Board Data with Updated Team Health Dimensions
+        "Core Platform": { 
+            capacity: "At Risk",      // Green - should work already
+            skillset: "Healthy",      // Red - should work already  
+        vision: "Healthy",       // Dark red with "!" - NEW
+        support: "Healthy",            // Grey with "?" - NEW
+        teamwork: "Healthy",      // Green
+        autonomy: "Healthy",      // Grey with "?" - NEW
+            jira: { sprint: "Sprint 23", velocity: 24, utilization: 92, stories: 35, bugs: 3, blockers: 1 } 
+        },
+        
+        "User Experience": { 
+            capacity: "healthy", 
+            skillset: "healthy", 
+            vision: "at-risk", 
+            support: "healthy", 
+            teamwork: "healthy", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 18, utilization: 85, stories: 28, bugs: 4, blockers: 2 } 
+        },
+        
+        "Security": { 
+            capacity: "at-risk", 
+            skillset: "at-risk", 
+            vision: "healthy", 
+            support: "healthy", 
+            teamwork: "at-risk", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 20, utilization: 88, stories: 32, bugs: 2, blockers: 3 } 
+        },
+        
+        "Data Engineering": { 
+            capacity: "at-risk", 
+            skillset: "healthy", 
+            vision: "healthy", 
+            support: "at-risk", 
+            teamwork: "healthy", 
+            autonomy: "at-risk", 
+            jira: { sprint: "Sprint 23", velocity: 32, utilization: 98, stories: 25, bugs: 5, blockers: 2 } 
+        },
+        
+        "Analytics": { 
+            capacity: "healthy", 
+            skillset: "healthy", 
+            vision: "healthy", 
+            support: "healthy", 
+            teamwork: "healthy", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 15, utilization: 85, stories: 18, bugs: 2, blockers: 1 } 
+        },
+        
+        "Site Reliability": { 
+            capacity: "healthy", 
+            skillset: "healthy", 
+            vision: "at-risk", 
+            support: "healthy", 
+            teamwork: "at-risk", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 12, utilization: 90, stories: 22, bugs: 7, blockers: 4 } 
+        },
+        
+        "Product Management": { 
+            capacity: "healthy", 
+            skillset: "at-risk", 
+            vision: "at-risk", 
+            support: "healthy", 
+            teamwork: "healthy", 
+            autonomy: "at-risk", 
+            jira: { sprint: "Sprint 23", velocity: 8, utilization: 85, stories: 30, bugs: 6, blockers: 3 } 
+        },
+        
+        "Customer Support": { 
+            capacity: "healthy", 
+            skillset: "healthy", 
+            vision: "healthy", 
+            support: "healthy", 
+            teamwork: "healthy", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 13, utilization: 87, stories: 15, bugs: 1, blockers: 0 } 
+        },
+        
+        "Business Operations": { 
+            capacity: "at-risk", 
+            skillset: "healthy", 
+            vision: "healthy", 
+            support: "at-risk", 
+            teamwork: "healthy", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 16, utilization: 94, stories: 20, bugs: 3, blockers: 2 } 
+        },
+        
+        "Developer Relations": { 
+            capacity: "at-risk", 
+            skillset: "healthy", 
+            vision: "healthy", 
+            support: "healthy", 
+            teamwork: "at-risk", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 10, utilization: 89, stories: 24, bugs: 4, blockers: 3 } 
+        },
+        
+        "Partner Engineering": { 
+            capacity: "healthy", 
+            skillset: "at-risk", 
+            vision: "at-risk", 
+            support: "healthy", 
+            teamwork: "healthy", 
+            autonomy: "at-risk", 
+            jira: { sprint: "Sprint 23", velocity: 14, utilization: 86, stories: 28, bugs: 2, blockers: 1 } 
+        },
+        
+        "Mobile Development": { 
+            capacity: "healthy", 
+            skillset: "healthy", 
+            vision: "healthy", 
+            support: "at-risk", 
+            teamwork: "healthy", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 11, utilization: 83, stories: 22, bugs: 5, blockers: 2 } 
+        },
+        
+        "Machine Learning": { 
+            capacity: "healthy", 
+            skillset: "healthy", 
+            vision: "at-risk", 
+            support: "healthy", 
+            teamwork: "healthy", 
+            autonomy: "at-risk", 
+            jira: { sprint: "Sprint 23", velocity: 19, utilization: 91, stories: 26, bugs: 3, blockers: 4 } 
+        },
+        
+        "Claims Operations": { 
+            capacity: "at-risk", 
+            skillset: "healthy", 
+            vision: "healthy", 
+            support: "healthy", 
+            teamwork: "at-risk", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 17, utilization: 95, stories: 31, bugs: 6, blockers: 3 } 
+        },
+        
+        "Risk Management": { 
+            capacity: "healthy", 
+            skillset: "at-risk", 
+            vision: "healthy", 
+            support: "healthy", 
+            teamwork: "healthy", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 9, utilization: 82, stories: 19, bugs: 2, blockers: 1 } 
+        },
+        
+        "Actuarial": { 
+            capacity: "healthy", 
+            skillset: "healthy", 
+            vision: "healthy", 
+            support: "at-risk", 
+            teamwork: "healthy", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 7, utilization: 78, stories: 16, bugs: 1, blockers: 0 } 
+        },
+        
+        "Compliance": { 
+            capacity: "healthy", 
+            skillset: "healthy", 
+            vision: "at-risk", 
+            support: "healthy", 
+            teamwork: "healthy", 
+            autonomy: "at-risk", 
+            jira: { sprint: "Sprint 23", velocity: 6, utilization: 75, stories: 14, bugs: 2, blockers: 1 } 
+        },
+        
+        "Migration Team": { 
+            capacity: "healthy", 
+            skillset: "healthy", 
+            vision: "healthy", 
+            support: "healthy", 
+            teamwork: "healthy", 
+            autonomy: "healthy", 
+            jira: { sprint: "Sprint 23", velocity: 15, utilization: 88, stories: 25, bugs: 1, blockers: 0 } 
         }
-    },
-
-    "Data & Analytics": {
-        capacity: "At Risk",       // Was at-risk, now At Risk
-        skillset: "Healthy",
-        vision: "Critical",        // Was at-risk, now Critical  
-        support: "Healthy",
-        teamwork: "Healthy",
-        autonomy: "Critical",      // Was at-risk, now Critical
-        jira: {
-            sprint: "Sprint 23",
-            velocity: 8,
-            utilization: 92,
-            stories: 22,
-            bugs: 7,
-            blockers: 1
-        }
-    },
-
-    "Mobile Experience": {
-        capacity: "Critical",      // Was at-risk, now Critical
-        skillset: "Healthy",
-        vision: "Healthy",
-        support: "At Risk",        // Was at-risk, now At Risk  
-        teamwork: "Healthy",
-        autonomy: "Healthy",
-        jira: {
-            sprint: "Sprint 23",
-            velocity: 15,
-            utilization: 78,
-            stories: 31,
-            bugs: 3,
-            blockers: 0
-        }
-    },
-
-    "Platform Infrastructure": {
-        capacity: "Healthy",
-        skillset: "Critical",      // Was at-risk, now Critical
-        vision: "Healthy",
-        support: "Healthy",
-        teamwork: "At Risk",       // Was at-risk, now At Risk
-        autonomy: "Critical",      // Was at-risk, now Critical  
-        jira: {
-            sprint: "Sprint 23",
-            velocity: 10,
-            utilization: 95,
-            stories: 18,
-            bugs: 8,
-            blockers: 3
-        }
-    },
-
-    "Security & Compliance": {
-        capacity: "At Risk",       // Was at-risk, now At Risk
-        skillset: "Healthy",
-        vision: "Healthy",
-        support: "Critical",       // Was at-risk, now Critical
-        teamwork: "Healthy", 
-        autonomy: "Healthy",
-        jira: {
-            sprint: "Sprint 23",
-            velocity: 13,
-            utilization: 83,
-            stories: 25,
-            bugs: 2,
-            blockers: 1
-        }
-    },
-
-    "Customer Success": {
-        capacity: "Healthy",
-        skillset: "Healthy",
-        vision: "At Risk",         // Was at-risk, now At Risk  
-        support: "Healthy",
-        teamwork: "Critical",      // Was at-risk, now Critical
-        autonomy: "Healthy",
-        jira: {
-            sprint: "Sprint 23", 
-            velocity: 11,
-            utilization: 88,
-            stories: 20,
-            bugs: 5,
-            blockers: 2
-        }
-    },
-
-    "Product Design": {
-        capacity: "Critical",      // Was at-risk, now Critical
-        skillset: "At Risk",       // Was at-risk, now At Risk
-        vision: "Healthy",
-        support: "Healthy",
-        teamwork: "Healthy",
-        autonomy: "Critical",      // Was at-risk, now Critical
-        jira: {
-            sprint: "Sprint 23",
-            velocity: 14,
-            utilization: 91,
-            stories: 27,
-            bugs: 1,
-            blockers: 0
-        }
-    },
-
-    "API & Integrations": {
-        capacity: "Healthy",
-        skillset: "Healthy", 
-        vision: "Critical",        // Was at-risk, now Critical
-        support: "At Risk",        // Was at-risk, now At Risk
-        teamwork: "Healthy",
-        autonomy: "Healthy",
-        jira: {
-            sprint: "Sprint 23",
-            velocity: 9,
-            utilization: 86,
-            stories: 16,
-            bugs: 6,
-            blockers: 1
-        }
-    },
-
-    "QA & Testing": {
-        capacity: "At Risk",       // Was at-risk, now At Risk
-        skillset: "Critical",      // Was at-risk, now Critical  
-        vision: "Healthy",
-        support: "Healthy",
-        teamwork: "At Risk",       // Was at-risk, now At Risk
-        autonomy: "Healthy",
-        jira: {
-            sprint: "Sprint 23",
-            velocity: 7,
-            utilization: 94,
-            stories: 14,
-            bugs: 9,
-            blockers: 2
-        }
-    },
-
-    "DevOps & Release": {
-        capacity: "Critical",      // Was at-risk, now Critical
-        skillset: "Healthy",
-        vision: "At Risk",         // Was at-risk, now At Risk
-        support: "Critical",       // Was at-risk, now Critical
-        teamwork: "Critical",      // Was at-risk, now Critical  
-        autonomy: "At Risk",       // Was at-risk, now At Risk
-        jira: {
-            sprint: "Sprint 23",
-            velocity: 6,
-            utilization: 97,
-            stories: 12,
-            bugs: 11,
-            blockers: 4
-        }
-    }
     }
 };
