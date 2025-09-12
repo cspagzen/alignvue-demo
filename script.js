@@ -3161,32 +3161,36 @@ function showEfficiencyCalculationModal() {
             <!-- Your Current Numbers -->
             <div class="section">
                 <h3 class="section-title">Your Current Numbers</h3>
-                <div class="metric-grid">
-                    <div class="metric-item">
-                        <span class="metric-label">Total Work Items</span>
-                        <span class="metric-value">${totalItems}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Efficiency Score</span>
-                        <span class="metric-value efficiency-score">${metrics.efficiencyScore}%</span>
-                    </div>
-                    <div class="metric-item expensive-work">
-                        <span class="metric-label">Expensive Work Above Line</span>
-                        <span class="metric-value">${metrics.breakdown.expensiveWorkAboveLine} items</span>
-                    </div>
-                    <div class="metric-item expensive-work">
-                        <span class="metric-label">Expensive Work Below Line</span>
-                        <span class="metric-value">${metrics.breakdown.expensiveWorkBelowLine} items (${expensiveWastePercent}% waste)</span>
-                    </div>
-                    <div class="metric-item discovery-work">
-                        <span class="metric-label">Discovery Work Above Line</span>
-                        <span class="metric-value">${metrics.breakdown.discoveryWorkAboveLine} items (${discoveryMisallocationPercent}% misallocation)</span>
-                    </div>
-                    <div class="metric-item discovery-work">
-                        <span class="metric-label">Discovery Work Below Line</span>
-                        <span class="metric-value">${metrics.breakdown.discoveryWorkBelowLine} items</span>
-                    </div>
-                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-secondary); display: flex; justify-content: space-between; align-items: center;">
+        <span>Capacity Risk:</span>
+        <span style="color: ${actualValues.teamHealth.capacity > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.capacity} pts</span>
+    </div>
+    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-secondary); display: flex; justify-content: space-between; align-items: center;">
+        <span>Skillset Risk:</span>
+        <span style="color: ${actualValues.teamHealth.skillset > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.skillset} pts</span>
+    </div>
+    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-secondary); display: flex; justify-content: space-between; align-items: center;">
+        <span>Support Risk:</span>
+        <span style="color: ${actualValues.teamHealth.support > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.support} pts</span>
+    </div>
+    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-secondary); display: flex; justify-content: space-between; align-items: center;">
+        <span>Over-utilization (>95%):</span>
+        <span style="color: ${actualValues.teamHealth.utilization > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.utilization} pts</span>
+    </div>
+    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-secondary); display: flex; justify-content: space-between; align-items: center;">
+        <span>Vision Risk:</span>
+        <span style="color: ${actualValues.teamHealth.vision > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.vision} pts</span>
+    </div>
+    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-secondary); display: flex; justify-content: space-between; align-items: center;">
+        <span>Team Cohesion Risk:</span>
+        <span style="color: ${actualValues.teamHealth.teamwork > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.teamwork} pts</span>
+    </div>
+    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-secondary); display: flex; justify-content: space-between; align-items: center;">
+        <span>Autonomy Risk:</span>
+        <span style="color: ${actualValues.teamHealth.autonomy > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.autonomy} pts</span>
+    </div>
+</div>
             </div>
 
             <!-- How It Works -->
