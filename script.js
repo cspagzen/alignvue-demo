@@ -920,14 +920,14 @@ function analyzeInitiativeRisk(initiative) {
     // Generate recommendations based on risk factors
     if (analysis.impactedTeams.length > 0) {
         const capacityIssues = analysis.impactedTeams.filter(t => 
-            t.riskFactors.some(f => f.includes('Capacity'))
-        ).length;
-        const skillsetIssues = analysis.impactedTeams.filter(t => 
-            t.riskFactors.some(f => f.includes('Skillset'))
-        ).length;
-        const criticalIssues = analysis.impactedTeams.filter(t => 
-            t.riskFactors.some(f => f.includes('Critical'))
-        ).length;
+    t.riskFactors.some(f => typeof f === 'string' ? f.includes('Capacity') : f.name.includes('Capacity'))
+).length;
+const skillsetIssues = analysis.impactedTeams.filter(t => 
+    t.riskFactors.some(f => typeof f === 'string' ? f.includes('Skillset') : f.name.includes('Skillset'))
+).length;
+const criticalIssues = analysis.impactedTeams.filter(t => 
+    t.riskFactors.some(f => typeof f === 'string' ? f.includes('Critical') : f.state === 'Critical')
+).length;
         
         if (criticalIssues > 0) {
             analysis.recommendations.push('URGENT: Multiple teams have critical health issues requiring immediate attention.');
