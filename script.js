@@ -1188,6 +1188,14 @@ function showRiskScoreInfoModal() {
                 <div class="section">
                     <div class="section-title">Team Health Risk Factors</div>
                     
+                    <!-- Updated 4-State Scoring Info -->
+                    <div style="color: var(--text-secondary); margin-bottom: 12px;">
+                        Updated 4-State Scoring: Critical dimensions receive double points to reflect their severity.
+                        <br>• High Impact: Capacity/Skillset - 3 pts (At Risk), 6 pts (Critical)
+                        <br>• Medium Impact: Support - 2 pts (At Risk), 4 pts (Critical)
+                        <br>• Lower Impact: Vision/Cohesion/Autonomy - 1 pt (At Risk), 2 pts (Critical)
+                    </div>
+                    
                     <div class="score-breakdown">
                         <div class="score-item">
                             <span>Capacity at-risk:</span>
@@ -1213,18 +1221,10 @@ function showRiskScoreInfoModal() {
                             <span>Team Cohesion at-risk:</span>
                             <span style="color: ${actualValues.teamHealth.teamwork > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.teamwork} pts</span>
                         </div>
-                        <div class="score-item" style="grid-column: 1 / -1;">
+                        <div class="score-item">
                             <span>Autonomy at-risk:</span>
                             <span style="color: ${actualValues.teamHealth.autonomy > 0 ? '#f59e0b' : '#6b7280'}; font-weight: 600;">${actualValues.teamHealth.autonomy} pts</span>
                         </div>
-                    </div>
-                    
-                    <div style="background: #000; color: #00ff00; font-family: 'Courier New', monospace; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.4;">
-                        <strong>Updated 4-State Scoring:</strong> Critical dimensions receive double points to reflect their severity.<br>
-                        <strong>• High Impact:</strong> Capacity/Skillset - 3 pts (At Risk), 6 pts (Critical)<br>
-                        <strong>• Medium Impact:</strong> Support - 2 pts (At Risk), 4 pts (Critical)<br>
-                        <strong>• Lower Impact:</strong> Vision/Cohesion/Autonomy - 1 pt (At Risk), 2 pts (Critical)<br>
-                        <strong>• Over-utilization:</strong> 2 pts (if >95% capacity)
                     </div>
                 </div>
 
@@ -1248,7 +1248,7 @@ function showRiskScoreInfoModal() {
                         </div>
                     </div>
                     
-                    <div style="background: #000; color: #00ff00; font-family: 'Courier New', monospace; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.4;">
+                    <div class="formula-box">
                         <strong>Flagged Work Scoring:</strong><br>
                         • 50%+ flagged = 8 points<br>
                         • 25-49% flagged = 5 points<br>
