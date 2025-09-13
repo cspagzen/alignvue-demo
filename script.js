@@ -11100,230 +11100,153 @@ function calculateFlaggedCount(childIssues) {
 
 // Updated fetchJiraData function to include Key Results
 async function fetchJiraData() {
-    showLoadingState();
-    try {
-        console.log('🚀 Starting batch Jira data fetch...');
-        
-        // Your existing initiative fetch (keep as-is)
-        const response = await fetch('/api/jira', {
+    console.log('Fetching Jira data with paginated batch child queries...');
+    
+    // Get all epics first
+    const initiativesResponse = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/search',
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                endpoint: '/rest/api/3/search',
-                method: 'POST',
-                body: {
-                    jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
-                    fields: ["*all"]
-                }
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('📦 Fetched initiatives:', data.issues.length);
-
-        // Process initiatives (your existing code - keep as-is)
-        boardData.initiatives = {};
-        data.issues.forEach(issue => {
-            // ... your existing initiative processing code ...
-        });
-
-        // NEW: Fetch team health data in parallel
-        console.log('🏥 Now fetching team health data...');
-        const teamHealthResult = await fetchTeamHealthData();
-
-        if (teamHealthResult.success) {
-            // Merge team health data with existing teams
-            console.log('🔗 Merging team health data with existing teams...');
-            
-            Object.keys(teamHealthResult.data).forEach(teamName => {
-                if (boardData.teams[teamName]) {
-                    // Update existing team with Jira health data
-                    console.log(`🔄 Updating existing team: ${teamName}`);
-                    boardData.teams[teamName] = {
-                        ...boardData.teams[teamName], // Keep any existing data
-                        ...teamHealthResult.data[teamName] // Override with Jira data
-                    };
-                } else {
-                    // Add new team from Jira
-                    console.log(`➕ Adding new team from Jira: ${teamName}`);
-                    boardData.teams[teamName] = teamHealthResult.data[teamName];
-                }
-            });
-
-            // Log teams that exist in app but not in Jira TH project
-            Object.keys(boardData.teams).forEach(teamName => {
-                if (!teamHealthResult.data[teamName]) {
-                    console.log(`⚠️ Team "${teamName}" exists in app but not in Jira TH project - will need to create`);
-                }
-            });
-
-        } else {
-            console.error('❌ Team health fetch failed, using fallback data:', teamHealthResult.error);
-        }
-
-        console.log('🎯 Final merged team data:', boardData.teams);
-
-        // Continue with your existing code (OKRs, etc.)
-        // ... rest of your fetchJiraData function ...
-
-        hideLoadingState();
-        updateAllCards();
-
-    } catch (error) {
-        console.error('❌ Error in fetchJiraData:', error);
-        hideLoadingState();
-    }
-}
-
-// VALIDATION HELPER: Add this function to help debug field mappings
-function validateTeamHealthFields() {
-    console.log('🔍 Validating expected vs actual team health field values...');
-    
-    const expectedValues = ['Healthy', 'At Risk', 'Critical'];
-    
-    Object.keys(boardData.teams).forEach(teamName => {
-        const team = boardData.teams[teamName];
-        const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
-        
-        console.log(`\n📋 Team: ${teamName}`);
-        dimensions.forEach(dimension => {
-            const value = team[dimension];
-            if (value !== null && !expectedValues.includes(value)) {
-                console.warn(`⚠️ Unexpected value for ${dimension}: "${value}" (expected: ${expectedValues.join(', ')}, or null)`);
-            } else {
-                console.log(`✅ ${dimension}: ${value || 'null'}`);
+            body: {
+                jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
+                fields: ["*all"]
             }
-        });
+        })
     });
-}
 
-// NEW: Team Health Data Fetching Function
-async function fetchTeamHealthData() {
-    console.log('🏥 Fetching team health data from Jira TH project...');
+    if (!initiativesResponse.ok) {
+        const error = await initiativesResponse.json();
+        throw new Error(error.error || `HTTP ${initiativesResponse.status}`);
+    }
+
+    const initiatives = await initiativesResponse.json();
+    console.log(`Found ${initiatives.issues.length} epics`);
+
+    // Get ALL child issues with proper pagination
+    if (initiatives.issues.length > 0) {
+        const epicKeys = initiatives.issues.map(epic => epic.key);
+        const parentJQL = `parent IN ("${epicKeys.join('","')}")`;
+        
+        console.log('Fetching all child issues with pagination...');
+        
+        try {
+            let allChildIssues = [];
+            let startAt = 0;
+            const maxResults = 100;
+            let hasMoreResults = true;
+
+            // Paginate through all child issues
+            while (hasMoreResults) {
+                const childrenResponse = await fetch('/api/jira', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        endpoint: '/rest/api/3/search',
+                        method: 'POST',
+                        body: {
+                            jql: parentJQL,
+                            fields: ['parent', 'status', 'key', 'summary', 'customfield_10190', 'customfield_10021'],
+                            startAt: startAt,
+                            maxResults: maxResults
+                        }
+                    })
+                });
+
+                if (childrenResponse.ok) {
+                    const childrenData = await childrenResponse.json();
+                    allChildIssues = allChildIssues.concat(childrenData.issues || []);
+                    
+                    // Check if there are more results
+                    hasMoreResults = childrenData.issues.length === maxResults;
+                    startAt += maxResults;
+                    
+                    console.log(`Fetched ${allChildIssues.length} child issues so far...`);
+                } else {
+                    console.error('Failed to fetch child issues');
+                    break;
+                }
+            }
+
+            // Group child issues by parent
+            const childIssuesByParent = {};
+            allChildIssues.forEach(child => {
+                const parentKey = child.fields.parent.key;
+                if (!childIssuesByParent[parentKey]) {
+                    childIssuesByParent[parentKey] = [];
+                }
+                childIssuesByParent[parentKey].push(child);
+            });
+
+            // Add child issues to each epic
+            initiatives.issues.forEach(epic => {
+                epic.childIssues = childIssuesByParent[epic.key] || [];
+            });
+
+            console.log(`Linked child issues to ${Object.keys(childIssuesByParent).length} epics`);
+            
+        } catch (error) {
+            console.error('Error fetching child issues:', error);
+        }
+    }
     
+    // Fetch OKRs data
+    let okrs;
     try {
-        const response = await fetch('/api/jira', {
+        const okrsResponse = await fetch('/api/jira', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 endpoint: '/rest/api/3/search',
-                method: 'POST',
+                method: 'POST', 
                 body: {
-                    jql: 'project = TH AND issuetype = Teams ORDER BY summary ASC',
-                    fields: [
-                        "summary",
-                        "customfield_10264", // Utilization
-                        "customfield_10257", // Capacity
-                        "customfield_10258", // Skillset
-                        "customfield_10259", // Vision
-                        "customfield_10260", // Support
-                        "customfield_10261", // Team Cohesion
-                        "customfield_10262", // Autonomy
-                        "customfield_10263"  // Comments
-                    ]
+                    jql: 'project = "OKRs" ORDER BY key ASC',
+                    fields: ["*all"],
+                    maxResults: 100
                 }
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('🏥 Raw team health response:', data);
-
-        // Parse and validate team health data
-        const teamHealthMap = {};
-        let validationErrors = [];
-
-        data.issues.forEach(issue => {
-            const teamName = issue.fields.summary;
-            const fields = issue.fields;
-
-            console.log(`🔍 Processing team: ${teamName}`);
-            console.log(`📋 Raw custom fields for ${teamName}:`, {
-                utilization: fields.customfield_10264,
-                capacity: fields.customfield_10257?.value || null,
-                skillset: fields.customfield_10258?.value || null,
-                vision: fields.customfield_10259?.value || null,
-                support: fields.customfield_10260?.value || null,
-                teamCohesion: fields.customfield_10261?.value || null,
-                autonomy: fields.customfield_10262?.value || null,
-                comments: fields.customfield_10263 || null
-            });
-
-            // Validate required fields exist
-            const requiredFields = [
-                { id: 'customfield_10257', name: 'Capacity' },
-                { id: 'customfield_10258', name: 'Skillset' },
-                { id: 'customfield_10259', name: 'Vision' },
-                { id: 'customfield_10260', name: 'Support' },
-                { id: 'customfield_10261', name: 'Team Cohesion' },
-                { id: 'customfield_10262', name: 'Autonomy' },
-                { id: 'customfield_10264', name: 'Utilization' }
-            ];
-
-            requiredFields.forEach(field => {
-                if (!fields.hasOwnProperty(field.id)) {
-                    validationErrors.push(`❌ Team "${teamName}": Missing field ${field.name} (${field.id})`);
-                }
-            });
-
-            // Map to our 4-state format
-            teamHealthMap[teamName] = {
-                // Map Jira selector values to our format
-                capacity: fields.customfield_10257?.value || null,
-                skillset: fields.customfield_10258?.value || null,
-                vision: fields.customfield_10259?.value || null,
-                support: fields.customfield_10260?.value || null,
-                teamwork: fields.customfield_10261?.value || null, // Note: keeping 'teamwork' for compatibility
-                autonomy: fields.customfield_10262?.value || null,
-                
-                // Additional Jira data
-                jira: {
-                    key: issue.key,
-                    utilization: fields.customfield_10264 || 0,
-                    comments: fields.customfield_10263 || null,
-                    // Placeholder for other team metrics - we'll add these later
-                    sprint: null,
-                    velocity: null,
-                    stories: null,
-                    bugs: null,
-                    blockers: null
-                }
-            };
-        });
-
-        // Log validation results
-        if (validationErrors.length > 0) {
-            console.warn('⚠️ Team Health Field Validation Errors:');
-            validationErrors.forEach(error => console.warn(error));
-            console.warn('👆 Please check these field configurations in Jira TH project');
+        if (okrsResponse.ok) {
+            okrs = await okrsResponse.json();
+            console.log(`Found ${okrs.issues.length} OKR issues`);
         } else {
-            console.log('✅ All team health fields validated successfully');
+            console.error('Failed to fetch OKRs');
+            okrs = { issues: [] };
         }
-
-        console.log('🏥 Processed team health data:', teamHealthMap);
-        console.log(`📊 Successfully fetched ${Object.keys(teamHealthMap).length} teams from TH project`);
-
-        return {
-            success: true,
-            data: teamHealthMap,
-            errors: validationErrors
-        };
-
     } catch (error) {
-        console.error('❌ Error fetching team health data:', error.message);
-        return {
-            success: false,
-            data: {},
-            error: error.message
-        };
+        console.error('Error fetching OKRs:', error);
+        okrs = { issues: [] };
     }
+    
+    // NEW: Fetch Key Results data
+    let keyResultsData = { keyResults: [], valueHistory: [] };
+    try {
+        keyResultsData = await fetchKeyResultsData();
+        
+        // Transform and store Key Results data
+        if (keyResultsData.keyResults.length > 0) {
+            liveKeyResultsData = transformKeyResultsData(keyResultsData.keyResults, keyResultsData.valueHistory);
+            console.log(`✅ Loaded ${liveKeyResultsData.length} live Key Results`);
+        }
+    } catch (error) {
+        console.error('Error fetching Key Results:', error);
+    }
+    
+    // Fetch completed initiatives
+    let transformedCompleted = [];
+    try {
+        const completedInitiatives = await fetchCompletedInitiativesFromJira();
+        transformedCompleted = transformJiraCompletedInitiatives(completedInitiatives);
+        console.log('Completed Initiatives Found:', transformedCompleted.length);
+    } catch (error) {
+        console.error('Error fetching completed initiatives:', error);
+        transformedCompleted = [];
+    }
+
+    // CHANGE: Pass the completed initiatives instead of empty array
+    return transformJiraData(initiatives, okrs, transformedCompleted);
 }
 
 // Helper function to calculate completion from child issues
