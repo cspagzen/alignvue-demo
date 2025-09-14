@@ -1576,8 +1576,7 @@ function openJiraEpic(epicKey) {
     window.open(jiraUrl, '_blank', 'noopener,noreferrer');
 }
 
-        // Updated team modal function with new health dimensions and status levels
-// ============================================================================
+ // ============================================================================
 // ENHANCED TEAM MODAL WITH EDIT-IN-PLACE
 // ============================================================================
 
