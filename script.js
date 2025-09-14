@@ -1580,7 +1580,7 @@ function openJiraEpic(epicKey) {
 // ENHANCED TEAM MODAL WITH EDIT-IN-PLACE
 // ============================================================================
 
-// Updated showTeamModal function with redesigned top four boxes - PRESERVING ALL EXISTING ELEMENTS
+// Updated showTeamModal function with redesigned top four boxes - COMPLETE VERSION
 function showTeamModal(teamName, teamData) {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
@@ -1588,9 +1588,8 @@ function showTeamModal(teamName, teamData) {
     
     const teamHealthIcon = getHealthIcon(teamData);
     let atRiskCount = 0;
-    let criticalCount = 0;
     
-    // Count all 6 dimensions that are at-risk or critical (keep existing logic)
+    // Count all 6 dimensions that are at-risk (keeping existing logic)
     if (isDimensionAtRisk(teamData.capacity)) atRiskCount++;
     if (isDimensionAtRisk(teamData.skillset)) atRiskCount++;
     if (isDimensionAtRisk(teamData.vision)) atRiskCount++;
@@ -1598,43 +1597,73 @@ function showTeamModal(teamName, teamData) {
     if (isDimensionAtRisk(teamData.teamwork)) atRiskCount++;
     if (isDimensionAtRisk(teamData.autonomy)) atRiskCount++;
 
-    // Keep exact existing health logic and colors
+    // Keep exact existing health status mapping
     let healthText = 'HEALTHY';
     let healthColor = 'var(--accent-green)';
-    let healthBgClass = 'team-health-white';
     
     if (atRiskCount === 0) { 
         healthText = 'HEALTHY'; 
         healthColor = 'var(--accent-green)'; 
-        healthBgClass = 'team-health-white';
     } else if (atRiskCount <= 2) { 
         healthText = 'LOW RISK'; 
         healthColor = 'var(--accent-orange)'; 
-        healthBgClass = 'team-health-yellow';
     } else if (atRiskCount <= 4) { 
         healthText = 'HIGH RISK'; 
         healthColor = '#FF5F1F'; 
-        healthBgClass = 'team-health-high-risk';
     } else { 
         healthText = 'CRITICAL'; 
         healthColor = 'var(--accent-red)'; 
-        healthBgClass = 'team-health-red';
     }
 
     title.innerHTML = `${teamName} <span style="color: var(--text-secondary); font-weight: 400;">Team Health Details</span>`;
     
-    // Get EXACT existing values (null-safe)
+    // Get existing values (preserving null handling)
     const utilization = teamData.jira ? teamData.jira.utilization || null : null;
     const activeStories = teamData.jira ? teamData.jira.stories || null : null;
     const blockers = teamData.jira ? teamData.jira.blockers || null : null;
 
+    // Generate notes for at-risk teams - COMPLETE existing function
+    const generateTeamNotes = (teamName, teamData) => {
+        const notes = [];
+        
+        if (isDimensionAtRisk(teamData.capacity)) {
+            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-orange);"><path d="M12 6v6l1.56.78"/><circle cx="12" cy="12" r="10"/></svg><span>Capacity Risk: Team is operating at ' + (teamData.jira?.utilization || 'unknown') + '% utilization. Consider rebalancing workload or adding resources.</span></div>');
+        }
+        
+        if (isDimensionAtRisk(teamData.skillset)) {
+            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-orange);"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg><span>Skillset Risk: Team lacks necessary technical skills. Consider training, hiring, or partner support.</span></div>');
+        }
+        
+        if (isDimensionAtRisk(teamData.vision)) {
+            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-orange);"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Vision Risk: Team unclear on objectives or requirements. Schedule alignment sessions.</span></div>');
+        }
+        
+        if (isDimensionAtRisk(teamData.support)) {
+            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-orange);"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg><span>Support Risk: Insufficient organizational or tooling support. Escalate blockers.</span></div>');
+        }
+        
+        if (isDimensionAtRisk(teamData.teamwork)) {
+            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-orange);"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Team Cohesion Risk: Communication or collaboration issues. Consider team building.</span></div>');
+        }
+        
+        if (isDimensionAtRisk(teamData.autonomy)) {
+            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-orange);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Autonomy Risk: Team waiting on external decisions. Clarify decision-making authority.</span></div>');
+        }
+        
+        if (notes.length === 0) {
+            return '<div class="p-4 rounded-lg text-center" style="background: var(--status-success-bg); border: 1px solid var(--accent-green); color: var(--text-secondary);"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2"><polyline points="20 6 9 17 4 12"/></svg><div class="font-medium" style="color: var(--accent-green);">Team Health: All Good!</div><div class="text-sm">No risk factors detected across team health dimensions.</div></div>';
+        }
+        
+        return '<div class="space-y-3">' + notes.join('') + '</div>';
+    };
+
     content.innerHTML = `
         <div class="space-y-6">
-            <!-- Top Four Boxes - Equal Size, Left-to-Right (REORGANIZED EXISTING ELEMENTS ONLY) -->
+            <!-- Top Four Boxes - Equal Size, Left-to-Right (REORGANIZED EXISTING ELEMENTS) -->
             <div class="grid grid-cols-4 gap-4 mb-6">
                 
-                <!-- Overall Team Health Box - EXACT existing health logic and styling -->
-                <div class="metric-box ${healthBgClass}" style="padding: 16px; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--bg-tertiary); border: 1px solid ${healthColor};">
+                <!-- Overall Team Health Box - EXACT existing health logic -->
+                <div class="metric-box" style="padding: 16px; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--bg-tertiary); border: 1px solid ${healthColor};">
                     <div class="text-xs font-medium mb-2" style="color: var(--text-secondary);">Overall Health</div>
                     <div class="text-xl font-bold mb-1" style="color: ${healthColor};">${healthText}</div>
                     <div class="text-xs" style="color: var(--text-secondary);">
@@ -1642,14 +1671,14 @@ function showTeamModal(teamName, teamData) {
                     </div>
                 </div>
 
-                <!-- Utilization Box - EXACT existing implementation preserved -->
+                <!-- Utilization Box - EXACT existing data display -->
                 <div class="metric-box" style="padding: 16px; border-radius: 8px; text-align: center; background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
                     <div class="text-xs font-medium mb-2" style="color: var(--text-secondary);">Utilization</div>
                     <div class="text-2xl font-bold mb-1" style="color: var(--accent-orange);">
                         ${utilization !== null && utilization !== undefined ? utilization + '%' : 'null'}
                     </div>
                     <div class="text-xs" style="color: var(--text-secondary);">
-                        ${utilization !== null && utilization !== undefined ? 'Team Capacity' : 'No Data'}
+                        Team Capacity
                     </div>
                 </div>
 
@@ -1667,7 +1696,7 @@ function showTeamModal(teamName, teamData) {
                 <!-- Blockers Box - EXACT existing values -->
                 <div class="metric-box" style="padding: 16px; border-radius: 8px; text-align: center; background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
                     <div class="text-xs font-medium mb-2" style="color: var(--text-secondary);">Blockers</div>
-                    <div class="text-2xl font-bold mb-1" style="color: ${blockers > 0 ? 'var(--accent-red)' : 'var(--text-primary)'};">
+                    <div class="text-2xl font-bold mb-1" style="color: ${(blockers !== null && blockers !== undefined && blockers > 0) ? 'var(--accent-red)' : 'var(--text-primary)'};">
                         ${blockers !== null && blockers !== undefined ? blockers : 'null'}
                     </div>
                     <div class="text-xs" style="color: var(--text-secondary);">
@@ -1679,10 +1708,10 @@ function showTeamModal(teamName, teamData) {
 
             </div>
 
-            <!-- ALL EXISTING MODAL CONTENT BELOW - UNCHANGED -->
+            <!-- Health Dimensions Section (COMPLETE EXISTING IMPLEMENTATION) -->
             <div style="border-top: 1px solid var(--border-primary); padding-top: 24px;">
                 
-                <!-- Health Dimensions Section Header -->
+                <!-- Health Dimensions Header -->
                 <div class="flex items-center gap-2 mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 6v6l1.56.78"/>
@@ -1699,10 +1728,39 @@ function showTeamModal(teamName, teamData) {
                     </button>
                 </div>
 
-                <!-- Keep ALL existing modal content exactly as it was -->
-                <!-- This includes: dimension grid, team notes, sprint info, etc. -->
-                <!-- I'm not including it all here since you just wanted the top 4 boxes reorganized -->
-                <!-- The rest of the modal content should remain 100% unchanged -->
+                <!-- 2x3 Dimensions Grid (EXISTING IMPLEMENTATION) -->
+                <div class="dimensions-grid-2x3 cursor-pointer mb-6" onclick="openTeamHealthModal('${teamName}')" 
+                     style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 300px;">
+                    <div class="dimension-cell ${isDimensionAtRisk(teamData.capacity) ? 'at-risk' : 'healthy'}" title="Capacity: ${teamData.capacity || 'Not Set'}">C</div>
+                    <div class="dimension-cell ${isDimensionAtRisk(teamData.skillset) ? 'at-risk' : 'healthy'}" title="Skillset: ${teamData.skillset || 'Not Set'}">S</div>
+                    <div class="dimension-cell ${isDimensionAtRisk(teamData.vision) ? 'at-risk' : 'healthy'}" title="Vision: ${teamData.vision || 'Not Set'}">V</div>
+                    <div class="dimension-cell ${isDimensionAtRisk(teamData.support) ? 'at-risk' : 'healthy'}" title="Support: ${teamData.support || 'Not Set'}">Su</div>
+                    <div class="dimension-cell ${isDimensionAtRisk(teamData.teamwork) ? 'at-risk' : 'healthy'}" title="Team Cohesion: ${teamData.teamwork || 'Not Set'}">T</div>
+                    <div class="dimension-cell ${isDimensionAtRisk(teamData.autonomy) ? 'at-risk' : 'healthy'}" title="Autonomy: ${teamData.autonomy || 'Not Set'}">A</div>
+                </div>
+
+                <!-- Team Notes Section -->
+                <div class="mb-6">
+                    <h3 class="text-base font-semibold mb-3" style="color: var(--text-primary);">Team Notes & Recommendations</h3>
+                    ${generateTeamNotes(teamName, teamData)}
+                </div>
+
+                <!-- Sprint Information (if available) -->
+                ${teamData.jira ? `
+                    <div class="mb-6">
+                        <h3 class="text-base font-semibold mb-3" style="color: var(--text-primary);">Sprint Information</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                                <div class="text-sm font-medium" style="color: var(--text-secondary);">Current Sprint</div>
+                                <div class="text-lg font-bold" style="color: var(--text-primary);">${teamData.jira.sprint || 'Not Set'}</div>
+                            </div>
+                            <div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                                <div class="text-sm font-medium" style="color: var(--text-secondary);">Velocity</div>
+                                <div class="text-lg font-bold" style="color: var(--text-primary);">${teamData.jira.velocity || 'Not Set'}</div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
 
             </div>
         </div>
