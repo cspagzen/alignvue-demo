@@ -12166,8 +12166,8 @@ function renderHealthDimensionsEditor(teamData, dimensions) {
                                 </div>
                                 <select 
                                     id="${dim.key}" 
-                                    class="text-lg font-bold capitalize ${colorClass}"
-                                    style="background: transparent; border: none; color: inherit; appearance: none;"
+                                    class="px-3 py-1 rounded border text-sm"
+                                    style="background: var(--bg-secondary); border-color: var(--border-primary); color: var(--text-primary);"
                                 >
                                     <option value="">Not Set</option>
                                     <option value="Healthy" ${value === 'Healthy' ? 'selected' : ''}>Healthy</option>
@@ -12180,40 +12180,33 @@ function renderHealthDimensionsEditor(teamData, dimensions) {
                 }).join('')}
             </div>
             
-            <!-- Form Buttons -->
             <div class="flex justify-between items-center">
                 <button 
                     type="button" 
                     onclick="toggleHealthEditMode('${teamData.name}')"
-                    class="flex items-center gap-2 px-4 py-2 text-sm rounded border hover:bg-gray-50 transition-colors"
+                    class="px-4 py-2 text-sm rounded border transition-colors"
                     style="border-color: var(--border-primary); color: var(--text-secondary);"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                        <path d="m15 9-6 6"/>
-                        <path d="m9 9 6 6"/>
-                    </svg>
                     Cancel
                 </button>
                 
                 <button 
-    type="submit" 
-    class="flex items-center gap-2 px-4 py-2 text-sm rounded text-white transition-colors"
-    style="background: var(--accent-blue);"
->
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-        <path d="M3 3v5h5"/>
-        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
-        <path d="M16 16h5v5"/>
-    </svg>
-    Sync Changes
-</button>
+                    type="submit" 
+                    class="flex items-center gap-2 px-4 py-2 text-sm rounded text-white transition-colors"
+                    style="background: var(--accent-blue);"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                        <path d="M16 16h5v5"/>
+                    </svg>
+                    Sync Changes
+                </button>
             </div>
         </form>
     `;
 }
-
 function renderUtilizationEditor(teamData) {
     return `
         <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
