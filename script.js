@@ -12119,7 +12119,7 @@ function showTeamModal(teamName, teamData) {
 // TEAM HEALTH COMMENTS RENDERING
 // ============================================================================
 function renderTeamComments(teamData) {
-    const comments = teamData.jira?.comments;
+    const comments = teamData.jira?.comments ? extractTextFromADF(teamData.jira.comments) : null;
     
     if (!comments || comments.trim() === '') {
         return `
