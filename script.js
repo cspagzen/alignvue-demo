@@ -12148,7 +12148,7 @@ function renderHealthDimensionsDisplay(teamData, dimensions) {
 function renderHealthDimensionsEditor(teamData, dimensions) {
     return `
         <form id="health-update-form" onsubmit="handleHealthUpdate(event, '${teamData.name}')">
-            <div class="space-y-3 mb-4">
+            <div class="grid grid-cols-2 gap-3 mb-4">
                 ${dimensions.map(dim => `
                     <div class="flex items-center justify-between p-3 rounded-lg border" 
                          style="background: var(--bg-secondary); border-color: var(--border-primary);">
