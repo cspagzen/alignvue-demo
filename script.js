@@ -12463,14 +12463,14 @@ async function updateTeamHealthInJira(teamName, data) {
     console.log('Updating team health in Jira:', teamName, data);
     
     const fields = {
-        customfield_10264: data.utilization, // Utilization
-        customfield_10257: data.capacity ? { value: data.capacity } : null, // Capacity
-        customfield_10258: data.skillset ? { value: data.skillset } : null, // Skillset
-        customfield_10259: data.vision ? { value: data.vision } : null, // Vision
-        customfield_10260: data.support ? { value: data.support } : null, // Support
-        customfield_10261: data.teamwork ? { value: data.teamwork } : null, // Team Cohesion
-        customfield_10262: data.autonomy ? { value: data.autonomy } : null, // Autonomy
-        customfield_10263: convertTextToADF(data.comments) // Comments - ADF format
+        customfield_10264: data.utilization,
+        customfield_10257: data.capacity ? { value: data.capacity } : null,
+        customfield_10258: data.skillset ? { value: data.skillset } : null,
+        customfield_10259: data.vision ? { value: data.vision } : null,
+        customfield_10260: data.support ? { value: data.support } : null,
+        customfield_10261: data.teamwork ? { value: data.teamwork } : null,
+        customfield_10262: data.autonomy ? { value: data.autonomy } : null,
+        customfield_10263: convertTextToADF(data.comments)
     };
     
     console.log('Sending to Jira:', fields);
@@ -12485,13 +12485,35 @@ async function updateTeamHealthInJira(teamName, data) {
         })
     });
     
-    if (!response.ok) {
-        const error = await response.json();
-        console.error('Jira update failed:', error);
-        throw new Error(error.error || `HTTP ${response.status}`);
+    // Check if the response was successful (200-299 status codes)
+    if (response.ok) {
+        console.log('Jira update response was successful (status:', response.status, ')');
+        
+        try {
+            // Try to parse JSON response
+            const result = await response.json();
+            console.log('Jira response parsed successfully:', result);
+        } catch (jsonError) {
+            // JSON parsing failed, but HTTP status was OK
+            console.warn('Jira update succeeded but response JSON was malformed:', jsonError.message);
+            console.log('This is usually fine - the update likely worked despite the JSON error');
+            // Don't throw error here since the update probably succeeded
+        }
+        
+        console.log('Team health updated successfully in Jira');
+        return; // Success
     }
     
-    console.log('Team health updated successfully in Jira');
+    // If we get here, the HTTP status was not OK
+    console.error('Jira update failed with status:', response.status);
+    
+    try {
+        const error = await response.json();
+        throw new Error(error.error || `HTTP ${response.status}`);
+    } catch (jsonError) {
+        // Could not parse error response either
+        throw new Error(`Jira update failed with status ${response.status} (could not parse error details)`);
+    }
 }
 
 async function createTeamInJira(teamName, healthData) {
@@ -12805,26 +12827,31 @@ async function submitHealthChanges() {
             Object.assign(teamData, formData);
             if (teamData.jira) {
                 teamData.jira.utilization = formData.utilization;
-                // Store comments as plain text in local data
                 teamData.jira.comments = formData.comments;
             }
         }
         
-        // Try to sync to Jira (with ADF conversion for comments)
+        // Try to sync to Jira
         if (typeof updateTeamHealthInJira === 'function') {
             try {
                 await updateTeamHealthInJira(teamName, formData);
                 console.log('Successfully synced to Jira');
+                // Exit edit mode
+                toggleHealthEditMode(teamName);
+                // Show success message
+                showTemporarySuccess('Changes saved and synced to Jira successfully!');
             } catch (jiraError) {
-                console.error('Jira sync failed, but local data updated:', jiraError);
-                alert('Changes saved locally. Jira sync failed: ' + jiraError.message);
+                console.error('Jira sync failed:', jiraError);
+                // Exit edit mode anyway since local data is updated
+                toggleHealthEditMode(teamName);
+                // Show partial success message
+                showTemporaryWarning('Changes saved locally, but Jira sync had issues. Data may still be synced - please refresh to check.');
             }
+        } else {
+            // No Jira sync function
+            toggleHealthEditMode(teamName);
+            showTemporarySuccess('Changes saved locally!');
         }
-        
-        // Exit edit mode
-        toggleHealthEditMode(teamName);
-        
-        console.log('Team health updated successfully');
         
     } catch (error) {
         console.error('Error updating team health:', error);
@@ -12852,6 +12879,41 @@ function convertTextToADF(text) {
             }
         ]
     };
+}
+
+function showTemporarySuccess(message) {
+    const notification = createNotification(message, 'success');
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+function showTemporaryWarning(message) {
+    const notification = createNotification(message, 'warning');
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 5000);
+}
+
+function createNotification(message, type) {
+    const div = document.createElement('div');
+    const bgColor = type === 'success' ? 'var(--accent-green)' : 'var(--accent-orange)';
+    
+    div.innerHTML = message;
+    div.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 10000;
+        max-width: 300px;
+        font-size: 14px;
+        line-height: 1.4;
+    `;
+    
+    return div;
 }
 
         init();
