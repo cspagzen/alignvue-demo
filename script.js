@@ -12030,14 +12030,14 @@ function showTeamModal(teamName, teamData) {
                 </div>
                 
                 <!-- Active Stories -->
-                <div class="bg-gray-800 p-4 rounded-lg text-center">
-                    <div class="text-white text-2xl font-bold">${teamData.jira?.stories || 'null'}</div>
+                <div class="bg-gray-800 p-4 rounded-lg text-center flex flex-col items-center justify-center">
+                    <div class="text-white text-3xl font-bold">${teamData.jira?.stories || 'null'}</div>
                     <div class="text-gray-400 text-sm">Active Stories</div>
                 </div>
                 
                 <!-- Blockers -->
-                <div class="bg-gray-800 p-4 rounded-lg text-center">
-                    <div class="text-white text-2xl font-bold">${teamData.jira?.blockers || 'null'}</div>
+                <div class="bg-gray-800 p-4 rounded-lg text-center flex flex-col items-center justify-center">
+                    <div class="text-white text-3xl font-bold">${teamData.jira?.blockers || 'null'}</div>
                     <div class="text-gray-400 text-sm">Blockers</div>
                 </div>
             </div>
