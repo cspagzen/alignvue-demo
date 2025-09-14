@@ -1590,157 +1590,96 @@ async function showTeamModal(teamName, teamData) {
         return;
     }
     
-    // Show loading state immediately
-    title.innerHTML = `${teamName} <span style="color: var(--text-secondary); font-size: 14px;">Loading...</span>`;
+    // Fetch live data from Jira and merge with local data
+    const jiraData = await fetchTeamDataFromJira(teamName);
+    if (jiraData) {
+        // Merge Jira data with local data, prioritizing Jira for health dimensions and comments
+        teamData = {
+            ...teamData,
+            ...jiraData,
+            jira: {
+                ...teamData.jira,
+                utilization: jiraData.utilization || teamData.jira?.utilization,
+                comments: jiraData.comments || teamData.jira?.comments
+            }
+        };
+        
+        // Update local cache with fresh data
+        boardData.teams[teamName] = teamData;
+    }
+    
+    // Set modal title
+    title.innerHTML = `${teamName} <span style="color: var(--text-secondary); font-size: 14px;">Team Health Details</span>`;
+    
+    // Calculate overall health using EXISTING function
+    const overallHealth = getTeamOverallHealth(teamData);
+    
+    // Build the modal content using EXISTING styling
     content.innerHTML = `
-        <div class="flex items-center justify-center py-8">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span class="ml-3 text-sm" style="color: var(--text-secondary);">Fetching latest team health data...</span>
+        <div class="space-y-6">
+            <!-- Overall Health -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-lg font-bold" style="color: var(--accent-${overallHealth.toLowerCase().replace(' ', '-')});">
+                        ${overallHealth}
+                    </div>
+                    <div class="text-sm" style="color: var(--text-secondary);">Overall Health</div>
+                </div>
+                <button 
+                    id="edit-team-health" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    onclick="enableTeamHealthEditing('${teamName}')"
+                >
+                    Edit
+                </button>
+            </div>
+            
+            <!-- Health Dimensions Grid -->
+            <div>
+                <h3 class="font-bold mb-3" style="color: var(--text-primary);">Health Dimensions</h3>
+                ${generateTeamHealthMatrix(teamData)}
+            </div>
+            
+            <!-- Utilization -->
+            <div>
+                <h3 class="font-bold mb-3" style="color: var(--text-primary);">Utilization</h3>
+                <div class="text-2xl font-bold" style="color: var(--accent-blue);">
+                    ${teamData.jira.utilization || 0}%
+                </div>
+            </div>
+            
+            <!-- Health Insights -->
+            <div>
+                <h3 class="font-bold mb-3" style="color: var(--text-primary);">Health Insights</h3>
+                <div class="space-y-2" style="color: var(--text-secondary);">
+                    ${generateHealthInsights(teamData)}
+                </div>
+            </div>
+            
+            <!-- Team Comments - FIXED -->
+            <div>
+                <h3 class="font-bold mb-3" style="color: var(--text-primary);">Team Comments</h3>
+                <div id="team-comments-container">
+                    ${renderTeamComments(teamData, false)}
+                </div>
+            </div>
         </div>
     `;
+    
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
     
-    try {
-        // Fetch live data from Jira and merge with local data
-        console.log('🔍 [DEBUG] Fetching fresh data for team:', teamName);
-        const jiraData = await fetchTeamDataFromJira(teamName);
-        
-        if (jiraData) {
-            console.log('✅ [DEBUG] Successfully got Jira data, merging...');
-            // Merge Jira data with local data, prioritizing Jira for health dimensions and comments
-            teamData = {
-                ...teamData,
-                ...jiraData,
-                jira: {
-                    ...teamData.jira,
-                    utilization: jiraData.utilization || teamData.jira?.utilization,
-                    comments: jiraData.comments || teamData.jira?.comments // CRITICAL: Ensure comments are preserved
-                }
-            };
-            
-            // Update local cache with fresh data
-            boardData.teams[teamName] = teamData;
-            console.log('🔍 [DEBUG] Updated team data with comments:', teamData.comments || teamData.jira?.comments);
-        } else {
-            console.warn('⚠️ [DEBUG] No Jira data found, using local data');
+    // Focus the close button for immediate keyboard navigation
+    setTimeout(() => {
+        const closeButton = modal.querySelector('button');
+        if (closeButton) {
+            closeButton.focus();
         }
-        
-        // Set modal title
-        title.innerHTML = `${teamName} <span style="color: var(--text-secondary); font-size: 14px;">Team Health Details</span>`;
-        
-        // Calculate overall health with null-aware logic
-        const overallHealth = calculateOverallTeamHealth(teamData);
-        const overallHealthClass = getOverallHealthClass(overallHealth);
-        
-        // Build the modal content with responsive design for 1600x900 baseline
-        content.innerHTML = `
-            <div class="space-y-6">
-                <!-- Overall Health Status -->
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="text-lg font-bold ${overallHealthClass}" style="margin-bottom: 4px;">
-                            ${overallHealth}
-                        </div>
-                        <div class="text-sm" style="color: var(--text-secondary);">
-                            Overall Health Status
-                        </div>
-                    </div>
-                    <button 
-                        id="edit-team-health" 
-                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                        onclick="enableTeamHealthEditing('${teamName}')"
-                    >
-                        Edit
-                    </button>
-                </div>
-                
-                <!-- Health Dimensions Grid - Optimized for 1600x900 -->
-                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4" style="min-height: 200px;">
-                    ${renderHealthDimension('Capacity', 'Workload & Resources', teamData.capacity)}
-                    ${renderHealthDimension('Support', 'Tools & Org Backing', teamData.support)}
-                    ${renderHealthDimension('Skillset', 'Technical Capabilities', teamData.skillset)}
-                    ${renderHealthDimension('Team Cohesion', 'Collaboration & Communication', teamData.teamwork)}
-                    ${renderHealthDimension('Vision', 'Clarity & Alignment', teamData.vision)}
-                    ${renderHealthDimension('Autonomy', 'Decision-making Authority', teamData.autonomy)}
-                </div>
-                
-                <!-- Utilization -->
-                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="font-medium" style="color: var(--text-primary);">Utilization</span>
-                        <span class="text-2xl font-bold" style="color: var(--accent-blue);">
-                            ${teamData.jira?.utilization || teamData.utilization || 0}%
-                        </span>
-                    </div>
-                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div 
-                            class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                            style="width: ${Math.min(100, teamData.jira?.utilization || teamData.utilization || 0)}%"
-                        ></div>
-                    </div>
-                </div>
-                
-                <!-- Health Insights -->
-                <div>
-                    <h3 class="font-bold mb-3" style="color: var(--text-primary);">
-                        <svg class="inline w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Health Insights
-                    </h3>
-                    <div class="space-y-2" style="color: var(--text-secondary);">
-                        ${generateHealthInsights(teamData)}
-                    </div>
-                </div>
-                
-                <!-- Team Comments Section - FIXED -->
-                <div>
-                    <h3 class="font-bold mb-3" style="color: var(--text-primary);">
-                        <svg class="inline w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                        </svg>
-                        Team Comments
-                    </h3>
-                    <div id="team-comments-container" class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg min-h-[100px]">
-                        ${renderTeamComments(teamData, false)}
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Focus the close button for accessibility
-        setTimeout(() => {
-            const closeButton = modal.querySelector('button[onclick*="closeModal"]') || modal.querySelector('.modal-close');
-            if (closeButton) {
-                closeButton.focus();
-            }
-        }, 100);
-        
-        announceToScreenReader(`Opened team health details for ${teamName}`);
-        
-    } catch (error) {
-        console.error('❌ [DEBUG] Error in showTeamModal:', error);
-        title.innerHTML = `${teamName} <span style="color: var(--accent-red); font-size: 14px;">Error Loading</span>`;
-        content.innerHTML = `
-            <div class="text-center py-8">
-                <div class="text-red-600 mb-4">
-                    <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Failed to load team health data
-                </div>
-                <p class="text-sm text-gray-600">Please check your connection and try again.</p>
-                <button 
-                    onclick="closeModal(); showTeamModal('${teamName}', boardData.teams['${teamName}'])" 
-                    class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                    Retry
-                </button>
-            </div>
-        `;
-    }
+    }, 100);
+    
+    announceToScreenReader(`Opened details for ${teamName} team`);
 }
+
 
 // ============================================================================
 // ENHANCED TEAM HEALTH CALCULATION (4-STATE SUPPORT)
@@ -12619,12 +12558,13 @@ async function fetchTeamDataFromJira(teamName) {
     console.log('🔍 [DEBUG] Starting fetchTeamDataFromJira for team:', teamName);
     
     try {
+        // ONLY FIX: Remove the problematic quotes and escaping
+        // Use exact match instead of text search to avoid quote issues
         const requestBody = {
             endpoint: '/rest/api/3/search',
             method: 'POST',
             body: {
-                // FIXED: Removed extra escaping from JQL - use single quotes or no quotes
-                jql: `project = TH AND issuetype = Teams AND summary ~ "${teamName}"`,
+                jql: `project = TH AND issuetype = Teams AND summary = "${teamName}"`,
                 fields: [
                     'customfield_10257', // Capacity
                     'customfield_10258', // Skillset  
@@ -12638,7 +12578,7 @@ async function fetchTeamDataFromJira(teamName) {
             }
         };
         
-        console.log('🔍 [DEBUG] Request body:', JSON.stringify(requestBody, null, 2));
+        console.log('🔍 [DEBUG] Fixed JQL (exact match):', requestBody.body.jql);
         
         const response = await fetch('/api/jira', {
             method: 'POST',
@@ -12659,7 +12599,7 @@ async function fetchTeamDataFromJira(teamName) {
         
         if (data.issues && data.issues.length > 0) {
             const issue = data.issues[0];
-            console.log('🔍 [DEBUG] Found issue:', issue.key, issue.fields?.summary);
+            console.log('🔍 [DEBUG] Found issue:', issue.key);
             
             // Focus on the comments field specifically
             const commentsField = issue.fields.customfield_10263;
@@ -12680,7 +12620,7 @@ async function fetchTeamDataFromJira(teamName) {
             return processedData;
             
         } else {
-            console.log('❌ [DEBUG] No issues found for team:', teamName);
+            console.log('⚠️ [DEBUG] No issues found for team:', teamName);
             return null;
         }
         
@@ -12690,15 +12630,9 @@ async function fetchTeamDataFromJira(teamName) {
     }
 }
 
+
 function renderTeamComments(teamData, isEditMode = false) {
-    console.log('🔍 [DEBUG] renderTeamComments called with:', { 
-        isEditMode, 
-        comments: teamData.comments, 
-        jiraComments: teamData.jira?.comments 
-    });
-    
     if (isEditMode) {
-        // Get comments from either direct property or jira object
         const currentComments = teamData.comments || teamData.jira?.comments || '';
         return `
             <textarea 
@@ -12710,11 +12644,8 @@ function renderTeamComments(teamData, isEditMode = false) {
             >${currentComments}</textarea>
         `;
     } else {
-        // Display mode - check both possible locations for comments
         const comments = teamData.comments || teamData.jira?.comments || '';
-        console.log('🔍 [DEBUG] Final comments for display:', comments);
-        
-        if (comments && comments.trim()) {
+        if (comments.trim()) {
             return `<div class="text-sm leading-relaxed" style="color: var(--text-primary);">${comments}</div>`;
         } else {
             return `<div class="text-sm italic" style="color: var(--text-secondary);">No comments added yet. Click Edit to add team notes.</div>`;
