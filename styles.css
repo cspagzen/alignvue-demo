@@ -3854,3 +3854,141 @@ input[type="number"] {
     scrollbar-width: auto;
     scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
+
+/* ===============================================================================
+   TEAM HEALTH MODAL SYSTEM STYLES
+   Add this section to your styles.css file
+   ============================================================================= */
+
+/* 4-State Dimension Cell Classes */
+.dimension-cell.critical {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+    border: 1px solid #7f1d1d;
+    position: relative;
+}
+
+.dimension-cell.critical::after {
+    content: "!";
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    font-size: 8px;
+    color: white;
+    font-weight: bold;
+}
+
+.dimension-cell.not-set {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 50%, #374151 100%);
+    border: 1px solid #374151;
+    opacity: 0.7;
+    position: relative;
+}
+
+.dimension-cell.not-set::after {
+    content: "?";
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    font-size: 8px;
+    color: white;
+    font-weight: bold;
+}
+
+/* Update existing dimension cells to be clickable */
+.dimensions-grid-2x3 {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dimensions-grid-2x3:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Team Health Modal Specific Styles */
+.team-health-select {
+    transition: all 0.2s ease;
+}
+
+.team-health-select:focus {
+    border-color: var(--accent-primary) !important;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+}
+
+.sync-status {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+}
+
+.sync-status.show {
+    display: flex;
+}
+
+.sync-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.animate-spin {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Enhanced dimension cell tooltips */
+.dimension-cell[title] {
+    cursor: help;
+}
+
+.dimension-cell[title]:hover {
+    opacity: 0.9;
+    transform: scale(1.1);
+}
+
+/* Modal form enhancements */
+.team-health-form .grid {
+    gap: 1rem;
+}
+
+.team-health-form label {
+    font-weight: 500;
+}
+
+.team-health-form select option {
+    padding: 0.5rem;
+}
+
+/* Status indicator styles */
+.health-status-display {
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.health-status-healthy {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid #10b981;
+}
+
+.health-status-at-risk {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid #f59e0b;
+}
+
+.health-status-critical {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #ef4444;
+}
+
+.health-status-not-set {
+    background: rgba(107, 114, 128, 0.1);
+    border: 1px solid #6b7280;
+}
