@@ -12942,12 +12942,12 @@ async function submitHealthChanges() {
         } catch (refreshError) {
             console.error('Both sync and manual refresh failed:', refreshError);
             
-            // Still try to close the modal gracefully
-            toggleHealthEditMode(teamName);
-            const modal = document.getElementById('team-modal');
-            if (modal && modal.classList.contains('show')) {
-                closeModal();
+            // Hide overlay and return to view mode on error
+            if (syncOverlay && syncOverlay.hide) {
+                syncOverlay.hide();
             }
+            
+            toggleHealthEditMode(teamName); // Exit edit mode, stay in modal
             
             // Only show error dialog for truly critical failures
             alert('Unable to sync changes to Jira. Please check your connection and try again.');
