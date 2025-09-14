@@ -12022,8 +12022,8 @@ function showTeamModal(teamName, teamData) {
                 <div class="grid grid-cols-1 gap-3">
                     <!-- Utilization Chart -->
                     <div id="utilization-container" class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                        <div style="width: 140px; height: 140px; margin: 0 auto;">
-                            <canvas id="utilization-chart" width="140" height="140"></canvas>
+                        <div style="width: 120px; height: 120px; margin: 0 auto;">
+                            <canvas id="utilization-chart" width="120" height="120"></canvas>
                         </div>
                         <div class="text-base mt-2" style="color: var(--text-secondary);">Utilization</div>
                     </div>
@@ -12146,40 +12146,77 @@ function renderHealthDimensionsDisplay(teamData, dimensions) {
 }
 
 function renderHealthDimensionsEditor(teamData, dimensions) {
-    return dimensions.map(dim => {
-        const value = teamData[dim.key];
-        const colorClass = getDimensionColorClass(value);
-        const borderColor = getDimensionBorderColor(value);
-        
-        return `
-            <div class="p-4 rounded-lg border" style="background: var(--bg-tertiary); border-color: ${borderColor};">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        ${getDimensionIcon(dim.icon, borderColor)}
-                        <div>
-                            <div class="text-sm font-bold" style="color: var(--text-primary);">${dim.label}</div>
-                            <div class="text-xs" style="color: var(--text-secondary);">${dim.desc}</div>
+    return `
+        <form id="health-update-form" onsubmit="handleHealthUpdate(event, '${teamData.name}')">
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                ${dimensions.map(dim => {
+                    const value = teamData[dim.key];
+                    const colorClass = getDimensionColorClass(value);
+                    const borderColor = getDimensionBorderColor(value);
+                    
+                    return `
+                        <div class="p-4 rounded-lg border" style="background: var(--bg-tertiary); border-color: ${borderColor};">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    ${getDimensionIcon(dim.icon, borderColor)}
+                                    <div>
+                                        <div class="text-sm font-bold" style="color: var(--text-primary);">${dim.label}</div>
+                                        <div class="text-xs" style="color: var(--text-secondary);">${dim.desc}</div>
+                                    </div>
+                                </div>
+                                <select 
+                                    id="${dim.key}" 
+                                    class="text-lg font-bold capitalize ${colorClass}"
+                                    style="background: transparent; border: none; color: inherit; appearance: none;"
+                                >
+                                    <option value="">Not Set</option>
+                                    <option value="Healthy" ${value === 'Healthy' ? 'selected' : ''}>Healthy</option>
+                                    <option value="At Risk" ${value === 'At Risk' ? 'selected' : ''}>At Risk</option>
+                                    <option value="Critical" ${value === 'Critical' ? 'selected' : ''}>Critical</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <select 
-                        id="${dim.key}" 
-                        class="text-lg font-bold capitalize ${colorClass}"
-                        style="background: transparent; border: none; color: inherit;"
-                    >
-                        <option value="">Not Set</option>
-                        <option value="Healthy" ${value === 'Healthy' ? 'selected' : ''}>Healthy</option>
-                        <option value="At Risk" ${value === 'At Risk' ? 'selected' : ''}>At Risk</option>
-                        <option value="Critical" ${value === 'Critical' ? 'selected' : ''}>Critical</option>
-                    </select>
-                </div>
+                    `;
+                }).join('')}
             </div>
-        `;
-    }).join('');
+            
+            <!-- Form Buttons -->
+            <div class="flex justify-between items-center">
+                <button 
+                    type="button" 
+                    onclick="toggleHealthEditMode('${teamData.name}')"
+                    class="flex items-center gap-2 px-4 py-2 text-sm rounded border hover:bg-gray-50 transition-colors"
+                    style="border-color: var(--border-primary); color: var(--text-secondary);"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                        <path d="m15 9-6 6"/>
+                        <path d="m9 9 6 6"/>
+                    </svg>
+                    Cancel
+                </button>
+                
+                <button 
+    type="submit" 
+    class="flex items-center gap-2 px-4 py-2 text-sm rounded text-white transition-colors"
+    style="background: var(--accent-blue);"
+>
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+        <path d="M16 16h5v5"/>
+    </svg>
+    Sync Changes
+</button>
+            </div>
+        </form>
+    `;
 }
 
 function renderUtilizationEditor(teamData) {
     return `
-        <div class="bg-gray-800 p-4 rounded-lg text-center">
+        <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
             <div class="mb-2">
                 <input 
                     type="number" 
@@ -12187,16 +12224,16 @@ function renderUtilizationEditor(teamData) {
                     min="0" 
                     max="150" 
                     value="${teamData.jira?.utilization || ''}"
-                    class="w-16 bg-gray-700 text-white text-center text-xl font-bold border border-gray-600 rounded"
+                    class="w-20 text-center text-xl font-bold border-2 rounded focus:outline-none focus:ring-2 transition-all"
+                    style="background: var(--bg-primary); color: var(--text-primary); border-color: var(--accent-blue); focus:border-color: var(--accent-blue); focus:ring-color: rgba(59, 130, 246, 0.3);"
                     placeholder="--"
                 />
-                <div class="text-sm text-gray-400 mt-1">%</div>
+                <div class="text-sm mt-1" style="color: var(--text-secondary);">%</div>
             </div>
-            <div class="text-white text-sm">Utilization</div>
+            <div class="text-sm" style="color: var(--text-secondary);">Utilization</div>
         </div>
     `;
 }
-
 // ============================================================================
 // EDIT MODE TOGGLE FUNCTIONALITY
 // ============================================================================
