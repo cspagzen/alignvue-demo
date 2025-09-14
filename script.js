@@ -12399,37 +12399,60 @@ async function handleHealthUpdate(event, teamName) {
     };
     
     try {
-        console.log('Updating team health for:', teamName, formData);
+        console.log('🔍 Debug: Updating team health for:', teamName);
+        console.log('🔍 Debug: Form data:', formData);
+        console.log('🔍 Debug: Team data before update:', boardData.teams[teamName]);
         
-        // Update in Jira (if updateTeamHealthInJira function exists)
+        // Check if updateTeamHealthInJira function exists
         if (typeof updateTeamHealthInJira === 'function') {
+            console.log('🔍 Debug: updateTeamHealthInJira function exists, calling it...');
             await updateTeamHealthInJira(teamName, formData);
+            console.log('✅ Debug: Jira update completed');
+        } else {
+            console.warn('⚠️ Debug: updateTeamHealthInJira function does not exist');
+            console.log('💡 Debug: Available functions:', Object.getOwnPropertyNames(window).filter(name => name.includes('update') || name.includes('jira') || name.includes('health')));
         }
         
         // Update local data
         const teamData = boardData.teams[teamName];
         if (teamData) {
+            console.log('🔍 Debug: Updating local team data...');
             Object.assign(teamData, formData);
-            teamData.jira.utilization = formData.utilization;
-            teamData.jira.comments = formData.comments;
+            if (teamData.jira) {
+                teamData.jira.utilization = formData.utilization;
+                teamData.jira.comments = formData.comments;
+            }
+            console.log('🔍 Debug: Team data after update:', teamData);
+        } else {
+            console.error('❌ Debug: Team not found in boardData.teams:', teamName);
         }
         
-        // Refresh UI (if updateUIWithLiveData function exists)
+        // Refresh UI
         if (typeof updateUIWithLiveData === 'function') {
+            console.log('🔍 Debug: Refreshing UI...');
             await updateUIWithLiveData();
+        } else {
+            console.warn('⚠️ Debug: updateUIWithLiveData function does not exist');
         }
         
         // Exit edit mode
+        console.log('🔍 Debug: Exiting edit mode...');
         toggleHealthEditMode(teamName);
         
-        console.log('Team health updated successfully');
+        console.log('✅ Team health updated successfully');
         
     } catch (error) {
-        console.error('Error updating team health:', error);
-        alert('Error saving changes. Please try again.');
+        console.error('❌ Error updating team health:', error);
+        console.error('❌ Error stack:', error.stack);
+        
+        // Show a more specific error message
+        if (error.message.includes('updateTeamHealthInJira')) {
+            alert('Error syncing to Jira. Changes saved locally but may not be synced to Jira.');
+        } else {
+            alert('Error saving changes: ' + error.message);
+        }
     }
 }
-
 async function updateTeamHealthInJira(teamName, healthData) {
     // First, find the team in Jira TH project
     const searchResponse = await fetch('/api/jira', {
@@ -12769,13 +12792,10 @@ function exitEditMode() {
 async function submitHealthChanges() {
     const teamName = window.currentEditingTeam;
     if (teamName) {
-        // Create a fake event object for handleHealthUpdate
-        const fakeEvent = {
-            preventDefault: () => {}
-        };
+        const fakeEvent = { preventDefault: () => {} };
         
-        // Call the existing handleHealthUpdate function
-        await handleHealthUpdate(fakeEvent, teamName);
+        // Use simple version for testing
+        await handleHealthUpdateSimple(fakeEvent, teamName);
     }
 }
 
