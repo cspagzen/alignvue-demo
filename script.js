@@ -11263,7 +11263,7 @@ async function fetchTeamHealthData() {
                 endpoint: '/rest/api/3/search',
                 method: 'POST',
                 body: {
-                    jql: 'project = TH AND issuetype = Teams ORDER BY summary ASC',
+                    jql: 'project = TH AND issuetype = Team ORDER BY summary ASC',
                     fields: [
                         "summary",
                         "key",
@@ -11494,6 +11494,51 @@ function validateTeamHealthFields() {
             }
         });
     });
+}
+
+// DEBUG: Discover the correct issue type name in TH project
+async function discoverTHIssueTypes() {
+    console.log('🕵️ Discovering issue types in TH project...');
+    
+    try {
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: 'project = TH',
+                    fields: ["summary", "key", "issuetype"]
+                }
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ TH project accessible');
+            console.log('📊 Found', data.total, 'issues in TH project');
+            
+            // Extract unique issue types
+            const issueTypes = [...new Set(data.issues.map(i => i.fields.issuetype.name))];
+            console.log('🏷️ Available issue types in TH project:', issueTypes);
+            
+            // Show some examples
+            console.log('📋 Sample issues with their types:');
+            data.issues.slice(0, 5).forEach(issue => {
+                console.log(`  ${issue.key}: "${issue.fields.summary}" [${issue.fields.issuetype.name}]`);
+            });
+            
+            return issueTypes;
+        } else {
+            const errorText = await response.text();
+            console.error('❌ Cannot access TH project:', errorText);
+            return [];
+        }
+    } catch (error) {
+        console.error('❌ Error discovering issue types:', error);
+        return [];
+    }
 }
 
 // DEBUG: Simple test to check if we can reach TH project at all
