@@ -12470,11 +12470,10 @@ async function updateTeamHealthInJira(teamName, data) {
         customfield_10260: data.support ? { value: data.support } : null, // Support
         customfield_10261: data.teamwork ? { value: data.teamwork } : null, // Team Cohesion
         customfield_10262: data.autonomy ? { value: data.autonomy } : null, // Autonomy
-        customfield_10263: convertTextToADF(data.comments) // Comments - FIXED TO USE ADF FORMAT
+        customfield_10263: convertTextToADF(data.comments) // Comments - ADF format
     };
     
-    console.log('Fields to update:', fields);
-    console.log('Comments ADF:', fields.customfield_10263);
+    console.log('Sending to Jira:', fields);
     
     const response = await fetch('/api/jira', {
         method: 'POST',
@@ -12780,11 +12779,56 @@ function exitEditMode() {
 
 async function submitHealthChanges() {
     const teamName = window.currentEditingTeam;
-    if (teamName) {
-        const fakeEvent = { preventDefault: () => {} };
+    if (!teamName) {
+        alert('No team selected for editing');
+        return;
+    }
+    
+    try {
+        // Collect form data
+        const formData = {
+            capacity: document.getElementById('capacity').value || null,
+            skillset: document.getElementById('skillset').value || null,
+            vision: document.getElementById('vision').value || null,
+            support: document.getElementById('support').value || null,
+            teamwork: document.getElementById('teamwork').value || null,
+            autonomy: document.getElementById('autonomy').value || null,
+            utilization: parseInt(document.getElementById('utilization-input').value) || 0,
+            comments: document.getElementById('team-comments').value || null
+        };
         
-        // Use simple version for testing
-        await handleHealthUpdateSimple(fakeEvent, teamName);
+        console.log('Submitting health changes for:', teamName, formData);
+        
+        // Update local data
+        const teamData = boardData.teams[teamName];
+        if (teamData) {
+            Object.assign(teamData, formData);
+            if (teamData.jira) {
+                teamData.jira.utilization = formData.utilization;
+                // Store comments as plain text in local data
+                teamData.jira.comments = formData.comments;
+            }
+        }
+        
+        // Try to sync to Jira (with ADF conversion for comments)
+        if (typeof updateTeamHealthInJira === 'function') {
+            try {
+                await updateTeamHealthInJira(teamName, formData);
+                console.log('Successfully synced to Jira');
+            } catch (jiraError) {
+                console.error('Jira sync failed, but local data updated:', jiraError);
+                alert('Changes saved locally. Jira sync failed: ' + jiraError.message);
+            }
+        }
+        
+        // Exit edit mode
+        toggleHealthEditMode(teamName);
+        
+        console.log('Team health updated successfully');
+        
+    } catch (error) {
+        console.error('Error updating team health:', error);
+        alert('Error saving changes: ' + error.message);
     }
 }
 
@@ -12793,7 +12837,6 @@ function convertTextToADF(text) {
         return null;
     }
     
-    // Convert plain text to Atlassian Document Format (ADF)
     return {
         type: "doc",
         version: 1,
@@ -12810,6 +12853,5 @@ function convertTextToADF(text) {
         ]
     };
 }
-
 
         init();
