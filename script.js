@@ -12010,7 +12010,7 @@ function showTeamModal(teamName, teamData) {
         <div class="space-y-6">
             <!-- Top Section: Status Overview -->
             <div class="grid grid-cols-4 gap-4">
-                <!-- Overall Team Health -->
+                <!-- Critical Status Alert -->
                 <div class="p-4 rounded-lg" style="background: var(--accent-red); color: white;">
                     <div class="flex items-center gap-2 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -12033,13 +12033,13 @@ function showTeamModal(teamName, teamData) {
                 
                 <!-- Active Stories -->
                 <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="text-2xl font-bold" style="color: var(--text-primary);">null</div>
+                    <div class="text-3xl font-bold mb-1" style="color: var(--text-primary);">null</div>
                     <div class="text-sm" style="color: var(--text-secondary);">Active Stories</div>
                 </div>
                 
                 <!-- Blockers -->
                 <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="text-2xl font-bold" style="color: var(--text-primary);">null</div>
+                    <div class="text-3xl font-bold mb-1" style="color: var(--text-primary);">null</div>
                     <div class="text-sm" style="color: var(--text-secondary);">Blockers</div>
                 </div>
             </div>
