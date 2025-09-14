@@ -11869,4 +11869,336 @@ function showSyncIndicator(type) {
     indicator.style.opacity = '1';
 }
 
+// ===============================================================================
+// PERMANENT TEAM HEALTH INTEGRATION - ADD TO END OF YOUR EXISTING SCRIPT.JS
+// This will make team health integration happen automatically on every page load
+// ===============================================================================
+
+// REPLACE your existing team health functions (if any) with this permanent version:
+
+async function fetchTeamHealthData() {
+    console.log('🏥 Fetching team health data from Jira TH project...');
+    
+    try {
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: 'project = TH AND issuetype = Team ORDER BY summary ASC',
+                    fields: [
+                        "summary",
+                        "key", 
+                        "customfield_10264", // Utilization
+                        "customfield_10257", // Capacity
+                        "customfield_10258", // Skillset
+                        "customfield_10259", // Vision
+                        "customfield_10260", // Support
+                        "customfield_10261", // Team Cohesion
+                        "customfield_10262", // Autonomy
+                        "customfield_10263"  // Comments
+                    ]
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('🏥 Raw team health response:', data);
+
+        if (!data.issues || data.issues.length === 0) {
+            console.warn('⚠️ No teams found in TH project');
+            return {
+                success: true,
+                data: {},
+                errors: ['No teams found in TH project']
+            };
+        }
+
+        // Value mapping function
+        function mapJiraValueToAppFormat(jiraValue) {
+            if (!jiraValue || !jiraValue.value) return null;
+            
+            const value = jiraValue.value.toLowerCase();
+            switch (value) {
+                case 'healthy': return 'Healthy';
+                case 'at-risk': 
+                case 'at risk': return 'At Risk';
+                case 'critical': return 'Critical';
+                default: 
+                    console.warn(`⚠️ Unknown health state: "${jiraValue.value}"`);
+                    return jiraValue.value;
+            }
+        }
+
+        // Parse team health data
+        const teamHealthMap = {};
+        let validationErrors = [];
+
+        data.issues.forEach(issue => {
+            const teamName = issue.fields.summary;
+            const fields = issue.fields;
+
+            console.log(`🔍 Processing team: ${teamName}`);
+
+            // Validate required fields exist
+            const requiredFields = [
+                { id: 'customfield_10257', name: 'Capacity' },
+                { id: 'customfield_10258', name: 'Skillset' },
+                { id: 'customfield_10259', name: 'Vision' },
+                { id: 'customfield_10260', name: 'Support' },
+                { id: 'customfield_10261', name: 'Team Cohesion' },
+                { id: 'customfield_10262', name: 'Autonomy' },
+                { id: 'customfield_10264', name: 'Utilization' }
+            ];
+
+            requiredFields.forEach(field => {
+                if (!fields.hasOwnProperty(field.id)) {
+                    validationErrors.push(`❌ Team "${teamName}": Missing field ${field.name} (${field.id})`);
+                }
+            });
+
+            // Map to our 4-state format
+            teamHealthMap[teamName] = {
+                capacity: mapJiraValueToAppFormat(fields.customfield_10257),
+                skillset: mapJiraValueToAppFormat(fields.customfield_10258),
+                vision: mapJiraValueToAppFormat(fields.customfield_10259),
+                support: mapJiraValueToAppFormat(fields.customfield_10260),
+                teamwork: mapJiraValueToAppFormat(fields.customfield_10261),
+                autonomy: mapJiraValueToAppFormat(fields.customfield_10262),
+                
+                // Additional Jira data
+                jira: {
+                    key: issue.key,
+                    utilization: fields.customfield_10264 || 0,
+                    comments: fields.customfield_10263 || null,
+                    sprint: null,
+                    velocity: null,
+                    stories: null,
+                    bugs: null,
+                    blockers: null
+                }
+            };
+        });
+
+        // Log validation results
+        if (validationErrors.length > 0) {
+            console.warn('⚠️ Team Health Field Validation Errors:');
+            validationErrors.forEach(error => console.warn(error));
+        } else {
+            console.log('✅ All team health fields validated successfully');
+        }
+
+        console.log('🏥 Processed team health data:', teamHealthMap);
+        console.log(`📊 Successfully processed ${Object.keys(teamHealthMap).length} teams from TH project`);
+
+        return {
+            success: true,
+            data: teamHealthMap,
+            errors: validationErrors
+        };
+
+    } catch (error) {
+        console.error('❌ Error fetching team health data:', error.message);
+        return {
+            success: false,
+            data: {},
+            error: error.message
+        };
+    }
+}
+
+async function integrateTeamHealthData() {
+    console.log('🔗 Starting team health data integration...');
+    
+    const teamHealthResult = await fetchTeamHealthData();
+
+    if (teamHealthResult.success) {
+        console.log('✅ Team health fetch successful, merging data...');
+        
+        // Ensure boardData.teams exists
+        if (!boardData.teams) {
+            console.log('📝 Initializing boardData.teams object');
+            boardData.teams = {};
+        }
+        
+        // Merge team health data with existing teams
+        Object.keys(teamHealthResult.data).forEach(teamName => {
+            if (boardData.teams[teamName]) {
+                // Update existing team with Jira health data
+                console.log(`🔄 Updating existing team: ${teamName}`);
+                boardData.teams[teamName] = {
+                    ...boardData.teams[teamName],
+                    ...teamHealthResult.data[teamName]
+                };
+            } else {
+                // Add new team from Jira
+                console.log(`➕ Adding new team from Jira: ${teamName}`);
+                boardData.teams[teamName] = teamHealthResult.data[teamName];
+            }
+        });
+
+        // Log teams that exist in app but not in Jira TH project
+        Object.keys(boardData.teams).forEach(teamName => {
+            if (!teamHealthResult.data[teamName]) {
+                console.log(`⚠️ Team "${teamName}" exists in app but not in Jira TH project - will need to create`);
+            }
+        });
+
+        console.log('🎯 Final merged team data:', boardData.teams);
+        return true;
+    } else {
+        console.error('❌ Team health integration failed:', teamHealthResult.error);
+        console.log('🔄 Continuing with existing team data...');
+        return false;
+    }
+}
+
+// PERMANENT INTEGRATION: Auto-enhance fetchJiraData on page load
+function installPermanentTeamHealthIntegration() {
+    console.log('🔧 Installing permanent team health integration...');
+    
+    // Store reference to original fetchJiraData
+    const originalFetchJiraData = window.fetchJiraData;
+    
+    if (!originalFetchJiraData) {
+        console.error('❌ Original fetchJiraData not found - retrying in 1 second...');
+        setTimeout(installPermanentTeamHealthIntegration, 1000);
+        return;
+    }
+    
+    // Create permanently enhanced version
+    window.fetchJiraData = async function(...args) {
+        console.log('🔄 Enhanced fetchJiraData called (permanent integration)...');
+        
+        try {
+            // Call original function first
+            const result = await originalFetchJiraData.apply(this, args);
+            
+            // Then automatically add team health integration
+            console.log('🏥 Auto-integrating team health data...');
+            await integrateTeamHealthData();
+            
+            return result;
+        } catch (error) {
+            console.error('❌ Enhanced sync error (falling back to original):', error);
+            // Return original result even if team health fails
+            return await originalFetchJiraData.apply(this, args);
+        }
+    };
+    
+    console.log('✅ Permanent team health integration installed!');
+    console.log('📋 Team health data will now be automatically integrated on every data sync');
+}
+
+// AUTO-INSTALL on page load (this makes it permanent)
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Auto-installing team health integration...');
+    
+    // Wait a bit for other scripts to load, then install
+    setTimeout(() => {
+        installPermanentTeamHealthIntegration();
+    }, 2000); // 2 second delay to ensure fetchJiraData exists
+});
+
+// Backup: Install when fetchJiraData becomes available
+let installAttempts = 0;
+const maxAttempts = 10;
+
+function attemptInstall() {
+    if (window.fetchJiraData && typeof window.fetchJiraData === 'function') {
+        installPermanentTeamHealthIntegration();
+    } else if (installAttempts < maxAttempts) {
+        installAttempts++;
+        console.log(`⏳ Waiting for fetchJiraData... (attempt ${installAttempts}/${maxAttempts})`);
+        setTimeout(attemptInstall, 1000);
+    } else {
+        console.error('❌ Could not find fetchJiraData after 10 attempts');
+    }
+}
+
+// Start attempting installation immediately
+attemptInstall();
+
+// Validation and testing functions (keep these for manual testing)
+function validateTeamHealthFields() {
+    console.log('🔍 Validating team health field values...');
+    
+    const expectedValues = ['Healthy', 'At Risk', 'Critical'];
+    
+    if (!boardData.teams) {
+        console.warn('⚠️ No team data available to validate');
+        return;
+    }
+    
+    Object.keys(boardData.teams).forEach(teamName => {
+        const team = boardData.teams[teamName];
+        const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+        
+        console.log(`\n📋 Team: ${teamName}`);
+        dimensions.forEach(dimension => {
+            const value = team[dimension];
+            if (value !== null && !expectedValues.includes(value)) {
+                console.warn(`⚠️ Unexpected value for ${dimension}: "${value}" (expected: ${expectedValues.join(', ')}, or null)`);
+            } else {
+                console.log(`✅ ${dimension}: ${value || 'null'}`);
+            }
+        });
+    });
+}
+
+function verifyTeamHealthInUI() {
+    console.log('🔍 Verifying team health data in UI...');
+    
+    if (boardData && boardData.teams) {
+        let teamsWithJiraHealth = 0;
+        let teamsWithOldHealth = 0;
+        
+        Object.keys(boardData.teams).forEach(teamName => {
+            const team = boardData.teams[teamName];
+            
+            // Check if it has the new format (title case values)
+            const hasNewFormat = team.capacity === 'Healthy' || 
+                                team.capacity === 'At Risk' || 
+                                team.capacity === 'Critical';
+                                
+            const hasOldFormat = team.capacity === 'healthy' || 
+                                team.capacity === 'at-risk';
+            
+            if (hasNewFormat) teamsWithJiraHealth++;
+            if (hasOldFormat) teamsWithOldHealth++;
+        });
+        
+        console.log(`✅ Teams with Jira health data: ${teamsWithJiraHealth}`);
+        console.log(`⚠️ Teams with old format data: ${teamsWithOldHealth}`);
+        
+        if (teamsWithJiraHealth > 0) {
+            console.log('🎉 Team health integration is working!');
+            return true;
+        } else {
+            console.log('❌ Team health integration not detected');
+            return false;
+        }
+    } else {
+        console.log('❌ No team data found');
+        return false;
+    }
+}
+
+console.log('🏥 PERMANENT TEAM HEALTH INTEGRATION LOADED');
+console.log('📋 Team health will be automatically integrated on every page load');
+console.log('🔧 Manual commands still available:');
+console.log('   - validateTeamHealthFields()');  
+console.log('   - verifyTeamHealthInUI()');
+
+// ===============================================================================
+// END OF PERMANENT TEAM HEALTH INTEGRATION
+// ===============================================================================
+
         init();
