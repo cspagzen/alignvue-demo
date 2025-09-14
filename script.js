@@ -12300,6 +12300,7 @@ function toggleHealthEditMode(teamName) {
     const utilizationContainer = document.getElementById('utilization-container');
     const button = document.getElementById('edit-health-btn');
     const teamData = boardData.teams[teamName];
+    const modal = document.getElementById('detail-modal');
     
     const isEditing = button.innerHTML.includes('Cancel');
     
@@ -12319,19 +12320,68 @@ function toggleHealthEditMode(teamName) {
             </div>
             <div class="text-white text-sm mt-2">Utilization</div>
         `;
+        
         // Reinitialize chart
         setTimeout(() => {
             initializeUtilizationChart(teamData.jira?.utilization || 0);
         }, 100);
+        
         // Refresh comments display
-document.getElementById('team-comments-display').innerHTML = renderTeamComments(teamData);
-document.getElementById('team-comments-section').style.display = 'block';
+        document.getElementById('team-comments-display').innerHTML = renderTeamComments(teamData);
+        document.getElementById('team-comments-section').style.display = 'block';
+        
+        // Show Health Insights section
+        const healthInsightsSection = Array.from(modal.querySelectorAll('div')).find(div => 
+            div.querySelector('h3') && 
+            div.querySelector('h3').textContent.includes('Health Insights')
+        );
+        if (healthInsightsSection) {
+            healthInsightsSection.style.display = 'block';
+        }
+        
+        // Remove blur and darken from other sections
+        const sectionsToRestore = ['Overall Team Health', 'Active Stories', 'Blockers'];
+        sectionsToRestore.forEach(sectionName => {
+            const section = Array.from(modal.querySelectorAll('div')).find(div => 
+                div.querySelector('h3') && 
+                div.querySelector('h3').textContent.includes(sectionName)
+            );
+            if (section) {
+                section.style.filter = '';
+                section.style.opacity = '';
+                section.style.pointerEvents = '';
+            }
+        });
+        
     } else {
         // Enter edit mode - hide edit button completely
         button.style.display = 'none';
         container.innerHTML = renderHealthDimensionsGrid(teamData, true);
         utilizationContainer.innerHTML = renderUtilizationEditor(teamData);
         document.getElementById('team-comments-section').style.display = 'none';
+        
+        // Hide Health Insights section
+        const healthInsightsSection = Array.from(modal.querySelectorAll('div')).find(div => 
+            div.querySelector('h3') && 
+            div.querySelector('h3').textContent.includes('Health Insights')
+        );
+        if (healthInsightsSection) {
+            healthInsightsSection.style.display = 'none';
+        }
+        
+        // Blur and darken other sections
+        const sectionsToBlur = ['Overall Team Health', 'Active Stories', 'Blockers'];
+        sectionsToBlur.forEach(sectionName => {
+            const section = Array.from(modal.querySelectorAll('div')).find(div => 
+                div.querySelector('h3') && 
+                div.querySelector('h3').textContent.includes(sectionName)
+            );
+            if (section) {
+                section.style.filter = 'blur(2px)';
+                section.style.opacity = '0.4';
+                section.style.pointerEvents = 'none';
+            }
+        });
     }
 }
 
