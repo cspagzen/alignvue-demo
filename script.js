@@ -12616,8 +12616,10 @@ async function testCommentsDataRetrieval() {
             console.log(`  ${teamName}:`, {
                 hasComments: !!comments,
                 commentsType: typeof comments,
-                commentsLength: comments ? comments.length : 0,
-                commentsPreview: comments ? comments.substring(0, 100) + '...' : 'No comments'
+                commentsLength: comments && typeof comments === 'string' ? comments.length : 0,
+                commentsPreview: comments && typeof comments === 'string' ? 
+                    (comments.length > 100 ? comments.substring(0, 100) + '...' : comments) : 
+                    'No comments or not a string'
             });
         });
         
