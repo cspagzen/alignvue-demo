@@ -12586,6 +12586,99 @@ function getTeamOverallHealth(teamData) {
     };
 }
 
+// ==============================================================================
+// ADF (Atlassian Document Format) TEXT EXTRACTION
+// Add this to your script.js
+// ==============================================================================
+
+/**
+ * Extract plain text from Atlassian Document Format (ADF) objects
+ * Used for custom field 10263 (Team Health Comments)
+ */
+function extractTextFromADF(adfObject) {
+    if (!adfObject || typeof adfObject !== 'object') {
+        return null;
+    }
+    
+    // Handle direct text
+    if (adfObject.type === 'text' && adfObject.text) {
+        return adfObject.text;
+    }
+    
+    // Handle content arrays
+    if (adfObject.content && Array.isArray(adfObject.content)) {
+        return adfObject.content
+            .map(item => extractTextFromADF(item))
+            .filter(text => text !== null)
+            .join(' ');
+    }
+    
+    return null;
+}
+
+/**
+ * Enhanced getFieldValue function that handles ADF for comments
+ * REPLACE your existing getFieldValue function with this one
+ */
+function getFieldValue(issue, fieldId) {
+    const fieldValue = issue.fields[fieldId];
+    
+    // Special handling for comments field (10263) - extract text from ADF
+    if (fieldId === 'customfield_10263' && fieldValue && typeof fieldValue === 'object') {
+        const extractedText = extractTextFromADF(fieldValue);
+        return extractedText && extractedText.trim() ? extractedText.trim() : null;
+    }
+    
+    // Handle custom field objects with value property (most Jira custom fields)
+    if (fieldValue && typeof fieldValue === 'object' && fieldValue.value !== undefined) {
+        return fieldValue.value;
+    }
+    
+    // Handle arrays of objects with value property (multi-select fields)
+    if (Array.isArray(fieldValue) && fieldValue.length > 0 && fieldValue[0]?.value !== undefined) {
+        return fieldValue.map(item => item.value);
+    }
+    
+    // Return as-is for simple values
+    return fieldValue;
+}
+
+// ==============================================================================
+// TEST THE ADF EXTRACTION
+// ==============================================================================
+
+function testADFExtraction() {
+    console.log('🧪 Testing ADF Text Extraction...');
+    console.log('=================================');
+    
+    // Test with Core Platform team's actual comments
+    const corePlatformTeam = boardData.teams['Core Platform'];
+    if (corePlatformTeam && corePlatformTeam.jira?.comments) {
+        console.log('📋 Raw ADF Object:', corePlatformTeam.jira.comments);
+        
+        const extractedText = extractTextFromADF(corePlatformTeam.jira.comments);
+        console.log('📝 Extracted Text:', extractedText);
+        console.log('✅ Length:', extractedText ? extractedText.length : 0);
+    }
+    
+    // Test with a few other teams
+    const testTeams = ['User Experience', 'Security', 'Data Engineering'];
+    testTeams.forEach(teamName => {
+        const team = boardData.teams[teamName];
+        if (team && team.jira?.comments) {
+            const extracted = extractTextFromADF(team.jira.comments);
+            console.log(`📋 ${teamName}: ${extracted ? 'HAS TEXT' : 'NO TEXT'}`);
+            if (extracted) {
+                console.log(`   Preview: ${extracted.substring(0, 50)}...`);
+            }
+        }
+    });
+}
+
+console.log('🛠️ ADF extraction functions ready!');
+console.log('1. Replace your getFieldValue function with the enhanced version above');
+console.log('2. Run: testADFExtraction()');
+console.log('3. Run: testCommentsDataRetrieval() again to see the difference');
 
 
 // ==============================================================================
