@@ -12892,13 +12892,36 @@ async function submitHealthChanges() {
         // Show success message for 3 seconds, then switch to non-edit mode BEFORE closing overlay
         setTimeout(() => {
             console.log('Data is updated - switching to non-edit mode...');
+            console.log('Current editing team:', window.currentEditingTeam);
+            console.log('Team name:', teamName);
             
-            // Switch to non-edit mode FIRST (data is guaranteed fresh at this point)
-            toggleHealthEditMode(teamName);
+            // Try multiple methods to ensure we exit edit mode
+            if (window.currentEditingTeam === teamName) {
+                console.log('Attempting to toggle health edit mode...');
+                toggleHealthEditMode(teamName);
+                
+                // Double-check that edit mode was exited
+                setTimeout(() => {
+                    if (window.currentEditingTeam === teamName) {
+                        console.warn('Edit mode still active, forcing exit...');
+                        window.currentEditingTeam = null;
+                        
+                        // Force re-render the modal in view mode
+                        const modal = document.getElementById('team-modal');
+                        if (modal && modal.classList.contains('show')) {
+                            const updatedTeamData = boardData.teams[teamName];
+                            if (updatedTeamData) {
+                                console.log('Force refreshing modal content with updated data...');
+                                showTeamHealthModal(teamName, updatedTeamData);
+                            }
+                        }
+                    }
+                }, 200);
+            }
             
             // THEN close overlay after mode switch completes
             setTimeout(() => {
-                console.log('Closing overlay - user will see non-edit modal with fresh data');
+                console.log('Closing overlay - user should see non-edit modal with fresh data');
                 if (syncOverlay && syncOverlay.hide) {
                     syncOverlay.hide();
                 }
