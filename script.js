@@ -12175,7 +12175,15 @@ function renderHealthDimensionsEditor(teamData, dimensions) {
             </div>
         `;
     }).join('') + `
-        <div class="flex justify-end mt-6">
+        <div class="flex justify-end gap-3 mt-6">
+            <button 
+                type="button" 
+                onclick="toggleHealthEditMode('${teamData.name}')"
+                class="flex items-center gap-2 px-4 py-2 text-sm rounded transition-colors"
+                style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); color: var(--accent-red);"
+            >
+                Cancel
+            </button>
             <button 
                 type="submit" 
                 class="flex items-center gap-2 px-4 py-2 text-sm rounded text-white transition-colors"
