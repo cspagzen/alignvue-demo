@@ -12146,60 +12146,35 @@ function renderHealthDimensionsDisplay(teamData, dimensions) {
 }
 
 function renderHealthDimensionsEditor(teamData, dimensions) {
-    return `
-        <form id="health-update-form" onsubmit="handleHealthUpdate(event, '${teamData.name}')">
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                ${dimensions.map(dim => `
-                    <div class="flex items-center justify-between p-3 rounded-lg border" 
-                         style="background: var(--bg-secondary); border-color: var(--border-primary);">
-                        <div class="flex items-center gap-3">
-                            ${getDimensionIcon(dim.icon, 'var(--text-secondary)')}
-                            <div>
-                                <div class="font-medium text-sm" style="color: var(--text-primary);">${dim.label}</div>
-                                <div class="text-xs opacity-75" style="color: var(--text-secondary);">${dim.desc}</div>
-                            </div>
+    return dimensions.map(dim => {
+        const value = teamData[dim.key];
+        const colorClass = getDimensionColorClass(value);
+        const borderColor = getDimensionBorderColor(value);
+        
+        return `
+            <div class="p-4 rounded-lg border" style="background: var(--bg-tertiary); border-color: ${borderColor};">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        ${getDimensionIcon(dim.icon, borderColor)}
+                        <div>
+                            <div class="text-sm font-bold" style="color: var(--text-primary);">${dim.label}</div>
+                            <div class="text-xs" style="color: var(--text-secondary);">${dim.desc}</div>
                         </div>
-                        <select 
-                            id="${dim.key}" 
-                            class="px-3 py-1 rounded border text-sm"
-                            style="background: var(--bg-tertiary); border-color: var(--border-primary); color: var(--text-primary);"
-                        >
-                            <option value="">Not Set</option>
-                            <option value="Healthy" ${teamData[dim.key] === 'Healthy' ? 'selected' : ''}>Healthy</option>
-                            <option value="At Risk" ${teamData[dim.key] === 'At Risk' ? 'selected' : ''}>At Risk</option>
-                            <option value="Critical" ${teamData[dim.key] === 'Critical' ? 'selected' : ''}>Critical</option>
-                        </select>
                     </div>
-                `).join('')}
+                    <select 
+                        id="${dim.key}" 
+                        class="text-lg font-bold capitalize ${colorClass}"
+                        style="background: transparent; border: none; color: inherit;"
+                    >
+                        <option value="">Not Set</option>
+                        <option value="Healthy" ${value === 'Healthy' ? 'selected' : ''}>Healthy</option>
+                        <option value="At Risk" ${value === 'At Risk' ? 'selected' : ''}>At Risk</option>
+                        <option value="Critical" ${value === 'Critical' ? 'selected' : ''}>Critical</option>
+                    </select>
+                </div>
             </div>
-            
-            <!-- Action Buttons -->
-            <div class="flex justify-end gap-3 pt-4 border-t" style="border-color: var(--border-primary);">
-                <button type="button" onclick="toggleHealthEditMode('${teamData.name}')" 
-                        class="px-4 py-2 text-sm rounded border hover:bg-gray-50 transition-colors"
-                        style="border-color: var(--border-primary); color: var(--text-secondary);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                        <path d="m15 9-6 6"/>
-                        <path d="m9 9 6 6"/>
-                    </svg>
-                    Cancel
-                </button>
-                <button type="submit" 
-                        class="px-4 py-2 text-sm rounded text-white transition-colors flex items-center gap-2"
-                        style="background: var(--accent-blue);"
-                        id="save-health-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                        <path d="M21 3v5h-5"/>
-                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                        <path d="M8 16H3v5"/>
-                    </svg>
-                    Sync Changes
-                </button>
-            </div>
-        </form>
-    `;
+        `;
+    }).join('');
 }
 
 function renderUtilizationEditor(teamData) {
