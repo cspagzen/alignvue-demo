@@ -12329,7 +12329,7 @@ async function updateTeamHealthInJira(teamName, healthData) {
             method: 'POST',
             body: {
                 jql: `project = "TH" AND issuetype = "Teams" AND summary ~ "${teamName}"`,
-                fields: ['id', 'key', 'summary', 'customfield_10263']
+                fields: ['id', 'key', 'summary']
             }
         })
     });
@@ -12391,8 +12391,7 @@ async function createTeamInJira(teamName, healthData) {
                     'customfield_10260': healthData.support ? { value: healthData.support } : null,
                     'customfield_10261': healthData.teamwork ? { value: healthData.teamwork } : null,
                     'customfield_10262': healthData.autonomy ? { value: healthData.autonomy } : null,
-                    'customfield_10264': healthData.utilization,
-                    'customfield_10263': healthData.comments
+                    'customfield_10264': healthData.utilization
                 }
             }
         })
