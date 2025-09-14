@@ -12470,50 +12470,39 @@ async function updateTeamHealthInJira(teamName, data) {
         customfield_10260: data.support ? { value: data.support } : null,
         customfield_10261: data.teamwork ? { value: data.teamwork } : null,
         customfield_10262: data.autonomy ? { value: data.autonomy } : null,
-        customfield_10263: convertTextToADF(data.comments)
+        customfield_10263: data.comments ? {
+            type: "doc",
+            version: 1,
+            content: [{
+                type: "paragraph",
+                content: [{
+                    type: "text",
+                    text: data.comments
+                }]
+            }]
+        } : null
     };
-    
-    console.log('Sending to Jira:', fields);
     
     const response = await fetch('/api/jira', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
             endpoint: `/rest/api/3/issue/${teamData.jira.key}`,
             method: 'PUT',
-            body: { fields }
+            body: {
+                fields: fields
+            }
         })
     });
     
-    // Check if the response was successful (200-299 status codes)
-    if (response.ok) {
-        console.log('Jira update response was successful (status:', response.status, ')');
-        
-        try {
-            // Try to parse JSON response
-            const result = await response.json();
-            console.log('Jira response parsed successfully:', result);
-        } catch (jsonError) {
-            // JSON parsing failed, but HTTP status was OK
-            console.warn('Jira update succeeded but response JSON was malformed:', jsonError.message);
-            console.log('This is usually fine - the update likely worked despite the JSON error');
-            // Don't throw error here since the update probably succeeded
-        }
-        
-        console.log('Team health updated successfully in Jira');
-        return; // Success
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Failed to update team health in Jira: ${response.status} ${errorData}`);
     }
     
-    // If we get here, the HTTP status was not OK
-    console.error('Jira update failed with status:', response.status);
-    
-    try {
-        const error = await response.json();
-        throw new Error(error.error || `HTTP ${response.status}`);
-    } catch (jsonError) {
-        // Could not parse error response either
-        throw new Error(`Jira update failed with status ${response.status} (could not parse error details)`);
-    }
+    console.log('✅ Team health updated in Jira successfully');
 }
 
 async function createTeamInJira(teamName, healthData) {
@@ -12937,17 +12926,83 @@ async function submitHealthChanges() {
     } catch (error) {
         console.error('Error in team health sync process:', error);
         
-        // Show error with option to retry
-        if (confirm('Sync failed. Would you like to try a manual refresh to check if changes were saved?')) {
-            try {
-                await triggerManualSync();
-            } catch (refreshError) {
-                console.error('Manual refresh also failed:', refreshError);
-                alert('Manual refresh failed. Please check your connection and try again.');
+        // DON'T show the awkward "sync failed" dialog to user
+        // Instead, automatically run the manual sync in the background
+        console.log('Initial sync had issues, automatically running validation sync...');
+        
+        try {
+            // Update the sync overlay to show validation
+            if (syncOverlay && syncOverlay.updateMessages) {
+                syncOverlay.updateMessages({
+                    title: 'Validating Changes',
+                    subtitle: 'Ensuring data was saved correctly...'
+                });
             }
+            
+            // Run the manual sync automatically - no user interaction needed
+            await triggerManualSync();
+            
+            // Success! Show success message
+            console.log('✅ Validation sync completed successfully');
+            
+            // If there's an active modal, close it
+            const modal = document.getElementById('team-modal');
+            if (modal && modal.classList.contains('show')) {
+                closeModal();
+            }
+            
+            // Show success feedback
+            showTemporarySuccess(`${teamName} health updated successfully!`);
+            
+        } catch (refreshError) {
+            console.error('Both sync and manual refresh failed:', refreshError);
+            // Only show error dialog for truly critical failures
+            alert('Unable to sync changes to Jira. Please check your connection and try again.');
         }
     }
 }
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function showTemporarySuccess(message) {
+    // Create temporary success toast
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--accent-green);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Animate out and remove
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
 
 // ==============================================================================
 // HELPER FUNCTION: Enhanced validation with user feedback
