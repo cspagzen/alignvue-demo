@@ -12846,9 +12846,9 @@ async function submitHealthChanges() {
             syncState.lastSyncData = newData;
             syncState.lastSyncTime = Date.now();
             
-            // Step 4: Wait a bit longer for UI to fully update
+            // Step 4: Wait for UI to fully update (data takes up to 4 seconds)
             console.log('Waiting for UI updates to complete...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
             // Step 5: Validate that our changes actually synced
             const updatedTeamData = newData.teams ? newData.teams[teamName] : boardData.teams[teamName];
@@ -12871,25 +12871,27 @@ async function submitHealthChanges() {
         }, {
             title: 'Syncing Team Health',
             subtitle: `Saving ${teamName} changes to Jira...`,
-            successTitle: 'Team Health Updated', 
-            successSubtitle: 'Changes synced successfully',
+            successTitle: 'Data Synced & Validated', 
+            successSubtitle: `${teamName} health updated successfully`,
             errorTitle: 'Sync Failed',
             errorSubtitle: 'Changes may not have been saved'
         });
         
-        console.log('✅ Team health update complete - now closing modal');
+        console.log('✅ Team health update complete');
         
-        // FORCE EXIT EDIT MODE AND CLOSE MODAL
-        toggleHealthEditMode(teamName); // Exit edit mode
-        
-        // Double-check modal closure
-        const modal = document.getElementById('team-modal');
-        if (modal && modal.classList.contains('show')) {
-            closeModal();
-        }
-        
-        // Show success feedback
-        showTemporarySuccess(`${teamName} health updated successfully!`);
+        // Show success state in overlay for 2 seconds, then close everything
+        setTimeout(() => {
+            console.log('Closing modal after success display...');
+            
+            // FORCE EXIT EDIT MODE AND CLOSE MODAL
+            toggleHealthEditMode(teamName); // Exit edit mode
+            
+            // Double-check modal closure
+            const modal = document.getElementById('team-modal');
+            if (modal && modal.classList.contains('show')) {
+                closeModal();
+            }
+        }, 2000);
         
     } catch (error) {
         console.error('Error in team health sync process:', error);
@@ -12899,33 +12901,43 @@ async function submitHealthChanges() {
         console.log('Initial sync had issues, automatically running validation sync...');
         
         try {
-            // Show validation message
-            if (syncOverlay && syncOverlay.updateMessages) {
-                syncOverlay.updateMessages({
-                    title: 'Validating Changes',
-                    subtitle: 'Ensuring data was saved correctly...'
-                });
-            }
-            
-            // Run the manual sync automatically
-            await triggerManualSync();
-            
-            // Wait longer for the data to actually propagate
-            console.log('Waiting for data to fully refresh...');
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Run validation sync with custom overlay messaging
+            await syncOverlay.syncWithProgress(async () => {
+                console.log('Running manual sync for validation...');
+                await triggerManualSync();
+                
+                // Wait longer for the data to actually propagate (up to 4 seconds)
+                console.log('Waiting for data to fully refresh...');
+                await new Promise(resolve => setTimeout(resolve, 4000));
+                
+                return {
+                    synced: true,
+                    validated: true,
+                    teamName: teamName
+                };
+            }, {
+                title: `Validating Data for ${teamName}`,
+                subtitle: 'Ensuring changes were saved correctly...',
+                successTitle: 'Data Synced & Validated',
+                successSubtitle: `${teamName} health updated successfully`,
+                errorTitle: 'Validation Failed',
+                errorSubtitle: 'Please try again'
+            });
             
             console.log('✅ Validation sync completed successfully');
             
-            // FORCE CLOSE EVERYTHING - don't return to edit mode
-            toggleHealthEditMode(teamName); // Exit edit mode
-            
-            const modal = document.getElementById('team-modal');
-            if (modal && modal.classList.contains('show')) {
-                closeModal();
-            }
-            
-            // Show success feedback
-            showTemporarySuccess(`${teamName} health updated successfully!`);
+            // Wait 2 seconds to show success message, then close
+            setTimeout(() => {
+                console.log('Closing modal after validation success...');
+                
+                // FORCE CLOSE EVERYTHING - don't return to edit mode
+                toggleHealthEditMode(teamName); // Exit edit mode
+                
+                const modal = document.getElementById('team-modal');
+                if (modal && modal.classList.contains('show')) {
+                    closeModal();
+                }
+            }, 2000);
             
         } catch (refreshError) {
             console.error('Both sync and manual refresh failed:', refreshError);
@@ -12943,7 +12955,7 @@ async function submitHealthChanges() {
     }
 }
 
-// ALSO ADD THIS FUNCTION TO FORCE MODAL CLOSURE
+// HELPER FUNCTION FOR FORCING MODAL CLOSURE
 function forceCloseTeamModal() {
     // Exit edit mode if active
     if (window.currentEditingTeam) {
