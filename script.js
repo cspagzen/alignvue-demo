@@ -12369,11 +12369,10 @@ function toggleHealthEditMode(teamName) {
             healthInsightsSection.style.display = 'none';
         }
         
-        // Blur and darken the top sections (Overall Team Health, Active Stories, Blockers, Utilization)
-        // Target the first row of metric boxes
+        // Blur and darken the top sections (exclude Utilization since it's editable)
         const topSectionBoxes = modal.querySelectorAll('.grid-cols-4 > div, .grid > div');
         topSectionBoxes.forEach(box => {
-            if (box && (box.textContent.includes('CRITICAL') || box.textContent.includes('Active Stories') || box.textContent.includes('Blockers') || box.textContent.includes('Utilization'))) {
+            if (box && (box.textContent.includes('CRITICAL') || box.textContent.includes('Active Stories') || box.textContent.includes('Blockers'))) {
                 box.style.filter = 'blur(2px)';
                 box.style.opacity = '0.4';
                 box.style.pointerEvents = 'none';
