@@ -12175,9 +12175,9 @@ function renderHealthDimensionsEditor(teamData, dimensions) {
             </div>
         `;
     }).join('') + `
-        <div class="grid grid-cols-2 gap-3 mt-6">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
             <div></div>
-            <div class="flex justify-end gap-3">
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
                 <button 
                     type="button" 
                     onclick="toggleHealthEditMode('${teamData.name}')"
