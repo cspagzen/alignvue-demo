@@ -12453,57 +12453,46 @@ async function handleHealthUpdate(event, teamName) {
         }
     }
 }
-async function updateTeamHealthInJira(teamName, healthData) {
-    // First, find the team in Jira TH project
-    const searchResponse = await fetch('/api/jira', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: '/rest/api/3/search',
-            method: 'POST',
-            body: {
-                jql: `project = "TH" AND issuetype = "Team" AND summary ~ "${teamName}"`,
-                fields: ['id', 'key', 'summary']
-            }
-        })
-    });
+async function updateTeamHealthInJira(teamName, data) {
+    const teamData = boardData.teams[teamName];
     
-    const searchData = await searchResponse.json();
-    
-    if (!searchData.issues || searchData.issues.length === 0) {
-        // Team doesn't exist, create it
-        return await createTeamInJira(teamName, healthData);
+    if (!teamData?.jira?.key) {
+        throw new Error('Team not found in Jira');
     }
     
-    const teamIssue = searchData.issues[0];
+    console.log('Updating team health in Jira:', teamName, data);
     
-    // Update existing team
-    const updateResponse = await fetch('/api/jira', {
+    const fields = {
+        customfield_10264: data.utilization, // Utilization
+        customfield_10257: data.capacity ? { value: data.capacity } : null, // Capacity
+        customfield_10258: data.skillset ? { value: data.skillset } : null, // Skillset
+        customfield_10259: data.vision ? { value: data.vision } : null, // Vision
+        customfield_10260: data.support ? { value: data.support } : null, // Support
+        customfield_10261: data.teamwork ? { value: data.teamwork } : null, // Team Cohesion
+        customfield_10262: data.autonomy ? { value: data.autonomy } : null, // Autonomy
+        customfield_10263: convertTextToADF(data.comments) // Comments - FIXED TO USE ADF FORMAT
+    };
+    
+    console.log('Fields to update:', fields);
+    console.log('Comments ADF:', fields.customfield_10263);
+    
+    const response = await fetch('/api/jira', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            endpoint: `/rest/api/3/issue/${teamIssue.key}`,
+            endpoint: `/rest/api/3/issue/${teamData.jira.key}`,
             method: 'PUT',
-            body: {
-                fields: {
-                    // Map health dimensions to custom fields
-                    'customfield_10257': healthData.capacity ? { value: healthData.capacity } : null,
-                    'customfield_10258': healthData.skillset ? { value: healthData.skillset } : null,
-                    'customfield_10259': healthData.vision ? { value: healthData.vision } : null,
-                    'customfield_10260': healthData.support ? { value: healthData.support } : null,
-                    'customfield_10261': healthData.teamwork ? { value: healthData.teamwork } : null,
-                    'customfield_10262': healthData.autonomy ? { value: healthData.autonomy } : null,
-                    'customfield_10264': healthData.utilization
-                }
-            }
+            body: { fields }
         })
     });
     
-    if (!updateResponse.ok) {
-        throw new Error('Failed to update team health in Jira');
+    if (!response.ok) {
+        const error = await response.json();
+        console.error('Jira update failed:', error);
+        throw new Error(error.error || `HTTP ${response.status}`);
     }
     
-    return { key: teamIssue.key, id: teamIssue.id };
+    console.log('Team health updated successfully in Jira');
 }
 
 async function createTeamInJira(teamName, healthData) {
@@ -12798,5 +12787,29 @@ async function submitHealthChanges() {
         await handleHealthUpdateSimple(fakeEvent, teamName);
     }
 }
+
+function convertTextToADF(text) {
+    if (!text || text.trim() === '') {
+        return null;
+    }
+    
+    // Convert plain text to Atlassian Document Format (ADF)
+    return {
+        type: "doc",
+        version: 1,
+        content: [
+            {
+                type: "paragraph",
+                content: [
+                    {
+                        type: "text",
+                        text: text.trim()
+                    }
+                ]
+            }
+        ]
+    };
+}
+
 
         init();
