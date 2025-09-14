@@ -11875,12 +11875,7 @@ function showSyncIndicator(type) {
     indicator.style.opacity = '1';
 }
 
-// ===============================================================================
-// TEAM HEALTH INTEGRATION - ADD TO END OF YOUR ORIGINAL SCRIPT.JS
-// Copy and paste this entire block to the very end of your script.js file
-// ===============================================================================
-
-// PHASE 1: Team Health Data Fetching Functions
+// REPLACE your existing team health functions (if any) with this permanent version:
 
 async function fetchTeamHealthData() {
     console.log('🏥 Fetching team health data from Jira TH project...');
@@ -11927,7 +11922,7 @@ async function fetchTeamHealthData() {
             };
         }
 
-        // Value mapping function to handle different case formats
+        // Value mapping function
         function mapJiraValueToAppFormat(jiraValue) {
             if (!jiraValue || !jiraValue.value) return null;
             
@@ -11943,7 +11938,7 @@ async function fetchTeamHealthData() {
             }
         }
 
-        // Parse and validate team health data
+        // Parse team health data
         const teamHealthMap = {};
         let validationErrors = [];
 
@@ -11997,7 +11992,6 @@ async function fetchTeamHealthData() {
         if (validationErrors.length > 0) {
             console.warn('⚠️ Team Health Field Validation Errors:');
             validationErrors.forEach(error => console.warn(error));
-            console.warn('👆 Please check these field configurations in Jira TH project');
         } else {
             console.log('✅ All team health fields validated successfully');
         }
@@ -12067,6 +12061,73 @@ async function integrateTeamHealthData() {
     }
 }
 
+// PERMANENT INTEGRATION: Auto-enhance fetchJiraData on page load
+function installPermanentTeamHealthIntegration() {
+    console.log('🔧 Installing permanent team health integration...');
+    
+    // Store reference to original fetchJiraData
+    const originalFetchJiraData = window.fetchJiraData;
+    
+    if (!originalFetchJiraData) {
+        console.error('❌ Original fetchJiraData not found - retrying in 1 second...');
+        setTimeout(installPermanentTeamHealthIntegration, 1000);
+        return;
+    }
+    
+    // Create permanently enhanced version
+    window.fetchJiraData = async function(...args) {
+        console.log('🔄 Enhanced fetchJiraData called (permanent integration)...');
+        
+        try {
+            // Call original function first
+            const result = await originalFetchJiraData.apply(this, args);
+            
+            // Then automatically add team health integration
+            console.log('🏥 Auto-integrating team health data...');
+            await integrateTeamHealthData();
+            
+            return result;
+        } catch (error) {
+            console.error('❌ Enhanced sync error (falling back to original):', error);
+            // Return original result even if team health fails
+            return await originalFetchJiraData.apply(this, args);
+        }
+    };
+    
+    console.log('✅ Permanent team health integration installed!');
+    console.log('📋 Team health data will now be automatically integrated on every data sync');
+}
+
+// AUTO-INSTALL on page load (this makes it permanent)
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Auto-installing team health integration...');
+    
+    // Wait a bit for other scripts to load, then install
+    setTimeout(() => {
+        installPermanentTeamHealthIntegration();
+    }, 2000); // 2 second delay to ensure fetchJiraData exists
+});
+
+// Backup: Install when fetchJiraData becomes available
+let installAttempts = 0;
+const maxAttempts = 10;
+
+function attemptInstall() {
+    if (window.fetchJiraData && typeof window.fetchJiraData === 'function') {
+        installPermanentTeamHealthIntegration();
+    } else if (installAttempts < maxAttempts) {
+        installAttempts++;
+        console.log(`⏳ Waiting for fetchJiraData... (attempt ${installAttempts}/${maxAttempts})`);
+        setTimeout(attemptInstall, 1000);
+    } else {
+        console.error('❌ Could not find fetchJiraData after 10 attempts');
+    }
+}
+
+// Start attempting installation immediately
+attemptInstall();
+
+// Validation and testing functions (keep these for manual testing)
 function validateTeamHealthFields() {
     console.log('🔍 Validating team health field values...');
     
@@ -12091,59 +12152,6 @@ function validateTeamHealthFields() {
             }
         });
     });
-}
-
-// PHASE 2: Safe Integration Functions
-
-async function enhancedDataSync() {
-    console.log('🔄 Starting enhanced data sync with team health...');
-    
-    try {
-        // Call your existing fetchJiraData function (unchanged)
-        console.log('📦 Phase 1: Running existing fetchJiraData...');
-        await fetchJiraData();
-        
-        // Then add team health integration
-        console.log('🏥 Phase 2: Adding team health data...');
-        await integrateTeamHealthData();
-        
-        console.log('✅ Enhanced data sync complete!');
-        
-    } catch (error) {
-        console.error('❌ Enhanced data sync failed:', error);
-    }
-}
-
-function autoEnhanceExistingSync() {
-    // Store reference to your original fetchJiraData
-    const originalFetchJiraData = window.fetchJiraData;
-    
-    // Create enhanced version
-    window.fetchJiraData = async function(...args) {
-        console.log('🔄 Enhanced fetchJiraData called...');
-        
-        try {
-            // Call original function first
-            const result = await originalFetchJiraData.apply(this, args);
-            
-            // Then add team health integration
-            console.log('🏥 Adding team health integration...');
-            await integrateTeamHealthData();
-            
-            return result;
-        } catch (error) {
-            console.error('❌ Enhanced sync error:', error);
-            // Return original result even if team health fails
-            return await originalFetchJiraData.apply(this, args);
-        }
-    };
-    
-    console.log('✅ Auto-enhancement installed! Your fetchJiraData now includes team health.');
-}
-
-function emergencyRollback() {
-    location.reload();
-    console.log('🚨 Emergency rollback executed - page reloaded');
 }
 
 function verifyTeamHealthInUI() {
@@ -12184,30 +12192,14 @@ function verifyTeamHealthInUI() {
     }
 }
 
-// Testing function for manual verification
-async function testTeamHealthIntegration() {
-    console.log('🧪 Testing team health integration...');
-    
-    // Test full integration
-    await integrateTeamHealthData();
-    
-    // Validate the results
-    validateTeamHealthFields();
-    
-    console.log('🧪 Test complete! Check console output above.');
-}
-
-// Instructions
-console.log('🧪 TEAM HEALTH INTEGRATION LOADED');
-console.log('Test commands available:');
-console.log('1. testTeamHealthIntegration() - Test integration');
-console.log('2. enhancedDataSync() - Test full sync with team health');
-console.log('3. autoEnhanceExistingSync() - Auto-integrate with existing sync');
-console.log('4. verifyTeamHealthInUI() - Check if integration is working');
-console.log('5. emergencyRollback() - Reload page if needed');
+console.log('🏥 PERMANENT TEAM HEALTH INTEGRATION LOADED');
+console.log('📋 Team health will be automatically integrated on every page load');
+console.log('🔧 Manual commands still available:');
+console.log('   - validateTeamHealthFields()');  
+console.log('   - verifyTeamHealthInUI()');
 
 // ===============================================================================
-// END OF TEAM HEALTH INTEGRATION
+// END OF PERMANENT TEAM HEALTH INTEGRATION
 // ===============================================================================
 
         init();
