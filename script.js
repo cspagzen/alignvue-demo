@@ -12781,13 +12781,6 @@ function getFieldValue(issue, fieldId) {
     return fieldValue;
 }
 
-function exitEditMode() {
-    const teamName = window.currentEditingTeam;
-    if (teamName) {
-        toggleHealthEditMode(teamName);
-    }
-}
-
 async function submitHealthChanges() {
     const teamName = window.currentEditingTeam;
     if (!teamName) {
@@ -12943,19 +12936,38 @@ async function submitHealthChanges() {
     }
 }
 
-// Helper function for clean modal closure
-function forceCloseTeamModal() {
-    if (window.currentEditingTeam) {
-        toggleHealthEditMode(window.currentEditingTeam);
-    }
+// FIXED exitEditMode function for Cancel button
+function exitEditMode() {
+    const teamName = window.currentEditingTeam;
+    console.log('exitEditMode called for team:', teamName);
     
-    const modal = document.getElementById('team-modal');
-    if (modal) {
-        modal.classList.remove('show');
+    if (teamName) {
+        console.log('Toggling health edit mode to exit...');
+        toggleHealthEditMode(teamName);
+        
+        // Double-check that edit mode was properly exited
+        setTimeout(() => {
+            if (window.currentEditingTeam === teamName) {
+                console.warn('Edit mode still active after toggle, forcing exit...');
+                window.currentEditingTeam = null;
+                
+                // Force refresh modal in view mode
+                const modal = document.getElementById('team-modal');
+                if (modal && modal.classList.contains('show')) {
+                    const teamData = boardData.teams[teamName];
+                    if (teamData) {
+                        console.log('Force refreshing modal to view mode...');
+                        showTeamHealthModal(teamName, teamData);
+                    }
+                }
+            }
+        }, 100);
+    } else {
+        console.warn('No current editing team found');
     }
-    
-    window.currentEditingTeam = null;
 }
+
+
 
 // ============================================================================
 // HELPER FUNCTIONS
