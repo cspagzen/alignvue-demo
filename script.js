@@ -12395,40 +12395,38 @@ async function handleHealthUpdate(event, teamName) {
         teamwork: document.getElementById('teamwork').value || null,
         autonomy: document.getElementById('autonomy').value || null,
         utilization: parseInt(document.getElementById('utilization-input').value) || 0,
-        comments: document.getElementById('team-comments').value || null  // ADD THIS LINE
+        comments: document.getElementById('team-comments').value || null
     };
     
-    const submitButton = document.getElementById('save-health-btn');
-    const originalText = submitButton.innerHTML;
-    
-    // Show loading state
-    submitButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin inline"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/><circle cx="12" cy="12" r="10"/></svg> Updating...';
-    submitButton.disabled = true;
-    
     try {
-        // Update in Jira
-        await updateTeamHealthInJira(teamName, formData);
+        console.log('Updating team health for:', teamName, formData);
+        
+        // Update in Jira (if updateTeamHealthInJira function exists)
+        if (typeof updateTeamHealthInJira === 'function') {
+            await updateTeamHealthInJira(teamName, formData);
+        }
         
         // Update local data
         const teamData = boardData.teams[teamName];
-        Object.assign(teamData, formData);
-        if (formData.utilization !== null && teamData.jira) {
+        if (teamData) {
+            Object.assign(teamData, formData);
             teamData.jira.utilization = formData.utilization;
+            teamData.jira.comments = formData.comments;
         }
         
-        // Exit edit mode and refresh display
+        // Refresh UI (if updateUIWithLiveData function exists)
+        if (typeof updateUIWithLiveData === 'function') {
+            await updateUIWithLiveData();
+        }
+        
+        // Exit edit mode
         toggleHealthEditMode(teamName);
         
-        // Show success feedback
-        showNotification('Team health updated successfully!', 'success');
+        console.log('Team health updated successfully');
         
     } catch (error) {
         console.error('Error updating team health:', error);
-        showNotification('Failed to update team health. Please try again.', 'error');
-        
-        // Restore button state
-        submitButton.innerHTML = originalText;
-        submitButton.disabled = false;
+        alert('Error saving changes. Please try again.');
     }
 }
 
@@ -12776,15 +12774,9 @@ async function submitHealthChanges() {
             preventDefault: () => {}
         };
         
-        try {
-            // Call the existing handleHealthUpdate function
-            await handleHealthUpdate(fakeEvent, teamName);
-        } catch (error) {
-            console.error('Error submitting health changes:', error);
-            alert('Error saving changes. Please try again.');
-        }
+        // Call the existing handleHealthUpdate function
+        await handleHealthUpdate(fakeEvent, teamName);
     }
 }
-
 
         init();
