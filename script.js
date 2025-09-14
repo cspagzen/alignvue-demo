@@ -12646,7 +12646,7 @@ async function testCommentsDataRetrieval() {
                 endpoint: '/rest/api/3/search',
                 method: 'POST',
                 body: {
-                    jql: `project = "TH" AND issuetype = "Teams" AND summary in (${teamNamesJQL})`,
+                    jql: `project = "TH" AND issuetype = "Team" AND summary in (${teamNamesJQL})`,
                     fields: [
                         "summary",
                         "key", 
@@ -12826,7 +12826,7 @@ async function debugJiraTHProject() {
             });
             
             const teamsIssueType = issueTypes.find(type => 
-                type.name.toLowerCase().includes('team')
+                type.name.toLowerCase() === 'team'
             );
             
             if (teamsIssueType) {
@@ -12948,5 +12948,7 @@ async function debugCommentsObjects() {
 console.log('🛠️ Debug functions ready!');
 console.log('Run: debugJiraTHProject()');
 console.log('Run: debugCommentsObjects()');
+
+
 
         init();
