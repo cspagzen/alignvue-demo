@@ -1688,10 +1688,6 @@ function showTeamModal(teamName, teamData) {
     modal.style.overflow = 'auto';
 }
 
-/**
- * UPDATED: Calculate overall team health with 4-state support
- * Advanced calculation treating Critical as "worth 2 points"
- */
 // ============================================================================
 // ENHANCED TEAM HEALTH CALCULATION (4-STATE SUPPORT)
 // ============================================================================
@@ -12384,7 +12380,8 @@ async function createTeamInJira(teamName, healthData) {
                     'customfield_10260': healthData.support ? { value: healthData.support } : null,
                     'customfield_10261': healthData.teamwork ? { value: healthData.teamwork } : null,
                     'customfield_10262': healthData.autonomy ? { value: healthData.autonomy } : null,
-                    'customfield_10264': healthData.utilization
+                    'customfield_10264': healthData.utilization,
+                    'customfield_10263': healthData.comments
                 }
             }
         })
