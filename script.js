@@ -12637,7 +12637,7 @@ async function testCommentsDataRetrieval() {
         
         // Create JQL for test
         const teamNamesJQL = testTeamNames.map(name => `"${name}"`).join(', ');
-        console.log('🔎 JQL Query:', `project = "TH" AND issuetype = "Teams" AND summary in (${teamNamesJQL})`);
+        console.log('🔎 JQL Query:', `project = "TH" AND issuetype = "Team" AND summary in (${teamNamesJQL})`);
         
         const response = await fetch('/api/jira', {
             method: 'POST',
