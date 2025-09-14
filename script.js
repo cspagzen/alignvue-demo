@@ -1590,139 +1590,155 @@ async function showTeamModal(teamName, teamData) {
         return;
     }
     
-    // Fetch live data from Jira and merge with local data
-    const jiraData = await fetchTeamDataFromJira(teamName);
-    if (jiraData) {
-        // Merge Jira data with local data, prioritizing Jira for health dimensions and comments
-        teamData = {
-            ...teamData,
-            ...jiraData,
-            jira: {
-                ...teamData.jira,
-                utilization: jiraData.utilization || teamData.jira?.utilization
-            }
-        };
-        
-        // Update local cache with fresh data
-        boardData.teams[teamName] = teamData;
-    }
-    
-    // Set modal title
-    title.innerHTML = `${teamName} <span class="ml-2 text-xs font-normal opacity-75" style="color: var(--text-secondary);">Team Health Details</span>`;
-    
-    // Calculate overall health
-    const healthStatus = getTeamOverallHealth(teamData);
-    
+    // Show loading state immediately
+    title.innerHTML = `${teamName} <span style="color: var(--text-secondary); font-size: 14px;">Loading...</span>`;
     content.innerHTML = `
-        <div class="space-y-6">
-            <!-- Top Row: 4 Equal Performance Metrics -->
-            <div class="grid grid-cols-4 gap-4">
-                
-                <!-- Overall Health Status -->
-                <div class="bg-gray-800 p-4 rounded-lg text-center">
-                    <div class="text-white text-2xl font-bold">${healthStatus.text}</div>
-                    <div class="text-gray-400 text-sm">Overall Health</div>
-                </div>
-                
-                <!-- Utilization Chart -->
-                <div id="utilization-container" class="bg-gray-800 p-4 rounded-lg text-center">
-                    <div style="width: 80px; height: 80px; margin: 0 auto;">
-                        <canvas id="utilization-chart" width="80" height="80"></canvas>
-                    </div>
-                    <div class="text-white text-sm mt-2">Utilization</div>
-                </div>
-                
-                <!-- Active Stories -->
-                <div class="bg-gray-800 p-4 rounded-lg text-center">
-                    <div class="text-white text-2xl font-bold">${teamData.jira?.stories || 'null'}</div>
-                    <div class="text-gray-400 text-sm">Active Stories</div>
-                </div>
-                
-                <!-- Blockers -->
-                <div class="bg-gray-800 p-4 rounded-lg text-center">
-                    <div class="text-white text-2xl font-bold">${teamData.jira?.blockers || 'null'}</div>
-                    <div class="text-gray-400 text-sm">Blockers</div>
-                </div>
-            </div>
+        <div class="flex items-center justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span class="ml-3 text-sm" style="color: var(--text-secondary);">Fetching latest team health data...</span>
+        </div>
+    `;
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    
+    try {
+        // Fetch live data from Jira and merge with local data
+        console.log('🔍 [DEBUG] Fetching fresh data for team:', teamName);
+        const jiraData = await fetchTeamDataFromJira(teamName);
+        
+        if (jiraData) {
+            console.log('✅ [DEBUG] Successfully got Jira data, merging...');
+            // Merge Jira data with local data, prioritizing Jira for health dimensions and comments
+            teamData = {
+                ...teamData,
+                ...jiraData,
+                jira: {
+                    ...teamData.jira,
+                    utilization: jiraData.utilization || teamData.jira?.utilization,
+                    comments: jiraData.comments || teamData.jira?.comments // CRITICAL: Ensure comments are preserved
+                }
+            };
             
-            <!-- Health Dimensions Section -->
-            <div>
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold flex items-center gap-3" style="color: var(--text-primary);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l11 11z"/>
-                        </svg>
-                        Health Dimensions
-                    </h3>
+            // Update local cache with fresh data
+            boardData.teams[teamName] = teamData;
+            console.log('🔍 [DEBUG] Updated team data with comments:', teamData.comments || teamData.jira?.comments);
+        } else {
+            console.warn('⚠️ [DEBUG] No Jira data found, using local data');
+        }
+        
+        // Set modal title
+        title.innerHTML = `${teamName} <span style="color: var(--text-secondary); font-size: 14px;">Team Health Details</span>`;
+        
+        // Calculate overall health with null-aware logic
+        const overallHealth = calculateOverallTeamHealth(teamData);
+        const overallHealthClass = getOverallHealthClass(overallHealth);
+        
+        // Build the modal content with responsive design for 1600x900 baseline
+        content.innerHTML = `
+            <div class="space-y-6">
+                <!-- Overall Health Status -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-lg font-bold ${overallHealthClass}" style="margin-bottom: 4px;">
+                            ${overallHealth}
+                        </div>
+                        <div class="text-sm" style="color: var(--text-secondary);">
+                            Overall Health Status
+                        </div>
+                    </div>
                     <button 
-                        id="edit-health-btn" 
-                        onclick="toggleHealthEditMode('${teamName}')"
-                        class="flex items-center gap-2 px-3 py-1 text-sm rounded border hover:bg-gray-50 transition-colors"
-                        style="border-color: var(--border-primary); color: var(--text-secondary);"
+                        id="edit-team-health" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                        onclick="enableTeamHealthEditing('${teamName}')"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a .5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
-                        </svg>
                         Edit
                     </button>
                 </div>
                 
-                <!-- Health Dimensions Grid (2x3) -->
-                <div id="health-dimensions-container" class="grid grid-cols-2 gap-3">
-                    <form id="health-update-form" onsubmit="handleHealthUpdate(event, '${teamName}')" style="display: contents;">
-                        ${renderHealthDimensionsGrid(teamData, false)}
-                    </form>
+                <!-- Health Dimensions Grid - Optimized for 1600x900 -->
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4" style="min-height: 200px;">
+                    ${renderHealthDimension('Capacity', 'Workload & Resources', teamData.capacity)}
+                    ${renderHealthDimension('Support', 'Tools & Org Backing', teamData.support)}
+                    ${renderHealthDimension('Skillset', 'Technical Capabilities', teamData.skillset)}
+                    ${renderHealthDimension('Team Cohesion', 'Collaboration & Communication', teamData.teamwork)}
+                    ${renderHealthDimension('Vision', 'Clarity & Alignment', teamData.vision)}
+                    ${renderHealthDimension('Autonomy', 'Decision-making Authority', teamData.autonomy)}
                 </div>
-            </div>
-            
-            <!-- Health Insights Section -->
-            <div>
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 6v6l4 2"/>
-                    </svg>
-                    Health Insights
-                </h3>
-                <div class="space-y-3" style="color: var(--text-secondary);">
-                    ${generateHealthInsights(teamData)}
+                
+                <!-- Utilization -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium" style="color: var(--text-primary);">Utilization</span>
+                        <span class="text-2xl font-bold" style="color: var(--accent-blue);">
+                            ${teamData.jira?.utilization || teamData.utilization || 0}%
+                        </span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                            class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                            style="width: ${Math.min(100, teamData.jira?.utilization || teamData.utilization || 0)}%"
+                        ></div>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Team Comments Section -->
-            <div>
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold flex items-center gap-3" style="color: var(--text-primary);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                
+                <!-- Health Insights -->
+                <div>
+                    <h3 class="font-bold mb-3" style="color: var(--text-primary);">
+                        <svg class="inline w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Health Insights
+                    </h3>
+                    <div class="space-y-2" style="color: var(--text-secondary);">
+                        ${generateHealthInsights(teamData)}
+                    </div>
+                </div>
+                
+                <!-- Team Comments Section - FIXED -->
+                <div>
+                    <h3 class="font-bold mb-3" style="color: var(--text-primary);">
+                        <svg class="inline w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                         </svg>
                         Team Comments
                     </h3>
-                </div>
-                
-                <div id="team-comments-container" class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    ${renderTeamComments(teamData, false)}
+                    <div id="team-comments-container" class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg min-h-[100px]">
+                        ${renderTeamComments(teamData, false)}
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
-    
-    // Initialize the utilization chart
-    setTimeout(() => {
-        initializeUtilizationChart(teamData.jira?.utilization || 0);
-    }, 100);
-    
-    modal.classList.add('show');
-    
-    // Add scrolling and proper sizing for all target resolutions
-    modal.style.maxHeight = '90vh';
-    modal.style.overflow = 'auto';
-    const modalContent = modal.querySelector('.modal-content');
-    if (modalContent) {
-        modalContent.style.maxHeight = '85vh';
-        modalContent.style.overflow = 'auto';
-        modalContent.style.paddingRight = '8px'; // Account for scrollbar
+        `;
+        
+        // Focus the close button for accessibility
+        setTimeout(() => {
+            const closeButton = modal.querySelector('button[onclick*="closeModal"]') || modal.querySelector('.modal-close');
+            if (closeButton) {
+                closeButton.focus();
+            }
+        }, 100);
+        
+        announceToScreenReader(`Opened team health details for ${teamName}`);
+        
+    } catch (error) {
+        console.error('❌ [DEBUG] Error in showTeamModal:', error);
+        title.innerHTML = `${teamName} <span style="color: var(--accent-red); font-size: 14px;">Error Loading</span>`;
+        content.innerHTML = `
+            <div class="text-center py-8">
+                <div class="text-red-600 mb-4">
+                    <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Failed to load team health data
+                </div>
+                <p class="text-sm text-gray-600">Please check your connection and try again.</p>
+                <button 
+                    onclick="closeModal(); showTeamModal('${teamName}', boardData.teams['${teamName}'])" 
+                    class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                    Retry
+                </button>
+            </div>
+        `;
     }
 }
 
@@ -12171,6 +12187,36 @@ function renderHealthDimensionsDisplay(teamData, dimensions) {
     }).join('');
 }
 
+function renderHealthDimension(title, description, value) {
+    const statusClass = getDimensionStatusClass(value);
+    const statusText = value || 'Not Set';
+    
+    return `
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <h4 class="font-medium text-sm" style="color: var(--text-primary);">${title}</h4>
+                    <p class="text-xs mt-1" style="color: var(--text-secondary);">${description}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full ${statusClass}"></div>
+                    <span class="text-xs font-medium ${statusClass}">${statusText}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Helper function to get dimension status class
+function getDimensionStatusClass(value) {
+    switch(value) {
+        case 'Healthy': return 'text-green-600 bg-green-600';
+        case 'At Risk': return 'text-yellow-600 bg-yellow-600';  
+        case 'Critical': return 'text-red-600 bg-red-600';
+        default: return 'text-gray-400 bg-gray-400';
+    }
+}
+
 function renderHealthDimensionsEditor(teamData, dimensions) {
     return `
         <form id="health-update-form" onsubmit="handleHealthUpdate(event, '${teamData.name}')">
@@ -12645,7 +12691,15 @@ async function fetchTeamDataFromJira(teamName) {
 }
 
 function renderTeamComments(teamData, isEditMode = false) {
+    console.log('🔍 [DEBUG] renderTeamComments called with:', { 
+        isEditMode, 
+        comments: teamData.comments, 
+        jiraComments: teamData.jira?.comments 
+    });
+    
     if (isEditMode) {
+        // Get comments from either direct property or jira object
+        const currentComments = teamData.comments || teamData.jira?.comments || '';
         return `
             <textarea 
                 id="team-comments" 
@@ -12653,11 +12707,14 @@ function renderTeamComments(teamData, isEditMode = false) {
                 class="w-full px-3 py-2 border rounded-md resize-none" 
                 style="border-color: var(--border-primary); background: var(--bg-secondary); color: var(--text-primary);"
                 placeholder="Add team health notes, concerns, updates, or any relevant information..."
-            >${teamData.comments || ''}</textarea>
+            >${currentComments}</textarea>
         `;
     } else {
-        const comments = teamData.comments || '';
-        if (comments.trim()) {
+        // Display mode - check both possible locations for comments
+        const comments = teamData.comments || teamData.jira?.comments || '';
+        console.log('🔍 [DEBUG] Final comments for display:', comments);
+        
+        if (comments && comments.trim()) {
             return `<div class="text-sm leading-relaxed" style="color: var(--text-primary);">${comments}</div>`;
         } else {
             return `<div class="text-sm italic" style="color: var(--text-secondary);">No comments added yet. Click Edit to add team notes.</div>`;
