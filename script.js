@@ -12546,20 +12546,48 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// ============================================================================
 // NEW FUNCTION: Fetch Team Data from Jira (including comments)
-// ============================================================================
-
-// ============================================================================
-// FIXED: fetchTeamDataFromJira with corrected JQL syntax
-// ============================================================================
-
-
+async function fetchTeamDataFromJira(teamName) {
+    try {
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: `project = "TH" AND issuetype = "Teams" AND summary ~ "${teamName}"`,
+                    fields: ['customfield_10257', 'customfield_10258', 'customfield_10259', 'customfield_10260', 'customfield_10261', 'customfield_10262', 'customfield_10263', 'customfield_10264']
+                }
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.issues && data.issues.length > 0) {
+            const issue = data.issues[0];
+            return {
+                capacity: issue.fields.customfield_10257?.value || null,
+                skillset: issue.fields.customfield_10258?.value || null,
+                vision: issue.fields.customfield_10259?.value || null,
+                support: issue.fields.customfield_10260?.value || null,
+                teamwork: issue.fields.customfield_10261?.value || null,
+                autonomy: issue.fields.customfield_10262?.value || null,
+                utilization: issue.fields.customfield_10264 || null,
+                comments: issue.fields.customfield_10263 || null  // THIS IS THE KEY ADDITION
+            };
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error fetching team data from Jira:', error);
+        return null;
+    }
+}
 
 
 function renderTeamComments(teamData, isEditMode = false) {
     if (isEditMode) {
-        const currentComments = teamData.comments || teamData.jira?.comments || '';
         return `
             <textarea 
                 id="team-comments" 
@@ -12567,10 +12595,10 @@ function renderTeamComments(teamData, isEditMode = false) {
                 class="w-full px-3 py-2 border rounded-md resize-none" 
                 style="border-color: var(--border-primary); background: var(--bg-secondary); color: var(--text-primary);"
                 placeholder="Add team health notes, concerns, updates, or any relevant information..."
-            >${currentComments}</textarea>
+            >${teamData.comments || ''}</textarea>
         `;
     } else {
-        const comments = teamData.comments || teamData.jira?.comments || '';
+        const comments = teamData.comments || '';
         if (comments.trim()) {
             return `<div class="text-sm leading-relaxed" style="color: var(--text-primary);">${comments}</div>`;
         } else {
