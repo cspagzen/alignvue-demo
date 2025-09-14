@@ -1576,361 +1576,185 @@ function openJiraEpic(epicKey) {
     window.open(jiraUrl, '_blank', 'noopener,noreferrer');
 }
 
-        // Updated team modal function with new health dimensions and status levels
+// ============================================================================
+// ENHANCED TEAM MODAL WITH EDIT-IN-PLACE
+// ============================================================================
+
 function showTeamModal(teamName, teamData) {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
     
-    const teamHealthIcon = getHealthIcon(teamData);
-    let atRiskCount = 0;
-    
-    // Count all 6 dimensions that are at-risk
-    if (isDimensionAtRisk(teamData.capacity)) atRiskCount++;
-    if (isDimensionAtRisk(teamData.skillset)) atRiskCount++;
-    if (isDimensionAtRisk(teamData.vision)) atRiskCount++;
-    if (isDimensionAtRisk(teamData.support)) atRiskCount++;
-    if (isDimensionAtRisk(teamData.teamwork)) atRiskCount++;
-    if (isDimensionAtRisk(teamData.autonomy)) atRiskCount++;
-
-    // New health status mapping
-    let healthText = 'HEALTHY';
-    let healthColor = 'var(--accent-green)';
-    
-    if (atRiskCount === 0) { 
-        healthText = 'HEALTHY'; 
-        healthColor = 'var(--accent-green)'; 
-    } else if (atRiskCount <= 2) { 
-        healthText = 'LOW RISK'; 
-        healthColor = 'var(--accent-orange)'; 
-    } else if (atRiskCount <= 4) { 
-        healthText = 'HIGH RISK'; 
-        healthColor = '#FF5F1F'; 
-    } else { 
-        healthText = 'CRITICAL'; 
-        healthColor = 'var(--accent-red)'; 
+    if (!teamData) {
+        console.error('Team not found:', teamName);
+        return;
     }
-
-    title.innerHTML = teamName;
     
-    // Generate notes for at-risk teams - updated for new dimensions
-    const generateTeamNotes = (teamName, teamData) => {
-        const notes = [];
-        
-        if (isDimensionAtRisk(teamData.capacity)) {
-            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-orange);"><path d="M12 6v6l1.56.78"/><circle cx="12" cy="12" r="10"/></svg><span>Capacity Risk: Team is operating at ' + teamData.jira.utilization + '% utilization. Consider redistributing workload or adding resources.</span></div>');
-        }
-        
-        if (isDimensionAtRisk(teamData.skillset)) {
-            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-blue);"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Skillset Gap: Team may need training or expertise in emerging technologies relevant to their initiatives.</span></div>');
-        }
-        
-        if (isDimensionAtRisk(teamData.vision)) {
-            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-purple);"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span>Vision Gap: Team may lack clarity on goals and strategic direction. Consider alignment sessions with leadership.</span></div>');
-        }
-        
-        if (isDimensionAtRisk(teamData.support)) {
-            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-teal);"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg><span>Support Issues: Team may need better tools, resources, or organizational backing to be effective.</span></div>');
-        }
-        
-        if (isDimensionAtRisk(teamData.teamwork)) {
-            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-pink);"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Team Cohesion Concerns: Communication and collaboration may need improvement. Consider team building or process changes.</span></div>');
-        }
-        
-        if (isDimensionAtRisk(teamData.autonomy)) {
-            notes.push('<div class="flex items-start gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color: var(--accent-indigo);"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span>Autonomy Issues: Team may have limited decision-making authority. Consider empowering team leads or reducing approval bottlenecks.</span></div>');
-        }
-        
-        return notes;
-    };
+    // Set modal title
+    title.innerHTML = `${teamName} <span class="ml-2 text-xs font-normal opacity-75" style="color: var(--text-secondary);">Team Health Details</span>`;
     
-    const teamNotes = generateTeamNotes(teamName, teamData);
+    // Calculate overall health
+    const healthStatus = getTeamOverallHealth(teamData);
     
     content.innerHTML = `
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Left Column - Health Dimensions -->
-            <div>
-                <!-- Overall Health Status -->
-                <div class="mb-6 p-4 rounded-lg text-center" style="background: linear-gradient(135deg, ${healthColor}, ${healthColor}); border: 1px solid ${healthColor};">
-                    <div class="flex items-center justify-center gap-3 mb-2">
-                        <div class="text-2xl">${teamHealthIcon}</div>
-                        <div class="text-2xl font-bold text-white">${healthText}</div>
-                    </div>
-                    <div class="text-sm text-white opacity-90">${atRiskCount} of 6 dimensions at risk</div>
+        <div class="space-y-6">
+            <!-- Top Row: Risk Status + Performance Metrics -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Left: Overall Health Status -->
+                <div class="p-4 rounded-lg text-white" style="background: ${getHealthStatusColor(healthStatus.level)};">
+                    <div class="text-2xl font-bold">${healthStatus.text}</div>
+                    <div class="text-sm opacity-90">${getHealthStatusDescription(healthStatus.level, teamData)}</div>
                 </div>
                 
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m14.479 19.374-.971.939a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5a5.2 5.2 0 0 1-.219 1.49"/>
-                        <path d="M15 15h6"/>
-                        <path d="M18 12v6"/>
-                    </svg>
-                    Health Dimensions
-                </h3>
-                
-                <!-- All 6 Health Dimensions -->
-                <div class="space-y-3">
-                    <!-- Capacity -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.capacity) ? 'var(--accent-red)' : 'var(--accent-green)'};">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.capacity) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 6v6l1.56.78"/>
-                                    <circle cx="12" cy="12" r="10"/>
-                                </svg>
-                                <div>
-                                    <div class="text-sm font-bold" style="color: var(--text-primary);">Capacity</div>
-                                    <div class="text-xs" style="color: var(--text-secondary);">Workload & Resources</div>
-                                </div>
-                            </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.capacity) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.capacity.replace('-', ' ')}</div>
+                <!-- Right: Performance Metrics Grid -->
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Utilization Chart -->
+                    <div id="utilization-container" class="bg-gray-800 p-4 rounded-lg text-center">
+                        <div style="width: 80px; height: 80px; margin: 0 auto;">
+                            <canvas id="utilization-chart" width="80" height="80"></canvas>
                         </div>
+                        <div class="text-white text-sm mt-2">Utilization</div>
                     </div>
                     
-                    <!-- Skillset -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.skillset) ? 'var(--accent-red)' : 'var(--accent-green)'};">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.skillset) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                                </svg>
-                                <div>
-                                    <div class="text-sm font-bold" style="color: var(--text-primary);">Skillset</div>
-                                    <div class="text-xs" style="color: var(--text-secondary);">Technical Capabilities</div>
-                                </div>
-                            </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.skillset) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.skillset.replace('-', ' ')}</div>
-                        </div>
+                    <!-- Active Stories -->
+                    <div class="bg-gray-800 p-4 rounded-lg text-center">
+                        <div class="text-white text-2xl font-bold">${teamData.jira?.stories || 'null'}</div>
+                        <div class="text-gray-400 text-sm">Active Stories</div>
                     </div>
                     
-                    <!-- Vision -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.vision) ? 'var(--accent-red)' : 'var(--accent-green)'};">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.vision) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                                <div>
-                                    <div class="text-sm font-bold" style="color: var(--text-primary);">Vision</div>
-                                    <div class="text-xs" style="color: var(--text-secondary);">Clarity & Alignment</div>
-                                </div>
-                            </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.vision) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.vision.replace('-', ' ')}</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Support -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.support) ? 'var(--accent-red)' : 'var(--accent-green)'};">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.support) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M7 10v12"/>
-                                    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/>
-                                </svg>
-                                <div>
-                                    <div class="text-sm font-bold" style="color: var(--text-primary);">Support</div>
-                                    <div class="text-xs" style="color: var(--text-secondary);">Tools & Org Backing</div>
-                                </div>
-                            </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.support) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.support.replace('-', ' ')}</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Team Cohesion -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.teamwork) ? 'var(--accent-red)' : 'var(--accent-green)'};">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.teamwork) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                                    <circle cx="9" cy="7" r="4"/>
-                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                </svg>
-                                <div>
-                                    <div class="text-sm font-bold" style="color: var(--text-primary);">Team Cohesion</div>
-                                    <div class="text-xs" style="color: var(--text-secondary);">Collaboration & Communication</div>
-                                </div>
-                            </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.teamwork) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.teamwork.replace('-', ' ')}</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Autonomy -->
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid ${isDimensionAtRisk(teamData.autonomy) ? 'var(--accent-red)' : 'var(--accent-green)'};">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${isDimensionAtRisk(teamData.autonomy) ? 'var(--accent-red)' : 'var(--accent-green)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                                    <path d="M2 17l10 5 10-5"/>
-                                    <path d="M2 12l10 5 10-5"/>
-                                </svg>
-                                <div>
-                                    <div class="text-sm font-bold" style="color: var(--text-primary);">Autonomy</div>
-                                    <div class="text-xs" style="color: var(--text-secondary);">Decision-making Independence</div>
-                                </div>
-                            </div>
-                            <div class="text-lg font-bold capitalize" style="color: ${isDimensionAtRisk(teamData.autonomy) ? 'var(--accent-red)' : 'var(--accent-green)'};">${teamData.autonomy.replace('-', ' ')}</div>
-                        </div>
+                    <!-- Blockers -->
+                    <div class="bg-gray-800 p-4 rounded-lg text-center">
+                        <div class="text-white text-2xl font-bold">${teamData.jira?.blockers || 'null'}</div>
+                        <div class="text-gray-400 text-sm">Blockers</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Right Column - Team Metrics & Notes -->
+            <!-- Health Dimensions Section -->
             <div>
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 3v16a2 2 0 0 0 2 2h16"/>
-                        <path d="M7 11h8"/>
-                        <path d="M7 16h12"/>
-                        <path d="M7 6h16"/>
-                    </svg>
-                    Performance Metrics
-                </h3>
-                
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div class="text-center p-3 rounded-lg" style="background: var(--bg-tertiary);">
-                        <div class="text-2xl font-bold" style="color: var(--text-primary);">${teamData.jira.velocity}</div>
-                        <div class="text-xs" style="color: var(--text-secondary);">Sprint Velocity</div>
-                    </div>
-                    <div class="text-center p-3 rounded-lg" style="background: var(--bg-tertiary);">
-                        <div class="text-2xl font-bold" style="color: var(--text-primary);">${teamData.jira.utilization}%</div>
-                        <div class="text-xs" style="color: var(--text-secondary);">Utilization</div>
-                    </div>
-                    <div class="text-center p-3 rounded-lg" style="background: var(--bg-tertiary);">
-                        <div class="text-2xl font-bold" style="color: var(--text-primary);">${teamData.jira.stories}</div>
-                        <div class="text-xs" style="color: var(--text-secondary);">Active Stories</div>
-                    </div>
-                    <div class="text-center p-3 rounded-lg" style="background: var(--bg-tertiary);">
-                        <div class="text-2xl font-bold" style="color: var(--text-primary);">${teamData.jira.blockers}</div>
-                        <div class="text-xs" style="color: var(--text-secondary);">Blockers</div>
-                    </div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold flex items-center gap-3" style="color: var(--text-primary);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l11 11z"/>
+                        </svg>
+                        Health Dimensions
+                    </h3>
+                    <button 
+                        id="edit-health-btn" 
+                        onclick="toggleHealthEditMode('${teamName}')"
+                        class="flex items-center gap-2 px-3 py-1 text-sm rounded border hover:bg-gray-50 transition-colors"
+                        style="border-color: var(--border-primary); color: var(--text-secondary);"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
+                        </svg>
+                        Edit
+                    </button>
                 </div>
                 
-                ${teamNotes.length > 0 ? `
+                <!-- Health Dimensions Grid (2x3) -->
+                <div id="health-dimensions-container" class="grid grid-cols-2 gap-3">
+                    ${renderHealthDimensionsGrid(teamData, false)}
+                </div>
+            </div>
+            
+            <!-- Health Insights Section -->
+            <div>
                 <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 8v4"/>
-                        <path d="M12 16h.01"/>
-                        <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
                     </svg>
                     Health Insights
                 </h3>
-                <div class="space-y-3">
-                    ${teamNotes.join('')}
-                </div>` : ''}
+                <div class="space-y-3" style="color: var(--text-secondary);">
+                    ${generateHealthInsights(teamData)}
+                </div>
             </div>
         </div>
     `;
     
-    modal.classList.add('show');
-    modal.setAttribute('aria-hidden', 'false');
-    
-    // Focus the close button for immediate keyboard navigation
+    // Initialize the utilization chart
     setTimeout(() => {
-        const closeButton = modal.querySelector('button');
-        if (closeButton) {
-            closeButton.focus();
-        }
+        initializeUtilizationChart(teamData.jira?.utilization || 0);
     }, 100);
+    
+    modal.classList.add('show');
+    
+    // Make modal scrollable for smaller resolutions
+    modal.style.maxHeight = '85vh';
+    modal.style.overflow = 'auto';
 }
 
 /**
  * UPDATED: Calculate overall team health with 4-state support
  * Advanced calculation treating Critical as "worth 2 points"
  */
+// ============================================================================
+// ENHANCED TEAM HEALTH CALCULATION (4-STATE SUPPORT)
+// ============================================================================
+
 function getTeamOverallHealth(teamData) {
-    let riskScore = 0;
+    let atRiskCount = 0;
+    let criticalCount = 0;
     
     const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
     
-    dimensions.forEach(dim => {
-        const value = teamData[dim];
-        
-        if (value === 'At Risk' || value === 'at-risk') {
-            riskScore += 1;  // At Risk = 1 point
-        } else if (value === 'Critical' || value === 'critical') {
-            riskScore += 2;  // Critical = 2 points (more severe)
-        }
+    // Count non-null dimensions only
+    const validDimensions = dimensions.filter(dim => teamData[dim] != null);
+    
+    validDimensions.forEach(dim => {
+        if (teamData[dim] === 'At Risk') atRiskCount++;
+        if (teamData[dim] === 'Critical') criticalCount++;
     });
     
-    // Risk score interpretation
-    if (riskScore === 0) return 'HEALTHY';
-    if (riskScore <= 2) return 'LOW RISK';
-    if (riskScore <= 6) return 'HIGH RISK'; 
-    return 'CRITICAL';  // 7+ points = critical team
+    // Priority: Critical takes precedence
+    if (criticalCount > 0) {
+        return {
+            text: 'CRITICAL',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/></svg>',
+            color: 'text-red-700',
+            level: 'critical'
+        };
+    }
+    
+    // Standard at-risk counting
+    if (atRiskCount === 0) {
+        return {
+            text: 'HEALTHY',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>',
+            color: 'text-green-700',
+            level: 'healthy'
+        };
+    }
+    
+    if (atRiskCount <= 2) {
+        return {
+            text: 'LOW RISK',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+            color: 'text-amber-700',
+            level: 'low-risk'
+        };
+    }
+    
+    if (atRiskCount <= 4) {
+        return {
+            text: 'HIGH RISK',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline"><path d="M12 16h.01"/><path d="M12 8v4"/><path d="M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"/></svg>',
+            color: 'text-orange-700',
+            level: 'high-risk'
+        };
+    }
+    
+    return {
+        text: 'CRITICAL',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/></svg>',
+        color: 'text-red-700',
+        level: 'critical'
+    };
 }
-
-        function showAddInitiativeModal(row, col) {
-            const modal = document.getElementById('detail-modal');
-            const title = document.getElementById('modal-title');
-            const content = document.getElementById('modal-content');
-            
-            const getColumnLabel = (col) => String.fromCharCode(69 - col);
-            
-            title.textContent = 'Add New Initiative';
-            content.innerHTML = 
-    '<form id="add-initiative-form" class="space-y-4">' +
-        '<div class="grid grid-cols-2 gap-4">' +
-            '<div>' +
-                '<label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Initiative Title</label>' +
-                '<input type="text" name="title" class="w-full px-3 py-2 border rounded-md" style="background: var(--bg-quaternary); border-color: var(--border-primary); color: var(--text-primary);" required>' +
-            '</div>' +
-            '<div>' +
-                '<label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Type</label>' +
-                '<select name="type" class="w-full px-3 py-2 border rounded-md" style="background: var(--bg-quaternary); border-color: var(--border-primary); color: var(--text-primary);" required>' +
-                    '<option value="strategic">Strategic</option>' +
-                    '<option value="ktlo">KTLO/Tech</option>' +
-                    '<option value="emergent">Emergent</option>' +
-                '</select>' +
-            '</div>' +
-        '</div>' +
-        '<div>' +
-            '<label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Outcome</label>' +
-            '<textarea name="outcome" class="w-full px-3 py-2 border rounded-md" rows="2" style="background: var(--bg-quaternary); border-color: var(--border-primary); color: var(--text-primary);" required></textarea>' +
-        '</div>' +
-        '<div>' +
-            '<label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Problem</label>' +
-            '<textarea name="problem" class="w-full px-3 py-2 border rounded-md" rows="2" style="background: var(--bg-quaternary); border-color: var(--border-primary); color: var(--text-primary);" required></textarea>' +
-        '</div>' +
-        '<div>' +
-            '<label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Solution</label>' +
-            '<textarea name="solution" class="w-full px-3 py-2 border rounded-md" rows="2" style="background: var(--bg-quaternary); border-color: var(--border-primary); color: var(--text-primary);" required></textarea>' +
-        '</div>' +
-        '<div class="grid grid-cols-2 gap-4">' +
-            '<div>' +
-                '<label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Teams (select multiple)</label>' +
-                '<select name="teams" multiple class="w-full px-3 py-2 border rounded-md h-24" style="background: var(--bg-quaternary); border-color: var(--border-primary); color: var(--text-primary);" required>' +
-                    Object.keys(boardData.teams).map(team => '<option value="' + team + '">' + team + '</option>').join('') +
-                '</select>' +
-            '</div>' +
-            '<div>' +
-                '<label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Validation Status</label>' +
-                '<select name="validation" class="w-full px-3 py-2 border rounded-md" style="background: var(--bg-quaternary); border-color: var(--border-primary); color: var(--text-primary);" required>' +
-                    '<option value="not-validated">Not Validated</option>' +
-                    '<option value="in-validation">In Validation</option>' +
-                    '<option value="validated">Validated</option>' +
-                '</select>' +
-            '</div>' +
-        '</div>' +
-        '<div class="flex justify-end gap-3 pt-4">' +
-            '<button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-md hover:bg-opacity-90" style="background: var(--bg-quaternary); border-color: var(--border-primary); color: var(--text-primary);">Cancel</button>' +
-            '<button type="submit" class="px-4 py-2 rounded-md hover:bg-opacity-90" style="background: var(--accent-primary); color: white;">Add Initiative</button>' +
-        '</div>' +
-    '</form>';
-            
-            const form = document.getElementById('add-initiative-form');
-const handleSubmit = function(e) {
-    e.preventDefault();
-    alert('Initiative would be added at this position. This is a demo - no actual data is saved.');
-    form.removeEventListener('submit', handleSubmit);
-    closeModal();
-};
-form.addEventListener('submit', handleSubmit);
-            
-            modal.classList.add('show');
-        }
 
         function showAddTeamModal() {
             const modal = document.getElementById('detail-modal');
@@ -12200,6 +12024,501 @@ console.log('   - verifyTeamHealthInUI()');
 // ===============================================================================
 // END OF PERMANENT TEAM HEALTH INTEGRATION
 // ===============================================================================
+
+// ============================================================================
+// UTILIZATION CHART FUNCTIONS
+// ============================================================================
+
+function getUtilizationChartColor(utilization) {
+    if (utilization < 50) return '#ea580c';        // Orange - Underutilized
+    if (utilization <= 70) return '#ca8a04';       // Yellow - Low utilization  
+    if (utilization <= 85) return '#16a34a';       // Green - Optimal
+    if (utilization <= 95) return '#ca8a04';       // Yellow - High
+    if (utilization <= 100) return '#ea580c';      // Orange - Overloaded
+    return '#dc2626';                              // Red - Critical (>100%)
+}
+
+function initializeUtilizationChart(utilization, containerId = 'utilization-chart') {
+    const canvas = document.getElementById(containerId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    const utilizationValue = Math.min(Math.max(utilization || 0, 0), 100);
+    const remainderValue = Math.max(0, 100 - utilizationValue);
+    
+    // Get color based on utilization value
+    const utilizationColor = getUtilizationChartColor(utilizationValue);
+    const remainderColor = '#374151'; // Grey for remainder
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [utilizationValue, remainderValue],
+                backgroundColor: [utilizationColor, remainderColor],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%', // Makes it a donut instead of pie
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                }
+            }
+        },
+        plugins: [{
+            beforeDraw: function(chart) {
+                const width = chart.width;
+                const height = chart.height;
+                const ctx = chart.ctx;
+                
+                ctx.restore();
+                ctx.font = 'bold 18px Arial';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${utilizationValue}%`, width/2, height/2);
+                ctx.save();
+            }
+        }]
+    });
+}
+
+// ============================================================================
+// HEALTH DIMENSIONS RENDERING
+// ============================================================================
+
+function renderHealthDimensionsGrid(teamData, isEditMode = false) {
+    const dimensions = [
+        { key: 'capacity', label: 'Capacity', desc: 'Workload & Resources', icon: 'clock' },
+        { key: 'support', label: 'Support', desc: 'Tools & Org Backing', icon: 'life-buoy' },
+        { key: 'skillset', label: 'Skillset', desc: 'Technical Capabilities', icon: 'graduation-cap' },
+        { key: 'teamwork', label: 'Team Cohesion', desc: 'Collaboration & Communication', icon: 'users' },
+        { key: 'vision', label: 'Vision', desc: 'Clarity & Alignment', icon: 'eye' },
+        { key: 'autonomy', label: 'Autonomy', desc: 'Decision-making Independence', icon: 'layers' }
+    ];
+    
+    if (isEditMode) {
+        return renderHealthDimensionsEditor(teamData, dimensions);
+    } else {
+        return renderHealthDimensionsDisplay(teamData, dimensions);
+    }
+}
+
+function renderHealthDimensionsDisplay(teamData, dimensions) {
+    return dimensions.map(dim => {
+        const value = teamData[dim.key];
+        const colorClass = getDimensionColorClass(value);
+        const borderColor = getDimensionBorderColor(value);
+        
+        return `
+            <div class="p-4 rounded-lg border" style="background: var(--bg-tertiary); border-color: ${borderColor};">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        ${getDimensionIcon(dim.icon, borderColor)}
+                        <div>
+                            <div class="text-sm font-bold" style="color: var(--text-primary);">${dim.label}</div>
+                            <div class="text-xs" style="color: var(--text-secondary);">${dim.desc}</div>
+                        </div>
+                    </div>
+                    <div class="text-lg font-bold capitalize ${colorClass}">
+                        ${value || 'Not Set'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderHealthDimensionsEditor(teamData, dimensions) {
+    return `
+        <form id="health-update-form" onsubmit="handleHealthUpdate(event, '${teamData.name}')">
+            <div class="space-y-3 mb-4">
+                ${dimensions.map(dim => `
+                    <div class="flex items-center justify-between p-3 rounded-lg border" 
+                         style="background: var(--bg-secondary); border-color: var(--border-primary);">
+                        <div class="flex items-center gap-3">
+                            ${getDimensionIcon(dim.icon, 'var(--text-secondary)')}
+                            <div>
+                                <div class="font-medium text-sm" style="color: var(--text-primary);">${dim.label}</div>
+                                <div class="text-xs opacity-75" style="color: var(--text-secondary);">${dim.desc}</div>
+                            </div>
+                        </div>
+                        <select 
+                            id="${dim.key}" 
+                            class="px-3 py-1 rounded border text-sm"
+                            style="background: var(--bg-tertiary); border-color: var(--border-primary); color: var(--text-primary);"
+                        >
+                            <option value="">Not Set</option>
+                            <option value="Healthy" ${teamData[dim.key] === 'Healthy' ? 'selected' : ''}>Healthy</option>
+                            <option value="At Risk" ${teamData[dim.key] === 'At Risk' ? 'selected' : ''}>At Risk</option>
+                            <option value="Critical" ${teamData[dim.key] === 'Critical' ? 'selected' : ''}>Critical</option>
+                        </select>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex justify-end gap-3 pt-4 border-t" style="border-color: var(--border-primary);">
+                <button type="button" onclick="toggleHealthEditMode('${teamData.name}')" 
+                        class="px-4 py-2 text-sm rounded border hover:bg-gray-50 transition-colors"
+                        style="border-color: var(--border-primary); color: var(--text-secondary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                        <path d="m15 9-6 6"/>
+                        <path d="m9 9 6 6"/>
+                    </svg>
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="px-4 py-2 text-sm rounded text-white transition-colors flex items-center gap-2"
+                        style="background: var(--accent-blue);"
+                        id="save-health-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M8 16H3v5"/>
+                    </svg>
+                    Sync Changes
+                </button>
+            </div>
+        </form>
+    `;
+}
+
+function renderUtilizationEditor(teamData) {
+    return `
+        <div class="bg-gray-800 p-4 rounded-lg text-center">
+            <div class="mb-2">
+                <input 
+                    type="number" 
+                    id="utilization-input"
+                    min="0" 
+                    max="150" 
+                    value="${teamData.jira?.utilization || ''}"
+                    class="w-16 bg-gray-700 text-white text-center text-xl font-bold border border-gray-600 rounded"
+                    placeholder="--"
+                />
+                <div class="text-sm text-gray-400 mt-1">%</div>
+            </div>
+            <div class="text-white text-sm">Utilization</div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// EDIT MODE TOGGLE FUNCTIONALITY
+// ============================================================================
+
+function toggleHealthEditMode(teamName) {
+    const container = document.getElementById('health-dimensions-container');
+    const utilizationContainer = document.getElementById('utilization-container');
+    const button = document.getElementById('edit-health-btn');
+    const teamData = boardData.teams[teamName];
+    
+    const isEditing = button.innerHTML.includes('Cancel');
+    
+    if (isEditing) {
+        // Exit edit mode - restore original displays
+        button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
+            </svg>
+            Edit
+        `;
+        container.innerHTML = renderHealthDimensionsGrid(teamData, false);
+        utilizationContainer.innerHTML = `
+            <div style="width: 80px; height: 80px; margin: 0 auto;">
+                <canvas id="utilization-chart" width="80" height="80"></canvas>
+            </div>
+            <div class="text-white text-sm mt-2">Utilization</div>
+        `;
+        // Reinitialize chart
+        setTimeout(() => {
+            initializeUtilizationChart(teamData.jira?.utilization || 0);
+        }, 100);
+    } else {
+        // Enter edit mode - show form controls  
+        button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                <path d="m15 9-6 6"/>
+                <path d="m9 9 6 6"/>
+            </svg>
+            Cancel
+        `;
+        container.innerHTML = renderHealthDimensionsGrid(teamData, true);
+        utilizationContainer.innerHTML = renderUtilizationEditor(teamData);
+    }
+}
+
+// ============================================================================
+// FORM SUBMISSION & JIRA SYNC
+// ============================================================================
+
+async function handleHealthUpdate(event, teamName) {
+    event.preventDefault();
+    
+    const formData = {
+        capacity: document.getElementById('capacity').value || null,
+        skillset: document.getElementById('skillset').value || null,
+        vision: document.getElementById('vision').value || null,
+        support: document.getElementById('support').value || null,
+        teamwork: document.getElementById('teamwork').value || null,
+        autonomy: document.getElementById('autonomy').value || null,
+        utilization: parseInt(document.getElementById('utilization-input')?.value) || null
+    };
+    
+    const submitButton = document.getElementById('save-health-btn');
+    const originalText = submitButton.innerHTML;
+    
+    // Show loading state
+    submitButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin inline"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/><circle cx="12" cy="12" r="10"/></svg> Updating...';
+    submitButton.disabled = true;
+    
+    try {
+        // Update in Jira
+        await updateTeamHealthInJira(teamName, formData);
+        
+        // Update local data
+        const teamData = boardData.teams[teamName];
+        Object.assign(teamData, formData);
+        if (formData.utilization !== null && teamData.jira) {
+            teamData.jira.utilization = formData.utilization;
+        }
+        
+        // Exit edit mode and refresh display
+        toggleHealthEditMode(teamName);
+        
+        // Show success feedback
+        showNotification('Team health updated successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error updating team health:', error);
+        showNotification('Failed to update team health. Please try again.', 'error');
+        
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+    }
+}
+
+async function updateTeamHealthInJira(teamName, healthData) {
+    // First, find the team in Jira TH project
+    const searchResponse = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/search',
+            method: 'POST',
+            body: {
+                jql: `project = "TH" AND issuetype = "Teams" AND summary ~ "${teamName}"`,
+                fields: ['id', 'key', 'summary']
+            }
+        })
+    });
+    
+    const searchData = await searchResponse.json();
+    
+    if (!searchData.issues || searchData.issues.length === 0) {
+        // Team doesn't exist, create it
+        return await createTeamInJira(teamName, healthData);
+    }
+    
+    const teamIssue = searchData.issues[0];
+    
+    // Update existing team
+    const updateResponse = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: `/rest/api/3/issue/${teamIssue.key}`,
+            method: 'PUT',
+            body: {
+                fields: {
+                    // Map health dimensions to custom fields
+                    'customfield_10257': healthData.capacity ? { value: healthData.capacity } : null,
+                    'customfield_10258': healthData.skillset ? { value: healthData.skillset } : null,
+                    'customfield_10259': healthData.vision ? { value: healthData.vision } : null,
+                    'customfield_10260': healthData.support ? { value: healthData.support } : null,
+                    'customfield_10261': healthData.teamwork ? { value: healthData.teamwork } : null,
+                    'customfield_10262': healthData.autonomy ? { value: healthData.autonomy } : null,
+                    'customfield_10264': healthData.utilization
+                }
+            }
+        })
+    });
+    
+    if (!updateResponse.ok) {
+        throw new Error('Failed to update team health in Jira');
+    }
+    
+    return { key: teamIssue.key, id: teamIssue.id };
+}
+
+async function createTeamInJira(teamName, healthData) {
+    const response = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/issue',
+            method: 'POST',
+            body: {
+                fields: {
+                    project: { key: 'TH' },
+                    issuetype: { name: 'Teams' },
+                    summary: teamName,
+                    // Initialize all health dimensions
+                    'customfield_10257': healthData.capacity ? { value: healthData.capacity } : null,
+                    'customfield_10258': healthData.skillset ? { value: healthData.skillset } : null,
+                    'customfield_10259': healthData.vision ? { value: healthData.vision } : null,
+                    'customfield_10260': healthData.support ? { value: healthData.support } : null,
+                    'customfield_10261': healthData.teamwork ? { value: healthData.teamwork } : null,
+                    'customfield_10262': healthData.autonomy ? { value: healthData.autonomy } : null,
+                    'customfield_10264': healthData.utilization
+                }
+            }
+        })
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to create team in Jira');
+    }
+    
+    const result = await response.json();
+    return { key: result.key, id: result.id };
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+function getDimensionColorClass(value) {
+    switch(value) {
+        case 'Healthy': return 'text-green-600';
+        case 'At Risk': return 'text-yellow-600';
+        case 'Critical': return 'text-red-600';
+        default: return 'text-gray-500';
+    }
+}
+
+function getDimensionBorderColor(value) {
+    switch(value) {
+        case 'Healthy': return 'var(--accent-green)';
+        case 'At Risk': return 'var(--accent-orange)';
+        case 'Critical': return 'var(--accent-red)';
+        default: return 'var(--border-primary)';
+    }
+}
+
+function getDimensionIcon(iconType, color) {
+    const icons = {
+        'clock': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>`,
+        'life-buoy': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>`,
+        'graduation-cap': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>`,
+        'users': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m19 8-2 3h4l-2-3"/></svg>`,
+        'eye': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+        'layers': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`
+    };
+    return icons[iconType] || '';
+}
+
+function getHealthStatusColor(level) {
+    switch(level) {
+        case 'healthy': return 'var(--accent-green)';
+        case 'low-risk': return '#f59e0b'; // Amber
+        case 'high-risk': return 'var(--accent-orange)';
+        case 'critical': return 'var(--accent-red)';
+        default: return '#6b7280'; // Grey
+    }
+}
+
+function getHealthStatusDescription(level, teamData) {
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    const atRiskCount = dimensions.filter(dim => teamData[dim] === 'At Risk').length;
+    const criticalCount = dimensions.filter(dim => teamData[dim] === 'Critical').length;
+    
+    if (criticalCount > 0) {
+        return `${criticalCount} dimension${criticalCount > 1 ? 's' : ''} critical, ${atRiskCount} at risk`;
+    }
+    if (atRiskCount > 0) {
+        return `${atRiskCount} of 6 dimensions at risk`;
+    }
+    return 'All dimensions healthy';
+}
+
+function generateHealthInsights(teamData) {
+    const insights = [];
+    
+    // Check utilization
+    const utilization = teamData.jira?.utilization;
+    if (utilization) {
+        if (utilization > 95) {
+            insights.push('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><strong>Capacity Risk:</strong> Team operating at high utilization. Consider redistributing workload or adding resources.');
+        } else if (utilization < 50) {
+            insights.push('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg><strong>Utilization Note:</strong> Team has available capacity for additional work.');
+        }
+    }
+    
+    // Check critical dimensions
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    dimensions.forEach(dim => {
+        if (teamData[dim] === 'Critical') {
+            const insights_text = {
+                'capacity': 'Team critically overloaded. Immediate workload reduction needed.',
+                'skillset': 'Missing critical skills. Consider training or hiring.',
+                'vision': 'Lack of clear direction. Leadership alignment needed.',
+                'support': 'Team lacks necessary tools or organizational support.',
+                'teamwork': 'Serious collaboration issues. Team building recommended.',
+                'autonomy': 'Team blocked by dependencies. Process improvement needed.'
+            };
+            insights.push(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-2"><path d="m14.876 18.99-1.368 1.323a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5a5.2 5.2 0 0 1-.244 1.572"/><path d="M15 15h6"/></svg><strong>${dim.charAt(0).toUpperCase() + dim.slice(1)} Issues:</strong> ${insights_text[dim]}`);
+        }
+    });
+    
+    if (insights.length === 0) {
+        insights.push('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-2"><path d="m14.479 19.374-.971.939a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5a5.2 5.2 0 0 1-.219 1.49"/><path d="M15 15h6"/><path d="M18 12v6"/></svg><strong>Team Status:</strong> No immediate health concerns identified.');
+    }
+    
+    return insights.map(insight => `<div class="flex items-start gap-2"><div>${insight}</div></div>`).join('');
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-300`;
+    
+    if (type === 'success') {
+        notification.style.background = 'var(--accent-green)';
+        notification.style.color = 'white';
+    } else if (type === 'error') {
+        notification.style.background = 'var(--accent-red)';
+        notification.style.color = 'white';
+    } else {
+        notification.style.background = 'var(--accent-blue)';
+        notification.style.color = 'white';
+    }
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
 
 
 
