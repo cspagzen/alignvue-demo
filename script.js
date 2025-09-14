@@ -12008,39 +12008,37 @@ function showTeamModal(teamName, teamData) {
     
     content.innerHTML = `
         <div class="space-y-6">
-            <!-- Top Section: Status Overview -->
-            <div class="grid grid-cols-4 gap-4">
-                <!-- Critical Status Alert -->
-                <div class="p-4 rounded-lg" style="background: var(--accent-red); color: white;">
-                    <div class="flex items-center gap-2 mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 1.73-3Z"/>
-                            <path d="M12 9v4"/>
-                            <path d="M12 17h.01"/>
-                        </svg>
-                        <div class="text-lg font-bold">CRITICAL</div>
-                    </div>
-                    <div class="text-sm opacity-90">1 dimension critical, 1 at risk</div>
+        <div class="space-y-6">
+            <!-- Top Row: Risk Status + Performance Metrics -->
+            <div class="grid grid-cols-4 gap-6">
+                
+                <!-- Left: Overall Health Status -->
+                <div class="p-4 rounded-lg text-white" style="background: ${getHealthStatusColor(healthStatus.level)};">
+                    <div class="text-2xl font-bold">${healthStatus.text}</div>
+                    <div class="text-sm opacity-90">${getHealthStatusDescription(healthStatus.level, teamData)}</div>
                 </div>
                 
-                <!-- Utilization -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="text-center">
-                        <canvas id="utilization-chart-${teamName.replace(/\s+/g, '-')}" width="80" height="80" style="width: 80px; height: 80px; margin: 0 auto;"></canvas>
-                        <div class="text-sm mt-2" style="color: var(--text-secondary);">Utilization</div>
+                <!-- Right: Performance Metrics Grid -->
+                <div class="grid grid-cols-1 gap-3">
+                    <!-- Utilization Chart -->
+                    <div id="utilization-container" class="bg-gray-800 p-4 rounded-lg text-center">
+                        <div style="width: 80px; height: 80px; margin: 0 auto;">
+                            <canvas id="utilization-chart" width="80" height="80"></canvas>
+                        </div>
+                        <div class="text-white text-sm mt-2">Utilization</div>
                     </div>
                 </div>
                 
                 <!-- Active Stories -->
-                <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="text-3xl font-bold mb-1" style="color: var(--text-primary);">null</div>
-                    <div class="text-sm" style="color: var(--text-secondary);">Active Stories</div>
+                <div class="bg-gray-800 p-4 rounded-lg text-center">
+                    <div class="text-white text-2xl font-bold">${teamData.jira?.stories || 'null'}</div>
+                    <div class="text-gray-400 text-sm">Active Stories</div>
                 </div>
                 
                 <!-- Blockers -->
-                <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="text-3xl font-bold mb-1" style="color: var(--text-primary);">null</div>
-                    <div class="text-sm" style="color: var(--text-secondary);">Blockers</div>
+                <div class="bg-gray-800 p-4 rounded-lg text-center">
+                    <div class="text-white text-2xl font-bold">${teamData.jira?.blockers || 'null'}</div>
+                    <div class="text-gray-400 text-sm">Blockers</div>
                 </div>
             </div>
             
