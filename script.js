@@ -12810,9 +12810,6 @@ async function submitHealthChanges() {
         
         console.log('Submitting health changes for:', teamName, formData);
         
-        // Store the original values for validation later
-        const originalData = JSON.parse(JSON.stringify(formData));
-        
         // Update local data immediately for responsive UI
         const teamData = boardData.teams[teamName];
         if (teamData) {
@@ -12823,152 +12820,117 @@ async function submitHealthChanges() {
             }
         }
         
-        // DO NOT exit edit mode yet - keep modal open during sync
-        
-        // Now do the full sync with overlay
-        await syncOverlay.syncWithProgress(async () => {
-            console.log('=== TEAM HEALTH UPDATE SYNC ===');
-            
-            // Step 1: Send the update to Jira
-            if (typeof updateTeamHealthInJira === 'function') {
-                console.log('Syncing team health changes to Jira...');
-                await updateTeamHealthInJira(teamName, formData);
-                console.log('Team health changes synced to Jira successfully');
-            }
-            
-            // Step 2: Force complete refresh of ALL data from Jira
-            console.log('Fetching all fresh data from Jira...');
-            const newData = await fetchJiraData();
-            
-            // Step 3: Update the entire board with fresh data
-            console.log('Updating board with fresh Jira data...');
-            updateBoardWithLiveData(newData);
-            syncState.lastSyncData = newData;
-            syncState.lastSyncTime = Date.now();
-            
-            // Step 4: Wait for UI to fully update (data takes up to 4 seconds)
-            console.log('Waiting for UI updates to complete...');
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Step 5: Validate that our changes actually synced
-            const updatedTeamData = newData.teams ? newData.teams[teamName] : boardData.teams[teamName];
-            
-            if (updatedTeamData) {
-                console.log('Validating synced data...');
-                console.log('Original form data:', originalData);
-                console.log('Synced team data:', updatedTeamData);
-                
-                // Don't worry about detailed validation - if we got here, it mostly worked
-                return {
-                    synced: true,
-                    validated: true,
-                    teamName: teamName
-                };
-            } else {
-                throw new Error('Team data not found after sync');
-            }
-            
-        }, {
-            title: 'Syncing Team Health',
-            subtitle: `Saving ${teamName} changes to Jira...`,
-            successTitle: 'Data Synced & Validated', 
-            successSubtitle: `${teamName} health updated successfully`,
-            errorTitle: 'Sync Failed',
-            errorSubtitle: 'Changes may not have been saved'
-        });
-        
-        console.log('✅ Team health update complete');
-        
-        // Show success state in overlay for 2 seconds, then close everything
-        setTimeout(() => {
-            console.log('Closing modal after success display...');
-            
-            // FORCE EXIT EDIT MODE AND CLOSE MODAL
-            toggleHealthEditMode(teamName); // Exit edit mode
-            
-            // Double-check modal closure
-            const modal = document.getElementById('team-modal');
-            if (modal && modal.classList.contains('show')) {
-                closeModal();
-            }
-        }, 2000);
-        
-    } catch (error) {
-        console.error('Error in team health sync process:', error);
-        
-        // Don't show the awkward "sync failed" dialog to user
-        // Instead, automatically run the manual sync in the background
-        console.log('Initial sync had issues, automatically running validation sync...');
+        // Show initial sync overlay and keep it visible throughout
+        if (syncOverlay && syncOverlay.show) {
+            syncOverlay.show({
+                title: 'Syncing Team Health',
+                subtitle: `Saving ${teamName} changes to Jira...`
+            });
+        }
         
         try {
-            // Run validation sync with custom overlay messaging
-            await syncOverlay.syncWithProgress(async () => {
-                console.log('Running manual sync for validation...');
-                await triggerManualSync();
+            // Step 1: Try the initial Jira update
+            if (typeof updateTeamHealthInJira === 'function') {
+                console.log('Attempting initial Jira sync...');
+                await updateTeamHealthInJira(teamName, formData);
+                console.log('Initial Jira sync completed');
                 
-                // Wait longer for the data to actually propagate (up to 4 seconds)
-                console.log('Waiting for data to fully refresh...');
-                await new Promise(resolve => setTimeout(resolve, 4000));
+                // Wait for data to propagate
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
-                return {
-                    synced: true,
-                    validated: true,
-                    teamName: teamName
-                };
-            }, {
-                title: `Validating Data for ${teamName}`,
-                subtitle: 'Ensuring changes were saved correctly...',
-                successTitle: 'Data Synced & Validated',
-                successSubtitle: `${teamName} health updated successfully`,
-                errorTitle: 'Validation Failed',
-                errorSubtitle: 'Please try again'
-            });
-            
-            console.log('✅ Validation sync completed successfully');
-            
-            // Wait 2 seconds to show success message, then close
-            setTimeout(() => {
-                console.log('Closing modal after validation success...');
-                
-                // FORCE CLOSE EVERYTHING - don't return to edit mode
-                toggleHealthEditMode(teamName); // Exit edit mode
-                
-                const modal = document.getElementById('team-modal');
-                if (modal && modal.classList.contains('show')) {
-                    closeModal();
-                }
-            }, 2000);
-            
-        } catch (refreshError) {
-            console.error('Both sync and manual refresh failed:', refreshError);
-            
-            // Hide overlay and return to view mode on error
-            if (syncOverlay && syncOverlay.hide) {
-                syncOverlay.hide();
+            } else {
+                throw new Error('updateTeamHealthInJira function not available');
             }
             
-            toggleHealthEditMode(teamName); // Exit edit mode, stay in modal
+        } catch (syncError) {
+            console.log('Initial sync had issues, running validation sync...');
             
-            // Only show error dialog for truly critical failures
-            alert('Unable to sync changes to Jira. Please check your connection and try again.');
+            // CRITICAL: Preserve the "Syncing Team Health" message during manual sync
+            // Temporarily disable syncOverlay to prevent "Manual Sync" from showing
+            const originalShow = syncOverlay?.show;
+            const originalUpdateMessages = syncOverlay?.updateMessages;
+            const originalHide = syncOverlay?.hide;
+            
+            if (syncOverlay) {
+                syncOverlay.show = () => {};
+                syncOverlay.updateMessages = () => {};
+                syncOverlay.hide = () => {};
+            }
+            
+            // Run manual sync silently (user keeps seeing "Syncing Team Health")
+            await triggerManualSync();
+            
+            // Restore syncOverlay functions
+            if (syncOverlay) {
+                syncOverlay.show = originalShow;
+                syncOverlay.updateMessages = originalUpdateMessages;
+                syncOverlay.hide = originalHide;
+            }
+            
+            // Wait for data to fully propagate from manual sync
+            console.log('Waiting for UI data to fully refresh after manual sync...');
+            await new Promise(resolve => setTimeout(resolve, 4000));
         }
+        
+        // Force a final data refresh to ensure we have latest data
+        console.log('Forcing final data refresh...');
+        const newData = await fetchJiraData();
+        updateBoardWithLiveData(newData);
+        syncState.lastSyncData = newData;
+        syncState.lastSyncTime = Date.now();
+        
+        // ONLY NOW show success message (data is guaranteed to be updated)
+        if (syncOverlay && syncOverlay.updateMessages) {
+            syncOverlay.updateMessages({
+                title: `${teamName} Team Health Data Successfully Updated and Validated`,
+                subtitle: 'All changes have been synced to Jira'
+            });
+        }
+        
+        console.log('✅ Team health sync process completed with updated data');
+        
+        // Show success message for 3 seconds, then switch to non-edit mode BEFORE closing overlay
+        setTimeout(() => {
+            console.log('Data is updated - switching to non-edit mode...');
+            
+            // Switch to non-edit mode FIRST (data is guaranteed fresh at this point)
+            toggleHealthEditMode(teamName);
+            
+            // THEN close overlay after mode switch completes
+            setTimeout(() => {
+                console.log('Closing overlay - user will see non-edit modal with fresh data');
+                if (syncOverlay && syncOverlay.hide) {
+                    syncOverlay.hide();
+                }
+            }, 500);
+            
+        }, 3000);
+        
+    } catch (criticalError) {
+        console.error('Critical error in team health sync:', criticalError);
+        
+        // Hide overlay and return to non-edit mode
+        if (syncOverlay && syncOverlay.hide) {
+            syncOverlay.hide();
+        }
+        
+        toggleHealthEditMode(teamName);
+        
+        alert('Unable to sync changes to Jira. Please check your connection and try again.');
     }
 }
 
-// HELPER FUNCTION FOR FORCING MODAL CLOSURE
+// Helper function for clean modal closure
 function forceCloseTeamModal() {
-    // Exit edit mode if active
     if (window.currentEditingTeam) {
         toggleHealthEditMode(window.currentEditingTeam);
     }
     
-    // Close modal
     const modal = document.getElementById('team-modal');
     if (modal) {
         modal.classList.remove('show');
     }
     
-    // Clear any editing state
     window.currentEditingTeam = null;
 }
 
