@@ -1600,7 +1600,7 @@ function showTeamModal(teamName, teamData) {
     const blockers = teamData.jira?.blockers || null;
     
     content.innerHTML = `
-        <div class="space-y-6">
+        <div class="space-y-6 team-modal-content">
             <!-- Top Row: Four Even Boxes -->
             <div class="grid grid-cols-4 gap-4">
                 
@@ -1647,17 +1647,87 @@ function showTeamModal(teamName, teamData) {
                 
             </div>
             
-            <!-- Rest of existing content unchanged -->
+            <!-- Rest of existing content -->
+            <!-- Right: Performance Metrics -->
+            <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                <h3 class="text-lg font-bold mb-4" style="color: var(--text-primary);">Performance Metrics</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <!-- Utilization -->
+                    <div class="text-center">
+                        <div class="text-2xl font-bold mb-1" style="color: var(--accent-orange);">${teamData.jira?.utilization || 0}%</div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Utilization</div>
+                    </div>
+                    <!-- Active Stories -->
+                    <div class="text-center">
+                        <div class="text-2xl font-bold mb-1" style="color: var(--accent-blue);">${teamData.jira?.stories || 'N/A'}</div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Active Stories</div>
+                    </div>
+                    <!-- Blockers -->
+                    <div class="text-center">
+                        <div class="text-2xl font-bold mb-1" style="color: var(--accent-red);">${teamData.jira?.blockers || 0}</div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Blockers</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Team Health Dimensions -->
             <div>
                 <h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Team Health Dimensions</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    ${renderTeamDimensionDetail('Capacity', 'capacity', teamData.capacity, 'Workload and resource availability')}
-                    ${renderTeamDimensionDetail('Skillset', 'skillset', teamData.skillset, 'Technical capabilities and expertise')}
-                    ${renderTeamDimensionDetail('Vision', 'vision', teamData.vision, 'Clarity of goals and direction')}
-                    ${renderTeamDimensionDetail('Support', 'support', teamData.support, 'Tools and organizational backing')}
-                    ${renderTeamDimensionDetail('Team Cohesion', 'teamwork', teamData.teamwork, 'Collaboration and communication')}
-                    ${renderTeamDimensionDetail('Autonomy', 'autonomy', teamData.autonomy, 'Decision-making authority')}
+                    <!-- Capacity -->
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-sm font-bold" style="color: var(--text-primary);">Capacity</div>
+                            <div class="text-sm font-bold ${getDimensionStatusColor(teamData.capacity)}">${teamData.capacity || 'Not Set'}</div>
+                        </div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Workload and resource availability</div>
+                    </div>
+                    
+                    <!-- Skillset -->
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-sm font-bold" style="color: var(--text-primary);">Skillset</div>
+                            <div class="text-sm font-bold ${getDimensionStatusColor(teamData.skillset)}">${teamData.skillset || 'Not Set'}</div>
+                        </div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Technical capabilities and expertise</div>
+                    </div>
+                    
+                    <!-- Vision -->
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-sm font-bold" style="color: var(--text-primary);">Vision</div>
+                            <div class="text-sm font-bold ${getDimensionStatusColor(teamData.vision)}">${teamData.vision || 'Not Set'}</div>
+                        </div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Clarity of goals and direction</div>
+                    </div>
+                    
+                    <!-- Support -->
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-sm font-bold" style="color: var(--text-primary);">Support</div>
+                            <div class="text-sm font-bold ${getDimensionStatusColor(teamData.support)}">${teamData.support || 'Not Set'}</div>
+                        </div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Tools and organizational backing</div>
+                    </div>
+                    
+                    <!-- Team Cohesion -->
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-sm font-bold" style="color: var(--text-primary);">Team Cohesion</div>
+                            <div class="text-sm font-bold ${getDimensionStatusColor(teamData.teamwork)}">${teamData.teamwork || 'Not Set'}</div>
+                        </div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Collaboration and communication</div>
+                    </div>
+                    
+                    <!-- Autonomy -->
+                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-sm font-bold" style="color: var(--text-primary);">Autonomy</div>
+                            <div class="text-sm font-bold ${getDimensionStatusColor(teamData.autonomy)}">${teamData.autonomy || 'Not Set'}</div>
+                        </div>
+                        <div class="text-xs" style="color: var(--text-secondary);">Decision-making authority</div>
+                    </div>
                 </div>
             </div>
             
@@ -1682,40 +1752,43 @@ function showTeamModal(teamName, teamData) {
     
     // Apply scrollbar styling to the modal content
     const style = document.createElement('style');
-    style.textContent = `
-        .team-modal-content {
-            max-height: 80vh;
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-        
-        .team-modal-content::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .team-modal-content::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-            margin: 4px 0;
-        }
-        
-        .team-modal-content::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.4);
-            border-radius: 4px;
-            border: 1px solid var(--bg-quaternary);
-        }
-        
-        .team-modal-content::-webkit-scrollbar-thumb:hover {
-            background: rgba(99, 102, 241, 0.6);
-        }
-        
-        /* Firefox scrollbar styles */
-        .team-modal-content {
-            scrollbar-width: auto;
-            scrollbar-color: rgba(99, 102, 241, 0.4) var(--bg-tertiary);
-        }
-    `;
-    document.head.appendChild(style);
+    if (!document.getElementById('team-modal-scrollbar-styles')) {
+        style.id = 'team-modal-scrollbar-styles';
+        style.textContent = `
+            .team-modal-content {
+                max-height: 80vh;
+                overflow-y: auto;
+                padding-right: 8px;
+            }
+            
+            .team-modal-content::-webkit-scrollbar {
+                width: 8px;
+            }
+            
+            .team-modal-content::-webkit-scrollbar-track {
+                background: var(--bg-tertiary);
+                border-radius: 4px;
+                margin: 4px 0;
+            }
+            
+            .team-modal-content::-webkit-scrollbar-thumb {
+                background: rgba(99, 102, 241, 0.4);
+                border-radius: 4px;
+                border: 1px solid var(--bg-quaternary);
+            }
+            
+            .team-modal-content::-webkit-scrollbar-thumb:hover {
+                background: rgba(99, 102, 241, 0.6);
+            }
+            
+            /* Firefox scrollbar styles */
+            .team-modal-content {
+                scrollbar-width: auto;
+                scrollbar-color: rgba(99, 102, 241, 0.4) var(--bg-tertiary);
+            }
+        `;
+        document.head.appendChild(style);
+    }
     
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
