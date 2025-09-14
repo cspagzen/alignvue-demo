@@ -12243,7 +12243,7 @@ function renderHealthDimensionsEditor(teamData, dimensions) {
             </div>
         </div>
     
-        <div style="display: flex; justify-content: center; gap: 16px; margin-top: 24px;">
+        <div style="display: flex; justify-content: center; gap: 16px; margin-top: 24px; width: 100%;">
             <button 
                 type="button" 
                 onclick="toggleHealthEditMode('${teamData.name || 'TEAM_NAME'}')"
@@ -12255,15 +12255,15 @@ function renderHealthDimensionsEditor(teamData, dimensions) {
             <button 
                 type="submit" 
                 class="px-6 py-2 text-sm rounded text-white transition-colors"
-                style="background: var(--accent-blue); min-width: 120px;"
+                style="background: var(--accent-blue); min-width: 140px; display: flex; align-items: center; justify-content: center; gap: 6px;"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: -2px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                     <path d="M3 3v5h5"/>
                     <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
                     <path d="M16 16h5v5"/>
                 </svg>
-                Sync Changes
+                <span>Sync Changes</span>
             </button>
         </div>
 
