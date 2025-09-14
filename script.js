@@ -2211,7 +2211,6 @@ function highlightInitiativeAndTeam(initiativeId) {
         '<div class="p-2 h-full flex flex-col justify-between">' +
             '<div class="text-xs font-medium leading-tight">' + initiative.title + '</div>' +
             '<div>' +
-                '<div class="progress-label">Progress</div>' +
                 '<div class="progress-bar-container" role="progressbar" aria-valuenow="' + initiative.progress + '" aria-valuemin="0" aria-valuemax="100" aria-label="Progress: ' + initiative.progress + '% completed">' +
                     '<div class="progress-bar ' + getProgressClass(initiative.progress) + '" style="width: ' + initiative.progress + '%"></div>' +
                 '</div>' +
