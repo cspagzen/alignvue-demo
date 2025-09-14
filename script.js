@@ -12146,56 +12146,50 @@ function renderHealthDimensionsDisplay(teamData, dimensions) {
 }
 
 function renderHealthDimensionsEditor(teamData, dimensions) {
-    return `
-        <form id="health-update-form" onsubmit="handleHealthUpdate(event, '${teamData.name}')">
-            <div class="grid grid-cols-2 gap-3 mb-6">
-                ${dimensions.map(dim => {
-                    const value = teamData[dim.key];
-                    const colorClass = getDimensionColorClass(value);
-                    const borderColor = getDimensionBorderColor(value);
-                    
-                    return `
-                        <div class="p-4 rounded-lg border" style="background: var(--bg-tertiary); border-color: ${borderColor};">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    ${getDimensionIcon(dim.icon, borderColor)}
-                                    <div>
-                                        <div class="text-sm font-bold" style="color: var(--text-primary);">${dim.label}</div>
-                                        <div class="text-xs" style="color: var(--text-secondary);">${dim.desc}</div>
-                                    </div>
-                                </div>
-                                <select 
-                                    id="${dim.key}" 
-                                    class="px-3 py-1 rounded border text-sm"
-                                    style="background: var(--bg-secondary); border-color: var(--border-primary); color: var(--text-primary);"
-                                >
-                                    <option value="">Not Set</option>
-                                    <option value="Healthy" ${value === 'Healthy' ? 'selected' : ''}>Healthy</option>
-                                    <option value="At Risk" ${value === 'At Risk' ? 'selected' : ''}>At Risk</option>
-                                    <option value="Critical" ${value === 'Critical' ? 'selected' : ''}>Critical</option>
-                                </select>
-                            </div>
+    return dimensions.map(dim => {
+        const value = teamData[dim.key];
+        const colorClass = getDimensionColorClass(value);
+        const borderColor = getDimensionBorderColor(value);
+        
+        return `
+            <div class="p-4 rounded-lg border" style="background: var(--bg-tertiary); border-color: ${borderColor};">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        ${getDimensionIcon(dim.icon, borderColor)}
+                        <div>
+                            <div class="text-sm font-bold" style="color: var(--text-primary);">${dim.label}</div>
+                            <div class="text-xs" style="color: var(--text-secondary);">${dim.desc}</div>
                         </div>
-                    `;
-                }).join('')}
+                    </div>
+                    <select 
+                        id="${dim.key}" 
+                        class="px-3 py-1 rounded border text-sm"
+                        style="background: var(--bg-secondary); border-color: var(--border-primary); color: var(--text-primary);"
+                    >
+                        <option value="">Not Set</option>
+                        <option value="Healthy" ${value === 'Healthy' ? 'selected' : ''}>Healthy</option>
+                        <option value="At Risk" ${value === 'At Risk' ? 'selected' : ''}>At Risk</option>
+                        <option value="Critical" ${value === 'Critical' ? 'selected' : ''}>Critical</option>
+                    </select>
+                </div>
             </div>
-            
-            <div class="flex justify-end">
-                <button 
-                    type="submit" 
-                    class="flex items-center gap-2 px-4 py-2 text-sm rounded text-white transition-colors"
-                    style="background: var(--accent-blue);"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                        <path d="M3 3v5h5"/>
-                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
-                        <path d="M16 16h5v5"/>
-                    </svg>
-                    Sync Changes
-                </button>
-            </div>
-        </form>
+        `;
+    }).join('') + `
+        <div class="flex justify-end mt-6">
+            <button 
+                type="submit" 
+                class="flex items-center gap-2 px-4 py-2 text-sm rounded text-white transition-colors"
+                style="background: var(--accent-blue);"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                    <path d="M16 16h5v5"/>
+                </svg>
+                Sync Changes
+            </button>
+        </div>
     `;
 }
 function renderUtilizationEditor(teamData) {
