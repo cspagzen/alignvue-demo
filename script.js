@@ -12225,6 +12225,24 @@ function renderHealthDimensionsEditor(teamData, dimensions) {
             </div>
         `;
     }).join('') + `
+    
+    <!-- NEW: Comments Section in Edit Mode -->
+        <div style="grid-column: 1 / -1; margin-top: 16px;">
+            <label for="team-comments" class="block text-sm font-medium mb-2" style="color: var(--text-primary);">
+                Team Health Comments
+            </label>
+            <textarea 
+                id="team-comments" 
+                rows="4"
+                class="w-full px-3 py-2 border rounded-md resize-vertical" 
+                style="background: var(--bg-secondary); border-color: var(--border-primary); color: var(--text-primary);"
+                placeholder="Add team health notes, concerns, updates, or observations..."
+            >${teamData.jira?.comments ? extractTextFromADF(teamData.jira.comments) : ''}</textarea>
+            <div class="text-xs mt-1" style="color: var(--text-secondary);">
+                These comments will be saved to Jira and visible to team members
+            </div>
+        </div>
+    
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
             <div></div>
             <div style="display: flex; justify-content: flex-end; gap: 12px;">
@@ -12305,11 +12323,15 @@ function toggleHealthEditMode(teamName) {
         setTimeout(() => {
             initializeUtilizationChart(teamData.jira?.utilization || 0);
         }, 100);
+        // Refresh comments display
+document.getElementById('team-comments-display').innerHTML = renderTeamComments(teamData);
+document.getElementById('team-comments-section').style.display = 'block';
     } else {
         // Enter edit mode - hide edit button completely
         button.style.display = 'none';
         container.innerHTML = renderHealthDimensionsGrid(teamData, true);
         utilizationContainer.innerHTML = renderUtilizationEditor(teamData);
+        document.getElementById('team-comments-section').style.display = 'none';
     }
 }
 
@@ -12327,7 +12349,8 @@ async function handleHealthUpdate(event, teamName) {
         support: document.getElementById('support').value || null,
         teamwork: document.getElementById('teamwork').value || null,
         autonomy: document.getElementById('autonomy').value || null,
-        utilization: parseInt(document.getElementById('utilization-input')?.value) || null
+        utilization: parseInt(document.getElementById('utilization-input').value) || 0,
+        comments: document.getElementById('team-comments').value || null  // ADD THIS LINE
     };
     
     const submitButton = document.getElementById('save-health-btn');
