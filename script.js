@@ -12586,4 +12586,192 @@ function getTeamOverallHealth(teamData) {
     };
 }
 
+
+
+// ==============================================================================
+// TEMPORARY TEST FUNCTION - Add this to script.js for testing comments data
+// ==============================================================================
+
+/**
+ * Test function to verify comments data retrieval from Jira
+ * Call this from browser console: testCommentsDataRetrieval()
+ */
+async function testCommentsDataRetrieval() {
+    console.log('🧪 Testing Comments Data Retrieval...');
+    console.log('=====================================');
+    
+    try {
+        // Test 1: Check if we have team data loaded
+        console.log('📊 Current boardData.teams:', Object.keys(boardData.teams || {}));
+        
+        if (!boardData.teams || Object.keys(boardData.teams).length === 0) {
+            console.warn('⚠️ No team data loaded. Try running fetchJiraData() first.');
+            return;
+        }
+        
+        // Test 2: Check comments in current team data
+        console.log('\n📝 Checking comments in current team data:');
+        Object.entries(boardData.teams).forEach(([teamName, teamData]) => {
+            const comments = teamData.jira?.comments;
+            console.log(`  ${teamName}:`, {
+                hasComments: !!comments,
+                commentsType: typeof comments,
+                commentsLength: comments ? comments.length : 0,
+                commentsPreview: comments ? comments.substring(0, 100) + '...' : 'No comments'
+            });
+        });
+        
+        // Test 3: Direct API test to fetch team health data
+        console.log('\n🔍 Testing direct Jira API call...');
+        
+        // Get a few team names for testing
+        const testTeamNames = Object.keys(boardData.teams).slice(0, 3);
+        console.log('Testing with teams:', testTeamNames);
+        
+        if (testTeamNames.length === 0) {
+            console.warn('⚠️ No team names available for testing');
+            return;
+        }
+        
+        // Create JQL for test
+        const teamNamesJQL = testTeamNames.map(name => `"${name}"`).join(', ');
+        console.log('🔎 JQL Query:', `project = "TH" AND issuetype = "Teams" AND summary in (${teamNamesJQL})`);
+        
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: `project = "TH" AND issuetype = "Teams" AND summary in (${teamNamesJQL})`,
+                    fields: [
+                        "summary",
+                        "key", 
+                        "customfield_10264", // Utilization
+                        "customfield_10257", // Capacity
+                        "customfield_10258", // Skillset
+                        "customfield_10259", // Vision
+                        "customfield_10260", // Support
+                        "customfield_10261", // Team Cohesion
+                        "customfield_10262", // Autonomy
+                        "customfield_10263"  // Comments
+                    ],
+                    maxResults: 10
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            console.error('❌ API Error:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('Error details:', errorText);
+            return;
+        }
+        
+        const data = await response.json();
+        console.log('✅ API Response successful!');
+        console.log('📈 Found teams:', data.issues?.length || 0);
+        
+        // Test 4: Analyze the raw field data
+        console.log('\n🔬 Analyzing raw field data:');
+        if (data.issues && data.issues.length > 0) {
+            data.issues.forEach(issue => {
+                const teamName = issue.fields.summary;
+                const rawComments = issue.fields.customfield_10263;
+                const processedComments = getFieldValue(issue, 'customfield_10263');
+                
+                console.log(`\n📋 Team: ${teamName}`);
+                console.log('  Raw comments field:', rawComments);
+                console.log('  Processed comments:', processedComments);
+                console.log('  Comments type:', typeof processedComments);
+                console.log('  Has comments:', !!processedComments);
+                
+                // Test all health dimensions too
+                const dimensions = [
+                    { name: 'Capacity', field: 'customfield_10257' },
+                    { name: 'Skillset', field: 'customfield_10258' },
+                    { name: 'Vision', field: 'customfield_10259' },
+                    { name: 'Support', field: 'customfield_10260' },
+                    { name: 'Team Cohesion', field: 'customfield_10261' },
+                    { name: 'Autonomy', field: 'customfield_10262' },
+                    { name: 'Utilization', field: 'customfield_10264' }
+                ];
+                
+                console.log('  Health Dimensions:');
+                dimensions.forEach(dim => {
+                    const value = getFieldValue(issue, dim.field);
+                    console.log(`    ${dim.name}: ${value}`);
+                });
+            });
+        } else {
+            console.warn('⚠️ No teams found in Jira TH project');
+            console.log('💡 This could mean:');
+            console.log('   1. Teams don\'t exist in TH project yet');
+            console.log('   2. Team names don\'t match between initiatives and TH project');
+            console.log('   3. TH project doesn\'t exist');
+        }
+        
+        // Test 5: Test the getFieldValue function specifically
+        console.log('\n🧮 Testing getFieldValue function:');
+        
+        const testFieldValues = [
+            { value: 'Healthy' },
+            'Simple String',
+            null,
+            undefined,
+            [{ value: 'Multi Value' }],
+            { content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Rich text content' }] }] }
+        ];
+        
+        testFieldValues.forEach((testValue, index) => {
+            console.log(`  Test ${index + 1}:`, testValue, '→', getFieldValue({ fields: { test: testValue } }, 'test'));
+        });
+        
+        console.log('\n✅ Comments data retrieval test complete!');
+        console.log('=====================================');
+        
+    } catch (error) {
+        console.error('❌ Test failed:', error);
+        console.error('Stack trace:', error.stack);
+    }
+}
+
+// Helper function to test comments display formatting
+function testCommentsFormatting() {
+    console.log('🎨 Testing comments formatting...');
+    
+    const testComments = [
+        '',
+        null,
+        undefined,
+        'Simple text comment',
+        'Multi-line\ncomment\nwith breaks',
+        'Comment with <script>alert("xss")</script> HTML',
+        'Very long comment that goes on and on and should test how we handle longer text content in the UI display and whether it wraps properly or gets truncated'
+    ];
+    
+    testComments.forEach((comment, index) => {
+        console.log(`\nTest comment ${index + 1}:`, comment);
+        console.log('Escaped:', escapeHtml(comment || ''));
+        console.log('Is empty:', !comment || comment.trim() === '');
+    });
+}
+
+// Simple HTML escape function for testing
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Instructions for running the test
+console.log('📋 Comments Data Test Ready!');
+console.log('To run the test, open browser console and type:');
+console.log('  testCommentsDataRetrieval()');
+console.log('');
+console.log('To test formatting, type:');
+console.log('  testCommentsFormatting()');
+
         init();
