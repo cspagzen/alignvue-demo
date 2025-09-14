@@ -1596,107 +1596,98 @@ function showTeamModal(teamName, teamData) {
     // Calculate overall health
     const healthStatus = getTeamOverallHealth(teamData);
     
-    // Get utilization percentage (default to 0 if not set)
-    const utilizationPercent = teamData.jira?.utilization || 0;
-    
-    // Get active stories and blockers (default to null if not set)
-    const activeStories = teamData.jira?.stories || null;
-    const blockers = teamData.jira?.blockers || null;
-    
     content.innerHTML = `
         <div class="space-y-6">
-            <!-- Top Row: Four Even Boxes -->
-            <div class="grid grid-cols-4 gap-4">
+            <!-- Top Row: Risk Status + Performance Metrics -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
-                <!-- Overall Team Health -->
+                <!-- Left: Overall Health Status -->
                 <div class="p-4 rounded-lg text-white" style="background: ${getHealthStatusColor(healthStatus.level)};">
-                    <div class="text-lg font-bold">${healthStatus.text}</div>
-                    <div class="text-xs opacity-90">${getHealthStatusDescription(healthStatus.level, teamData)}</div>
+                    <div class="text-2xl font-bold">${healthStatus.text}</div>
+                    <div class="text-sm opacity-90">${getHealthStatusDescription(healthStatus.level, teamData)}</div>
                 </div>
                 
-                <!-- Utilization Chart -->
-                <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="text-center">
-                        <div class="relative w-16 h-16 mx-auto mb-2">
-                            <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
-                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                    fill="none" stroke="var(--border-primary)" stroke-width="2"/>
-                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                    fill="none" stroke="var(--accent-orange)" stroke-width="2"
-                                    stroke-dasharray="${utilizationPercent}, 100" stroke-linecap="round"/>
-                            </svg>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <span class="text-sm font-bold" style="color: var(--text-primary);">${utilizationPercent}%</span>
-                            </div>
+                <!-- Right: Performance Metrics Grid -->
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Utilization Chart -->
+                    <div id="utilization-container" class="bg-gray-800 p-4 rounded-lg text-center">
+                        <div style="width: 80px; height: 80px; margin: 0 auto;">
+                            <canvas id="utilization-chart" width="80" height="80"></canvas>
                         </div>
-                        <div class="text-xs font-medium" style="color: var(--text-primary);">Utilization</div>
+                        <div class="text-white text-sm mt-2">Utilization</div>
+                    </div>
+                    
+                    <!-- Active Stories -->
+                    <div class="bg-gray-800 p-4 rounded-lg text-center">
+                        <div class="text-white text-2xl font-bold">${teamData.jira?.stories || 'null'}</div>
+                        <div class="text-gray-400 text-sm">Active Stories</div>
+                    </div>
+                    
+                    <!-- Blockers -->
+                    <div class="bg-gray-800 p-4 rounded-lg text-center">
+                        <div class="text-white text-2xl font-bold">${teamData.jira?.blockers || 'null'}</div>
+                        <div class="text-gray-400 text-sm">Blockers</div>
                     </div>
                 </div>
-                
-                <!-- Active Stories -->
-                <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="text-2xl font-bold mb-1" style="color: var(--text-primary);">
-                        ${activeStories !== null ? activeStories : 'null'}
-                    </div>
-                    <div class="text-xs font-medium" style="color: var(--text-secondary);">Active Stories</div>
-                </div>
-                
-                <!-- Blockers -->
-                <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="text-2xl font-bold mb-1" style="color: var(--text-primary);">
-                        ${blockers !== null ? blockers : 'null'}
-                    </div>
-                    <div class="text-xs font-medium" style="color: var(--text-secondary);">Blockers</div>
-                </div>
-                
             </div>
             
-            <!-- Rest of existing content unchanged -->
+            <!-- Health Dimensions Section -->
             <div>
-                <h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Team Health Dimensions</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold flex items-center gap-3" style="color: var(--text-primary);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l11 11z"/>
+                        </svg>
+                        Health Dimensions
+                    </h3>
+                    <button 
+                        id="edit-health-btn" 
+                        onclick="toggleHealthEditMode('${teamName}')"
+                        class="flex items-center gap-2 px-3 py-1 text-sm rounded border hover:bg-gray-50 transition-colors"
+                        style="border-color: var(--border-primary); color: var(--text-secondary);"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
+                        </svg>
+                        Edit
+                    </button>
+                </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    ${renderTeamDimensionDetail('Capacity', 'capacity', teamData.capacity, 'Workload and resource availability')}
-                    ${renderTeamDimensionDetail('Skillset', 'skillset', teamData.skillset, 'Technical capabilities and expertise')}
-                    ${renderTeamDimensionDetail('Vision', 'vision', teamData.vision, 'Clarity of goals and direction')}
-                    ${renderTeamDimensionDetail('Support', 'support', teamData.support, 'Tools and organizational backing')}
-                    ${renderTeamDimensionDetail('Team Cohesion', 'teamwork', teamData.teamwork, 'Collaboration and communication')}
-                    ${renderTeamDimensionDetail('Autonomy', 'autonomy', teamData.autonomy, 'Decision-making authority')}
+                <!-- Health Dimensions Grid (2x3) -->
+                <div id="health-dimensions-container" class="grid grid-cols-2 gap-3">
+                    ${renderHealthDimensionsGrid(teamData, false)}
                 </div>
             </div>
             
-            ${teamData.jira && teamData.jira.comments ? `
-                <div>
-                    <h3 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Additional Notes</h3>
-                    <div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                        <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">${teamData.jira.comments}</p>
-                    </div>
+            <!-- Health Insights Section -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                    Health Insights
+                </h3>
+                <div class="space-y-3" style="color: var(--text-secondary);">
+                    ${generateHealthInsights(teamData)}
                 </div>
-            ` : ''}
-            
-            <div class="flex justify-end">
-                <button 
-                    onclick="closeModal()" 
-                    class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                >
-                    Close
-                </button>
             </div>
-        </div>`;
+        </div>
+    `;
     
-    modal.classList.add('show');
-    modal.setAttribute('aria-hidden', 'false');
-    
-    // Focus the close button for immediate keyboard navigation
+    // Initialize the utilization chart
     setTimeout(() => {
-        const closeButton = modal.querySelector('button');
-        if (closeButton) {
-            closeButton.focus();
-        }
+        initializeUtilizationChart(teamData.jira?.utilization || 0);
     }, 100);
     
-    announceToScreenReader(`Opened team details for ${teamName}`);
+    modal.classList.add('show');
+    
+    // Make modal scrollable for smaller resolutions
+    modal.style.maxHeight = '85vh';
+    modal.style.overflow = 'auto';
 }
+
 
 // ============================================================================
 // ENHANCED TEAM HEALTH CALCULATION (4-STATE SUPPORT)
