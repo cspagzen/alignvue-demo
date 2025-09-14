@@ -12153,7 +12153,7 @@ function escapeHtml(text) {
 // HEALTH DIMENSIONS RENDERING
 // ============================================================================
 
-function renderHealthDimensionsGrid(teamData, isEditMode = false, teamName = '') {
+function renderHealthDimensionsGrid(teamData, isEditMode = false) {
     const dimensions = [
         { key: 'capacity', label: 'Capacity', desc: 'Workload & Resources', icon: 'clock' },
         { key: 'support', label: 'Support', desc: 'Tools & Org Backing', icon: 'life-buoy' },
@@ -12164,9 +12164,7 @@ function renderHealthDimensionsGrid(teamData, isEditMode = false, teamName = '')
     ];
     
     if (isEditMode) {
-        return `<form onsubmit="handleHealthUpdate(event, '${teamName}')">
-            ${renderHealthDimensionsEditor(teamData, dimensions, teamName)}
-        </form>`;
+        return renderHealthDimensionsEditor(teamData, dimensions);
     } else {
         return renderHealthDimensionsDisplay(teamData, dimensions);
     }
@@ -12197,7 +12195,7 @@ function renderHealthDimensionsDisplay(teamData, dimensions) {
     }).join('');
 }
 
-function renderHealthDimensionsEditor(teamData, dimensions, teamName) {
+function renderHealthDimensionsEditor(teamData, dimensions) {
     return dimensions.map(dim => {
         const value = teamData[dim.key];
         const colorClass = getDimensionColorClass(value);
@@ -12249,14 +12247,15 @@ function renderHealthDimensionsEditor(teamData, dimensions, teamName) {
         <div style="display: flex; justify-content: center; gap: 16px; margin-top: 24px; width: 100%;">
             <button 
                 type="button" 
-                onclick="toggleHealthEditMode('${teamName}')"
+                onclick="exitEditMode()"
                 class="px-6 py-2 text-sm rounded transition-colors"
                 style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); color: var(--accent-red); min-width: 120px;"
             >
                 Cancel
             </button>
             <button 
-                type="submit" 
+                type="button" 
+                onclick="submitHealthChanges()"
                 class="px-6 py-2 text-sm rounded text-white transition-colors"
                 style="background: var(--accent-blue); min-width: 140px; display: flex; align-items: center; justify-content: center; gap: 6px;"
             >
@@ -12303,6 +12302,9 @@ function toggleHealthEditMode(teamName) {
     const teamData = boardData.teams[teamName];
     const modal = document.getElementById('detail-modal');
     
+    // Store teamName globally for button access
+    window.currentEditingTeam = teamName;
+    
     const isEditing = button.innerHTML.includes('Cancel');
     
     if (isEditing) {
@@ -12314,7 +12316,7 @@ function toggleHealthEditMode(teamName) {
             </svg>
             Edit
         `;
-        container.innerHTML = renderHealthDimensionsGrid(teamData, false, teamName);
+        container.innerHTML = renderHealthDimensionsGrid(teamData, false);
         utilizationContainer.innerHTML = `
             <div style="width: 80px; height: 80px; margin: 0 auto;">
                 <canvas id="utilization-chart" width="80" height="80"></canvas>
@@ -12340,7 +12342,7 @@ function toggleHealthEditMode(teamName) {
             healthInsightsSection.style.display = 'block';
         }
         
-        // Remove blur and darken from the top sections (exclude Utilization since it's editable)
+        // Remove blur and darken from the top sections
         const topSectionBoxes = modal.querySelectorAll('.grid-cols-4 > div, .grid > div');
         topSectionBoxes.forEach(box => {
             if (box && (box.textContent.includes('CRITICAL') || box.textContent.includes('Active Stories') || box.textContent.includes('Blockers'))) {
@@ -12351,9 +12353,9 @@ function toggleHealthEditMode(teamName) {
         });
         
     } else {
-        // Enter edit mode - hide edit button completely
+        // Enter edit mode
         button.style.display = 'none';
-        container.innerHTML = renderHealthDimensionsGrid(teamData, true, teamName);
+        container.innerHTML = renderHealthDimensionsGrid(teamData, true);
         utilizationContainer.innerHTML = renderUtilizationEditor(teamData);
         document.getElementById('team-comments-section').style.display = 'none';
         
@@ -12366,7 +12368,7 @@ function toggleHealthEditMode(teamName) {
             healthInsightsSection.style.display = 'none';
         }
         
-        // Blur and darken the top sections (exclude Utilization since it's editable)
+        // Blur and darken the top sections
         const topSectionBoxes = modal.querySelectorAll('.grid-cols-4 > div, .grid > div');
         topSectionBoxes.forEach(box => {
             if (box && (box.textContent.includes('CRITICAL') || box.textContent.includes('Active Stories') || box.textContent.includes('Blockers'))) {
@@ -12757,6 +12759,31 @@ function getFieldValue(issue, fieldId) {
     
     // Return as-is for simple values
     return fieldValue;
+}
+
+function exitEditMode() {
+    const teamName = window.currentEditingTeam;
+    if (teamName) {
+        toggleHealthEditMode(teamName);
+    }
+}
+
+async function submitHealthChanges() {
+    const teamName = window.currentEditingTeam;
+    if (teamName) {
+        // Create a fake event object for handleHealthUpdate
+        const fakeEvent = {
+            preventDefault: () => {}
+        };
+        
+        try {
+            // Call the existing handleHealthUpdate function
+            await handleHealthUpdate(fakeEvent, teamName);
+        } catch (error) {
+            console.error('Error submitting health changes:', error);
+            alert('Error saving changes. Please try again.');
+        }
+    }
 }
 
 
