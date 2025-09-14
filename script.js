@@ -1580,7 +1580,7 @@ function openJiraEpic(epicKey) {
 // ENHANCED TEAM MODAL WITH EDIT-IN-PLACE
 // ============================================================================
 
-function showTeamModal(teamName, teamData) {
+async function showTeamModal(teamName, teamData) {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
@@ -1588,6 +1588,23 @@ function showTeamModal(teamName, teamData) {
     if (!teamData) {
         console.error('Team not found:', teamName);
         return;
+    }
+    
+    // Fetch live data from Jira and merge with local data
+    const jiraData = await fetchTeamDataFromJira(teamName);
+    if (jiraData) {
+        // Merge Jira data with local data, prioritizing Jira for health dimensions and comments
+        teamData = {
+            ...teamData,
+            ...jiraData,
+            jira: {
+                ...teamData.jira,
+                utilization: jiraData.utilization || teamData.jira?.utilization
+            }
+        };
+        
+        // Update local cache with fresh data
+        boardData.teams[teamName] = teamData;
     }
     
     // Set modal title
@@ -1598,36 +1615,33 @@ function showTeamModal(teamName, teamData) {
     
     content.innerHTML = `
         <div class="space-y-6">
-            <!-- Top Row: Risk Status + Performance Metrics -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Top Row: 4 Equal Performance Metrics -->
+            <div class="grid grid-cols-4 gap-4">
                 
-                <!-- Left: Overall Health Status -->
-                <div class="p-4 rounded-lg text-white" style="background: ${getHealthStatusColor(healthStatus.level)};">
-                    <div class="text-2xl font-bold">${healthStatus.text}</div>
-                    <div class="text-sm opacity-90">${getHealthStatusDescription(healthStatus.level, teamData)}</div>
+                <!-- Overall Health Status -->
+                <div class="bg-gray-800 p-4 rounded-lg text-center">
+                    <div class="text-white text-2xl font-bold">${healthStatus.text}</div>
+                    <div class="text-gray-400 text-sm">Overall Health</div>
                 </div>
                 
-                <!-- Right: Performance Metrics Grid -->
-                <div class="grid grid-cols-2 gap-3">
-                    <!-- Utilization Chart -->
-                    <div id="utilization-container" class="bg-gray-800 p-4 rounded-lg text-center">
-                        <div style="width: 80px; height: 80px; margin: 0 auto;">
-                            <canvas id="utilization-chart" width="80" height="80"></canvas>
-                        </div>
-                        <div class="text-white text-sm mt-2">Utilization</div>
+                <!-- Utilization Chart -->
+                <div id="utilization-container" class="bg-gray-800 p-4 rounded-lg text-center">
+                    <div style="width: 80px; height: 80px; margin: 0 auto;">
+                        <canvas id="utilization-chart" width="80" height="80"></canvas>
                     </div>
-                    
-                    <!-- Active Stories -->
-                    <div class="bg-gray-800 p-4 rounded-lg text-center">
-                        <div class="text-white text-2xl font-bold">${teamData.jira?.stories || 'null'}</div>
-                        <div class="text-gray-400 text-sm">Active Stories</div>
-                    </div>
-                    
-                    <!-- Blockers -->
-                    <div class="bg-gray-800 p-4 rounded-lg text-center">
-                        <div class="text-white text-2xl font-bold">${teamData.jira?.blockers || 'null'}</div>
-                        <div class="text-gray-400 text-sm">Blockers</div>
-                    </div>
+                    <div class="text-white text-sm mt-2">Utilization</div>
+                </div>
+                
+                <!-- Active Stories -->
+                <div class="bg-gray-800 p-4 rounded-lg text-center">
+                    <div class="text-white text-2xl font-bold">${teamData.jira?.stories || 'null'}</div>
+                    <div class="text-gray-400 text-sm">Active Stories</div>
+                </div>
+                
+                <!-- Blockers -->
+                <div class="bg-gray-800 p-4 rounded-lg text-center">
+                    <div class="text-white text-2xl font-bold">${teamData.jira?.blockers || 'null'}</div>
+                    <div class="text-gray-400 text-sm">Blockers</div>
                 </div>
             </div>
             
@@ -1648,7 +1662,7 @@ function showTeamModal(teamName, teamData) {
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
+                            <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a .5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
                         </svg>
                         Edit
                     </button>
@@ -1656,7 +1670,9 @@ function showTeamModal(teamName, teamData) {
                 
                 <!-- Health Dimensions Grid (2x3) -->
                 <div id="health-dimensions-container" class="grid grid-cols-2 gap-3">
-                    ${renderHealthDimensionsGrid(teamData, false)}
+                    <form id="health-update-form" onsubmit="handleHealthUpdate(event, '${teamName}')" style="display: contents;">
+                        ${renderHealthDimensionsGrid(teamData, false)}
+                    </form>
                 </div>
             </div>
             
@@ -1673,6 +1689,22 @@ function showTeamModal(teamName, teamData) {
                     ${generateHealthInsights(teamData)}
                 </div>
             </div>
+            
+            <!-- Team Comments Section -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold flex items-center gap-3" style="color: var(--text-primary);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Team Comments
+                    </h3>
+                </div>
+                
+                <div id="team-comments-container" class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    ${renderTeamComments(teamData, false)}
+                </div>
+            </div>
         </div>
     `;
     
@@ -1683,9 +1715,15 @@ function showTeamModal(teamName, teamData) {
     
     modal.classList.add('show');
     
-    // Make modal scrollable for smaller resolutions
-    modal.style.maxHeight = '85vh';
+    // Add scrolling and proper sizing for all target resolutions
+    modal.style.maxHeight = '90vh';
     modal.style.overflow = 'auto';
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.maxHeight = '85vh';
+        modalContent.style.overflow = 'auto';
+        modalContent.style.paddingRight = '8px'; // Account for scrollbar
+    }
 }
 
 // ============================================================================
@@ -12318,7 +12356,7 @@ async function updateTeamHealthInJira(teamName, healthData) {
             method: 'POST',
             body: {
                 jql: `project = "TH" AND issuetype = "Teams" AND summary ~ "${teamName}"`,
-                fields: ['id', 'key', 'summary']
+                fields: ['id', 'key', 'summary', 'customfield_10263']
             }
         })
     });
@@ -12331,6 +12369,11 @@ async function updateTeamHealthInJira(teamName, healthData) {
     }
     
     const teamIssue = searchData.issues[0];
+    
+    // Extract existing comments if not provided in healthData
+    if (!healthData.comments && teamIssue.fields.customfield_10263) {
+        healthData.comments = teamIssue.fields.customfield_10263;
+    }
     
     // Update existing team
     const updateResponse = await fetch('/api/jira', {
@@ -12348,7 +12391,8 @@ async function updateTeamHealthInJira(teamName, healthData) {
                     'customfield_10260': healthData.support ? { value: healthData.support } : null,
                     'customfield_10261': healthData.teamwork ? { value: healthData.teamwork } : null,
                     'customfield_10262': healthData.autonomy ? { value: healthData.autonomy } : null,
-                    'customfield_10264': healthData.utilization
+                    'customfield_10264': healthData.utilization,
+                    'customfield_10263': healthData.comments
                 }
             }
         })
@@ -12517,6 +12561,46 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// ============================================================================
+// NEW FUNCTION: Fetch Team Data from Jira (including comments)
+// ============================================================================
 
+async function fetchTeamDataFromJira(teamName) {
+    try {
+        const response = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: `project = "TH" AND issuetype = "Teams" AND summary ~ "${teamName}"`,
+                    fields: ['customfield_10257', 'customfield_10258', 'customfield_10259', 'customfield_10260', 'customfield_10261', 'customfield_10262', 'customfield_10263', 'customfield_10264']
+                }
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.issues && data.issues.length > 0) {
+            const issue = data.issues[0];
+            return {
+                capacity: issue.fields.customfield_10257?.value || null,
+                skillset: issue.fields.customfield_10258?.value || null,
+                vision: issue.fields.customfield_10259?.value || null,
+                support: issue.fields.customfield_10260?.value || null,
+                teamwork: issue.fields.customfield_10261?.value || null,
+                autonomy: issue.fields.customfield_10262?.value || null,
+                utilization: issue.fields.customfield_10264 || null,
+                comments: issue.fields.customfield_10263 || null  // THIS IS THE KEY ADDITION
+            };
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error fetching team data from Jira:', error);
+        return null;
+    }
+}
 
         init();
