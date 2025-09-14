@@ -12821,7 +12821,10 @@ async function submitHealthChanges() {
         
         console.log('Submitting health changes for:', teamName, formData);
         
-        // Update local data
+        // Store the original values for validation later
+        const originalData = JSON.parse(JSON.stringify(formData));
+        
+        // Update local data immediately for responsive UI
         const teamData = boardData.teams[teamName];
         if (teamData) {
             Object.assign(teamData, formData);
@@ -12831,31 +12834,135 @@ async function submitHealthChanges() {
             }
         }
         
-        // Try to sync to Jira
-        if (typeof updateTeamHealthInJira === 'function') {
-            try {
+        // Exit edit mode immediately for better UX
+        toggleHealthEditMode(teamName);
+        
+        // Now do the full sync with overlay
+        await syncOverlay.syncWithProgress(async () => {
+            console.log('=== TEAM HEALTH UPDATE SYNC ===');
+            
+            // Step 1: Send the update to Jira
+            if (typeof updateTeamHealthInJira === 'function') {
+                console.log('Syncing team health changes to Jira...');
                 await updateTeamHealthInJira(teamName, formData);
-                console.log('Successfully synced to Jira');
-                // Exit edit mode
-                toggleHealthEditMode(teamName);
-                // Show success message
-                showTemporarySuccess('Changes saved and synced to Jira successfully!');
-            } catch (jiraError) {
-                console.error('Jira sync failed:', jiraError);
-                // Exit edit mode anyway since local data is updated
-                toggleHealthEditMode(teamName);
-                // Show partial success message
-                showTemporaryWarning('Changes saved locally, but Jira sync had issues. Data may still be synced - please refresh to check.');
+                console.log('Team health changes synced to Jira successfully');
             }
-        } else {
-            // No Jira sync function
-            toggleHealthEditMode(teamName);
-            showTemporarySuccess('Changes saved locally!');
-        }
+            
+            // Step 2: Force complete refresh of ALL data from Jira
+            console.log('Fetching all fresh data from Jira...');
+            const newData = await fetchJiraData();
+            
+            // Step 3: Update the entire board with fresh data
+            console.log('Updating board with fresh Jira data...');
+            updateBoardWithLiveData(newData);
+            syncState.lastSyncData = newData;
+            syncState.lastSyncTime = Date.now();
+            
+            // Step 4: Validate that our changes actually synced
+            const updatedTeamData = newData.teams ? newData.teams[teamName] : boardData.teams[teamName];
+            
+            if (updatedTeamData) {
+                console.log('Validating synced data...');
+                console.log('Original form data:', originalData);
+                console.log('Synced team data:', updatedTeamData);
+                
+                // Check if key changes are reflected
+                let changesValidated = true;
+                const validationResults = [];
+                
+                // Validate health dimensions
+                ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'].forEach(dim => {
+                    const formValue = originalData[dim];
+                    const syncedValue = updatedTeamData[dim];
+                    const isValid = formValue === syncedValue;
+                    
+                    validationResults.push({
+                        field: dim,
+                        expected: formValue,
+                        actual: syncedValue,
+                        valid: isValid
+                    });
+                    
+                    if (!isValid) changesValidated = false;
+                });
+                
+                // Validate utilization
+                const utilizationValid = originalData.utilization === (updatedTeamData.jira?.utilization || 0);
+                validationResults.push({
+                    field: 'utilization',
+                    expected: originalData.utilization,
+                    actual: updatedTeamData.jira?.utilization || 0,
+                    valid: utilizationValid
+                });
+                
+                if (!utilizationValid) changesValidated = false;
+                
+                // Validate comments (extract text for comparison)
+                const syncedComments = updatedTeamData.jira?.comments ? 
+                    extractTextFromADF(updatedTeamData.jira.comments) : null;
+                const commentsValid = (originalData.comments || null) === (syncedComments || null);
+                
+                validationResults.push({
+                    field: 'comments',
+                    expected: originalData.comments || null,
+                    actual: syncedComments || null,
+                    valid: commentsValid
+                });
+                
+                if (!commentsValid) changesValidated = false;
+                
+                console.log('Validation results:', validationResults);
+                
+                return {
+                    synced: true,
+                    validated: changesValidated,
+                    teamName: teamName,
+                    validationResults: validationResults
+                };
+            } else {
+                throw new Error('Team data not found after sync');
+            }
+            
+        }, {
+            title: 'Syncing Team Health',
+            subtitle: `Saving ${teamName} changes to Jira...`,
+            successTitle: 'Team Health Updated',
+            successSubtitle: 'Changes synced and validated successfully',
+            errorTitle: 'Sync Failed',
+            errorSubtitle: 'Changes may not have been saved'
+        });
+        
+        console.log('Team health update and validation complete!');
         
     } catch (error) {
-        console.error('Error updating team health:', error);
-        alert('Error saving changes: ' + error.message);
+        console.error('Error in team health sync process:', error);
+        
+        // Show error with option to retry
+        if (confirm('Sync failed. Would you like to try a manual refresh to check if changes were saved?')) {
+            try {
+                await triggerManualSync();
+            } catch (refreshError) {
+                console.error('Manual refresh also failed:', refreshError);
+                alert('Manual refresh failed. Please check your connection and try again.');
+            }
+        }
+    }
+}
+
+// ==============================================================================
+// HELPER FUNCTION: Enhanced validation with user feedback
+// ==============================================================================
+
+function showValidationResults(results) {
+    const failures = results.validationResults.filter(r => !r.valid);
+    
+    if (failures.length === 0) {
+        // All changes validated successfully
+        showTemporarySuccess(`All ${teamName} changes validated in Jira!`);
+    } else {
+        // Some changes may not have synced
+        const failedFields = failures.map(f => f.field).join(', ');
+        showTemporaryWarning(`Some changes may not have synced: ${failedFields}. Please check manually.`);
     }
 }
 
