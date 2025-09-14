@@ -12603,4 +12603,25 @@ async function fetchTeamDataFromJira(teamName) {
     }
 }
 
+function renderTeamComments(teamData, isEditMode = false) {
+    if (isEditMode) {
+        return `
+            <textarea 
+                id="team-comments" 
+                rows="4"
+                class="w-full px-3 py-2 border rounded-md resize-none" 
+                style="border-color: var(--border-primary); background: var(--bg-secondary); color: var(--text-primary);"
+                placeholder="Add team health notes, concerns, updates, or any relevant information..."
+            >${teamData.comments || ''}</textarea>
+        `;
+    } else {
+        const comments = teamData.comments || '';
+        if (comments.trim()) {
+            return `<div class="text-sm leading-relaxed" style="color: var(--text-primary);">${comments}</div>`;
+        } else {
+            return `<div class="text-sm italic" style="color: var(--text-secondary);">No comments added yet. Click Edit to add team notes.</div>`;
+        }
+    }
+}
+
         init();
