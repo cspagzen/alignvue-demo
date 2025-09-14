@@ -12776,4 +12776,177 @@ console.log('');
 console.log('To test formatting, type:');
 console.log('  testCommentsFormatting()');
 
+// ==============================================================================
+// DEBUG JIRA TH PROJECT SETUP
+// ==============================================================================
+
+async function debugJiraTHProject() {
+    console.log('🔍 Debugging Jira TH Project Setup...');
+    console.log('=====================================');
+    
+    try {
+        // Test 1: Check if TH project exists
+        console.log('1️⃣ Checking if TH project exists...');
+        const projectResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/project/TH',
+                method: 'GET'
+            })
+        });
+        
+        if (projectResponse.ok) {
+            const project = await projectResponse.json();
+            console.log('✅ TH Project exists:', project.name);
+            console.log('   Key:', project.key);
+            console.log('   ID:', project.id);
+        } else {
+            console.error('❌ TH Project not found:', projectResponse.status);
+            console.log('💡 You need to create the TH project in Jira first');
+            return;
+        }
+        
+        // Test 2: Check issue types in TH project
+        console.log('\n2️⃣ Checking issue types...');
+        const issueTypesResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/issuetype',
+                method: 'GET'
+            })
+        });
+        
+        if (issueTypesResponse.ok) {
+            const issueTypes = await issueTypesResponse.json();
+            console.log('📋 Available issue types:');
+            issueTypes.forEach(type => {
+                console.log(`   - ${type.name} (${type.id})`);
+            });
+            
+            const teamsIssueType = issueTypes.find(type => 
+                type.name.toLowerCase().includes('team')
+            );
+            
+            if (teamsIssueType) {
+                console.log(`✅ Found team-related issue type: ${teamsIssueType.name}`);
+            } else {
+                console.log('⚠️ No "Teams" issue type found. Available types above.');
+            }
+        }
+        
+        // Test 3: Check what's actually in TH project
+        console.log('\n3️⃣ Checking what exists in TH project...');
+        const searchResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: 'project = TH',
+                    fields: ['summary', 'issuetype', 'key'],
+                    maxResults: 50
+                }
+            })
+        });
+        
+        if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            console.log(`📊 Found ${searchData.issues.length} issues in TH project:`);
+            
+            if (searchData.issues.length > 0) {
+                searchData.issues.forEach(issue => {
+                    console.log(`   - ${issue.fields.summary} (${issue.fields.issuetype.name}) [${issue.key}]`);
+                });
+            } else {
+                console.log('   (No issues found in TH project)');
+            }
+        }
+        
+        // Test 4: Check custom fields for comments
+        console.log('\n4️⃣ Checking custom field 10263 (Comments)...');
+        const fieldResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/field/customfield_10263',
+                method: 'GET'
+            })
+        });
+        
+        if (fieldResponse.ok) {
+            const field = await fieldResponse.json();
+            console.log('✅ Comments field exists:', field.name);
+            console.log('   Type:', field.schema?.type);
+            console.log('   System:', field.schema?.system);
+        } else {
+            console.error('❌ Comments field not found:', fieldResponse.status);
+        }
+        
+        // Test 5: Try simpler search to test basic connectivity
+        console.log('\n5️⃣ Testing basic Jira connectivity...');
+        const basicResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search',
+                method: 'POST',
+                body: {
+                    jql: 'project = TH ORDER BY created DESC',
+                    maxResults: 5
+                }
+            })
+        });
+        
+        if (basicResponse.ok) {
+            console.log('✅ Basic Jira connectivity works');
+        } else {
+            console.error('❌ Basic connectivity failed:', basicResponse.status);
+        }
+        
+    } catch (error) {
+        console.error('❌ Debug failed:', error);
+    }
+}
+
+// Test the comments objects we're getting
+async function debugCommentsObjects() {
+    console.log('🔍 Debugging Comments Objects...');
+    console.log('================================');
+    
+    // Get first team with comments object
+    const teamWithComments = Object.entries(boardData.teams).find(([name, data]) => 
+        data.jira?.comments && typeof data.jira.comments === 'object'
+    );
+    
+    if (teamWithComments) {
+        const [teamName, teamData] = teamWithComments;
+        console.log(`📋 Examining comments for: ${teamName}`);
+        console.log('Raw comments object:', teamData.jira.comments);
+        console.log('Object keys:', Object.keys(teamData.jira.comments));
+        console.log('Object prototype:', Object.getPrototypeOf(teamData.jira.comments));
+        
+        // Try to extract text if it's a rich text object
+        if (teamData.jira.comments.content) {
+            console.log('Found .content property:', teamData.jira.comments.content);
+        }
+        
+        if (teamData.jira.comments.text) {
+            console.log('Found .text property:', teamData.jira.comments.text);
+        }
+        
+        if (teamData.jira.comments.value) {
+            console.log('Found .value property:', teamData.jira.comments.value);
+        }
+    } else {
+        console.log('❌ No teams with comments objects found');
+    }
+}
+
+console.log('🛠️ Debug functions ready!');
+console.log('Run: debugJiraTHProject()');
+console.log('Run: debugCommentsObjects()');
+
         init();
