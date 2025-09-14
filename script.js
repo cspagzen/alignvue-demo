@@ -12323,7 +12323,7 @@ async function updateTeamHealthInJira(teamName, healthData) {
             endpoint: '/rest/api/3/search',
             method: 'POST',
             body: {
-                jql: `project = "TH" AND issuetype = "Teams" AND summary ~ "${teamName}"`,
+                jql: `project = "TH" AND issuetype = "Team" AND summary ~ "${teamName}"`,
                 fields: ['id', 'key', 'summary']
             }
         })
