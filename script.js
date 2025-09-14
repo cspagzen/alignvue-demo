@@ -12021,23 +12021,23 @@ function showTeamModal(teamName, teamData) {
                 <!-- Right: Performance Metrics Grid -->
                 <div class="grid grid-cols-1 gap-3">
                     <!-- Utilization Chart -->
-                    <div id="utilization-container" class="bg-gray-800 p-4 rounded-lg text-center">
+                    <div id="utilization-container" class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
                         <div style="width: 80px; height: 80px; margin: 0 auto;">
                             <canvas id="utilization-chart" width="80" height="80"></canvas>
                         </div>
-                        <div class="text-white text-sm mt-2">Utilization</div>
+                        <div class="text-sm mt-2" style="color: var(--text-secondary);">Utilization</div>
                     </div>
                 </div>
                 
                 <!-- Active Stories -->
-                <div class="bg-gray-800 p-4 rounded-lg text-center flex flex-col items-center justify-center">
-                    <div class="text-white text-3xl font-bold">${teamData.jira?.stories || 'null'}</div>
-                    <div class="text-gray-400 text-sm">Active Stories</div>
+                <div class="p-4 rounded-lg text-center flex flex-col items-center justify-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <div class="text-3xl font-bold" style="color: var(--text-primary);">${teamData.jira?.stories || 'null'}</div>
+                   <div class="text-sm" style="color: var(--text-secondary);">Active Stories</div>
                 </div>
                 
                 <!-- Blockers -->
-                <div class="bg-gray-800 p-4 rounded-lg text-center flex flex-col items-center justify-center">
-                    <div class="text-white text-3xl font-bold">${teamData.jira?.blockers || 'null'}</div>
+                <div class="p-4 rounded-lg text-center flex flex-col items-center justify-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                    <div class="text-3xl font-bold" style="color: var(--text-primary);">${teamData.jira?.blockers || 'null'}</div>
                     <div class="text-gray-400 text-sm">Blockers</div>
                 </div>
             </div>
