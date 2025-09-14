@@ -12175,28 +12175,31 @@ function renderHealthDimensionsEditor(teamData, dimensions) {
             </div>
         `;
     }).join('') + `
-        <div class="flex justify-end gap-3 mt-6" style="margin-right: 0; padding-right: 0;">
-            <button 
-                type="button" 
-                onclick="toggleHealthEditMode('${teamData.name}')"
-                class="flex items-center gap-2 px-4 py-2 text-sm rounded transition-colors"
-                style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); color: var(--accent-red);"
-            >
-                Cancel
-            </button>
-            <button 
-                type="submit" 
-                class="flex items-center gap-2 px-4 py-2 text-sm rounded text-white transition-colors"
-                style="background: var(--accent-blue);"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                    <path d="M3 3v5h5"/>
-                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
-                    <path d="M16 16h5v5"/>
-                </svg>
-                Sync Changes
-            </button>
+        <div class="grid grid-cols-2 gap-3 mt-6">
+            <div></div>
+            <div class="flex justify-end gap-3">
+                <button 
+                    type="button" 
+                    onclick="toggleHealthEditMode('${teamData.name}')"
+                    class="flex items-center gap-2 px-4 py-2 text-sm rounded transition-colors"
+                    style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); color: var(--accent-red);"
+                >
+                    Cancel
+                </button>
+                <button 
+                    type="submit" 
+                    class="flex items-center gap-2 px-4 py-2 text-sm rounded text-white transition-colors"
+                    style="background: var(--accent-blue);"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                        <path d="M16 16h5v5"/>
+                    </svg>
+                    Sync Changes
+                </button>
+            </div>
         </div>
     `;
 }
