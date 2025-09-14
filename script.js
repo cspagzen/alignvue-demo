@@ -12565,26 +12565,75 @@ function showNotification(message, type = 'info') {
 // NEW FUNCTION: Fetch Team Data from Jira (including comments)
 // ============================================================================
 
+// ============================================================================
+// DEBUG VERSION: fetchTeamDataFromJira with detailed console logging
+// ============================================================================
+
 async function fetchTeamDataFromJira(teamName) {
+    console.log('🔍 [DEBUG] Starting fetchTeamDataFromJira for team:', teamName);
+    
     try {
+        const requestBody = {
+            endpoint: '/rest/api/3/search',
+            method: 'POST',
+            body: {
+                jql: `project = "TH" AND issuetype = "Teams" AND summary ~ "${teamName}"`,
+                fields: [
+                    'customfield_10257', // Capacity
+                    'customfield_10258', // Skillset  
+                    'customfield_10259', // Vision
+                    'customfield_10260', // Support
+                    'customfield_10261', // Team Cohesion
+                    'customfield_10262', // Autonomy
+                    'customfield_10263', // Comments ⭐ THIS IS THE ONE WE CARE ABOUT
+                    'customfield_10264'  // Utilization
+                ]
+            }
+        };
+        
+        console.log('🔍 [DEBUG] Request body:', JSON.stringify(requestBody, null, 2));
+        
         const response = await fetch('/api/jira', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                endpoint: '/rest/api/3/search',
-                method: 'POST',
-                body: {
-                    jql: `project = "TH" AND issuetype = "Teams" AND summary ~ "${teamName}"`,
-                    fields: ['customfield_10257', 'customfield_10258', 'customfield_10259', 'customfield_10260', 'customfield_10261', 'customfield_10262', 'customfield_10263', 'customfield_10264']
-                }
-            })
+            body: JSON.stringify(requestBody)
         });
         
+        console.log('🔍 [DEBUG] Response status:', response.status, response.statusText);
+        console.log('🔍 [DEBUG] Response ok:', response.ok);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ [DEBUG] API Error Response:', errorText);
+            return null;
+        }
+        
         const data = await response.json();
+        console.log('🔍 [DEBUG] Full API response:', JSON.stringify(data, null, 2));
+        console.log('🔍 [DEBUG] Number of issues found:', data.issues?.length || 0);
         
         if (data.issues && data.issues.length > 0) {
             const issue = data.issues[0];
-            return {
+            console.log('🔍 [DEBUG] First issue key:', issue.key);
+            console.log('🔍 [DEBUG] First issue summary:', issue.fields?.summary);
+            console.log('🔍 [DEBUG] All fields in response:', Object.keys(issue.fields || {}));
+            
+            // Focus on the comments field specifically
+            const commentsField = issue.fields.customfield_10263;
+            console.log('🔍 [DEBUG] customfield_10263 (Comments) raw value:', commentsField);
+            console.log('🔍 [DEBUG] customfield_10263 type:', typeof commentsField);
+            console.log('🔍 [DEBUG] customfield_10263 length:', commentsField?.length || 'N/A');
+            
+            // Check all the custom fields
+            console.log('🔍 [DEBUG] customfield_10257 (Capacity):', issue.fields.customfield_10257);
+            console.log('🔍 [DEBUG] customfield_10258 (Skillset):', issue.fields.customfield_10258);
+            console.log('🔍 [DEBUG] customfield_10259 (Vision):', issue.fields.customfield_10259);
+            console.log('🔍 [DEBUG] customfield_10260 (Support):', issue.fields.customfield_10260);
+            console.log('🔍 [DEBUG] customfield_10261 (Team Cohesion):', issue.fields.customfield_10261);
+            console.log('🔍 [DEBUG] customfield_10262 (Autonomy):', issue.fields.customfield_10262);
+            console.log('🔍 [DEBUG] customfield_10264 (Utilization):', issue.fields.customfield_10264);
+            
+            const processedData = {
                 capacity: issue.fields.customfield_10257?.value || null,
                 skillset: issue.fields.customfield_10258?.value || null,
                 vision: issue.fields.customfield_10259?.value || null,
@@ -12592,13 +12641,24 @@ async function fetchTeamDataFromJira(teamName) {
                 teamwork: issue.fields.customfield_10261?.value || null,
                 autonomy: issue.fields.customfield_10262?.value || null,
                 utilization: issue.fields.customfield_10264 || null,
-                comments: issue.fields.customfield_10263 || null  // THIS IS THE KEY ADDITION
+                comments: issue.fields.customfield_10263 || null
             };
+            
+            console.log('🔍 [DEBUG] Processed data being returned:', JSON.stringify(processedData, null, 2));
+            return processedData;
+            
+        } else {
+            console.log('❌ [DEBUG] No issues found for team:', teamName);
+            console.log('🔍 [DEBUG] This could mean:');
+            console.log('   - Team name mismatch');
+            console.log('   - Team not in TH project');  
+            console.log('   - JQL query issue');
+            return null;
         }
         
-        return null;
     } catch (error) {
-        console.error('Error fetching team data from Jira:', error);
+        console.error('❌ [DEBUG] Exception caught:', error);
+        console.error('❌ [DEBUG] Error stack:', error.stack);
         return null;
     }
 }
