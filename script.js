@@ -12022,10 +12022,10 @@ function showTeamModal(teamName, teamData) {
                 <div class="grid grid-cols-1 gap-3">
                     <!-- Utilization Chart -->
                     <div id="utilization-container" class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                        <div style="width: 80px; height: 80px; margin: 0 auto;">
-                            <canvas id="utilization-chart" width="80" height="80"></canvas>
+                        <div style="width: 120px; height: 120px; margin: 0 auto;">
+                            <canvas id="utilization-chart" width="120" height="120"></canvas>
                         </div>
-                        <div class="text-sm mt-2" style="color: var(--text-secondary);">Utilization</div>
+                        <div class="text-base mt-2" style="color: var(--text-secondary);">Utilization</div>
                     </div>
                 </div>
                 
