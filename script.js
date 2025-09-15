@@ -10589,23 +10589,7 @@ function extractTextFromDoc(docField) {
     return text.trim() || null;
 }
 
-// Make sure getFieldValue handles the object format properly
-function getFieldValue(issue, fieldId) {
-    const fieldValue = issue.fields[fieldId];
-    
-    // Handle custom field objects with value property (most Jira custom fields)
-    if (fieldValue && typeof fieldValue === 'object' && fieldValue.value !== undefined) {
-        return fieldValue.value;
-    }
-    
-    // Handle arrays of objects with value property (multi-select fields)
-    if (Array.isArray(fieldValue) && fieldValue.length > 0 && fieldValue[0]?.value !== undefined) {
-        return fieldValue.map(item => item.value);
-    }
-    
-    // Return as-is for simple values
-    return fieldValue;
-}
+
 
 // Update formatMarketSize to handle proper field IDs
 function formatMarketSize(issue) {
@@ -12474,9 +12458,7 @@ async function handleHealthUpdate(event, teamName) {
 // ============================================================================
 // SIMPLE TEAM HEALTH PERFORMANCE FIX
 // ============================================================================
-// Just replace these 2 functions - that's it!
-
-// 1. REPLACE your existing handleHealthUpdate function with this:
+// 
 async function handleHealthUpdate(event, teamName) {
     event.preventDefault();
     
@@ -12494,8 +12476,9 @@ async function handleHealthUpdate(event, teamName) {
     try {
         console.log('🔄 Updating team health for:', teamName);
         console.log('📝 Form data:', formData);
+        console.log('💬 Comments from form:', formData.comments);
         
-        // Update local data immediately
+        // Update local data immediately (but we'll validate from Jira after sync)
         const teamData = boardData.teams[teamName];
         if (teamData) {
             Object.assign(teamData, formData);
@@ -12520,38 +12503,117 @@ async function handleHealthUpdate(event, teamName) {
         }
         
         // Sync to Jira
+        let jiraUpdateSuccess = false;
         try {
             if (typeof updateTeamHealthInJira === 'function') {
                 console.log('📤 Syncing to Jira...');
                 await updateTeamHealthInJira(teamName, formData);
                 console.log('✅ Jira sync completed');
+                jiraUpdateSuccess = true;
             }
         } catch (syncError) {
             console.warn('⚠️ Jira sync failed:', syncError);
         }
         
-        // 🎯 THE KEY FIX: No massive data reload!
-        // Instead of calling integrateTeamHealthData() or fetchJiraData() 
-        // which causes the 8-10 second delay, just reopen the modal quickly
+        // 🎯 NEW: Quick validation fetch to get the actual synced data
+        let validatedTeamData = teamData; // fallback to local data
         
+        if (jiraUpdateSuccess && teamData?.jira?.key) {
+            try {
+                console.log('🔍 Fetching updated team data from Jira for validation...');
+                
+                if (syncOverlay && syncOverlay.updateMessages) {
+                    syncOverlay.updateMessages({
+                        title: 'Validating Changes',
+                        subtitle: 'Retrieving updated data from Jira...'
+                    });
+                }
+                
+                const fetchResponse = await fetch('/api/jira', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        endpoint: `/rest/api/3/issue/${teamData.jira.key}`,
+                        method: 'GET',
+                        body: {
+                            fields: [
+                                'customfield_10257', // Capacity
+                                'customfield_10258', // Skillset
+                                'customfield_10259', // Vision
+                                'customfield_10260', // Support
+                                'customfield_10261', // Teamwork
+                                'customfield_10262', // Autonomy
+                                'customfield_10263', // Comments
+                                'customfield_10264'  // Utilization
+                            ].join(',')
+                        }
+                    })
+                });
+                
+                if (fetchResponse.ok) {
+                    const jiraData = await fetchResponse.json();
+                    console.log('📥 Fresh Jira data received:', jiraData);
+                    
+                    // Transform the fresh Jira data
+                    const freshTeamData = {
+                        ...teamData, // Keep existing data
+                        capacity: getFieldValue(jiraData, 'customfield_10257'),
+                        skillset: getFieldValue(jiraData, 'customfield_10258'),
+                        vision: getFieldValue(jiraData, 'customfield_10259'),
+                        support: getFieldValue(jiraData, 'customfield_10260'),
+                        teamwork: getFieldValue(jiraData, 'customfield_10261'),
+                        autonomy: getFieldValue(jiraData, 'customfield_10262'),
+                        jira: {
+                            ...teamData.jira,
+                            comments: getFieldValue(jiraData, 'customfield_10263'),
+                            utilization: getFieldValue(jiraData, 'customfield_10264') || 0
+                        }
+                    };
+                    
+                    console.log('✅ Transformed fresh team data:', freshTeamData);
+                    console.log('💬 Comments from Jira:', freshTeamData.jira.comments);
+                    
+                    // Update the boardData with fresh data
+                    boardData.teams[teamName] = freshTeamData;
+                    validatedTeamData = freshTeamData;
+                    
+                } else {
+                    console.warn('⚠️ Failed to fetch fresh data, using local data');
+                }
+                
+            } catch (fetchError) {
+                console.warn('⚠️ Validation fetch failed:', fetchError);
+            }
+        }
+        
+        // Show success and reopen modal
         setTimeout(() => {
-            // Hide overlay
-            if (syncOverlay && syncOverlay.hide) {
-                syncOverlay.hide();
+            if (syncOverlay && syncOverlay.updateMessages) {
+                syncOverlay.updateMessages({
+                    title: 'Team Health Updated',
+                    subtitle: 'All changes synced successfully'
+                });
             }
             
-            // Reopen modal with updated data
-            const updatedTeamData = boardData.teams[teamName];
-            if (typeof openTeamModal === 'function') {
-                openTeamModal(teamName);
-            } else if (typeof showTeamModal === 'function') {
-                showTeamModal(teamName, updatedTeamData);
-            } else {
-                // Fallback - construct modal manually
-                showUpdatedTeamModal(teamName, updatedTeamData);
-            }
+            // Wait a moment for success message, then reopen
+            setTimeout(() => {
+                // Hide overlay
+                if (syncOverlay && syncOverlay.hide) {
+                    syncOverlay.hide();
+                }
+                
+                // Reopen modal with validated data
+                if (typeof openTeamModal === 'function') {
+                    openTeamModal(teamName);
+                } else if (typeof showTeamModal === 'function') {
+                    showTeamModal(teamName, validatedTeamData);
+                } else {
+                    showUpdatedTeamModal(teamName, validatedTeamData);
+                }
+                
+            }, 1000);
             
-        }, 1000); // Just 1 second instead of 8-10 seconds!
+        }, 500);
         
     } catch (error) {
         console.error('❌ Error updating team health:', error);
@@ -12564,7 +12626,7 @@ async function handleHealthUpdate(event, teamName) {
     }
 }
 
-// 2. ADD this fallback function (in case your existing modal functions don't work):
+
 function showUpdatedTeamModal(teamName, teamData) {
     console.log('🔄 Opening updated team modal for:', teamName);
     
@@ -12646,31 +12708,6 @@ function showUpdatedTeamModal(teamName, teamData) {
     modal.classList.add('show');
 }
 
-// ============================================================================
-// THAT'S IT! Just replace those 2 functions above.
-// ============================================================================
-
-/*
-WHAT THIS DOES:
-
-❌ REMOVES: The massive data reload that takes 8-10 seconds
-✅ KEEPS: Syncing individual team data to Jira  
-✅ ADDS: Fast modal reopening in ~1 second
-
-IMPLEMENTATION:
-1. Find your existing handleHealthUpdate function in script.js
-2. Replace it with the one above
-3. Add the showUpdatedTeamModal function
-4. Test - should be much faster!
-
-IGNORE THE COMPLEX STUFF:
-- You don't need to modify integrateTeamHealthData() 
-- You don't need to modify fetchJiraData()
-- You don't need the flag system
-- You don't need the wrapper functions
-
-Just replace handleHealthUpdate and add the fallback function. That's it!
-*/
 
 
 async function updateTeamHealthInJira(teamName, data) {
@@ -12974,17 +13011,18 @@ function extractTextFromADF(adfObject) {
     return null;
 }
 
-/**
- * Enhanced getFieldValue function that handles ADF for comments
- * REPLACE your existing getFieldValue function with this one
- */
 function getFieldValue(issue, fieldId) {
     const fieldValue = issue.fields[fieldId];
     
-    // Special handling for comments field (10263) - extract text from ADF
+    // Handle null/undefined
+    if (!fieldValue) return null;
+    
+    // 🎯 SPECIAL HANDLING for comments field (customfield_10263) - extract text from ADF
     if (fieldId === 'customfield_10263' && fieldValue && typeof fieldValue === 'object') {
-        const extractedText = extractTextFromADF(fieldValue);
-        return extractedText && extractedText.trim() ? extractedText.trim() : null;
+        if (fieldValue.content) {
+            const extractedText = extractTextFromADF(fieldValue);
+            return extractedText && extractedText.trim() ? extractedText.trim() : null;
+        }
     }
     
     // Handle custom field objects with value property (most Jira custom fields)
@@ -12997,7 +13035,12 @@ function getFieldValue(issue, fieldId) {
         return fieldValue.map(item => item.value);
     }
     
-    // Return as-is for simple values
+    // Handle simple values (strings, numbers)
+    if (typeof fieldValue === 'string' || typeof fieldValue === 'number') {
+        return fieldValue;
+    }
+    
+    // Return as-is for other cases
     return fieldValue;
 }
 
