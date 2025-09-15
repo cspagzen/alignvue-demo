@@ -12878,7 +12878,7 @@ async function submitHealthChanges() {
         syncState.lastSyncData = newData;
         syncState.lastSyncTime = Date.now();
         
-        // REOPEN MODAL IN NON-EDIT MODE with fresh data
+        // REOPEN MODAL IMMEDIATELY with fresh data (while overlay is still showing)
         console.log('Reopening modal in view mode with updated data...');
         const updatedTeamData = newData.teams ? newData.teams[teamName] : boardData.teams[teamName];
         
@@ -12891,7 +12891,7 @@ async function submitHealthChanges() {
             reopenTeamModalInViewMode(teamName, updatedTeamData);
         }
         
-        // NOW show success message in overlay (modal is already open)
+        // NOW show success message in overlay (modal is already open behind overlay)
         setTimeout(() => {
             if (syncOverlay && syncOverlay.updateMessages) {
                 syncOverlay.updateMessages({
@@ -12910,7 +12910,7 @@ async function submitHealthChanges() {
                 }
             }, 3000);
             
-        }, 500); // Small delay to let modal render
+        }, 100); // Very small delay just to let modal render
         
     } catch (criticalError) {
         console.error('Critical error in team health sync:', criticalError);
