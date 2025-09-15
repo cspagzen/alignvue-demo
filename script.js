@@ -12884,32 +12884,32 @@ async function submitHealthChanges() {
         
         // Show success message for 3 seconds, then switch to non-edit mode BEFORE closing overlay
         setTimeout(() => {
-            console.log('Data is updated - switching to non-edit mode...');
+            console.log('Data is updated - forcing exit from edit mode...');
             console.log('Current editing team:', window.currentEditingTeam);
             console.log('Team name:', teamName);
             
-            // Try multiple methods to ensure we exit edit mode
-            if (window.currentEditingTeam === teamName) {
-                console.log('Attempting to toggle health edit mode...');
+            const button = document.getElementById('edit-health-btn');
+            const isEditing = button && button.innerHTML.includes('Cancel');
+            
+            console.log('Button exists:', !!button);
+            console.log('Is currently in edit mode:', isEditing);
+            
+            if (isEditing) {
+                console.log('Calling toggleHealthEditMode to exit edit mode...');
                 toggleHealthEditMode(teamName);
+            } else {
+                console.log('Not in edit mode or button not found, forcing modal refresh...');
+                // Force exit by clearing edit state and refreshing modal
+                window.currentEditingTeam = null;
                 
-                // Double-check that edit mode was exited
-                setTimeout(() => {
-                    if (window.currentEditingTeam === teamName) {
-                        console.warn('Edit mode still active, forcing exit...');
-                        window.currentEditingTeam = null;
-                        
-                        // Force re-render the modal in view mode
-                        const modal = document.getElementById('team-modal');
-                        if (modal && modal.classList.contains('show')) {
-                            const updatedTeamData = boardData.teams[teamName];
-                            if (updatedTeamData) {
-                                console.log('Force refreshing modal content with updated data...');
-                                showTeamHealthModal(teamName, updatedTeamData);
-                            }
-                        }
+                const modal = document.getElementById('team-modal');
+                if (modal && modal.classList.contains('show')) {
+                    const teamData = boardData.teams[teamName];
+                    if (teamData && typeof openTeamModal === 'function') {
+                        console.log('Re-opening modal in view mode with fresh data...');
+                        openTeamModal(teamName);
                     }
-                }, 200);
+                }
             }
             
             // THEN close overlay after mode switch completes
