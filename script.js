@@ -12103,7 +12103,7 @@ function showTeamModal(teamName, teamData) {
 // TEAM HEALTH COMMENTS RENDERING
 // ============================================================================
 function renderTeamComments(teamData) {
-    const comments = teamData.jira?.comments;
+    const comments = teamData.jira?.comments ? extractTextFromADF(teamData.jira.comments) : null;
     
     if (!comments || comments.trim() === '') {
         return `
@@ -12981,35 +12981,9 @@ function getTeamOverallHealth(teamData) {
     };
 }
 
-// ==============================================================================
-// ADF (Atlassian Document Format) TEXT EXTRACTION
-// Add this to your script.js
-// ==============================================================================
-
-/**
- * Extract plain text from Atlassian Document Format (ADF) objects
- * Used for custom field 10263 (Team Health Comments)
- */
-function extractTextFromADF(adfObject) {
-    if (!adfObject || typeof adfObject !== 'object') {
-        return null;
-    }
-    
-    // Handle direct text
-    if (adfObject.type === 'text' && adfObject.text) {
-        return adfObject.text;
-    }
-    
-    // Handle content arrays
-    if (adfObject.content && Array.isArray(adfObject.content)) {
-        return adfObject.content
-            .map(item => extractTextFromADF(item))
-            .filter(text => text !== null)
-            .join(' ');
-    }
-    
-    return null;
-}
+// ============================================================================
+// TEAM MODAL FUNCTIONS - CLEAN WORKING VERSION
+// ============================================================================
 
 function getFieldValue(issue, fieldId) {
     const fieldValue = issue.fields[fieldId];
@@ -13017,7 +12991,7 @@ function getFieldValue(issue, fieldId) {
     // Handle null/undefined
     if (!fieldValue) return null;
     
-    // 🎯 SPECIAL HANDLING for comments field (customfield_10263) - extract text from ADF
+    // Special handling for comments field (customfield_10263) - extract text from ADF
     if (fieldId === 'customfield_10263' && fieldValue && typeof fieldValue === 'object') {
         if (fieldValue.content) {
             const extractedText = extractTextFromADF(fieldValue);
@@ -13064,7 +13038,7 @@ async function submitHealthChanges() {
             comments: document.getElementById('team-comments').value || null
         };
         
-        console.log('📝 Submitting health changes for:', teamName, formData);
+        console.log('Submitting health changes for:', teamName, formData);
         
         // Update local data immediately
         const teamData = boardData.teams[teamName];
@@ -13099,7 +13073,7 @@ async function submitHealthChanges() {
             console.warn('Jira sync failed:', syncError);
         }
         
-        // 🎯 PERFORMANCE FIX: Skip the massive reload, just reopen modal
+        // Quick reopen - no massive refresh
         setTimeout(() => {
             if (syncOverlay && syncOverlay.hide) {
                 syncOverlay.hide();
@@ -13122,99 +13096,100 @@ async function submitHealthChanges() {
     }
 }
 
-// FIXED exitEditMode function for Cancel button  
 function exitEditMode() {
     const teamName = window.currentEditingTeam;
     console.log('exitEditMode called for team:', teamName);
     
     if (teamName) {
-        forceExitEditMode(teamName);
+        // Simple exit - just reopen the modal in view mode
+        if (typeof openTeamModal === 'function') {
+            openTeamModal(teamName);
+        } else if (typeof showTeamModal === 'function') {
+            showTeamModal(teamName, boardData.teams[teamName]);
+        } else {
+            console.warn('No modal opening function available');
+            // Close modal as fallback
+            const modal = document.getElementById('team-modal') || document.getElementById('detail-modal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+            window.currentEditingTeam = null;
+        }
     } else {
         console.warn('No current editing team found');
     }
 }
 
-// NEW FUNCTION: Force exit edit mode with complete modal restoration
-function forceExitEditMode(teamName) {
-    console.log('forceExitEditMode called for:', teamName);
+function renderTeamComments(teamData) {
+    const comments = teamData.jira?.comments ? extractTextFromADF(teamData.jira.comments) : null;
     
-    // Clear the editing state
-    window.currentEditingTeam = null;
-    
-    // Find the edit button and force it back to "Edit" state
-    const button = document.getElementById('edit-health-btn');
-    if (button) {
-        button.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a .5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
-            </svg>
-            Edit
+    if (!comments || comments.trim() === '') {
+        return `
+            <div class="text-center py-8" style="color: var(--text-secondary);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto mb-3" style="color: var(--border-primary);">
+                    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+                    <path d="M8 12h8"/>
+                    <path d="M8 8h8"/>
+                </svg>
+                <p class="text-sm">No team health comments yet</p>
+                <p class="text-xs mt-1">Click Edit to add notes about this team's health</p>
+            </div>
         `;
-        button.setAttribute('onclick', `toggleHealthEditMode('${teamName}')`);
-        button.style.display = 'flex';
     }
     
-    // Restore health dimensions container to view mode
+    return `
+        <div class="prose prose-sm max-w-none" style="color: var(--text-primary);">
+            <div class="whitespace-pre-wrap">${escapeHtml(comments)}</div>
+        </div>
+    `;
+}
+
+function toggleHealthEditMode(teamName) {
     const container = document.getElementById('health-dimensions-container');
-    if (container) {
-        console.log('Restoring health dimensions container to view mode');
-        const teamData = boardData.teams[teamName];
-        if (teamData && typeof renderHealthDimensionsGrid === 'function') {
-            container.innerHTML = renderHealthDimensionsGrid(teamData, false);
-        }
-    }
-    
-    // Restore utilization container to view mode
     const utilizationContainer = document.getElementById('utilization-container');
-    if (utilizationContainer) {
-        console.log('Restoring utilization container to view mode');
-        const teamData = boardData.teams[teamName];
-        if (teamData) {
-            utilizationContainer.innerHTML = `
-                <div style="width: 80px; height: 80px; margin: 0 auto;">
-                    <canvas id="utilization-chart" width="80" height="80"></canvas>
-                </div>
-                <div class="text-white text-sm mt-2">Utilization</div>
-            `;
-            
-            // Reinitialize chart
-            setTimeout(() => {
-                if (typeof initializeUtilizationChart === 'function') {
-                    initializeUtilizationChart(teamData.jira?.utilization || 0);
-                }
-            }, 100);
-        }
-    }
-    
-    // RESTORE Team Comments section
-    const commentsSection = document.getElementById('team-comments-section');
-    if (commentsSection) {
-        console.log('Restoring team comments section');
-        commentsSection.style.display = 'block';
-        
-        const commentsDisplay = document.getElementById('team-comments-display');
-        if (commentsDisplay) {
-            const teamData = boardData.teams[teamName];
-            if (teamData && typeof renderTeamComments === 'function') {
-                commentsDisplay.innerHTML = renderTeamComments(teamData);
-            }
-        }
-    }
-    
-    // RESTORE Health Insights section
+    const button = document.getElementById('edit-health-button');
     const modal = document.getElementById('team-modal') || document.getElementById('detail-modal');
-    if (modal) {
+    
+    if (!container || !utilizationContainer || !button) {
+        console.error('Required elements not found for edit mode toggle');
+        return;
+    }
+    
+    const teamData = boardData.teams[teamName];
+    if (!teamData) {
+        console.error('Team data not found for:', teamName);
+        return;
+    }
+    
+    const isEditMode = button.textContent.includes('Cancel');
+    
+    if (isEditMode) {
+        // Exit edit mode - restore view mode
+        window.currentEditingTeam = null;
+        button.textContent = 'Edit Team Health';
+        button.style.background = 'var(--accent-blue)';
+        
+        // Restore view mode content
+        container.innerHTML = renderHealthDimensionsGrid(teamData, false);
+        utilizationContainer.innerHTML = renderUtilizationDisplay(teamData);
+        document.getElementById('team-comments-section').style.display = 'block';
+        
+        // Restore comments section
+        const commentsDisplay = document.getElementById('team-comments-display');
+        if (commentsDisplay && typeof renderTeamComments === 'function') {
+            commentsDisplay.innerHTML = renderTeamComments(teamData);
+        }
+        
+        // Restore Health Insights section
         const healthInsightsSection = Array.from(modal.querySelectorAll('div')).find(div => 
             div.querySelector('h3') && 
             div.querySelector('h3').textContent.includes('Health Insights')
         );
         if (healthInsightsSection) {
-            console.log('Restoring Health Insights section');
             healthInsightsSection.style.display = 'block';
         }
         
-        // Remove blur and darken from the top sections
+        // Remove blur effects
         const topSectionBoxes = modal.querySelectorAll('.grid-cols-4 > div, .grid > div');
         topSectionBoxes.forEach(box => {
             if (box && (box.textContent.includes('CRITICAL') || box.textContent.includes('Active Stories') || box.textContent.includes('Blockers'))) {
@@ -13223,214 +13198,37 @@ function forceExitEditMode(teamName) {
                 box.style.pointerEvents = '';
             }
         });
-    }
-    
-    // Hide the sync status if it exists
-    const syncStatus = document.getElementById('sync-status');
-    if (syncStatus) {
-        syncStatus.style.display = 'none';
-    }
-    
-    console.log('✅ Forced exit from edit mode completed with all sections restored');
-}
-
-// NEW FUNCTION: Fallback to manually reopen modal in view mode
-function reopenTeamModalInViewMode(teamName, teamData) {
-    console.log('🔄 Reopening team modal in view mode for:', teamName);
-    
-    const modal = document.getElementById('detail-modal');
-    const title = document.getElementById('modal-title');
-    const content = document.getElementById('modal-content');
-    
-    if (!modal || !title || !content) {
-        console.error('❌ Modal elements not found');
-        return;
-    }
-    
-    title.innerHTML = `${teamName} Team Health`;
-    
-    // Basic team health display
-    content.innerHTML = `
-        <div class="team-health-view">
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                    <label class="block text-sm font-medium mb-1">Capacity</label>
-                    <div class="text-lg">${teamData.capacity || 'Not Set'}</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Skillset</label>
-                    <div class="text-lg">${teamData.skillset || 'Not Set'}</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Vision</label>
-                    <div class="text-lg">${teamData.vision || 'Not Set'}</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Support</label>
-                    <div class="text-lg">${teamData.support || 'Not Set'}</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Teamwork</label>
-                    <div class="text-lg">${teamData.teamwork || 'Not Set'}</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Autonomy</label>
-                    <div class="text-lg">${teamData.autonomy || 'Not Set'}</div>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                    <label class="block text-sm font-medium mb-1">Utilization</label>
-                    <div class="text-lg">${teamData.jira?.utilization || 0}%</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Comments</label>
-                    <div class="text-sm">${teamData.jira?.comments || 'No comments'}</div>
-                </div>
-            </div>
-            
-            <div class="flex justify-end gap-3">
-                <button 
-                    type="button" 
-                    onclick="closeModal()" 
-                    class="px-4 py-2 rounded-md border"
-                    style="border-color: var(--border-primary); color: var(--text-secondary);"
-                >
-                    Close
-                </button>
-                <button 
-                    type="button" 
-                    onclick="editTeamHealth('${teamName}')" 
-                    class="px-4 py-2 rounded-md text-white"
-                    style="background: var(--accent-blue);"
-                >
-                    Edit
-                </button>
-            </div>
-        </div>
-    `;
-    
-    modal.classList.add('show');
-    console.log('✅ Team modal reopened successfully');
-}
-
-
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-function showTemporarySuccess(message) {
-    // Create temporary success toast
-    const toast = document.createElement('div');
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: var(--accent-green);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        z-index: 10000;
-        font-weight: 500;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-    `;
-    toast.textContent = message;
-    
-    document.body.appendChild(toast);
-    
-    // Animate in
-    setTimeout(() => {
-        toast.style.transform = 'translateX(0)';
-    }, 100);
-    
-    // Animate out and remove
-    setTimeout(() => {
-        toast.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.parentNode.removeChild(toast);
-            }
-        }, 300);
-    }, 3000);
-}
-
-
-// ==============================================================================
-// HELPER FUNCTION: Enhanced validation with user feedback
-// ==============================================================================
-
-function showValidationResults(results) {
-    const failures = results.validationResults.filter(r => !r.valid);
-    
-    if (failures.length === 0) {
-        // All changes validated successfully
-        showTemporarySuccess(`All ${teamName} changes validated in Jira!`);
+        
     } else {
-        // Some changes may not have synced
-        const failedFields = failures.map(f => f.field).join(', ');
-        showTemporaryWarning(`Some changes may not have synced: ${failedFields}. Please check manually.`);
-    }
-}
-
-function convertTextToADF(text) {
-    if (!text || text.trim() === '') {
-        return null;
-    }
-    
-    return {
-        type: "doc",
-        version: 1,
-        content: [
-            {
-                type: "paragraph",
-                content: [
-                    {
-                        type: "text",
-                        text: text.trim()
-                    }
-                ]
+        // Enter edit mode
+        window.currentEditingTeam = teamName;
+        button.textContent = 'Cancel';
+        button.style.background = 'var(--accent-red)';
+        
+        // Switch to edit mode content
+        container.innerHTML = renderHealthDimensionsGrid(teamData, true);
+        utilizationContainer.innerHTML = renderUtilizationEditor(teamData);
+        document.getElementById('team-comments-section').style.display = 'none';
+        
+        // Hide Health Insights section
+        const healthInsightsSection = Array.from(modal.querySelectorAll('div')).find(div => 
+            div.querySelector('h3') && 
+            div.querySelector('h3').textContent.includes('Health Insights')
+        );
+        if (healthInsightsSection) {
+            healthInsightsSection.style.display = 'none';
+        }
+        
+        // Blur and darken the top sections
+        const topSectionBoxes = modal.querySelectorAll('.grid-cols-4 > div, .grid > div');
+        topSectionBoxes.forEach(box => {
+            if (box && (box.textContent.includes('CRITICAL') || box.textContent.includes('Active Stories') || box.textContent.includes('Blockers'))) {
+                box.style.filter = 'blur(2px)';
+                box.style.opacity = '0.4';
+                box.style.pointerEvents = 'none';
             }
-        ]
-    };
-}
-
-function showTemporarySuccess(message) {
-    const notification = createNotification(message, 'success');
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}
-
-function showTemporaryWarning(message) {
-    const notification = createNotification(message, 'warning');
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 5000);
-}
-
-function createNotification(message, type) {
-    const div = document.createElement('div');
-    const bgColor = type === 'success' ? 'var(--accent-green)' : 'var(--accent-orange)';
-    
-    div.innerHTML = message;
-    div.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${bgColor};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 10000;
-        max-width: 300px;
-        font-size: 14px;
-        line-height: 1.4;
-    `;
-    
-    return div;
+        });
+    }
 }
 
         init();
