@@ -12878,8 +12878,8 @@ async function submitHealthChanges() {
         syncState.lastSyncData = newData;
         syncState.lastSyncTime = Date.now();
         
-        // REOPEN MODAL IMMEDIATELY with fresh data (while overlay is still showing)
-        console.log('Reopening modal in view mode with updated data...');
+        // REOPEN MODAL with accurate fresh data (overlay still showing)
+        console.log('Reopening modal in view mode with fresh, validated data...');
         const updatedTeamData = newData.teams ? newData.teams[teamName] : boardData.teams[teamName];
         
         if (updatedTeamData && typeof openTeamModal === 'function') {
@@ -12891,7 +12891,7 @@ async function submitHealthChanges() {
             reopenTeamModalInViewMode(teamName, updatedTeamData);
         }
         
-        // NOW show success message in overlay (modal is already open behind overlay)
+        // Show success message briefly, then close overlay to reveal modal
         setTimeout(() => {
             if (syncOverlay && syncOverlay.updateMessages) {
                 syncOverlay.updateMessages({
@@ -12900,17 +12900,17 @@ async function submitHealthChanges() {
                 });
             }
             
-            console.log('✅ Team health sync process completed with fresh modal');
+            console.log('✅ Team health sync process completed - showing success then revealing modal');
             
-            // Close overlay after showing success message for 3 seconds
+            // Close overlay after brief success message to reveal fresh modal
             setTimeout(() => {
-                console.log('Closing overlay - user sees refreshed modal in view mode');
+                console.log('Closing overlay - revealing modal with accurate, fresh data');
                 if (syncOverlay && syncOverlay.hide) {
                     syncOverlay.hide();
                 }
-            }, 3000);
+            }, 2000); // Shorter success display since user is waiting
             
-        }, 100); // Very small delay just to let modal render
+        }, 200); // Quick transition to success message
         
     } catch (criticalError) {
         console.error('Critical error in team health sync:', criticalError);
