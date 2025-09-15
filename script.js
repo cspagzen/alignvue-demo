@@ -12925,22 +12925,16 @@ function exitEditMode() {
     }
 }
 
-// NEW FUNCTION: Force exit edit mode with correct IDs and logic
+// NEW FUNCTION: Force exit edit mode with complete modal restoration
 function forceExitEditMode(teamName) {
     console.log('forceExitEditMode called for:', teamName);
     
     // Clear the editing state
     window.currentEditingTeam = null;
     
-    // Find the edit button and check if it shows "Cancel"
+    // Find the edit button and force it back to "Edit" state
     const button = document.getElementById('edit-health-btn');
-    const isEditing = button && button.innerHTML.includes('Cancel');
-    
-    console.log('Edit button found:', !!button);
-    console.log('Is in edit mode:', isEditing);
-    
-    if (isEditing && button) {
-        // Change button back to "Edit"
+    if (button) {
         button.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -12948,12 +12942,11 @@ function forceExitEditMode(teamName) {
             </svg>
             Edit
         `;
-        
-        // Update the onclick to use the correct team name
         button.setAttribute('onclick', `toggleHealthEditMode('${teamName}')`);
+        button.style.display = 'flex';
     }
     
-    // Find and restore the health dimensions container
+    // Restore health dimensions container to view mode
     const container = document.getElementById('health-dimensions-container');
     if (container) {
         console.log('Restoring health dimensions container to view mode');
@@ -12963,14 +12956,64 @@ function forceExitEditMode(teamName) {
         }
     }
     
-    // Find and restore the utilization container  
+    // Restore utilization container to view mode
     const utilizationContainer = document.getElementById('utilization-container');
     if (utilizationContainer) {
         console.log('Restoring utilization container to view mode');
         const teamData = boardData.teams[teamName];
-        if (teamData && typeof renderUtilizationDisplay === 'function') {
-            utilizationContainer.innerHTML = renderUtilizationDisplay(teamData);
+        if (teamData) {
+            utilizationContainer.innerHTML = `
+                <div style="width: 80px; height: 80px; margin: 0 auto;">
+                    <canvas id="utilization-chart" width="80" height="80"></canvas>
+                </div>
+                <div class="text-white text-sm mt-2">Utilization</div>
+            `;
+            
+            // Reinitialize chart
+            setTimeout(() => {
+                if (typeof initializeUtilizationChart === 'function') {
+                    initializeUtilizationChart(teamData.jira?.utilization || 0);
+                }
+            }, 100);
         }
+    }
+    
+    // RESTORE Team Comments section
+    const commentsSection = document.getElementById('team-comments-section');
+    if (commentsSection) {
+        console.log('Restoring team comments section');
+        commentsSection.style.display = 'block';
+        
+        const commentsDisplay = document.getElementById('team-comments-display');
+        if (commentsDisplay) {
+            const teamData = boardData.teams[teamName];
+            if (teamData && typeof renderTeamComments === 'function') {
+                commentsDisplay.innerHTML = renderTeamComments(teamData);
+            }
+        }
+    }
+    
+    // RESTORE Health Insights section
+    const modal = document.getElementById('team-modal') || document.getElementById('detail-modal');
+    if (modal) {
+        const healthInsightsSection = Array.from(modal.querySelectorAll('div')).find(div => 
+            div.querySelector('h3') && 
+            div.querySelector('h3').textContent.includes('Health Insights')
+        );
+        if (healthInsightsSection) {
+            console.log('Restoring Health Insights section');
+            healthInsightsSection.style.display = 'block';
+        }
+        
+        // Remove blur and darken from the top sections
+        const topSectionBoxes = modal.querySelectorAll('.grid-cols-4 > div, .grid > div');
+        topSectionBoxes.forEach(box => {
+            if (box && (box.textContent.includes('CRITICAL') || box.textContent.includes('Active Stories') || box.textContent.includes('Blockers'))) {
+                box.style.filter = '';
+                box.style.opacity = '';
+                box.style.pointerEvents = '';
+            }
+        });
     }
     
     // Hide the sync status if it exists
@@ -12979,7 +13022,7 @@ function forceExitEditMode(teamName) {
         syncStatus.style.display = 'none';
     }
     
-    console.log('✅ Forced exit from edit mode completed');
+    console.log('✅ Forced exit from edit mode completed with all sections restored');
 }
 
 
