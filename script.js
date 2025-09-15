@@ -12878,8 +12878,8 @@ async function submitHealthChanges() {
         syncState.lastSyncData = newData;
         syncState.lastSyncTime = Date.now();
         
-        // REOPEN MODAL with accurate fresh data (overlay still showing)
-        console.log('Reopening modal in view mode with fresh, validated data...');
+        // REOPEN MODAL IMMEDIATELY with accurate fresh data (overlay still showing)
+        console.log('Reopening modal NOW with fresh, validated data...');
         const updatedTeamData = newData.teams ? newData.teams[teamName] : boardData.teams[teamName];
         
         if (updatedTeamData && typeof openTeamModal === 'function') {
@@ -12890,27 +12890,25 @@ async function submitHealthChanges() {
             // Fallback: reopen with manual modal construction
             reopenTeamModalInViewMode(teamName, updatedTeamData);
         }
+        console.log('Modal reopened with fresh data');
         
         // Show success message briefly, then close overlay to reveal modal
+        if (syncOverlay && syncOverlay.updateMessages) {
+            syncOverlay.updateMessages({
+                title: `${teamName} Team Health Data Successfully Updated and Validated`,
+                subtitle: 'All changes have been synced to Jira'
+            });
+        }
+        
+        console.log('✅ Team health sync process completed - showing success then revealing modal');
+        
+        // Close overlay after brief success message to reveal fresh modal
         setTimeout(() => {
-            if (syncOverlay && syncOverlay.updateMessages) {
-                syncOverlay.updateMessages({
-                    title: `${teamName} Team Health Data Successfully Updated and Validated`,
-                    subtitle: 'All changes have been synced to Jira'
-                });
+            console.log('Closing overlay - revealing modal with accurate, fresh data');
+            if (syncOverlay && syncOverlay.hide) {
+                syncOverlay.hide();
             }
-            
-            console.log('✅ Team health sync process completed - showing success then revealing modal');
-            
-            // Close overlay after brief success message to reveal fresh modal
-            setTimeout(() => {
-                console.log('Closing overlay - revealing modal with accurate, fresh data');
-                if (syncOverlay && syncOverlay.hide) {
-                    syncOverlay.hide();
-                }
-            }, 2000); // Shorter success display since user is waiting
-            
-        }, 200); // Quick transition to success message
+        }, 2000); // Shorter success display since user is waiting
         
     } catch (criticalError) {
         console.error('Critical error in team health sync:', criticalError);
