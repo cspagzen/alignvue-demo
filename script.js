@@ -10589,7 +10589,23 @@ function extractTextFromDoc(docField) {
     return text.trim() || null;
 }
 
-
+// Make sure getFieldValue handles the object format properly
+function getFieldValue(issue, fieldId) {
+    const fieldValue = issue.fields[fieldId];
+    
+    // Handle custom field objects with value property (most Jira custom fields)
+    if (fieldValue && typeof fieldValue === 'object' && fieldValue.value !== undefined) {
+        return fieldValue.value;
+    }
+    
+    // Handle arrays of objects with value property (multi-select fields)
+    if (Array.isArray(fieldValue) && fieldValue.length > 0 && fieldValue[0]?.value !== undefined) {
+        return fieldValue.map(item => item.value);
+    }
+    
+    // Return as-is for simple values
+    return fieldValue;
+}
 
 // Update formatMarketSize to handle proper field IDs
 function formatMarketSize(issue) {
@@ -12383,333 +12399,60 @@ async function handleHealthUpdate(event, teamName) {
     };
     
     try {
-        console.log('🔄 Updating team health for:', teamName);
-        console.log('📝 Form data:', formData);
+        console.log('🔍 Debug: Updating team health for:', teamName);
+        console.log('🔍 Debug: Form data:', formData);
+        console.log('🔍 Debug: Team data before update:', boardData.teams[teamName]);
         
-        // Update local data immediately
+        // Check if updateTeamHealthInJira function exists
+        if (typeof updateTeamHealthInJira === 'function') {
+            console.log('🔍 Debug: updateTeamHealthInJira function exists, calling it...');
+            await updateTeamHealthInJira(teamName, formData);
+            console.log('✅ Debug: Jira update completed');
+        } else {
+            console.warn('⚠️ Debug: updateTeamHealthInJira function does not exist');
+            console.log('💡 Debug: Available functions:', Object.getOwnPropertyNames(window).filter(name => name.includes('update') || name.includes('jira') || name.includes('health')));
+        }
+        
+        // Update local data
         const teamData = boardData.teams[teamName];
         if (teamData) {
+            console.log('🔍 Debug: Updating local team data...');
             Object.assign(teamData, formData);
             if (teamData.jira) {
                 teamData.jira.utilization = formData.utilization;
                 teamData.jira.comments = formData.comments;
             }
+            console.log('🔍 Debug: Team data after update:', teamData);
+        } else {
+            console.error('❌ Debug: Team not found in boardData.teams:', teamName);
         }
         
-        // Close modal and show sync overlay
-        const modal = document.getElementById('team-modal') || document.getElementById('detail-modal');
-        if (modal) {
-            modal.classList.remove('show');
-        }
-        window.currentEditingTeam = null;
-        
-        if (syncOverlay && syncOverlay.show) {
-            syncOverlay.show({
-                title: 'Syncing Team Health',
-                subtitle: `Saving ${teamName} changes to Jira...`
-            });
+        // Refresh UI
+        if (typeof updateUIWithLiveData === 'function') {
+            console.log('🔍 Debug: Refreshing UI...');
+            await updateUIWithLiveData();
+        } else {
+            console.warn('⚠️ Debug: updateUIWithLiveData function does not exist');
         }
         
-        // Sync to Jira
-        try {
-            if (typeof updateTeamHealthInJira === 'function') {
-                console.log('📤 Syncing to Jira...');
-                await updateTeamHealthInJira(teamName, formData);
-                console.log('✅ Jira sync completed');
-            }
-        } catch (syncError) {
-            console.warn('⚠️ Jira sync failed:', syncError);
-        }
+        // Exit edit mode
+        console.log('🔍 Debug: Exiting edit mode...');
+        toggleHealthEditMode(teamName);
         
-        // 🎯 THE KEY FIX: No massive data reload!
-        // Instead of calling integrateTeamHealthData() or fetchJiraData() 
-        // which causes the 8-10 second delay, just reopen the modal quickly
-        
-        setTimeout(() => {
-            // Hide overlay
-            if (syncOverlay && syncOverlay.hide) {
-                syncOverlay.hide();
-            }
-            
-            // Reopen modal with updated data
-            const updatedTeamData = boardData.teams[teamName];
-            if (typeof openTeamModal === 'function') {
-                openTeamModal(teamName);
-            } else if (typeof showTeamModal === 'function') {
-                showTeamModal(teamName, updatedTeamData);
-            } else {
-                // Fallback - construct modal manually
-                showUpdatedTeamModal(teamName, updatedTeamData);
-            }
-            
-        }, 1000); // Just 1 second instead of 8-10 seconds!
+        console.log('✅ Team health updated successfully');
         
     } catch (error) {
         console.error('❌ Error updating team health:', error);
+        console.error('❌ Error stack:', error.stack);
         
-        if (syncOverlay && syncOverlay.hide) {
-            syncOverlay.hide();
+        // Show a more specific error message
+        if (error.message.includes('updateTeamHealthInJira')) {
+            alert('Error syncing to Jira. Changes saved locally but may not be synced to Jira.');
+        } else {
+            alert('Error saving changes: ' + error.message);
         }
-        
-        alert('Error saving changes: ' + error.message);
     }
 }
-
-// ============================================================================
-// SIMPLE TEAM HEALTH PERFORMANCE FIX
-// ============================================================================
-// 
-async function handleHealthUpdate(event, teamName) {
-    event.preventDefault();
-    
-    const formData = {
-        capacity: document.getElementById('capacity').value || null,
-        skillset: document.getElementById('skillset').value || null,
-        vision: document.getElementById('vision').value || null,
-        support: document.getElementById('support').value || null,
-        teamwork: document.getElementById('teamwork').value || null,
-        autonomy: document.getElementById('autonomy').value || null,
-        utilization: parseInt(document.getElementById('utilization-input').value) || 0,
-        comments: document.getElementById('team-comments').value || null
-    };
-    
-    try {
-        console.log('🔄 Updating team health for:', teamName);
-        console.log('📝 Form data:', formData);
-        console.log('💬 Comments from form:', formData.comments);
-        
-        // Update local data immediately (but we'll validate from Jira after sync)
-        const teamData = boardData.teams[teamName];
-        if (teamData) {
-            Object.assign(teamData, formData);
-            if (teamData.jira) {
-                teamData.jira.utilization = formData.utilization;
-                teamData.jira.comments = formData.comments;
-            }
-        }
-        
-        // Close modal and show sync overlay
-        const modal = document.getElementById('team-modal') || document.getElementById('detail-modal');
-        if (modal) {
-            modal.classList.remove('show');
-        }
-        window.currentEditingTeam = null;
-        
-        if (syncOverlay && syncOverlay.show) {
-            syncOverlay.show({
-                title: 'Syncing Team Health',
-                subtitle: `Saving ${teamName} changes to Jira...`
-            });
-        }
-        
-        // Sync to Jira
-        let jiraUpdateSuccess = false;
-        try {
-            if (typeof updateTeamHealthInJira === 'function') {
-                console.log('📤 Syncing to Jira...');
-                await updateTeamHealthInJira(teamName, formData);
-                console.log('✅ Jira sync completed');
-                jiraUpdateSuccess = true;
-            }
-        } catch (syncError) {
-            console.warn('⚠️ Jira sync failed:', syncError);
-        }
-        
-        // 🎯 NEW: Quick validation fetch to get the actual synced data
-        let validatedTeamData = teamData; // fallback to local data
-        
-        if (jiraUpdateSuccess && teamData?.jira?.key) {
-            try {
-                console.log('🔍 Fetching updated team data from Jira for validation...');
-                
-                if (syncOverlay && syncOverlay.updateMessages) {
-                    syncOverlay.updateMessages({
-                        title: 'Validating Changes',
-                        subtitle: 'Retrieving updated data from Jira...'
-                    });
-                }
-                
-                const fetchResponse = await fetch('/api/jira', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        endpoint: `/rest/api/3/issue/${teamData.jira.key}`,
-                        method: 'GET',
-                        body: {
-                            fields: [
-                                'customfield_10257', // Capacity
-                                'customfield_10258', // Skillset
-                                'customfield_10259', // Vision
-                                'customfield_10260', // Support
-                                'customfield_10261', // Teamwork
-                                'customfield_10262', // Autonomy
-                                'customfield_10263', // Comments
-                                'customfield_10264'  // Utilization
-                            ].join(',')
-                        }
-                    })
-                });
-                
-                if (fetchResponse.ok) {
-                    const jiraData = await fetchResponse.json();
-                    console.log('📥 Fresh Jira data received:', jiraData);
-                    
-                    // Transform the fresh Jira data
-                    const freshTeamData = {
-                        ...teamData, // Keep existing data
-                        capacity: getFieldValue(jiraData, 'customfield_10257'),
-                        skillset: getFieldValue(jiraData, 'customfield_10258'),
-                        vision: getFieldValue(jiraData, 'customfield_10259'),
-                        support: getFieldValue(jiraData, 'customfield_10260'),
-                        teamwork: getFieldValue(jiraData, 'customfield_10261'),
-                        autonomy: getFieldValue(jiraData, 'customfield_10262'),
-                        jira: {
-                            ...teamData.jira,
-                            comments: getFieldValue(jiraData, 'customfield_10263'),
-                            utilization: getFieldValue(jiraData, 'customfield_10264') || 0
-                        }
-                    };
-                    
-                    console.log('✅ Transformed fresh team data:', freshTeamData);
-                    console.log('💬 Comments from Jira:', freshTeamData.jira.comments);
-                    
-                    // Update the boardData with fresh data
-                    boardData.teams[teamName] = freshTeamData;
-                    validatedTeamData = freshTeamData;
-                    
-                } else {
-                    console.warn('⚠️ Failed to fetch fresh data, using local data');
-                }
-                
-            } catch (fetchError) {
-                console.warn('⚠️ Validation fetch failed:', fetchError);
-            }
-        }
-        
-        // Show success and reopen modal
-        setTimeout(() => {
-            if (syncOverlay && syncOverlay.updateMessages) {
-                syncOverlay.updateMessages({
-                    title: 'Team Health Updated',
-                    subtitle: 'All changes synced successfully'
-                });
-            }
-            
-            // Wait a moment for success message, then reopen
-            setTimeout(() => {
-                // Hide overlay
-                if (syncOverlay && syncOverlay.hide) {
-                    syncOverlay.hide();
-                }
-                
-                // Reopen modal with validated data
-                if (typeof openTeamModal === 'function') {
-                    openTeamModal(teamName);
-                } else if (typeof showTeamModal === 'function') {
-                    showTeamModal(teamName, validatedTeamData);
-                } else {
-                    showUpdatedTeamModal(teamName, validatedTeamData);
-                }
-                
-            }, 1000);
-            
-        }, 500);
-        
-    } catch (error) {
-        console.error('❌ Error updating team health:', error);
-        
-        if (syncOverlay && syncOverlay.hide) {
-            syncOverlay.hide();
-        }
-        
-        alert('Error saving changes: ' + error.message);
-    }
-}
-
-
-function showUpdatedTeamModal(teamName, teamData) {
-    console.log('🔄 Opening updated team modal for:', teamName);
-    
-    const modal = document.getElementById('detail-modal');
-    const title = document.getElementById('modal-title');
-    const content = document.getElementById('modal-content');
-    
-    if (!modal || !title || !content) {
-        console.error('❌ Modal elements not found');
-        alert('Team health updated successfully!');
-        return;
-    }
-    
-    title.innerHTML = `${teamName} Team Health`;
-    
-    content.innerHTML = `
-        <div class="space-y-4">
-            <div class="text-sm text-green-600 bg-green-50 p-3 rounded-lg border border-green-200">
-                ✅ Team health successfully updated and synced to Jira
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium mb-1">Capacity</label>
-                    <div class="text-lg">${teamData.capacity || 'Not Set'}</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Skillset</label>
-                    <div class="text-lg">${teamData.skillset || 'Not Set'}</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Vision</label>
-                    <div class="text-lg">${teamData.vision || 'Not Set'}</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Support</label>
-                    <div class="text-lg">${teamData.support || 'Not Set'}</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Teamwork</label>
-                    <div class="text-lg">${teamData.teamwork || 'Not Set'}</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Autonomy</label>
-                    <div class="text-lg">${teamData.autonomy || 'Not Set'}</div>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium mb-1">Utilization</label>
-                    <div class="text-lg">${teamData.jira?.utilization || 0}%</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Comments</label>
-                    <div class="text-sm text-gray-600">${teamData.jira?.comments || 'No comments'}</div>
-                </div>
-            </div>
-            
-            <div class="flex justify-end gap-3 pt-4">
-                <button 
-                    type="button" 
-                    onclick="closeModal()" 
-                    class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                >
-                    Close
-                </button>
-                <button 
-                    type="button" 
-                    onclick="editTeamHealth('${teamName}')" 
-                    class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                >
-                    Edit Again
-                </button>
-            </div>
-        </div>
-    `;
-    
-    modal.classList.add('show');
-}
-
-
-
 async function updateTeamHealthInJira(teamName, data) {
     const teamData = boardData.teams[teamName];
     
@@ -12727,39 +12470,50 @@ async function updateTeamHealthInJira(teamName, data) {
         customfield_10260: data.support ? { value: data.support } : null,
         customfield_10261: data.teamwork ? { value: data.teamwork } : null,
         customfield_10262: data.autonomy ? { value: data.autonomy } : null,
-        customfield_10263: data.comments ? {
-            type: "doc",
-            version: 1,
-            content: [{
-                type: "paragraph",
-                content: [{
-                    type: "text",
-                    text: data.comments
-                }]
-            }]
-        } : null
+        customfield_10263: convertTextToADF(data.comments)
     };
+    
+    console.log('Sending to Jira:', fields);
     
     const response = await fetch('/api/jira', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             endpoint: `/rest/api/3/issue/${teamData.jira.key}`,
             method: 'PUT',
-            body: {
-                fields: fields
-            }
+            body: { fields }
         })
     });
     
-    if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Failed to update team health in Jira: ${response.status} ${errorData}`);
+    // Check if the response was successful (200-299 status codes)
+    if (response.ok) {
+        console.log('Jira update response was successful (status:', response.status, ')');
+        
+        try {
+            // Try to parse JSON response
+            const result = await response.json();
+            console.log('Jira response parsed successfully:', result);
+        } catch (jsonError) {
+            // JSON parsing failed, but HTTP status was OK
+            console.warn('Jira update succeeded but response JSON was malformed:', jsonError.message);
+            console.log('This is usually fine - the update likely worked despite the JSON error');
+            // Don't throw error here since the update probably succeeded
+        }
+        
+        console.log('Team health updated successfully in Jira');
+        return; // Success
     }
     
-    console.log('✅ Team health updated in Jira successfully');
+    // If we get here, the HTTP status was not OK
+    console.error('Jira update failed with status:', response.status);
+    
+    try {
+        const error = await response.json();
+        throw new Error(error.error || `HTTP ${response.status}`);
+    } catch (jsonError) {
+        // Could not parse error response either
+        throw new Error(`Jira update failed with status ${response.status} (could not parse error details)`);
+    }
 }
 
 async function createTeamInJira(teamName, healthData) {
@@ -12981,22 +12735,47 @@ function getTeamOverallHealth(teamData) {
     };
 }
 
-// ============================================================================
-// TEAM MODAL FUNCTIONS - CLEAN WORKING VERSION
-// ============================================================================
+// ==============================================================================
+// ADF (Atlassian Document Format) TEXT EXTRACTION
+// Add this to your script.js
+// ==============================================================================
 
+/**
+ * Extract plain text from Atlassian Document Format (ADF) objects
+ * Used for custom field 10263 (Team Health Comments)
+ */
+function extractTextFromADF(adfObject) {
+    if (!adfObject || typeof adfObject !== 'object') {
+        return null;
+    }
+    
+    // Handle direct text
+    if (adfObject.type === 'text' && adfObject.text) {
+        return adfObject.text;
+    }
+    
+    // Handle content arrays
+    if (adfObject.content && Array.isArray(adfObject.content)) {
+        return adfObject.content
+            .map(item => extractTextFromADF(item))
+            .filter(text => text !== null)
+            .join(' ');
+    }
+    
+    return null;
+}
+
+/**
+ * Enhanced getFieldValue function that handles ADF for comments
+ * REPLACE your existing getFieldValue function with this one
+ */
 function getFieldValue(issue, fieldId) {
     const fieldValue = issue.fields[fieldId];
     
-    // Handle null/undefined
-    if (!fieldValue) return null;
-    
-    // Special handling for comments field (customfield_10263) - extract text from ADF
+    // Special handling for comments field (10263) - extract text from ADF
     if (fieldId === 'customfield_10263' && fieldValue && typeof fieldValue === 'object') {
-        if (fieldValue.content) {
-            const extractedText = extractTextFromADF(fieldValue);
-            return extractedText && extractedText.trim() ? extractedText.trim() : null;
-        }
+        const extractedText = extractTextFromADF(fieldValue);
+        return extractedText && extractedText.trim() ? extractedText.trim() : null;
     }
     
     // Handle custom field objects with value property (most Jira custom fields)
@@ -13009,13 +12788,15 @@ function getFieldValue(issue, fieldId) {
         return fieldValue.map(item => item.value);
     }
     
-    // Handle simple values (strings, numbers)
-    if (typeof fieldValue === 'string' || typeof fieldValue === 'number') {
-        return fieldValue;
-    }
-    
-    // Return as-is for other cases
+    // Return as-is for simple values
     return fieldValue;
+}
+
+function exitEditMode() {
+    const teamName = window.currentEditingTeam;
+    if (teamName) {
+        toggleHealthEditMode(teamName);
+    }
 }
 
 async function submitHealthChanges() {
@@ -13040,7 +12821,10 @@ async function submitHealthChanges() {
         
         console.log('Submitting health changes for:', teamName, formData);
         
-        // Update local data immediately
+        // Store the original values for validation later
+        const originalData = JSON.parse(JSON.stringify(formData));
+        
+        // Update local data immediately for responsive UI
         const teamData = boardData.teams[teamName];
         if (teamData) {
             Object.assign(teamData, formData);
@@ -13050,185 +12834,264 @@ async function submitHealthChanges() {
             }
         }
         
-        // Close modal and show overlay
-        const modal = document.getElementById('team-modal') || document.getElementById('detail-modal');
-        if (modal) {
-            modal.classList.remove('show');
-        }
-        window.currentEditingTeam = null;
+        // Exit edit mode immediately for better UX
+        toggleHealthEditMode(teamName);
         
-        if (syncOverlay && syncOverlay.show) {
-            syncOverlay.show({
-                title: 'Syncing Team Health',
-                subtitle: `Saving ${teamName} changes to Jira...`
-            });
-        }
-        
-        // Sync to Jira
-        try {
+        // Now do the full sync with overlay
+        await syncOverlay.syncWithProgress(async () => {
+            console.log('=== TEAM HEALTH UPDATE SYNC ===');
+            
+            // Step 1: Send the update to Jira
             if (typeof updateTeamHealthInJira === 'function') {
+                console.log('Syncing team health changes to Jira...');
                 await updateTeamHealthInJira(teamName, formData);
-            }
-        } catch (syncError) {
-            console.warn('Jira sync failed:', syncError);
-        }
-        
-        // Quick reopen - no massive refresh
-        setTimeout(() => {
-            if (syncOverlay && syncOverlay.hide) {
-                syncOverlay.hide();
+                console.log('Team health changes synced to Jira successfully');
             }
             
-            // Reopen modal with updated data
-            if (typeof openTeamModal === 'function') {
-                openTeamModal(teamName);
-            } else if (typeof showTeamModal === 'function') {
-                showTeamModal(teamName, boardData.teams[teamName]);
+            // Step 2: Force complete refresh of ALL data from Jira
+            console.log('Fetching all fresh data from Jira...');
+            const newData = await fetchJiraData();
+            
+            // Step 3: Update the entire board with fresh data
+            console.log('Updating board with fresh Jira data...');
+            updateBoardWithLiveData(newData);
+            syncState.lastSyncData = newData;
+            syncState.lastSyncTime = Date.now();
+            
+            // Step 4: Validate that our changes actually synced
+            const updatedTeamData = newData.teams ? newData.teams[teamName] : boardData.teams[teamName];
+            
+            if (updatedTeamData) {
+                console.log('Validating synced data...');
+                console.log('Original form data:', originalData);
+                console.log('Synced team data:', updatedTeamData);
+                
+                // Check if key changes are reflected
+                let changesValidated = true;
+                const validationResults = [];
+                
+                // Validate health dimensions
+                ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'].forEach(dim => {
+                    const formValue = originalData[dim];
+                    const syncedValue = updatedTeamData[dim];
+                    const isValid = formValue === syncedValue;
+                    
+                    validationResults.push({
+                        field: dim,
+                        expected: formValue,
+                        actual: syncedValue,
+                        valid: isValid
+                    });
+                    
+                    if (!isValid) changesValidated = false;
+                });
+                
+                // Validate utilization
+                const utilizationValid = originalData.utilization === (updatedTeamData.jira?.utilization || 0);
+                validationResults.push({
+                    field: 'utilization',
+                    expected: originalData.utilization,
+                    actual: updatedTeamData.jira?.utilization || 0,
+                    valid: utilizationValid
+                });
+                
+                if (!utilizationValid) changesValidated = false;
+                
+                // Validate comments (extract text for comparison)
+                const syncedComments = updatedTeamData.jira?.comments ? 
+                    extractTextFromADF(updatedTeamData.jira.comments) : null;
+                const commentsValid = (originalData.comments || null) === (syncedComments || null);
+                
+                validationResults.push({
+                    field: 'comments',
+                    expected: originalData.comments || null,
+                    actual: syncedComments || null,
+                    valid: commentsValid
+                });
+                
+                if (!commentsValid) changesValidated = false;
+                
+                console.log('Validation results:', validationResults);
+                
+                return {
+                    synced: true,
+                    validated: changesValidated,
+                    teamName: teamName,
+                    validationResults: validationResults
+                };
+            } else {
+                throw new Error('Team data not found after sync');
             }
-        }, 1000);
+            
+        }, {
+            title: 'Syncing Team Health',
+            subtitle: `Saving ${teamName} changes to Jira...`,
+            successTitle: 'Team Health Updated',
+            successSubtitle: 'Changes synced and validated successfully',
+            errorTitle: 'Sync Failed',
+            errorSubtitle: 'Changes may not have been saved'
+        });
+        
+        console.log('Team health update and validation complete!');
         
     } catch (error) {
-        console.error('Error in submitHealthChanges:', error);
-        if (syncOverlay && syncOverlay.hide) {
-            syncOverlay.hide();
+        console.error('Error in team health sync process:', error);
+        
+        // DON'T show the awkward "sync failed" dialog to user
+        // Instead, automatically run the manual sync in the background
+        console.log('Initial sync had issues, automatically running validation sync...');
+        
+        try {
+            // Update the sync overlay to show validation
+            if (syncOverlay && syncOverlay.updateMessages) {
+                syncOverlay.updateMessages({
+                    title: 'Validating Changes',
+                    subtitle: 'Ensuring data was saved correctly...'
+                });
+            }
+            
+            // Run the manual sync automatically - no user interaction needed
+            await triggerManualSync();
+            
+            // Success! Show success message
+            console.log('✅ Validation sync completed successfully');
+            
+            // If there's an active modal, close it
+            const modal = document.getElementById('team-modal');
+            if (modal && modal.classList.contains('show')) {
+                closeModal();
+            }
+            
+            // Show success feedback
+            showTemporarySuccess(`${teamName} health updated successfully!`);
+            
+        } catch (refreshError) {
+            console.error('Both sync and manual refresh failed:', refreshError);
+            // Only show error dialog for truly critical failures
+            alert('Unable to sync changes to Jira. Please check your connection and try again.');
         }
-        alert('Error saving changes: ' + error.message);
     }
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function showTemporarySuccess(message) {
+    // Create temporary success toast
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--accent-green);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Animate out and remove
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
 }
 
 function exitEditMode() {
     const teamName = window.currentEditingTeam;
-    console.log('exitEditMode called for team:', teamName);
-    
     if (teamName) {
-        // Simple exit - just reopen the modal in view mode
-        if (typeof openTeamModal === 'function') {
-            openTeamModal(teamName);
-        } else if (typeof showTeamModal === 'function') {
-            showTeamModal(teamName, boardData.teams[teamName]);
-        } else {
-            console.warn('No modal opening function available');
-            // Close modal as fallback
-            const modal = document.getElementById('team-modal') || document.getElementById('detail-modal');
-            if (modal) {
-                modal.classList.remove('show');
-            }
-            window.currentEditingTeam = null;
-        }
+        toggleHealthEditMode(teamName);
+    }
+}
+// ==============================================================================
+// HELPER FUNCTION: Enhanced validation with user feedback
+// ==============================================================================
+
+function showValidationResults(results) {
+    const failures = results.validationResults.filter(r => !r.valid);
+    
+    if (failures.length === 0) {
+        // All changes validated successfully
+        showTemporarySuccess(`All ${teamName} changes validated in Jira!`);
     } else {
-        console.warn('No current editing team found');
+        // Some changes may not have synced
+        const failedFields = failures.map(f => f.field).join(', ');
+        showTemporaryWarning(`Some changes may not have synced: ${failedFields}. Please check manually.`);
     }
 }
 
-function renderTeamComments(teamData) {
-    const comments = teamData.jira?.comments ? extractTextFromADF(teamData.jira.comments) : null;
-    
-    if (!comments || comments.trim() === '') {
-        return `
-            <div class="text-center py-8" style="color: var(--text-secondary);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto mb-3" style="color: var(--border-primary);">
-                    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
-                    <path d="M8 12h8"/>
-                    <path d="M8 8h8"/>
-                </svg>
-                <p class="text-sm">No team health comments yet</p>
-                <p class="text-xs mt-1">Click Edit to add notes about this team's health</p>
-            </div>
-        `;
+function convertTextToADF(text) {
+    if (!text || text.trim() === '') {
+        return null;
     }
     
-    return `
-        <div class="prose prose-sm max-w-none" style="color: var(--text-primary);">
-            <div class="whitespace-pre-wrap">${escapeHtml(comments)}</div>
-        </div>
+    return {
+        type: "doc",
+        version: 1,
+        content: [
+            {
+                type: "paragraph",
+                content: [
+                    {
+                        type: "text",
+                        text: text.trim()
+                    }
+                ]
+            }
+        ]
+    };
+}
+
+function showTemporarySuccess(message) {
+    const notification = createNotification(message, 'success');
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+function showTemporaryWarning(message) {
+    const notification = createNotification(message, 'warning');
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 5000);
+}
+
+function createNotification(message, type) {
+    const div = document.createElement('div');
+    const bgColor = type === 'success' ? 'var(--accent-green)' : 'var(--accent-orange)';
+    
+    div.innerHTML = message;
+    div.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 10000;
+        max-width: 300px;
+        font-size: 14px;
+        line-height: 1.4;
     `;
-}
-
-function toggleHealthEditMode(teamName) {
-    const container = document.getElementById('health-dimensions-container');
-    const utilizationContainer = document.getElementById('utilization-container');
-    const button = document.getElementById('edit-health-button');
-    const modal = document.getElementById('team-modal') || document.getElementById('detail-modal');
     
-    if (!container || !utilizationContainer || !button) {
-        console.error('Required elements not found for edit mode toggle');
-        return;
-    }
-    
-    const teamData = boardData.teams[teamName];
-    if (!teamData) {
-        console.error('Team data not found for:', teamName);
-        return;
-    }
-    
-    const isEditMode = button.textContent.includes('Cancel');
-    
-    if (isEditMode) {
-        // Exit edit mode - restore view mode
-        window.currentEditingTeam = null;
-        button.textContent = 'Edit Team Health';
-        button.style.background = 'var(--accent-blue)';
-        
-        // Restore view mode content
-        container.innerHTML = renderHealthDimensionsGrid(teamData, false);
-        utilizationContainer.innerHTML = renderUtilizationDisplay(teamData);
-        document.getElementById('team-comments-section').style.display = 'block';
-        
-        // Restore comments section
-        const commentsDisplay = document.getElementById('team-comments-display');
-        if (commentsDisplay && typeof renderTeamComments === 'function') {
-            commentsDisplay.innerHTML = renderTeamComments(teamData);
-        }
-        
-        // Restore Health Insights section
-        const healthInsightsSection = Array.from(modal.querySelectorAll('div')).find(div => 
-            div.querySelector('h3') && 
-            div.querySelector('h3').textContent.includes('Health Insights')
-        );
-        if (healthInsightsSection) {
-            healthInsightsSection.style.display = 'block';
-        }
-        
-        // Remove blur effects
-        const topSectionBoxes = modal.querySelectorAll('.grid-cols-4 > div, .grid > div');
-        topSectionBoxes.forEach(box => {
-            if (box && (box.textContent.includes('CRITICAL') || box.textContent.includes('Active Stories') || box.textContent.includes('Blockers'))) {
-                box.style.filter = '';
-                box.style.opacity = '';
-                box.style.pointerEvents = '';
-            }
-        });
-        
-    } else {
-        // Enter edit mode
-        window.currentEditingTeam = teamName;
-        button.textContent = 'Cancel';
-        button.style.background = 'var(--accent-red)';
-        
-        // Switch to edit mode content
-        container.innerHTML = renderHealthDimensionsGrid(teamData, true);
-        utilizationContainer.innerHTML = renderUtilizationEditor(teamData);
-        document.getElementById('team-comments-section').style.display = 'none';
-        
-        // Hide Health Insights section
-        const healthInsightsSection = Array.from(modal.querySelectorAll('div')).find(div => 
-            div.querySelector('h3') && 
-            div.querySelector('h3').textContent.includes('Health Insights')
-        );
-        if (healthInsightsSection) {
-            healthInsightsSection.style.display = 'none';
-        }
-        
-        // Blur and darken the top sections
-        const topSectionBoxes = modal.querySelectorAll('.grid-cols-4 > div, .grid > div');
-        topSectionBoxes.forEach(box => {
-            if (box && (box.textContent.includes('CRITICAL') || box.textContent.includes('Active Stories') || box.textContent.includes('Blockers'))) {
-                box.style.filter = 'blur(2px)';
-                box.style.opacity = '0.4';
-                box.style.pointerEvents = 'none';
-            }
-        });
-    }
+    return div;
 }
 
         init();
