@@ -12882,35 +12882,12 @@ async function submitHealthChanges() {
         
         console.log('✅ Team health sync process completed with updated data');
         
-        // Show success message for 3 seconds, then switch to non-edit mode BEFORE closing overlay
+        // Show success message for 3 seconds, then force exit edit mode BEFORE closing overlay
         setTimeout(() => {
             console.log('Data is updated - forcing exit from edit mode...');
-            console.log('Current editing team:', window.currentEditingTeam);
-            console.log('Team name:', teamName);
             
-            const button = document.getElementById('edit-health-btn');
-            const isEditing = button && button.innerHTML.includes('Cancel');
-            
-            console.log('Button exists:', !!button);
-            console.log('Is currently in edit mode:', isEditing);
-            
-            if (isEditing) {
-                console.log('Calling toggleHealthEditMode to exit edit mode...');
-                toggleHealthEditMode(teamName);
-            } else {
-                console.log('Not in edit mode or button not found, forcing modal refresh...');
-                // Force exit by clearing edit state and refreshing modal
-                window.currentEditingTeam = null;
-                
-                const modal = document.getElementById('team-modal');
-                if (modal && modal.classList.contains('show')) {
-                    const teamData = boardData.teams[teamName];
-                    if (teamData && typeof openTeamModal === 'function') {
-                        console.log('Re-opening modal in view mode with fresh data...');
-                        openTeamModal(teamName);
-                    }
-                }
-            }
+            // FORCE EXIT EDIT MODE using the correct method
+            forceExitEditMode(teamName);
             
             // THEN close overlay after mode switch completes
             setTimeout(() => {
@@ -12925,46 +12902,84 @@ async function submitHealthChanges() {
     } catch (criticalError) {
         console.error('Critical error in team health sync:', criticalError);
         
-        // Hide overlay and return to non-edit mode
+        // Hide overlay and force exit edit mode
         if (syncOverlay && syncOverlay.hide) {
             syncOverlay.hide();
         }
         
-        toggleHealthEditMode(teamName);
+        forceExitEditMode(teamName);
         
         alert('Unable to sync changes to Jira. Please check your connection and try again.');
     }
 }
 
-// FIXED exitEditMode function for Cancel button
+// FIXED exitEditMode function for Cancel button  
 function exitEditMode() {
     const teamName = window.currentEditingTeam;
     console.log('exitEditMode called for team:', teamName);
     
     if (teamName) {
-        console.log('Toggling health edit mode to exit...');
-        toggleHealthEditMode(teamName);
-        
-        // Double-check that edit mode was properly exited
-        setTimeout(() => {
-            if (window.currentEditingTeam === teamName) {
-                console.warn('Edit mode still active after toggle, forcing exit...');
-                window.currentEditingTeam = null;
-                
-                // Force refresh modal in view mode
-                const modal = document.getElementById('team-modal');
-                if (modal && modal.classList.contains('show')) {
-                    const teamData = boardData.teams[teamName];
-                    if (teamData) {
-                        console.log('Force refreshing modal to view mode...');
-                        showTeamHealthModal(teamName, teamData);
-                    }
-                }
-            }
-        }, 100);
+        forceExitEditMode(teamName);
     } else {
         console.warn('No current editing team found');
     }
+}
+
+// NEW FUNCTION: Force exit edit mode with correct IDs and logic
+function forceExitEditMode(teamName) {
+    console.log('forceExitEditMode called for:', teamName);
+    
+    // Clear the editing state
+    window.currentEditingTeam = null;
+    
+    // Find the edit button and check if it shows "Cancel"
+    const button = document.getElementById('edit-health-btn');
+    const isEditing = button && button.innerHTML.includes('Cancel');
+    
+    console.log('Edit button found:', !!button);
+    console.log('Is in edit mode:', isEditing);
+    
+    if (isEditing && button) {
+        // Change button back to "Edit"
+        button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a .5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
+            </svg>
+            Edit
+        `;
+        
+        // Update the onclick to use the correct team name
+        button.setAttribute('onclick', `toggleHealthEditMode('${teamName}')`);
+    }
+    
+    // Find and restore the health dimensions container
+    const container = document.getElementById('health-dimensions-container');
+    if (container) {
+        console.log('Restoring health dimensions container to view mode');
+        const teamData = boardData.teams[teamName];
+        if (teamData && typeof renderHealthDimensionsGrid === 'function') {
+            container.innerHTML = renderHealthDimensionsGrid(teamData, false);
+        }
+    }
+    
+    // Find and restore the utilization container  
+    const utilizationContainer = document.getElementById('utilization-container');
+    if (utilizationContainer) {
+        console.log('Restoring utilization container to view mode');
+        const teamData = boardData.teams[teamName];
+        if (teamData && typeof renderUtilizationDisplay === 'function') {
+            utilizationContainer.innerHTML = renderUtilizationDisplay(teamData);
+        }
+    }
+    
+    // Hide the sync status if it exists
+    const syncStatus = document.getElementById('sync-status');
+    if (syncStatus) {
+        syncStatus.style.display = 'none';
+    }
+    
+    console.log('✅ Forced exit from edit mode completed');
 }
 
 
