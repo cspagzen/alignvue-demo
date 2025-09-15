@@ -12813,7 +12813,14 @@ async function submitHealthChanges() {
             }
         }
         
-        // Show initial sync overlay and keep it visible throughout
+        // CLOSE THE MODAL IMMEDIATELY and show sync overlay
+        const modal = document.getElementById('team-modal') || document.getElementById('detail-modal');
+        if (modal) {
+            modal.classList.remove('show');
+        }
+        window.currentEditingTeam = null;
+        
+        // Show sync overlay
         if (syncOverlay && syncOverlay.show) {
             syncOverlay.show({
                 title: 'Syncing Team Health',
@@ -12839,7 +12846,6 @@ async function submitHealthChanges() {
             console.log('Initial sync had issues, running validation sync...');
             
             // CRITICAL: Preserve the "Syncing Team Health" message during manual sync
-            // Temporarily disable syncOverlay to prevent "Manual Sync" from showing
             const originalShow = syncOverlay?.show;
             const originalUpdateMessages = syncOverlay?.updateMessages;
             const originalHide = syncOverlay?.hide;
@@ -12850,7 +12856,7 @@ async function submitHealthChanges() {
                 syncOverlay.hide = () => {};
             }
             
-            // Run manual sync silently (user keeps seeing "Syncing Team Health")
+            // Run manual sync silently
             await triggerManualSync();
             
             // Restore syncOverlay functions
@@ -12860,7 +12866,7 @@ async function submitHealthChanges() {
                 syncOverlay.hide = originalHide;
             }
             
-            // Wait for data to fully propagate from manual sync
+            // Wait for data to fully propagate
             console.log('Waiting for UI data to fully refresh after manual sync...');
             await new Promise(resolve => setTimeout(resolve, 4000));
         }
@@ -12872,42 +12878,47 @@ async function submitHealthChanges() {
         syncState.lastSyncData = newData;
         syncState.lastSyncTime = Date.now();
         
-        // ONLY NOW show success message (data is guaranteed to be updated)
-        if (syncOverlay && syncOverlay.updateMessages) {
-            syncOverlay.updateMessages({
-                title: `${teamName} Team Health Data Successfully Updated and Validated`,
-                subtitle: 'All changes have been synced to Jira'
-            });
+        // REOPEN MODAL IN NON-EDIT MODE with fresh data
+        console.log('Reopening modal in view mode with updated data...');
+        const updatedTeamData = newData.teams ? newData.teams[teamName] : boardData.teams[teamName];
+        
+        if (updatedTeamData && typeof openTeamModal === 'function') {
+            openTeamModal(teamName);
+        } else if (typeof showTeamModal === 'function') {
+            showTeamModal(teamName, updatedTeamData);
+        } else {
+            // Fallback: reopen with manual modal construction
+            reopenTeamModalInViewMode(teamName, updatedTeamData);
         }
         
-        console.log('✅ Team health sync process completed with updated data');
-        
-        // Show success message for 3 seconds, then force exit edit mode BEFORE closing overlay
+        // NOW show success message in overlay (modal is already open)
         setTimeout(() => {
-            console.log('Data is updated - forcing exit from edit mode...');
+            if (syncOverlay && syncOverlay.updateMessages) {
+                syncOverlay.updateMessages({
+                    title: `${teamName} Team Health Data Successfully Updated and Validated`,
+                    subtitle: 'All changes have been synced to Jira'
+                });
+            }
             
-            // FORCE EXIT EDIT MODE using the correct method
-            forceExitEditMode(teamName);
+            console.log('✅ Team health sync process completed with fresh modal');
             
-            // THEN close overlay after mode switch completes
+            // Close overlay after showing success message for 3 seconds
             setTimeout(() => {
-                console.log('Closing overlay - user should see non-edit modal with fresh data');
+                console.log('Closing overlay - user sees refreshed modal in view mode');
                 if (syncOverlay && syncOverlay.hide) {
                     syncOverlay.hide();
                 }
-            }, 500);
+            }, 3000);
             
-        }, 3000);
+        }, 500); // Small delay to let modal render
         
     } catch (criticalError) {
         console.error('Critical error in team health sync:', criticalError);
         
-        // Hide overlay and force exit edit mode
+        // Hide overlay
         if (syncOverlay && syncOverlay.hide) {
             syncOverlay.hide();
         }
-        
-        forceExitEditMode(teamName);
         
         alert('Unable to sync changes to Jira. Please check your connection and try again.');
     }
@@ -13023,6 +13034,36 @@ function forceExitEditMode(teamName) {
     }
     
     console.log('✅ Forced exit from edit mode completed with all sections restored');
+}
+
+// NEW FUNCTION: Fallback to manually reopen modal in view mode
+function reopenTeamModalInViewMode(teamName, teamData) {
+    console.log('Reopening team modal manually for:', teamName);
+    
+    const modal = document.getElementById('team-modal') || document.getElementById('detail-modal');
+    if (!modal) return;
+    
+    // Find modal content containers
+    const titleElement = document.getElementById('modal-title') || modal.querySelector('h2');
+    const contentElement = document.getElementById('modal-content') || modal.querySelector('.modal-content');
+    
+    if (titleElement) {
+        titleElement.textContent = `${teamName} - Team Health Details`;
+    }
+    
+    if (contentElement && typeof generateTeamModalContent === 'function') {
+        contentElement.innerHTML = generateTeamModalContent(teamName, teamData);
+    }
+    
+    // Show the modal
+    modal.classList.add('show');
+    
+    // Initialize any charts if needed
+    setTimeout(() => {
+        if (typeof initializeUtilizationChart === 'function') {
+            initializeUtilizationChart(teamData.jira?.utilization || 0);
+        }
+    }, 100);
 }
 
 
