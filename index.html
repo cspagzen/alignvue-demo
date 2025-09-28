@@ -621,12 +621,7 @@
     </div>
 </div>
         
-    <div class="view-container active" id="portfolio-pulse-view" data-view="portfolio-pulse" style="display: none;">
-        <div class="bento-container-placeholder">Portfolio Pulse will go here</div>
-    </div>
-
-    <div class="view-container" id="initiatives-board-view" data-view="initiatives-board">
-        <div class="board-container">
+    <div class="board-container">
         <div class="pyramid-section">
             <div style="background: var(--bg-secondary); border: 1px solid var(--border-primary); box-shadow: var(--shadow-lg);" class="rounded-xl">
                 <div class="px-6 py-4" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
@@ -809,17 +804,7 @@
 
         
 <!-- Bento Grid Container -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const bentoContainer = document.querySelector('.bento-container');
-    const portfolioView = document.querySelector('#portfolio-pulse-view');
-    const placeholder = portfolioView.querySelector('.bento-container-placeholder');
-    
-    placeholder.replaceWith(bentoContainer);
-    portfolioView.style.display = 'block';
-    document.querySelector('#initiatives-board-view').style.display = 'none';
-});
-</script>
+<div class="bento-container">
     <div class="px-6 py-4" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
     <h2 class="text-lg font-bold text-white flex items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-activity-icon lucide-activity">
