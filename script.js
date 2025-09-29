@@ -5055,17 +5055,7 @@ content.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"
     modal.classList.add('show');
 }
 
-function updateCriticalTeamCard() {
-    const content = document.getElementById('critical-team-content');
-    
-    // ... ALL EXISTING CODE STAYS HERE ...
-    
-    // REPLACE WITH THESE LINES:
-    content.classList.add('under-construction-content');
-    const card = content.closest('.bento-card');
-    card.style.position = 'relative';
-    card.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"><div class="under-construction-text">Under Construction</div></div>');
-}
+
 
 function updateCriticalTeamStatusCard() {
     const content = document.getElementById('critical-team-status-content');
