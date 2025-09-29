@@ -1241,6 +1241,31 @@
         </div>
     </div>
 </div>
+    <script>
+// Hide board on page load, show only Portfolio Pulse
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('.board-container').style.display = 'none';
+    document.querySelector('.bento-container').style.display = 'block';
+});
+
+// Portfolio Pulse view switching
+document.addEventListener('click', function(e) {
+    const portfolioNav = e.target.closest('[data-view="portfolio-pulse"]');
+    if (portfolioNav) {
+        e.preventDefault();
+        document.querySelector('.bento-container').style.display = 'block';
+        document.querySelector('.board-container').style.display = 'none';
+        document.querySelectorAll('.sidebar-nav-item').forEach(item => item.classList.remove('active'));
+        portfolioNav.classList.add('active');
+    }
     
+    // Initiatives or Team Health clicked - show board, hide bento
+    const boardNav = e.target.closest('[data-section="initiatives"], [data-section="teams"]');
+    if (boardNav) {
+        document.querySelector('.bento-container').style.display = 'none';
+        document.querySelector('.board-container').style.display = 'flex';
+    }
+});
+</script>
     </body>
 </html>
