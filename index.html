@@ -1242,5 +1242,31 @@
     </div>
 </div>
     
-    </body>
+    <script>
+// Simple view switching
+document.addEventListener('click', function(e) {
+    const navItem = e.target.closest('[data-view]');
+    if (!navItem) return;
+    
+    e.preventDefault();
+    const viewName = navItem.dataset.view;
+    
+    // Hide both views
+    document.querySelector('.bento-container').style.display = 'none';
+    document.querySelector('.board-container').style.display = 'none';
+    
+    // Show the selected view
+    if (viewName === 'portfolio-pulse') {
+        document.querySelector('.bento-container').style.display = 'block';
+    } else if (viewName === 'initiatives-board') {
+        document.querySelector('.board-container').style.display = 'block';
+    }
+    
+    // Update active nav state
+    document.querySelectorAll('.sidebar-nav-item').forEach(item => item.classList.remove('active'));
+    navItem.classList.add('active');
+});
+</script>
+</body>
+    
 </html>
