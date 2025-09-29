@@ -10272,10 +10272,10 @@ scrollToSection(section);
 }
 
 // Scroll to sections function
-// Enhanced scroll to sections with highlighting
-// Scroll to sections function
-// Enhanced scroll to sections with highlighting
 function scrollToSection(section) {
+    if (section === 'portfolio-pulse') return;
+    
+    // ... rest of existing function
     let targetElement = null;
     let highlightElement = null;
     
