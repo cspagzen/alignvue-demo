@@ -5055,22 +5055,35 @@ content.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"
 }
 
 function updateCriticalTeamStatusCard() {
-    const content = document.getElementById('critical-team-status-content');
-    
-    // TODO: Implement critical team status logic
-}
-
-function updateCriticalTeamCard() {
     const content = document.getElementById('critical-team-content');
     
-    // ... ALL EXISTING CODE STAYS HERE ...
+    // Get teams in critical status
+    const criticalTeams = Object.entries(boardData.teams)
+        .filter(([name, data]) => {
+            const atRiskCount = [data.capacity, data.skillset, data.vision, data.support, data.teamwork, data.autonomy]
+                .filter(status => status === 'at-risk').length;
+            return atRiskCount >= 5; // Critical = 5+ at-risk dimensions
+        })
+        .map(([name]) => name);
     
-    // REPLACE WITH THESE LINES:
+    content.innerHTML = `
+        <div class="text-center space-y-2">
+            <div class="bento-medium-metric" style="color: var(--accent-red);">${criticalTeams.length}</div>
+            <div class="text-xs" style="color: var(--text-secondary);">Teams in Critical Status</div>
+            ${criticalTeams.length > 0 ? 
+                `<div class="text-xs" style="color: var(--text-tertiary);">${criticalTeams.slice(0, 2).join(', ')}</div>` 
+                : ''}
+        </div>
+    `;
+    
+    // ADD THE BLUR OVERLAY
     content.classList.add('under-construction-content');
     const card = content.closest('.bento-card');
     card.style.position = 'relative';
     card.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"><div class="under-construction-text">Under Construction</div></div>');
 }
+
+
       
       function getTrendArrow(riskType) {
     // Simulate trend direction based on risk type
