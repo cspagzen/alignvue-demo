@@ -1862,6 +1862,7 @@ function highlightInitiativeAndTeam(initiativeId) {
 }
         
         function generatePyramid() {
+            console.trace('🔴 generatePyramid called from:');
             const container = document.getElementById('priority-matrix');
             container.innerHTML = '';
 
@@ -2099,6 +2100,7 @@ function isDimensionAtRisk(dimensionValue) {
 }
         
         function generateTeamHealthMatrix() {
+            console.trace('🔴 generateTeamHealthMatrix called from:');
             const container = document.getElementById('team-health-matrix');
             container.innerHTML = '';
 
