@@ -1243,24 +1243,35 @@
 </div>
     
     <script>
-// Simple Portfolio Pulse toggle only
+// Only toggle Portfolio Pulse view
 document.addEventListener('click', function(e) {
-    const navItem = e.target.closest('[data-view]');
+    const navItem = e.target.closest('[data-view="portfolio-pulse"]');
     if (!navItem) return;
     
     e.preventDefault();
-    const viewName = navItem.dataset.view;
     
-    if (viewName === 'portfolio-pulse') {
-        document.querySelector('.bento-container').style.display = 'block';
-        document.querySelector('.board-container').style.display = 'none';
-    } else if (viewName === 'initiatives-board') {
-        document.querySelector('.bento-container').style.display = 'none';
-        document.querySelector('.board-container').style.display = 'block';
-    }
+    // Show Portfolio Pulse, hide board
+    document.querySelector('.bento-container').style.display = 'block';
+    document.querySelector('.board-container').style.display = 'none';
     
-    // Update active nav state for view items only
-    document.querySelectorAll('[data-view]').forEach(item => item.classList.remove('active'));
+    // Update nav
+    document.querySelectorAll('.sidebar-nav-item').forEach(item => item.classList.remove('active'));
+    navItem.classList.add('active');
+});
+
+// When clicking Initiatives Board, show board and hide bento
+document.addEventListener('click', function(e) {
+    const navItem = e.target.closest('[data-view="initiatives-board"]');
+    if (!navItem) return;
+    
+    e.preventDefault();
+    
+    // Hide Portfolio Pulse, show board
+    document.querySelector('.bento-container').style.display = 'none';
+    document.querySelector('.board-container').style.display = 'flex';
+    
+    // Update nav
+    document.querySelectorAll('.sidebar-nav-item').forEach(item => item.classList.remove('active'));
     navItem.classList.add('active');
 });
 </script>
