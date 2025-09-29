@@ -4753,7 +4753,6 @@ function updateResourceCard() {
     card.style.position = 'relative';
     card.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"><div class="under-construction-text">Under Construction</div></div>');
 }
-}
 
 function updateDeliveryConfidenceCard() {
     const content = document.getElementById('delivery-confidence-content');
@@ -5054,8 +5053,6 @@ content.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"
     
     modal.classList.add('show');
 }
-
-
 
 function updateCriticalTeamStatusCard() {
     const content = document.getElementById('critical-team-status-content');
