@@ -4396,41 +4396,247 @@ function ensureKRTypeBadgeStyles() {
 
 function updateHealthCard() {
     const content = document.getElementById('health-status-content');
+    const healthCounts = getTeamHealthCounts();
+    const indicatorCounts = getHealthIndicatorCounts();
+    
+    // Find max values for scaling (updated for new health levels)
+    const maxHealthValue = Math.max(healthCounts.healthy, healthCounts.lowRisk, healthCounts.highRisk, healthCounts.critical);
+    const maxIndicatorValue = Math.max(indicatorCounts.capacity, indicatorCounts.skillset, indicatorCounts.vision, indicatorCounts.support, indicatorCounts.teamwork, indicatorCounts.autonomy);
     
     content.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 1rem;">
-            <svg class="uc-graphic" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                <!-- Background rounded rectangle -->
-                <rect x="20" y="20" width="360" height="260" rx="24" fill="rgba(30, 27, 75, 0.6)" stroke="#6573FF" stroke-width="2"/>
+        <div class="h-full flex flex-col" style="gap: 0.5rem;">
+            <!-- Team Health Card - Top -->
+            <div class="flex-1 kpi-gauge-card" style="display: flex; flex-direction: column; padding: 0.5rem;">
+                <div class="flex justify-between items-center" style="margin-bottom: 0.5rem;">
+                    <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary);">Team Health</div>
+                    <div style="color: var(--accent-blue); font-size: 0.8rem;">Click segments for details</div>
+                </div>
                 
-                <!-- Construction Barrier Icon -->
-                <g transform="translate(200, 80)">
-                    <!-- Left post -->
-                    <rect x="-35" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
-                    <!-- Right post -->
-                    <rect x="29" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
-                    
-                    <!-- Barrier bar -->
-                    <rect x="-35" y="15" width="70" height="18" rx="3" fill="none" stroke="#8B92FF" stroke-width="2"/>
-                    
-                    <!-- Diagonal stripes -->
-                    <line x1="-30" y1="16" x2="-20" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="-18" y1="16" x2="-8" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="-6" y1="16" x2="4" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="6" y1="16" x2="16" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="18" y1="16" x2="28" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    
-                    <!-- Top hooks/circles -->
-                    <circle cx="-30" cy="12" r="3" fill="#8B92FF"/>
-                    <circle cx="30" cy="12" r="3" fill="#8B92FF"/>
-                </g>
-                
-                <!-- Title Text -->
-                <text x="200" y="200" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="28">Team Health</text>
-                
-                <!-- Subtitle Text -->
-                <text x="200" y="235" text-anchor="middle" fill="#A5B4FC" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="16" letter-spacing="3">UNDER CONSTRUCTION</text>
-            </svg>
+                <!-- Updated Bar Chart Container - 4 bars for new health levels -->
+                <div class="flex items-end justify-between gap-1" style="height: 4rem; flex: 1;">
+                    <!-- Healthy Bar -->
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+    <div style="flex: 1; display: flex; align-items: end; width: 100%;">
+        <div class="cursor-pointer kpi-gauge-card"
+             onclick="showTeamHealthModal('healthy')"
+             title="Healthy Teams: ${healthCounts.healthy} teams"
+             style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%); 
+                    border: 1px solid #14532d;
+                    width: 100%; 
+                    height: ${(healthCounts.healthy / Math.max(1, maxHealthValue)) * 100}%; 
+                    border-radius: 0.25rem 0.25rem 0 0; 
+                    display: flex; align-items: center; justify-content: center; 
+                    font-size: 0.9rem; color: white; font-weight: 700; 
+                    transition: all 0.2s ease;
+                    min-height: 2rem;">
+            ${healthCounts.healthy}
+        </div>
+    </div>
+    <div style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Healthy</div>
+</div>
+
+<!-- Low Risk Bar -->
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+    <div style="flex: 1; display: flex; align-items: end; width: 100%;">
+        <div class="cursor-pointer kpi-gauge-card"
+             onclick="showTeamHealthModal('low-risk')"
+             title="Low Risk Teams: ${healthCounts.lowRisk} teams"
+             style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%); 
+                    border: 1px solid #b45309;
+                    width: 100%; 
+                    height: ${(healthCounts.lowRisk / Math.max(1, maxHealthValue)) * 100}%; 
+                    border-radius: 0.25rem 0.25rem 0 0; 
+                    display: flex; align-items: center; justify-content: center; 
+                    font-size: 0.9rem; color: white; font-weight: 700; 
+                    transition: all 0.2s ease;
+                    min-height: 2rem;">
+            ${healthCounts.lowRisk}
+        </div>
+    </div>
+    <div style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Low Risk</div>
+</div>
+
+<!-- High Risk Bar -->
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+    <div style="flex: 1; display: flex; align-items: end; width: 100%;">
+       <div class="cursor-pointer kpi-gauge-card"
+             onclick="showTeamHealthModal('high-risk')"
+             title="High Risk Teams: ${healthCounts.highRisk} teams"
+             style="background: linear-gradient(135deg, #fb7185 0%, #f43f5e 50%, #e11d48 100%); 
+                    border: 1px solid #be123c;
+                    width: 100%; 
+                    height: ${(healthCounts.highRisk / Math.max(1, maxHealthValue)) * 100}%; 
+                    border-radius: 0.25rem 0.25rem 0 0; 
+                    display: flex; align-items: center; justify-content: center; 
+                    font-size: 0.9rem; color: white; font-weight: 700; 
+                    transition: all 0.2s ease;
+                    min-height: 2rem;">
+            ${healthCounts.highRisk}
+        </div>
+    </div>
+    <div style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">High Risk</div>
+</div>
+
+<!-- Critical Bar -->
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+    <div style="flex: 1; display: flex; align-items: end; width: 100%;">
+        <div class="cursor-pointer kpi-gauge-card"
+             onclick="showTeamHealthModal('critical')"
+             title="Critical Teams: ${healthCounts.critical} teams"
+             style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%); 
+                    border: 1px solid #7f1d1d;
+                    width: 100%; 
+                    height: ${(healthCounts.critical / Math.max(1, maxHealthValue)) * 100}%; 
+                    border-radius: 0.25rem 0.25rem 0 0; 
+                    display: flex; align-items: center; justify-content: center; 
+                    font-size: 0.9rem; color: white; font-weight: 700; 
+                    transition: all 0.2s ease;
+                    min-height: 2rem;">
+            ${healthCounts.critical}
+        </div>
+    </div>
+    <div style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Critical</div>
+</div>
+                </div>
+            </div>
+            
+            <!-- Risk Factors Card - Bottom (Purple gradations) -->
+<div class="flex-1 kpi-gauge-card" style="display: flex; flex-direction: column; padding: 0.5rem;">
+    <div class="flex justify-between items-center" style="margin-bottom: 0.5rem;">
+        <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary);">Risk Factors</div>
+        <div style="color: var(--accent-blue); font-size: 0.8rem;">Click segments for details</div>
+    </div>
+    
+    <!-- Single row of 6 dimensions with purple gradients -->
+    <div class="flex gap-1" style="flex: 1; height: 3rem;">
+        <!-- Capacity -->
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
+                <div class="cursor-pointer kpi-gauge-card"
+                     onclick="showHealthIndicatorModal('capacity')"
+                     title="Capacity Issues: ${indicatorCounts.capacity} teams"
+                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
+                            border: 1px solid #581c87;
+                            width: 100%; 
+                            height: ${(indicatorCounts.capacity / Math.max(1, maxIndicatorValue)) * 100}%; 
+                            border-radius: 0.25rem 0.25rem 0 0; 
+                            display: flex; align-items: center; justify-content: center; 
+                            font-size: 0.8rem; color: white; font-weight: 700; 
+                            transition: all 0.2s ease;
+                            min-height: 1.5rem;">
+                    ${indicatorCounts.capacity}
+                </div>
+            </div>
+            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Capacity</div>
+        </div>
+        
+        <!-- Skillset -->
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
+                <div class="cursor-pointer kpi-gauge-card"
+                     onclick="showHealthIndicatorModal('skillset')"
+                     title="Skillset Issues: ${indicatorCounts.skillset} teams"
+                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
+                            border: 1px solid #581c87;
+                            width: 100%; 
+                            height: ${(indicatorCounts.skillset / Math.max(1, maxIndicatorValue)) * 100}%; 
+                            border-radius: 0.25rem 0.25rem 0 0; 
+                            display: flex; align-items: center; justify-content: center; 
+                            font-size: 0.8rem; color: white; font-weight: 700; 
+                            transition: all 0.2s ease;
+                            min-height: 1.5rem;">
+                    ${indicatorCounts.skillset}
+                </div>
+            </div>
+            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Skillset</div>
+        </div>
+        
+        <!-- Vision -->
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
+                <div class="cursor-pointer kpi-gauge-card"
+                     onclick="showHealthIndicatorModal('vision')"
+                     title="Vision Issues: ${indicatorCounts.vision} teams"
+                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
+                            border: 1px solid #581c87;
+                            width: 100%; 
+                            height: ${(indicatorCounts.vision / Math.max(1, maxIndicatorValue)) * 100}%; 
+                            border-radius: 0.25rem 0.25rem 0 0; 
+                            display: flex; align-items: center; justify-content: center; 
+                            font-size: 0.8rem; color: white; font-weight: 700; 
+                            transition: all 0.2s ease;
+                            min-height: 1.5rem;">
+                    ${indicatorCounts.vision}
+                </div>
+            </div>
+            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Vision</div>
+        </div>
+        
+        <!-- Support -->
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
+                <div class="cursor-pointer kpi-gauge-card"
+                     onclick="showHealthIndicatorModal('support')"
+                     title="Support Issues: ${indicatorCounts.support} teams"
+                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
+                            border: 1px solid #581c87;
+                            width: 100%; 
+                            height: ${(indicatorCounts.support / Math.max(1, maxIndicatorValue)) * 100}%; 
+                            border-radius: 0.25rem 0.25rem 0 0; 
+                            display: flex; align-items: center; justify-content: center; 
+                            font-size: 0.8rem; color: white; font-weight: 700; 
+                            transition: all 0.2s ease;
+                            min-height: 1.5rem;">
+                    ${indicatorCounts.support}
+                </div>
+            </div>
+            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Support</div>
+        </div>
+        
+        <!-- Team Cohesion -->
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
+                <div class="cursor-pointer kpi-gauge-card"
+                     onclick="showHealthIndicatorModal('teamwork')"
+                     title="Team Cohesion Issues: ${indicatorCounts.teamwork} teams"
+                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
+                            border: 1px solid #581c87;
+                            width: 100%; 
+                            height: ${(indicatorCounts.teamwork / Math.max(1, maxIndicatorValue)) * 100}%; 
+                            border-radius: 0.25rem 0.25rem 0 0; 
+                            display: flex; align-items: center; justify-content: center; 
+                            font-size: 0.8rem; color: white; font-weight: 700; 
+                            transition: all 0.2s ease;
+                            min-height: 1.5rem;">
+                    ${indicatorCounts.teamwork}
+                </div>
+            </div>
+            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Team Cohesion</div>
+        </div>
+        
+        <!-- Autonomy -->
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
+                <div class="cursor-pointer kpi-gauge-card"
+                     onclick="showHealthIndicatorModal('autonomy')"
+                     title="Autonomy Issues: ${indicatorCounts.autonomy} teams"
+                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
+                            border: 1px solid #581c87;
+                            width: 100%; 
+                            height: ${(indicatorCounts.autonomy / Math.max(1, maxIndicatorValue)) * 100}%; 
+                            border-radius: 0.25rem 0.25rem 0 0; 
+                            display: flex; align-items: center; justify-content: center; 
+                            font-size: 0.8rem; color: white; font-weight: 700; 
+                            transition: all 0.2s ease;
+                            min-height: 1.5rem;">
+                    ${indicatorCounts.autonomy}
+                </div>
+            </div>
+            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Autonomy</div>
+        </div>
+    </div>
+</div>
+            </div>
         </div>
     `;
 }
@@ -4529,81 +4735,33 @@ function getPriorityNumberColor(type) {
       
 function updateResourceCard() {
     const content = document.getElementById('resource-alerts-content');
+    const resourceAnalysis = calculateResourceAlerts();
     
     content.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 1rem;">
-            <svg class="uc-graphic" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                <!-- Background rounded rectangle -->
-                <rect x="20" y="20" width="360" height="260" rx="24" fill="rgba(30, 27, 75, 0.6)" stroke="#6573FF" stroke-width="2"/>
-                
-                <!-- Construction Barrier Icon -->
-                <g transform="translate(200, 80)">
-                    <!-- Left post -->
-                    <rect x="-35" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
-                    <!-- Right post -->
-                    <rect x="29" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
-                    
-                    <!-- Barrier bar -->
-                    <rect x="-35" y="15" width="70" height="18" rx="3" fill="none" stroke="#8B92FF" stroke-width="2"/>
-                    
-                    <!-- Diagonal stripes -->
-                    <line x1="-30" y1="16" x2="-20" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="-18" y1="16" x2="-8" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="-6" y1="16" x2="4" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="6" y1="16" x2="16" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="18" y1="16" x2="28" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    
-                    <!-- Top hooks/circles -->
-                    <circle cx="-30" cy="12" r="3" fill="#8B92FF"/>
-                    <circle cx="30" cy="12" r="3" fill="#8B92FF"/>
-                </g>
-                
-                <!-- Title Text -->
-                <text x="200" y="200" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="26">Workload Distribution</text>
-                
-                <!-- Subtitle Text -->
-                <text x="200" y="235" text-anchor="middle" fill="#A5B4FC" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="16" letter-spacing="3">UNDER CONSTRUCTION</text>
-            </svg>
+        <div class="text-center space-y-2">
+            <div class="bento-medium-metric">${resourceAnalysis.overloadedTeams}</div>
+            <div class="text-xs" style="color: var(--text-secondary);">Overloaded Teams</div>
+            <div class="text-xs" style="color: var(--text-tertiary);">Avg ${resourceAnalysis.avgTeamsPerInit} teams/init</div>
         </div>
     `;
 }
+
 
 function updateDeliveryConfidenceCard() {
     const content = document.getElementById('delivery-confidence-content');
     
     content.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 1rem;">
-            <svg class="uc-graphic" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                <!-- Background rounded rectangle -->
-                <rect x="20" y="20" width="360" height="260" rx="24" fill="rgba(30, 27, 75, 0.6)" stroke="#6573FF" stroke-width="2"/>
-                
-                <!-- Construction Barrier Icon -->
-                <g transform="translate(200, 80)">
-                    <!-- Left post -->
-                    <rect x="-35" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
-                    <!-- Right post -->
-                    <rect x="29" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
-                    
-                    <!-- Barrier bar -->
-                    <rect x="-35" y="15" width="70" height="18" rx="3" fill="none" stroke="#8B92FF" stroke-width="2"/>
-                    
-                    <!-- Diagonal stripes -->
-                    <line x1="-30" y1="16" x2="-20" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="-18" y1="16" x2="-8" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="-6" y1="16" x2="4" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="6" y1="16" x2="16" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="18" y1="16" x2="28" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    
-                    <!-- Top hooks/circles -->
-                    <circle cx="-30" cy="12" r="3" fill="#8B92FF"/>
-                    <circle cx="30" cy="12" r="3" fill="#8B92FF"/>
+            <svg class="uc-graphic" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="400" height="200" rx="16" fill="var(--glass-bg)" stroke="var(--accent-purple)" stroke-width="2"/>
+                <g transform="translate(150,60)">
+                    <rect x="0" y="40" width="100" height="20" rx="4" fill="var(--accent-purple)" opacity="0.9"/>
+                    <rect x="0" y="0" width="100" height="40" rx="4" fill="var(--bg-tertiary)" stroke="var(--accent-purple)" stroke-width="2"/>
+                    <line x1="5" y1="5" x2="95" y2="35" stroke="var(--accent-purple)" stroke-width="4"/>
+                    <line x1="5" y1="35" x2="95" y2="5" stroke="var(--accent-purple)" stroke-width="4"/>
                 </g>
-                
-                <!-- Title Text -->
-                <text x="200" y="200" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="28">Delivery Confidence</text>
-                
-                <!-- Subtitle Text -->
-                <text x="200" y="235" text-anchor="middle" fill="#A5B4FC" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="16" letter-spacing="3">UNDER CONSTRUCTION</text>
+                <text x="200" y="150" text-anchor="middle" fill="var(--text-primary)" font-family="Inter" font-weight="600" font-size="18">Delivery Confidence</text>
+                <text x="200" y="175" text-anchor="middle" fill="var(--text-tertiary)" font-family="Inter" font-size="12" letter-spacing="2">UNDER CONSTRUCTION</text>
             </svg>
         </div>
     `;
@@ -4843,45 +5001,10 @@ function updateDeliveryConfidenceCard() {
     modal.classList.add('show');
 }
 
-function updateCriticalTeamCard() {
-    const content = document.getElementById('critical-team-content');
+function updateCriticalTeamStatusCard() {
+    const content = document.getElementById('critical-team-status-content');
     
-    content.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 1rem;">
-            <svg class="uc-graphic" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                <!-- Background rounded rectangle -->
-                <rect x="20" y="20" width="360" height="260" rx="24" fill="rgba(30, 27, 75, 0.6)" stroke="#6573FF" stroke-width="2"/>
-                
-                <!-- Construction Barrier Icon -->
-                <g transform="translate(200, 80)">
-                    <!-- Left post -->
-                    <rect x="-35" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
-                    <!-- Right post -->
-                    <rect x="29" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
-                    
-                    <!-- Barrier bar -->
-                    <rect x="-35" y="15" width="70" height="18" rx="3" fill="none" stroke="#8B92FF" stroke-width="2"/>
-                    
-                    <!-- Diagonal stripes -->
-                    <line x1="-30" y1="16" x2="-20" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="-18" y1="16" x2="-8" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="-6" y1="16" x2="4" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="6" y1="16" x2="16" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="18" y1="16" x2="28" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    
-                    <!-- Top hooks/circles -->
-                    <circle cx="-30" cy="12" r="3" fill="#8B92FF"/>
-                    <circle cx="30" cy="12" r="3" fill="#8B92FF"/>
-                </g>
-                
-                <!-- Title Text -->
-                <text x="200" y="200" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="28">Critical Team Status</text>
-                
-                <!-- Subtitle Text -->
-                <text x="200" y="235" text-anchor="middle" fill="#A5B4FC" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="16" letter-spacing="3">UNDER CONSTRUCTION</text>
-            </svg>
-        </div>
-    `;
+    // TODO: Implement critical team status logic
 }
       
       function getTrendArrow(riskType) {
