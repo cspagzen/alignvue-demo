@@ -3856,8 +3856,7 @@ input[type="number"] {
 }
 
 /* Under Construction Blur Effect */
-.under-construction {
-    position: relative;
+.under-construction-content {
     filter: blur(8px);
     pointer-events: none;
     opacity: 0.3;
@@ -3873,9 +3872,8 @@ input[type="number"] {
     align-items: center;
     justify-content: center;
     background: rgba(30, 27, 75, 0.8);
-    z-index: 1000;  /* Higher z-index to sit above everything */
+    z-index: 1000;
     pointer-events: none;
-    filter: none;  /* Remove any blur from this element */
 }
 
 .under-construction-text {
@@ -3886,5 +3884,4 @@ input[type="number"] {
     text-transform: uppercase;
     text-align: center;
     padding: 1rem;
-    filter: none;  /* Ensure text is not blurred */
 }
