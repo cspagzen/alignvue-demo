@@ -3855,9 +3855,35 @@ input[type="number"] {
     scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
 
-/* Under Construction Graphics */
-.uc-graphic {
-    width: 100%;
-    max-width: 300px;
-    height: auto;
+/* Under Construction Blur Effect */
+.under-construction {
+    position: relative;
+    filter: blur(8px);
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+.under-construction-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(30, 27, 75, 0.8);
+    backdrop-filter: blur(4px);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.under-construction-text {
+    color: #A5B4FC;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 1rem;
 }
