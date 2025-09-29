@@ -2245,12 +2245,7 @@ teamCard.innerHTML =
     container.appendChild(mendozaLine);
 }
             }
-          // Call collapse initialization AFTER pyramid is fully built
-    setTimeout(() => {
-        if (typeof initMendozaCollapse === 'function') {
-            initMendozaCollapse();
-        }
-    }, 150);  
+           
         }
 
         function isAlignedWithOKRs(initiative) {
@@ -13105,110 +13100,62 @@ function createNotification(message, type) {
 }
 
 // ============================================================================
-// MENDOZA LINE COLLAPSE/EXPAND FUNCTIONALITY
+// MENDOZA LINE COLLAPSE/EXPAND FUNCTIONALITY - SIMPLIFIED VERSION
 // ============================================================================
-// Add this code to your existing script.js file
 
 /**
  * Initialize Mendoza Line collapse/expand functionality
- * Call this after the pyramid and team sections are rendered
+ * This version works by finding ALL row-containers and hiding rows 6-8
  */
 function initMendozaCollapse() {
-    // Create the collapsible structure
-    createMendozaLineStructure();
+    console.log('🎯 Initializing Mendoza collapse...');
     
-    // Initialize collapse state (default: collapsed)
-    const isCollapsed = localStorage.getItem('mendoza-collapsed') !== 'false'; // default true
-    setMendozaState(isCollapsed, false); // false = no animation on init
+    // Find both containers
+    const pyramidContainer = document.getElementById('priority-matrix');
+    const teamContainer = document.getElementById('team-health-matrix');
+    
+    if (!pyramidContainer || !teamContainer) {
+        console.error('❌ Could not find pyramid or team containers');
+        return;
+    }
+    
+    // Find all Mendoza lines (should be 2: one in pyramid, one in team)
+    const mendozaLines = document.querySelectorAll('.mendoza-line');
+    console.log(`Found ${mendozaLines.length} Mendoza lines`);
+    
+    if (mendozaLines.length === 0) {
+        console.error('❌ No Mendoza lines found');
+        return;
+    }
+    
+    // Use the first Mendoza line for the control (in pyramid section)
+    const controlLine = mendozaLines[0];
+    
+    // Create the control button inside the Mendoza line
+    createMendozaControl(controlLine);
+    
+    // Get initial state (default: collapsed)
+    const isCollapsed = localStorage.getItem('mendoza-collapsed') !== 'false';
+    
+    // Set initial state
+    setMendozaState(isCollapsed, false);
     
     // Add click handler
-    const mendozaControl = document.querySelector('.mendoza-control');
-    if (mendozaControl) {
-        mendozaControl.addEventListener('click', toggleMendozaLine);
-    }
+    controlLine.addEventListener('click', toggleMendozaLine);
+    
+    console.log('✅ Mendoza collapse initialized');
 }
 
 /**
- * Creates the Mendoza line control structure in both pyramid and team sections
- */
-function createMendozaLineStructure() {
-    // Handle Pyramid Section
-    const pyramidContent = document.getElementById('priority-matrix');
-    if (pyramidContent) {
-        wrapBelowLineContent(pyramidContent, 'pyramid');
-    }
-    
-    // Handle Team Section
-    const teamContent = document.querySelector('.team-content');
-    if (teamContent) {
-        wrapBelowLineContent(teamContent, 'team');
-    }
-}
-
-/**
- * Wraps rows 6-8 in a collapsible container and adds Mendoza line control
- */
-function wrapBelowLineContent(container, sectionType) {
-    const rows = container.querySelectorAll('.row-container');
-    
-    // Find existing Mendoza line or create one
-    let mendozaLine = container.querySelector('.mendoza-line');
-    const mendozaLineIndex = Array.from(container.children).indexOf(mendozaLine);
-    
-    // Create wrapper for below-line content
-    const belowLineWrapper = document.createElement('div');
-    belowLineWrapper.className = 'below-mendoza-wrapper';
-    belowLineWrapper.dataset.section = sectionType;
-    
-    // Create preview peek container (shows when collapsed)
-    const previewPeek = document.createElement('div');
-    previewPeek.className = 'mendoza-preview-peek';
-    previewPeek.innerHTML = createPreviewPeekContent(sectionType);
-    
-    // Create collapsible content container
-    const collapsibleContent = document.createElement('div');
-    collapsibleContent.className = 'mendoza-collapsible-content';
-    
-    // Move rows 6, 7, 8 into collapsible content
-    rows.forEach((row, index) => {
-        const rowNum = index + 1;
-        if (rowNum >= 6 && rowNum <= 8) {
-            collapsibleContent.appendChild(row);
-        }
-    });
-    
-    // Assemble structure
-    belowLineWrapper.appendChild(previewPeek);
-    belowLineWrapper.appendChild(collapsibleContent);
-    
-    // Insert after Mendoza line
-    if (mendozaLine && mendozaLine.nextSibling) {
-        container.insertBefore(belowLineWrapper, mendozaLine.nextSibling);
-    } else if (mendozaLine) {
-        container.appendChild(belowLineWrapper);
-    }
-    
-    // Create/update Mendoza line control (only once for pyramid section)
-    if (sectionType === 'pyramid' && mendozaLine) {
-        const existingControl = mendozaLine.querySelector('.mendoza-control');
-        if (!existingControl) {
-            createMendozaControl(mendozaLine);
-        }
-    }
-}
-
-/**
- * Creates the clickable Mendoza line control
+ * Creates the clickable control inside the Mendoza line
  */
 function createMendozaControl(mendozaLine) {
-    // Clear existing content
     mendozaLine.innerHTML = '';
+    mendozaLine.style.cursor = 'pointer';
     
-    // Add control button
     const control = document.createElement('button');
     control.className = 'mendoza-control';
     control.setAttribute('aria-expanded', 'false');
-    control.setAttribute('aria-controls', 'mendoza-collapsible');
     
     control.innerHTML = `
         <div class="mendoza-control-content">
@@ -13227,28 +13174,11 @@ function createMendozaControl(mendozaLine) {
     `;
     
     mendozaLine.appendChild(control);
-    
-    // Update summary counts
     updateMendozaSummary();
 }
 
 /**
- * Creates preview peek content showing darkened/blurred tops of row 6
- */
-function createPreviewPeekContent(sectionType) {
-    return `
-        <div class="peek-gradient"></div>
-        <div class="peek-message">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-            <span>Click above to view lower priority items</span>
-        </div>
-    `;
-}
-
-/**
- * Toggles the Mendoza line collapsed state
+ * Toggle between collapsed and expanded states
  */
 function toggleMendozaLine(e) {
     e.preventDefault();
@@ -13257,92 +13187,80 @@ function toggleMendozaLine(e) {
     const currentState = localStorage.getItem('mendoza-collapsed') !== 'false';
     const newState = !currentState;
     
-    setMendozaState(newState, true); // true = animate
+    console.log(`Toggling Mendoza: ${currentState ? 'collapsed' : 'expanded'} → ${newState ? 'collapsed' : 'expanded'}`);
+    
+    setMendozaState(newState, true);
     localStorage.setItem('mendoza-collapsed', newState);
 }
 
 /**
- * Sets the Mendoza line state (collapsed or expanded)
+ * Set the collapsed/expanded state for BOTH sections
  */
 function setMendozaState(isCollapsed, animate = true) {
-    const wrappers = document.querySelectorAll('.below-mendoza-wrapper');
-    const control = document.querySelector('.mendoza-control');
-    const mendozaLine = document.querySelector('.mendoza-line');
+    console.log(`Setting Mendoza state: ${isCollapsed ? 'COLLAPSED' : 'EXPANDED'}`);
     
-    if (!animate) {
-        // Disable transitions temporarily
-        wrappers.forEach(wrapper => {
-            wrapper.style.transition = 'none';
-            wrapper.querySelectorAll('*').forEach(el => el.style.transition = 'none');
-        });
-    }
+    // Get all row containers from BOTH sections
+    const pyramidRows = document.querySelectorAll('#priority-matrix .row-container');
+    const teamRows = document.querySelectorAll('#team-health-matrix .teams-row-container');
     
-    wrappers.forEach(wrapper => {
-        if (isCollapsed) {
-            wrapper.classList.add('collapsed');
-        } else {
-            wrapper.classList.remove('collapsed');
+    console.log(`Found ${pyramidRows.length} pyramid rows, ${teamRows.length} team rows`);
+    
+    // Hide/show rows 6, 7, 8 in pyramid (rows are 0-indexed, so 5, 6, 7)
+    [5, 6, 7].forEach(index => {
+        if (pyramidRows[index]) {
+            pyramidRows[index].style.display = isCollapsed ? 'none' : 'flex';
+            pyramidRows[index].style.transition = animate ? 'all 0.3s ease' : 'none';
         }
     });
     
+    // Hide/show rows 6, 7, 8 in team health
+    [5, 6, 7].forEach(index => {
+        if (teamRows[index]) {
+            teamRows[index].style.display = isCollapsed ? 'none' : 'flex';
+            teamRows[index].style.transition = animate ? 'all 0.3s ease' : 'none';
+        }
+    });
+    
+    // Update control button
+    const control = document.querySelector('.mendoza-control');
     if (control) {
         control.setAttribute('aria-expanded', !isCollapsed);
         
-        // Update text and arrow
         const text = control.querySelector('.mendoza-text');
         const arrow = control.querySelector('.mendoza-arrow');
         const summary = control.querySelector('.mendoza-summary');
         
-        if (isCollapsed) {
-            text.textContent = 'Below the Line Initiatives';
-            arrow.textContent = '▼';
-            summary.style.display = 'flex';
-        } else {
-            text.textContent = 'Hide Lower Priority Items';
-            arrow.textContent = '▲';
-            summary.style.display = 'none';
+        if (text && arrow && summary) {
+            if (isCollapsed) {
+                text.textContent = 'Below the Line Initiatives';
+                arrow.textContent = '▼';
+                summary.style.display = 'flex';
+                updateMendozaSummary();
+            } else {
+                text.textContent = 'Hide Lower Priority Items';
+                arrow.textContent = '▲';
+                summary.style.display = 'none';
+            }
         }
     }
     
-    if (mendozaLine) {
-        mendozaLine.classList.toggle('collapsed', isCollapsed);
-    }
-    
-    if (!animate) {
-        // Re-enable transitions after a frame
-        requestAnimationFrame(() => {
-            wrappers.forEach(wrapper => {
-                wrapper.style.transition = '';
-                wrapper.querySelectorAll('*').forEach(el => el.style.transition = '');
-            });
-        });
-    }
-    
-    // Update summary when collapsed
-    if (isCollapsed) {
-        updateMendozaSummary();
-    }
+    console.log(`✅ Mendoza state set to: ${isCollapsed ? 'collapsed' : 'expanded'}`);
 }
 
 /**
- * Updates the summary counts dynamically
+ * Update summary statistics
  */
 function updateMendozaSummary() {
-    // Get all initiatives in rows 6-8
-    const belowLineInitiatives = [];
-    
-    // Check if boardData exists
     if (typeof boardData === 'undefined' || !boardData.initiatives) {
+        console.log('No boardData available for summary');
         return;
     }
     
-    boardData.initiatives.forEach(init => {
-        if (init.priority >= 22 && init.priority <= 36) { // Rows 6-8
-            belowLineInitiatives.push(init);
-        }
-    });
+    // Get initiatives in rows 6-8 (priorities 22-36)
+    const belowLineInitiatives = boardData.initiatives.filter(init => 
+        init.priority >= 22 && init.priority <= 36
+    );
     
-    // Count by type
     const counts = {
         total: belowLineInitiatives.length,
         strategic: belowLineInitiatives.filter(i => i.type === 'strategic').length,
@@ -13356,9 +13274,7 @@ function updateMendozaSummary() {
     const ktloEl = document.getElementById('summary-ktlo');
     const emergentEl = document.getElementById('summary-emergent');
     
-    if (totalEl) {
-        totalEl.textContent = `${counts.total} initiative${counts.total !== 1 ? 's' : ''}`;
-    }
+    if (totalEl) totalEl.textContent = `${counts.total} initiative${counts.total !== 1 ? 's' : ''}`;
     if (strategicEl) {
         strategicEl.textContent = `${counts.strategic} strategic`;
         strategicEl.style.display = counts.strategic > 0 ? 'inline' : 'none';
@@ -13372,20 +13288,31 @@ function updateMendozaSummary() {
         emergentEl.style.display = counts.emergent > 0 ? 'inline' : 'none';
     }
     
-    // Hide dividers if no items to show
-    const summaryItems = document.querySelectorAll('.mendoza-summary .summary-item:not(#summary-total)');
-    const hasVisibleItems = Array.from(summaryItems).some(el => el.style.display !== 'none');
+    // Hide dividers if no items
+    const hasVisibleItems = counts.strategic > 0 || counts.ktlo > 0 || counts.emergent > 0;
     const dividers = document.querySelectorAll('.summary-divider');
-    dividers.forEach(div => {
-        div.style.display = hasVisibleItems ? 'inline' : 'none';
-    });
+    dividers.forEach(div => div.style.display = hasVisibleItems ? 'inline' : 'none');
 }
 
 /**
- * Call this function after initiatives are added/removed/changed
+ * Call this after initiatives change
  */
 function refreshMendozaState() {
-    updateMendozaSummary();
+    const isCollapsed = localStorage.getItem('mendoza-collapsed') !== 'false';
+    if (isCollapsed) {
+        updateMendozaSummary();
+    }
+}
+
+async function init() {
+    // ... ALL your existing code stays ...
+    
+    // At the very bottom, ADD THIS:
+    setTimeout(() => {
+        if (typeof initMendozaCollapse === 'function') {
+            initMendozaCollapse();
+        }
+    }, 500);
 }
 
         init();
