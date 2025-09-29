@@ -10274,6 +10274,11 @@ if (this.dataset.action === 'toggle-quick-filters') {
 // Scroll to sections function
 // Enhanced scroll to sections with highlighting
 function scrollToSection(section) {
+    // Don't scroll if clicking view switchers
+    if (section === 'portfolio-pulse') {
+        return; // Let the view switching script handle it
+    }
+    
     let targetElement = null;
     let highlightElement = null;
     
@@ -10297,7 +10302,6 @@ function scrollToSection(section) {
     if (targetElement) {
         scrollToElement(targetElement, section === 'teams' || section === 'initiatives');
         
-        // Add highlight animation
         if (highlightElement) {
             highlightSection(highlightElement);
         }
