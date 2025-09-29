@@ -4745,70 +4745,50 @@ function updateResourceCard() {
         </div>
     `;
 }
-
 function updateDeliveryConfidenceCard() {
     const content = document.getElementById('delivery-confidence-content');
+    
+    // UNDER CONSTRUCTION - Display your provided graphic
+    content.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 120px; padding: 1rem;">
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0i..." 
+                 alt="Delivery Confidence Under Construction" 
+                 style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+        </div>
+    `;
+    
+    /* COMMENTED OUT - Original implementation to be restored later
     
     // Calculate delivery confidence metrics
     const confidenceMetrics = calculateDeliveryConfidence();
     
     // Determine confidence level and styling
-    let confidenceLevel, confidenceIcon, confidenceText, confidenceColor;
+    let confidenceLevel, confidenceIcon, confidenceColor;
     
     if (confidenceMetrics.score >= 85) {
-        confidenceLevel = 'high';
-        confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11v1a10 10 0 1 1-9-10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/><path d="M16 5h6"/><path d="M19 2v6"/></svg>';
-        confidenceText = 'High Confidence';
+        confidenceLevel = 'High Confidence';
+        confidenceIcon = '😊';
         confidenceColor = 'var(--accent-green)';
-    } else if (confidenceMetrics.score >= 75) {
-        confidenceLevel = 'moderate-confidence';
-        confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'Moderate Confidence';
+    } else if (confidenceMetrics.score >= 70) {
+        confidenceLevel = 'Moderate';
+        confidenceIcon = '😐';
         confidenceColor = '#eab308';
-    } else if (confidenceMetrics.score >= 65) {
-        confidenceLevel = 'moderate-risk';
-        confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" x2="16" y1="15" y2="15"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'Moderate Risk';
-        confidenceColor = 'var(--accent-orange)';
     } else {
-        confidenceLevel = 'high-risk';
-        confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'High Risk';
+        confidenceLevel = 'At Risk';
+        confidenceIcon = '😟';
         confidenceColor = 'var(--accent-red)';
     }
     
-    // Get risk factor colors
-    const validationColor = getRiskColor('validation', confidenceMetrics.riskFactors.validation);
-    const capacityColor = getRiskColor('capacity', confidenceMetrics.riskFactors.capacity);
-    const blockersColor = getRiskColor('blockers', confidenceMetrics.riskFactors.blockers);
-    
     content.innerHTML = `
-    <div class="h-full flex gap-3">
-        <!-- Left: Confidence Icon and Text -->
-        <div class="flex-1 flex flex-col items-center justify-center text-center">
-            <div class="mb-2">${confidenceIcon.replace('width="90" height="90"', 'width="60" height="60"')}</div>
-            <div class="text-sm font-bold" style="color: ${confidenceColor};">${confidenceText}</div>
+        <div class="text-center space-y-2">
+            <div class="text-4xl">${confidenceIcon}</div>
+            <div class="bento-medium-metric" style="color: ${confidenceColor};">${confidenceMetrics.score}%</div>
+            <div class="text-xs font-semibold" style="color: ${confidenceColor};">${confidenceLevel}</div>
         </div>
-        
-        <!-- Right: Risk Metrics -->
-        <div class="flex-1 flex flex-col justify-center space-y-2">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-medium" style="color: var(--text-tertiary);">Validation Risks</span>
-                <div class="text-xl font-bold" style="color: ${getRiskColor('validation', confidenceMetrics.riskFactors.validation)};">${confidenceMetrics.riskFactors.validation}</div>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-medium" style="color: var(--text-tertiary);">Capacity Risks</span>
-                <div class="text-xl font-bold" style="color: ${getRiskColor('capacity', confidenceMetrics.riskFactors.capacity)};">${confidenceMetrics.riskFactors.capacity}</div>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-medium" style="color: var(--text-tertiary);">Blocked Items</span>
-                <div class="text-xl font-bold" style="color: ${getRiskColor('blockers', confidenceMetrics.riskFactors.blockers)};">${confidenceMetrics.riskFactors.blockers}</div>
-            </div>
-        </div>
-    </div>
-`;
+    `;
+    
+    END OF COMMENTED OUT CODE */
 }
-
 
 
       
