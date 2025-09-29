@@ -2240,17 +2240,17 @@ teamCard.innerHTML =
                 container.appendChild(rowDiv);
                 
                 if (row === 5) {
-                    const mendozaLine = document.createElement('div');
-                    mendozaLine.className = 'mendoza-line-plain';
-                    container.appendChild(mendozaLine);
-                }
+    const mendozaLine = document.createElement('div');
+    mendozaLine.className = 'mendoza-line';  // ← Changed to match pyramid
+    container.appendChild(mendozaLine);
+}
             }
           // Call collapse initialization AFTER pyramid is fully built
     setTimeout(() => {
         if (typeof initMendozaCollapse === 'function') {
             initMendozaCollapse();
         }
-    }, 100);  
+    }, 150);  
         }
 
         function isAlignedWithOKRs(initiative) {
