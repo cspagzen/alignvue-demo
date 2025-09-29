@@ -4807,8 +4807,9 @@ function updateDeliveryConfidenceCard() {
         </div>
     </div>
 `;
-    content.classList.add('under-construction');
-    content.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"><div class="under-construction-text">Under Construction</div></div>');
+    const card = content.closest('.bento-card');
+    card.classList.add('under-construction');
+    card.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"><div class="under-construction-text">Under Construction</div></div>');
 }
 
 

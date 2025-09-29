@@ -3856,8 +3856,7 @@ input[type="number"] {
 }
 
 /* Under Construction Blur Effect */
-.under-construction {
-    position: relative;
+.bento-card.under-construction .bento-card-content {
     filter: blur(8px);
     pointer-events: none;
     opacity: 0.3;
@@ -3873,7 +3872,6 @@ input[type="number"] {
     align-items: center;
     justify-content: center;
     background: rgba(30, 27, 75, 0.8);
-    backdrop-filter: blur(4px);
     z-index: 10;
     pointer-events: none;
 }
