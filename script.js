@@ -10275,7 +10275,9 @@ if (this.dataset.action === 'toggle-quick-filters') {
             
             // Get section and scroll to it
             const section = this.dataset.section;
-            scrollToSection(section);
+            if (section) {
+                scrollToSection(section);
+            }
             
             // Close sidebar on mobile
             if (window.innerWidth <= 768) {
