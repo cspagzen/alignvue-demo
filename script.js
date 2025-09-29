@@ -13312,7 +13312,7 @@ async function init() {
         if (typeof initMendozaCollapse === 'function') {
             initMendozaCollapse();
         }
-    }, 500);
+    }, 1000);
 }
 
         init();
