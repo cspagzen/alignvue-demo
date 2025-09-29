@@ -621,7 +621,7 @@
     </div>
 </div>
         
-    <div class="board-container" style="display: none;">
+    <div class="board-container">
         <div class="pyramid-section">
             <div style="background: var(--bg-secondary); border: 1px solid var(--border-primary); box-shadow: var(--shadow-lg);" class="rounded-xl">
                 <div class="px-6 py-4" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
@@ -1243,7 +1243,7 @@
 </div>
     
     <script>
-// Simple view switching
+// Simple Portfolio Pulse toggle only
 document.addEventListener('click', function(e) {
     const navItem = e.target.closest('[data-view]');
     if (!navItem) return;
@@ -1251,19 +1251,16 @@ document.addEventListener('click', function(e) {
     e.preventDefault();
     const viewName = navItem.dataset.view;
     
-    // Hide both views
-    document.querySelector('.bento-container').style.display = 'none';
-    document.querySelector('.board-container').style.display = 'none';
-    
-    // Show the selected view
     if (viewName === 'portfolio-pulse') {
         document.querySelector('.bento-container').style.display = 'block';
+        document.querySelector('.board-container').style.display = 'none';
     } else if (viewName === 'initiatives-board') {
+        document.querySelector('.bento-container').style.display = 'none';
         document.querySelector('.board-container').style.display = 'block';
     }
     
-    // Update active nav state
-    document.querySelectorAll('.sidebar-nav-item').forEach(item => item.classList.remove('active'));
+    // Update active nav state for view items only
+    document.querySelectorAll('[data-view]').forEach(item => item.classList.remove('active'));
     navItem.classList.add('active');
 });
 </script>
