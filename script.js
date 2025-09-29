@@ -2001,10 +2001,11 @@ rowDiv.appendChild(rowNumber);
                 
                 container.appendChild(rowDiv);
                 
+                // After row 5, insert Mendoza line structure
                 if (row === 5) {
-                    const mendozaLine = document.createElement('div');
-                    mendozaLine.className = 'mendoza-line';
-                    container.appendChild(mendozaLine);
+                const mendozaLineContainer = document.createElement('div');
+                mendozaLineContainer.className = 'mendoza-line';
+                container.appendChild(mendozaLineContainer);
                 }
             }
             
@@ -2244,7 +2245,12 @@ teamCard.innerHTML =
                     container.appendChild(mendozaLine);
                 }
             }
-            
+          // Call collapse initialization AFTER pyramid is fully built
+    setTimeout(() => {
+        if (typeof initMendozaCollapse === 'function') {
+            initMendozaCollapse();
+        }
+    }, 100);  
         }
 
         function isAlignedWithOKRs(initiative) {
@@ -9488,12 +9494,6 @@ async function init() {
     
     generatePyramid();
     generateTeamHealthMatrix();
-    // Add delay to ensure DOM is ready for Mendoza collapse
-setTimeout(() => {
-    console.log('🎯 Initializing Mendoza collapse...');
-    initMendozaCollapse();
-}, 500);
-
     generateBentoGrid();
     ensureValidationCardStyles();
     initSearch();
