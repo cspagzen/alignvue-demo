@@ -54,14 +54,7 @@
     NAVIGATION
 </div>
 
-<a href="#" class="sidebar-nav-item active" data-section="initiatives" data-tooltip="Portfolio Pulse">
-    <svg class="sidebar-nav-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>
-    </svg>
-    <span>Portfolio Pulse</span>
-</a>
-
-<a href="#" class="sidebar-nav-item" data-section="teams" data-tooltip="Initiative Prioritization">
+<a href="#" class="sidebar-nav-item active" data-section="initiatives" data-tooltip="Initiatives">
     <svg class="sidebar-nav-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="m3 8 4-4 4 4"/>
         <path d="M7 4v16"/>
@@ -69,16 +62,23 @@
         <path d="M11 16h7"/>
         <path d="M11 20h10"/>
     </svg>
-    <span>Initiative Prioritization</span>
+    <span>Initiatives</span>
 </a>
-     
-<a href="#" class="sidebar-nav-item" data-section="portfolio-pulse" data-tooltip="Team Health">
+
+<a href="#" class="sidebar-nav-item" data-section="teams" data-tooltip="Team Health">
     <svg class="sidebar-nav-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="m14.479 19.374-.971.939a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5a5.2 5.2 0 0 1-.219 1.49"/>
         <path d="M15 15h6"/>
         <path d="M18 12v6"/>
     </svg>
     <span>Team Health</span>
+</a>
+     
+<a href="#" class="sidebar-nav-item" data-section="portfolio-pulse" data-tooltip="Portfolio Pulse">
+    <svg class="sidebar-nav-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>
+    </svg>
+    <span>Portfolio Pulse</span>
 </a>
        
     <a href="#" class="sidebar-nav-item" id="sidebar-sync-btn" data-action="manual-sync" data-tooltip="Sync data with Jira">
@@ -621,7 +621,7 @@
     </div>
 </div>
         
-    <div class="board-container">
+    <div class="board-container" id="board-view">
         <div class="pyramid-section">
             <div style="background: var(--bg-secondary); border: 1px solid var(--border-primary); box-shadow: var(--shadow-lg);" class="rounded-xl">
                 <div class="px-6 py-4" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
@@ -633,7 +633,7 @@
         <path d="M11 16h7"/>
         <path d="M11 20h10"/>
     </svg>
-    Initiative Prioritization
+    Portfolio Prioritization
 </h2>
     <p class="text-sm" style="color: var(--text-secondary);">Drag and drop to reprioritize | Hover over initiatives to highlight associated teams | Click initiatives for details</p>
 </div>
@@ -1242,26 +1242,24 @@
     </div>
 </div>
     <script>
-// Hide board on page load, show only Portfolio Pulse
 document.addEventListener('DOMContentLoaded', function() {
+    // Hide board on load, show bento
     document.querySelector('.board-container').style.display = 'none';
-    document.querySelector('.bento-container').style.display = 'block';
 });
 
-// Portfolio Pulse view switching
 document.addEventListener('click', function(e) {
-    const portfolioNav = e.target.closest('[data-view="portfolio-pulse"]');
-    if (portfolioNav) {
+    const navItem = e.target.closest('.sidebar-nav-item');
+    if (!navItem) return;
+    
+    if (navItem.dataset.view === 'portfolio-pulse') {
         e.preventDefault();
         document.querySelector('.bento-container').style.display = 'block';
         document.querySelector('.board-container').style.display = 'none';
-        document.querySelectorAll('.sidebar-nav-item').forEach(item => item.classList.remove('active'));
-        portfolioNav.classList.add('active');
-    }
-    
-    // Initiatives or Team Health clicked - show board, hide bento
-    const boardNav = e.target.closest('[data-section="initiatives"], [data-section="teams"]');
-    if (boardNav) {
+        navItem.classList.add('active');
+        document.querySelectorAll('.sidebar-nav-item').forEach(i => {
+            if (i !== navItem && !i.dataset.action) i.classList.remove('active');
+        });
+    } else if (navItem.dataset.section) {
         document.querySelector('.bento-container').style.display = 'none';
         document.querySelector('.board-container').style.display = 'flex';
     }
