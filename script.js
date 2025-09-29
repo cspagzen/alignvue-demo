@@ -4752,16 +4752,37 @@ function updateDeliveryConfidenceCard() {
     
     content.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 1rem;">
-            <svg class="uc-graphic" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0" y="0" width="400" height="200" rx="16" fill="var(--glass-bg)" stroke="var(--accent-purple)" stroke-width="2"/>
-                <g transform="translate(150,60)">
-                    <rect x="0" y="40" width="100" height="20" rx="4" fill="var(--accent-purple)" opacity="0.9"/>
-                    <rect x="0" y="0" width="100" height="40" rx="4" fill="var(--bg-tertiary)" stroke="var(--accent-purple)" stroke-width="2"/>
-                    <line x1="5" y1="5" x2="95" y2="35" stroke="var(--accent-purple)" stroke-width="4"/>
-                    <line x1="5" y1="35" x2="95" y2="5" stroke="var(--accent-purple)" stroke-width="4"/>
+            <svg class="uc-graphic" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background rounded rectangle -->
+                <rect x="20" y="20" width="360" height="260" rx="24" fill="rgba(30, 27, 75, 0.6)" stroke="#6573FF" stroke-width="2"/>
+                
+                <!-- Construction Barrier Icon -->
+                <g transform="translate(200, 80)">
+                    <!-- Left post -->
+                    <rect x="-35" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
+                    <!-- Right post -->
+                    <rect x="29" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
+                    
+                    <!-- Barrier bar -->
+                    <rect x="-35" y="15" width="70" height="18" rx="3" fill="none" stroke="#8B92FF" stroke-width="2"/>
+                    
+                    <!-- Diagonal stripes -->
+                    <line x1="-30" y1="16" x2="-20" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="-18" y1="16" x2="-8" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="-6" y1="16" x2="4" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="6" y1="16" x2="16" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="18" y1="16" x2="28" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
+                    
+                    <!-- Top hooks/circles -->
+                    <circle cx="-30" cy="12" r="3" fill="#8B92FF"/>
+                    <circle cx="30" cy="12" r="3" fill="#8B92FF"/>
                 </g>
-                <text x="200" y="150" text-anchor="middle" fill="var(--text-primary)" font-family="Inter" font-weight="600" font-size="18">Delivery Confidence</text>
-                <text x="200" y="175" text-anchor="middle" fill="var(--text-tertiary)" font-family="Inter" font-size="12" letter-spacing="2">UNDER CONSTRUCTION</text>
+                
+                <!-- Title Text -->
+                <text x="200" y="200" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="28">Delivery Confidence</text>
+                
+                <!-- Subtitle Text -->
+                <text x="200" y="235" text-anchor="middle" fill="#A5B4FC" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="16" letter-spacing="3">UNDER CONSTRUCTION</text>
             </svg>
         </div>
     `;
