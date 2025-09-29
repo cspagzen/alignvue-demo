@@ -4450,44 +4450,63 @@ function updateHealthCard() {
       
 function updateAtRiskCard() {
     const content = document.getElementById('at-risk-content');
+    const atRiskInitiatives = getTopAtRiskInitiatives()
+    .sort((a, b) => analyzeInitiativeRisk(b).riskScore - analyzeInitiativeRisk(a).riskScore)
+    .slice(0, 3);
     
-    content.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 1rem;">
-            <svg class="uc-graphic" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                <!-- Background rounded rectangle -->
-                <rect x="20" y="20" width="360" height="260" rx="24" fill="rgba(30, 27, 75, 0.6)" stroke="#6573FF" stroke-width="2"/>
-                
-                <!-- Construction Barrier Icon -->
-                <g transform="translate(200, 80)">
-                    <!-- Left post -->
-                    <rect x="-35" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
-                    <!-- Right post -->
-                    <rect x="29" y="25" width="6" height="30" rx="2" fill="#8B92FF" opacity="0.8"/>
-                    
-                    <!-- Barrier bar -->
-                    <rect x="-35" y="15" width="70" height="18" rx="3" fill="none" stroke="#8B92FF" stroke-width="2"/>
-                    
-                    <!-- Diagonal stripes -->
-                    <line x1="-30" y1="16" x2="-20" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="-18" y1="16" x2="-8" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="-6" y1="16" x2="4" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="6" y1="16" x2="16" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="18" y1="16" x2="28" y2="32" stroke="#8B92FF" stroke-width="3" stroke-linecap="round"/>
-                    
-                    <!-- Top hooks/circles -->
-                    <circle cx="-30" cy="12" r="3" fill="#8B92FF"/>
-                    <circle cx="30" cy="12" r="3" fill="#8B92FF"/>
-                </g>
-                
-                <!-- Title Text -->
-                <text x="200" y="200" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="28">Risk Factors</text>
-                
-                <!-- Subtitle Text -->
-                <text x="200" y="235" text-anchor="middle" fill="#A5B4FC" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="16" letter-spacing="3">UNDER CONSTRUCTION</text>
-            </svg>
-        </div>
-    `;
+    content.innerHTML = '<div class="flex gap-3 h-full">' + 
+        atRiskInitiatives.map(initiative => {
+            
+            
+            // Calculate risk level and get colors (simplified version for cards)
+            const riskScore = analyzeInitiativeRisk(initiative).riskScore;
+            const riskColor = getRiskLevelColor(riskScore);
+            
+            return `
+                <div class="flex-1 min-w-0">
+                    <div class="initiative-card-mini ${getTypeColor(initiative.type)} text-white h-full cursor-pointer at-risk-card-item"
+                         onclick="handleAtRiskCardClick(${initiative.id})"
+                         data-initiative-id="${initiative.id}"
+                         data-risk-color="${riskColor}"
+                         style="padding: 0.75rem; border-radius: 8px; position: relative; min-height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
+                        
+                        <!-- Header with title only -->
+                        <div class="mb-2">
+                            <div class="text-xs font-bold leading-tight" style="line-height: 1.2; max-height: 3em; overflow: hidden;">
+                                ${initiative.title}
+                            </div>
+                        </div>
+                        
+                        <!-- Risk Score text -->
+<div class="text-xs opacity-90 mb-2" style="font-weight: 500; color: ${getRiskLevelColor(analyzeInitiativeRisk(initiative).riskScore)};">
+    Risk: ${analyzeInitiativeRisk(initiative).riskScore}/50
+</div>
+                        
+                        <!-- Type badge (styled like pipeline items) -->
+                        <div class="flex justify-start">
+                            <span class="bento-type-badge bento-type-${initiative.type}">
+                                ${initiative.type.toUpperCase()}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('') + 
+    '</div>';
+    
+    // Apply risk colors after DOM is created
+    setTimeout(() => {
+        document.querySelectorAll('.at-risk-card-item').forEach(card => {
+            const riskColor = card.dataset.riskColor;
+            if (riskColor) {
+                card.style.setProperty('border', `2px solid ${riskColor}`, 'important');
+                card.style.setProperty('border-left', `6px solid ${riskColor}`, 'important');
+                card.style.setProperty('box-shadow', `0 8px 25px ${riskColor}33, var(--shadow-lg)`, 'important');
+            }
+        });
+    }, 10);
 }
+
 
 
 // UPDATE: getRiskLevelColor function for 50-point scale
