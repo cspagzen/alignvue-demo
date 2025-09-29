@@ -10173,6 +10173,30 @@ setTimeout(() => {
     navItems.forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
+            // Handle Portfolio Pulse view switching
+            if (this.dataset.view === 'portfolio-pulse') {
+                document.querySelector('.bento-container').style.display = 'block';
+                document.querySelector('.board-container').style.display = 'none';
+                
+                // Update active state
+                navItems.forEach(nav => {
+                    if (!nav.dataset.action) {
+                        nav.classList.remove('active');
+                    }
+                });
+                this.classList.add('active');
+                
+                if (window.innerWidth <= 768) {
+                    closeSidebar();
+                }
+                return;
+            }
+            
+            // Handle board views (initiatives/teams) - show board, then scroll
+            if (this.dataset.section === 'initiatives' || this.dataset.section === 'teams') {
+                document.querySelector('.bento-container').style.display = 'none';
+                document.querySelector('.board-container').style.display = 'flex';
+            }
             
             // Handle Add Initiative action
             if (this.dataset.action === 'add-initiative') {
