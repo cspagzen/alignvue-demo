@@ -1754,7 +1754,7 @@ body.chip-bar-active .main-content {
 }
 
 /* Mendoza Line */
-.mendoza-line {
+/*.mendoza-line {
     width: 100%;
     border-top: 4px dashed #ef4444;
     margin: 20px 0;
@@ -1794,7 +1794,7 @@ body.chip-bar-active .main-content {
 mendoza-line:hover {
     border-color: #dc2626;
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
-}
+}/*
 
 /* Priority Arrows */
 .priority-arrow {

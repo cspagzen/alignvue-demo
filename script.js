@@ -9488,7 +9488,12 @@ async function init() {
     
     generatePyramid();
     generateTeamHealthMatrix();
+    // Add delay to ensure DOM is ready for Mendoza collapse
+setTimeout(() => {
+    console.log('🎯 Initializing Mendoza collapse...');
     initMendozaCollapse();
+}, 500);
+
     generateBentoGrid();
     ensureValidationCardStyles();
     initSearch();
