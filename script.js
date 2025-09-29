@@ -10251,7 +10251,9 @@ if (this.dataset.action === 'toggle-quick-filters') {
             
             // Get section and scroll to it
             const section = this.dataset.section;
-            scrollToSection(section);
+            if (this.dataset.section) document.body.classList.add('show-board');
+if (this.dataset.view === 'portfolio-pulse') document.body.classList.remove('show-board');
+scrollToSection(section);
             
             // Close sidebar on mobile
             if (window.innerWidth <= 768) {
