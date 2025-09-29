@@ -4639,6 +4639,8 @@ function updateHealthCard() {
             </div>
         </div>
     `;
+    content.classList.add('under-construction');
+content.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"><div class="under-construction-text">Under Construction</div></div>');
 }
       
       function getHealthIndicatorCounts() {
