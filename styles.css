@@ -3855,3 +3855,9 @@ input[type="number"] {
     scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
 
+/* Under Construction Graphics */
+.uc-graphic {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+}

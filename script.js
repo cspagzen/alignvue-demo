@@ -4745,49 +4745,26 @@ function updateResourceCard() {
         </div>
     `;
 }
+
+
 function updateDeliveryConfidenceCard() {
     const content = document.getElementById('delivery-confidence-content');
     
-    // UNDER CONSTRUCTION - Display your provided graphic
     content.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 120px; padding: 1rem;">
-            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0i..." 
-                 alt="Delivery Confidence Under Construction" 
-                 style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 1rem;">
+            <svg class="uc-graphic" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="400" height="200" rx="16" fill="var(--glass-bg)" stroke="var(--accent-purple)" stroke-width="2"/>
+                <g transform="translate(150,60)">
+                    <rect x="0" y="40" width="100" height="20" rx="4" fill="var(--accent-purple)" opacity="0.9"/>
+                    <rect x="0" y="0" width="100" height="40" rx="4" fill="var(--bg-tertiary)" stroke="var(--accent-purple)" stroke-width="2"/>
+                    <line x1="5" y1="5" x2="95" y2="35" stroke="var(--accent-purple)" stroke-width="4"/>
+                    <line x1="5" y1="35" x2="95" y2="5" stroke="var(--accent-purple)" stroke-width="4"/>
+                </g>
+                <text x="200" y="150" text-anchor="middle" fill="var(--text-primary)" font-family="Inter" font-weight="600" font-size="18">Delivery Confidence</text>
+                <text x="200" y="175" text-anchor="middle" fill="var(--text-tertiary)" font-family="Inter" font-size="12" letter-spacing="2">UNDER CONSTRUCTION</text>
+            </svg>
         </div>
     `;
-    
-    /* COMMENTED OUT - Original implementation to be restored later
-    
-    // Calculate delivery confidence metrics
-    const confidenceMetrics = calculateDeliveryConfidence();
-    
-    // Determine confidence level and styling
-    let confidenceLevel, confidenceIcon, confidenceColor;
-    
-    if (confidenceMetrics.score >= 85) {
-        confidenceLevel = 'High Confidence';
-        confidenceIcon = '😊';
-        confidenceColor = 'var(--accent-green)';
-    } else if (confidenceMetrics.score >= 70) {
-        confidenceLevel = 'Moderate';
-        confidenceIcon = '😐';
-        confidenceColor = '#eab308';
-    } else {
-        confidenceLevel = 'At Risk';
-        confidenceIcon = '😟';
-        confidenceColor = 'var(--accent-red)';
-    }
-    
-    content.innerHTML = `
-        <div class="text-center space-y-2">
-            <div class="text-4xl">${confidenceIcon}</div>
-            <div class="bento-medium-metric" style="color: ${confidenceColor};">${confidenceMetrics.score}%</div>
-            <div class="text-xs font-semibold" style="color: ${confidenceColor};">${confidenceLevel}</div>
-        </div>
-    `;
-    
-    END OF COMMENTED OUT CODE */
 }
 
 
