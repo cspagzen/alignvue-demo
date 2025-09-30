@@ -9526,14 +9526,16 @@ function openQuickPrioritizeModal(initiative) {
     const gridElement = document.getElementById('quick-prioritize-grid');
     
     if (!modal || !nameElement || !gridElement) {
-        console.error('Modal elements not found!', { modal, nameElement, gridElement });
+        console.error('Modal elements not found!');
         return;
     }
     
     nameElement.textContent = initiative.title;
-    gridElement.innerHTML = '<p style="color: var(--text-secondary); padding: 2rem; text-align: center;">Grid will be populated in Phase 4</p>';
     
-    // Force the modal to be visible
+    // Render the priority grid
+    renderPriorityGrid(gridElement);
+    
+    // Show the modal
     modal.style.display = 'flex';
     modal.style.opacity = '1';
     modal.style.visibility = 'visible';
@@ -9546,6 +9548,95 @@ function openQuickPrioritizeModal(initiative) {
     modal.style.alignItems = 'center';
     modal.style.justifyContent = 'center';
     modal.style.backgroundColor = 'rgba(0, 0, 0, 0.75)';
+    
+    // Store the current initiative for when a slot is clicked
+    modal.dataset.initiativeId = initiative.id;
+}
+
+function renderPriorityGrid(gridElement) {
+    gridElement.innerHTML = '';
+    
+    const rowConfigs = [
+        { row: 1, count: 1, label: 'NOW', color: '#dc2626' },
+        { row: 2, count: 2, label: 'NOW', color: '#dc2626' },
+        { row: 3, count: 3, label: 'NOW', color: '#dc2626' },
+        { row: 4, count: 4, label: 'NEXT', color: '#ea580c' },
+        { row: 5, count: 5, label: 'NEXT', color: '#ea580c' },
+        { row: 6, count: 6, label: 'LATER', color: '#d97706' },
+        { row: 7, count: 7, label: 'LATER', color: '#d97706' },
+        { row: 8, count: 8, label: 'LATER', color: '#6b7280' }
+    ];
+    
+    rowConfigs.forEach(config => {
+        const rowContainer = document.createElement('div');
+        rowContainer.className = 'priority-row-container';
+        
+        // Show label only for first row of each section
+        const showLabel = (config.row === 1 || config.row === 4 || config.row === 6);
+        if (showLabel) {
+            const label = document.createElement('div');
+            label.className = `priority-row-label row-${config.label.toLowerCase()}`;
+            label.textContent = config.label;
+            rowContainer.appendChild(label);
+        } else {
+            const spacer = document.createElement('div');
+            spacer.style.width = '60px';
+            rowContainer.appendChild(spacer);
+        }
+        
+        // Create slots container
+        const slotsContainer = document.createElement('div');
+        slotsContainer.className = 'priority-row-slots';
+        
+        // Create slots (will be reversed by flex-direction)
+        for (let col = 1; col <= config.count; col++) {
+            const slotNumber = getSlotFromRowCol(config.row, col);
+            const slot = createPrioritySlot(slotNumber);
+            slotsContainer.appendChild(slot);
+        }
+        
+        rowContainer.appendChild(slotsContainer);
+        
+        // Row number circle
+        const rowNumber = document.createElement('div');
+        rowNumber.className = 'priority-row-number';
+        rowNumber.style.background = config.color;
+        rowNumber.textContent = config.row;
+        rowContainer.appendChild(rowNumber);
+        
+        gridElement.appendChild(rowContainer);
+    });
+}
+
+function createPrioritySlot(slotNumber) {
+    const slot = document.createElement('div');
+    slot.className = 'priority-slot';
+    
+    // Find if this slot has an initiative
+    const existingInitiative = boardData.initiatives.find(init => init.priority === slotNumber);
+    
+    if (existingInitiative) {
+        slot.classList.add('occupied');
+        slot.innerHTML = `
+            <div class="slot-number">${slotNumber}</div>
+            <div class="slot-initiative-title">${existingInitiative.title}</div>
+        `;
+    } else {
+        slot.innerHTML = `
+            <div class="slot-number">${slotNumber}</div>
+            <div class="slot-empty-text">Empty</div>
+        `;
+    }
+    
+    slot.onclick = () => handleSlotClick(slotNumber);
+    
+    return slot;
+}
+
+function handleSlotClick(slotNumber) {
+    console.log('Slot clicked:', slotNumber);
+    // TODO: Phase 5 will wire this up to actually move the initiative
+    alert(`You clicked slot ${slotNumber}! Phase 5 will make this move the initiative.`);
 }
 
 function closeQuickPrioritizeModal() {
