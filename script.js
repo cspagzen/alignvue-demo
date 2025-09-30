@@ -9635,8 +9635,35 @@ function createPrioritySlot(slotNumber) {
 
 function handleSlotClick(slotNumber) {
     console.log('Slot clicked:', slotNumber);
-    // TODO: Phase 5 will wire this up to actually move the initiative
-    alert(`You clicked slot ${slotNumber}! Phase 5 will make this move the initiative.`);
+    
+    const modal = document.getElementById('quick-prioritize-modal');
+    const initiativeId = parseInt(modal.dataset.initiativeId);
+    
+    // Find the initiative in the bullpen
+    const initiative = boardData.bullpen.find(init => init && init.id === initiativeId);
+    
+    if (!initiative) {
+        console.error('Initiative not found in bullpen:', initiativeId);
+        alert('Error: Initiative not found');
+        return;
+    }
+    
+    console.log('Moving initiative to slot:', slotNumber, initiative);
+    
+    // Use your existing function to move from bullpen to matrix
+    handleBullpenToMatrix(initiative, slotNumber);
+    
+    // Refresh the board and other views
+    generatePyramid();
+    generateTeamHealthMatrix();
+    refreshMendozaState();
+    updatePipelineCard(); // This will update the pipeline count
+    
+    // Close the modal
+    closeQuickPrioritizeModal();
+    
+    // Show success message
+    console.log(`✅ ${initiative.title} moved to priority slot ${slotNumber}`);
 }
 
 function closeQuickPrioritizeModal() {
