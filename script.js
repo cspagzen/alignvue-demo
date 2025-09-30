@@ -9521,15 +9521,36 @@ function decrementKPIValue() {
 function openQuickPrioritizeModal(initiative) {
     console.log('Opening quick prioritize modal for:', initiative);
     
-    document.getElementById('prioritize-initiative-name').textContent = initiative.title;
-    document.getElementById('quick-prioritize-modal').style.display = 'flex';
+    const modal = document.getElementById('quick-prioritize-modal');
+    const nameElement = document.getElementById('prioritize-initiative-name');
+    const gridElement = document.getElementById('quick-prioritize-grid');
     
-    // TODO: We'll populate the grid in Phase 4
-    document.getElementById('quick-prioritize-grid').innerHTML = '<p style="color: var(--text-secondary);">Grid will be populated in Phase 4</p>';
+    if (!modal || !nameElement || !gridElement) {
+        console.error('Modal elements not found!', { modal, nameElement, gridElement });
+        return;
+    }
+    
+    nameElement.textContent = initiative.title;
+    gridElement.innerHTML = '<p style="color: var(--text-secondary); padding: 2rem; text-align: center;">Grid will be populated in Phase 4</p>';
+    
+    // Force the modal to be visible
+    modal.style.display = 'flex';
+    modal.style.opacity = '1';
+    modal.style.visibility = 'visible';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.right = '0';
+    modal.style.bottom = '0';
+    modal.style.zIndex = '10000';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.75)';
 }
 
 function closeQuickPrioritizeModal() {
-    document.getElementById('quick-prioritize-modal').style.display = 'none';
+    const modal = document.getElementById('quick-prioritize-modal');
+    modal.style.display = 'none';
 }
        
 async function init() {
