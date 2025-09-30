@@ -2326,20 +2326,32 @@ function updatePipelineCard() {
     content.innerHTML = bullpenItems.map(initiative => `
     <div class="bento-pipeline-item validation-${initiative.validation}" 
          data-initiative-id="${initiative.id}"
-         onclick="showInitiativeModal(boardData.bullpen.find(init => init && init.id === ${initiative.id}))"
          style="position: relative;">
         <div class="bento-pipeline-item-header">
-    <div class="bento-pipeline-item-title">
-        ${initiative.title}
-    </div>
-    <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
-        <span class="bento-type-badge bento-type-${initiative.type}">${initiative.type.toUpperCase()}</span>
-        <div class="bento-pipeline-validation">
-            ${getValidationIcon(initiative.validation)}
-            <span class="bento-validation-text">${getValidationText(initiative.validation)}</span>
+            <div class="bento-pipeline-item-title" 
+                 onclick="showInitiativeModal(boardData.bullpen.find(init => init && init.id === ${initiative.id}))"
+                 style="cursor: pointer; flex: 1;">
+                ${initiative.title}
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                    <span class="bento-type-badge bento-type-${initiative.type}">${initiative.type.toUpperCase()}</span>
+                    <div class="bento-pipeline-validation">
+                        ${getValidationIcon(initiative.validation)}
+                        <span class="bento-validation-text">${getValidationText(initiative.validation)}</span>
+                    </div>
+                </div>
+                <button class="pipeline-prioritize-btn" 
+                        onclick="event.stopPropagation(); console.log('Prioritize clicked for:', '${initiative.title}', ${initiative.id});"
+                        title="Prioritize this initiative">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14"/>
+                        <path d="m12 5 7 7-7 7"/>
+                    </svg>
+                    Prioritize
+                </button>
+            </div>
         </div>
-    </div>
-</div>
     </div>
 `).join('');
     
