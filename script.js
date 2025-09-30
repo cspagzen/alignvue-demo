@@ -9588,11 +9588,11 @@ function renderPriorityGrid(gridElement) {
         const slotsContainer = document.createElement('div');
         slotsContainer.className = 'priority-row-slots';
         
-        // Create slots (will be reversed by flex-direction)
-        for (let col = 1; col <= config.count; col++) {
-            const slotNumber = getSlotFromRowCol(config.row, col);
-            const slot = createPrioritySlot(slotNumber);
-            slotsContainer.appendChild(slot);
+        // Create slots from right to left (col 1 = rightmost = lowest slot number in row)
+        for (let col = config.count; col >= 1; col--) {
+    const slotNumber = getSlotFromRowCol(config.row, col);
+    const slot = createPrioritySlot(slotNumber);
+    slotsContainer.appendChild(slot);
         }
         
         rowContainer.appendChild(slotsContainer);
