@@ -2342,7 +2342,7 @@ function updatePipelineCard() {
                     </div>
                 </div>
                 <button class="pipeline-prioritize-btn" 
-                        onclick="event.stopPropagation(); console.log('Prioritize clicked for:', '${initiative.title}', ${initiative.id});"
+                        onclick="event.stopPropagation(); openQuickPrioritizeModal(boardData.bullpen.find(init => init && init.id === ${initiative.id}));"
                         title="Prioritize this initiative">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M5 12h14"/>
@@ -9515,6 +9515,21 @@ function decrementKPIValue() {
     const currentValue = parseInt(input.value) || 0;
     const step = parseInt(input.step) || 1;
     input.value = Math.max(0, currentValue - step);
+}
+
+// Quick Prioritize Modal Functions
+function openQuickPrioritizeModal(initiative) {
+    console.log('Opening quick prioritize modal for:', initiative);
+    
+    document.getElementById('prioritize-initiative-name').textContent = initiative.title;
+    document.getElementById('quick-prioritize-modal').style.display = 'flex';
+    
+    // TODO: We'll populate the grid in Phase 4
+    document.getElementById('quick-prioritize-grid').innerHTML = '<p style="color: var(--text-secondary);">Grid will be populated in Phase 4</p>';
+}
+
+function closeQuickPrioritizeModal() {
+    document.getElementById('quick-prioritize-modal').style.display = 'none';
 }
        
 async function init() {

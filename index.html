@@ -1249,5 +1249,33 @@
     </div>
 </div>
     
+    <!-- Quick Prioritize Modal -->
+<div id="quick-prioritize-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2 id="prioritize-modal-title">Select Priority Slot</h2>
+            <button onclick="closeQuickPrioritizeModal()" class="modal-close" aria-label="Close modal">×</button>
+        </div>
+        
+        <div class="modal-body">
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.875rem;">
+                Click on any slot to assign <strong id="prioritize-initiative-name"></strong> to that priority position. 
+                Slots with initiatives show the title for context.
+            </p>
+            
+            <div id="quick-prioritize-grid" style="display: flex; flex-direction: column; gap: 0.75rem; align-items: flex-end;">
+                <!-- Grid will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                💡 Tip: Higher rows = higher priority
+            </div>
+            <button onclick="closeQuickPrioritizeModal()" class="btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+    
     </body>
 </html>
