@@ -9650,6 +9650,9 @@ function handleSlotClick(slotNumber) {
     
     console.log('Moving initiative to slot:', slotNumber, initiative);
     
+    // Close the modal first
+    closeQuickPrioritizeModal();
+    
     // Use your existing function to move from bullpen to matrix
     handleBullpenToMatrix(initiative, slotNumber);
     
@@ -9659,11 +9662,64 @@ function handleSlotClick(slotNumber) {
     refreshMendozaState();
     updatePipelineCard(); // This will update the pipeline count
     
-    // Close the modal
-    closeQuickPrioritizeModal();
+    // Show success notification
+    showSuccessNotification(`✅ "${initiative.title}" moved to Priority ${slotNumber}`);
+}
+
+function showSuccessNotification(message) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        z-index: 10001;
+        font-weight: 600;
+        font-size: 0.875rem;
+        animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
     
-    // Show success message
-    console.log(`✅ ${initiative.title} moved to priority slot ${slotNumber}`);
+    // Add animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
 }
 
 function closeQuickPrioritizeModal() {
