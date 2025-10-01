@@ -10900,7 +10900,7 @@ if (initiatives.issues.length > 0) {
                     method: 'POST',
                     jql: `parent = "${epic.key}"`,
                     fields: ['key'],
-                    maxResults: 0
+                    maxResults: 1
                 })
             });
 
