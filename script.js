@@ -1418,20 +1418,35 @@ function showRiskScoreInfoModal() {
                             '</div>' +
                         '</div>' +
                         
-                        // Key Result
-                        '<div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%); border: 1px solid var(--accent-purple);">' +
-                            '<div class="text-sm font-bold mb-2 flex items-center gap-2" style="color: var(--accent-purple);">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                    '<path d="M12 13V2l8 4-8 4"/>' +
-                                    '<path d="M20.561 10.222a9 9 0 1 1-12.55-5.29"/>' +
-                                    '<path d="M8.002 9.997a5 5 0 1 0 8.9 2.02"/>' +
-                                '</svg>' +
-                                'Related Key Result' +
-                            '</div>' +
-                            '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.keyResult : 'N/A') + '</p>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
+                        // Related Key Result
+'<div class="mt-4 p-4 rounded-lg" style="background: var(--bg-tertiary); border: 2px solid var(--accent-purple);">' +
+    '<div class="flex items-center gap-2 mb-3">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
+        '<div class="text-sm font-bold" style="color: var(--accent-purple);">Related Key Result</div>' +
+    '</div>' +
+    '<div class="text-sm leading-relaxed" style="color: var(--text-primary);">' +
+        (initiative.canvas ? initiative.canvas.keyResult : 'Launch 3 new strategic product capabilities') +
+    '</div>' +
+'</div>' +
+
+// ADD BUTTON HERE IN LEFT COLUMN
+(initiative.priority !== 'pipeline' && typeof initiative.priority === 'number' ? 
+    '<div style="margin-top: 1rem;">' +
+        '<button onclick="confirmMoveToPipeline(' + initiative.id + ')" ' +
+                'class="pipeline-return-btn" ' +
+                'title="Move this initiative back to the pipeline">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="m16 16-3 3 3 3"/>' +
+                '<path d="M3 12h14.5a1 1 0 0 1 0 7H13"/>' +
+                '<path d="M3 19h6"/>' +
+                '<path d="M3 5h18"/>' +
+            '</svg>' +
+            'Move Back to Pipeline' +
+        '</button>' +
+    '</div>'
+: '') +
+
+'</div>' +
                 
                 // Right Column - Execution Details
                 '<div>' +
@@ -1545,23 +1560,6 @@ function showRiskScoreInfoModal() {
                             '</div>' +
                         '</div>' +
                     '</div>' +
-        
-               // ADD BACK TO PIPELINE BUTTON HERE
-'<div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-primary);">' +
-    (initiative.priority !== 'pipeline' && typeof initiative.priority === 'number' ? 
-        '<button onclick="confirmMoveToPipeline(' + initiative.id + ')" ' +
-                'class="pipeline-return-btn" ' +
-                'title="Move this initiative back to the pipeline">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                '<path d="m16 16-3 3 3 3"/>' +
-                '<path d="M3 12h14.5a1 1 0 0 1 0 7H13"/>' +
-                '<path d="M3 19h6"/>' +
-                '<path d="M3 5h18"/>' +
-            '</svg>' +
-            'Move Back to Pipeline' +
-        '</button>'
-    : '') +
-'</div>' +
 
 '</div>' +
 '</div>' +
