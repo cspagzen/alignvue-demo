@@ -31,20 +31,7 @@ export default async function handler(req, res) {
     let finalMethod = method;
     let finalBody = Object.keys(jiraRequestBody).length > 0 ? JSON.stringify(jiraRequestBody) : undefined;
     
-    if (endpoint.includes('/search') && method === 'POST') {
-      // Convert POST /rest/api/3/search to GET /rest/api/3/search/jql with query params
-      const { jql, fields, startAt, maxResults } = jiraRequestBody;
-      const params = new URLSearchParams();
-      
-      if (jql) params.append('jql', jql);
-      if (fields && Array.isArray(fields)) params.append('fields', fields.join(','));
-      if (startAt !== undefined) params.append('startAt', startAt);
-      if (maxResults !== undefined) params.append('maxResults', maxResults);
-      
-      finalUrl = `${JIRA_URL}/rest/api/3/search/jql?${params.toString()}`;
-      finalMethod = 'GET';
-      finalBody = undefined;
-    }
+    
     
     const jiraResponse = await fetch(finalUrl, {
       method: finalMethod,
