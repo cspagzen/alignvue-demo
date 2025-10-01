@@ -1376,183 +1376,144 @@ function showRiskScoreInfoModal() {
     const content = document.getElementById('modal-content');
     
     // Store the element that opened the modal for focus restoration
-    modal.dataset.previousFocus = document.activeElement ? document.activeElement.dataset.initiativeId || document.activeElement.dataset.teamName || 'unknown' : 'unknown';
+    modal.dataset.previousFocus = document.activeElement ? (document.activeElement.dataset.initiativeId || document.activeElement.dataset.teamName || 'unknown') : 'unknown';
     
-    title.innerHTML = initiative.title + '<span class="ml-2 text-xs font-normal opacity-75" style="color: var(--text-secondary);">Initiative Details</span>';
+    title.textContent = initiative.title + ' - Initiative Details';
+    
+    const riskAnalysis = analyzeInitiativeRisk(initiative);
+    const riskLevel = getRiskLevel(riskAnalysis.riskScore);
     
     content.innerHTML = 
-        '<div class="space-y-6">' +
-            '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">' +
-                // Left Column - Strategic Overview
+        '<div class="space-y-4">' +
+            '<div class="grid grid-cols-2 gap-4">' +
                 '<div>' +
-                    '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                            '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>' +
-                            '<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>' +
-                        '</svg>' +
-                        'Strategic Overview' +
-                    '</h3>' +
-                    
-                    '<div class="space-y-4">' +
-                        // Problem & Solution
-                        '<div class="grid gap-3" style="grid-template-columns: 1fr 1fr;">' +
-                            '<div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                                '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Problem</div>' +
-                                '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.problem : 'N/A') + '</p>' +
-                            '</div>' +
-                            '<div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                                '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Solution</div>' +
-                                '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.solution : 'N/A') + '</p>' +
-                            '</div>' +
+                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
+                        '<div class="flex items-center justify-between mb-4">' +
+                            '<h3 class="text-base font-bold flex items-center gap-2" style="color: var(--text-primary);">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M2 12h20"/><path d="m19 9-7 7-7-7"/></svg>' +
+                                'Strategic Overview' +
+                            '</h3>' +
                         '</div>' +
-                        
-                        // Market & Customer
-                        '<div class="grid gap-3" style="grid-template-columns: 1fr 1fr;">' +
-                            '<div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                                '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Market Size</div>' +
-                                '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.marketSize : 'N/A') + '</p>' +
+                        '<div class="grid grid-cols-2 gap-3">' +
+                            '<div class="p-3 rounded-lg" style="background: var(--bg-secondary); border: 1px solid var(--border-secondary);">' +
+                                '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Problem</div>' +
+                                '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.problem : 'No problem statement') + '</p>' +
                             '</div>' +
-                            '<div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
+                            '<div class="p-3 rounded-lg" style="background: var(--bg-secondary); border: 1px solid var(--border-secondary);">' +
+                                '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Solution</div>' +
+                                '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.solution : 'No solution defined') + '</p>' +
+                            '</div>' +
+                            '<div class="p-3 rounded-lg" style="background: var(--bg-secondary); border: 1px solid var(--border-secondary);">' +
+                                '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Market Size</div>' +
+                                '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.market_size : 'N/A') + '</p>' +
+                            '</div>' +
+                            '<div class="p-3 rounded-lg" style="background: var(--bg-secondary); border: 1px solid var(--border-secondary);">' +
                                 '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Customer</div>' +
                                 '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.customer : 'N/A') + '</p>' +
                             '</div>' +
                         '</div>' +
-                        
-                        // Key Result
-                        '<div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%); border: 1px solid var(--accent-purple);">' +
-                            '<div class="text-sm font-bold mb-2 flex items-center gap-2" style="color: var(--accent-purple);">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                    '<path d="M12 13V2l8 4-8 4"/>' +
-                                    '<path d="M20.561 10.222a9 9 0 1 1-12.55-5.29"/>' +
-                                    '<path d="M8.002 9.997a5 5 0 1 0 8.9 2.02"/>' +
-                                '</svg>' +
+                        '<div class="mt-3 p-3 rounded-lg" style="background: var(--bg-secondary); border: 1px solid var(--border-secondary);">' +
+                            '<div class="text-sm font-bold mb-2 flex items-center gap-2" style="color: var(--accent-primary);">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' +
                                 'Related Key Result' +
                             '</div>' +
-                            '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.keyResult : 'N/A') + '</p>' +
+                            '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas && initiative.canvas.okr ? initiative.canvas.okr : 'No OKR') + '</p>' +
                         '</div>' +
                     '</div>' +
                 '</div>' +
-                
-                // Right Column - Execution Details
                 '<div>' +
-                    '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                            '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>' +
-                            '<line x1="16" y1="2" x2="16" y2="6"/>' +
-                            '<line x1="8" y1="2" x2="8" y2="6"/>' +
-                            '<line x1="3" y1="10" x2="21" y2="10"/>' +
-                        '</svg>' +
-                        'Execution Details' +
-                    '</h3>' +
-                    
-                    '<div class="space-y-4">' +
-                        // Jira Analytics with compact View button
-                        '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-green);">' +
-                            '<div class="text-sm font-bold mb-3 flex items-center justify-between" style="color: var(--accent-green);">' +
-                                '<span class="flex items-center gap-2">' +
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                        '<path d="M3 6h18"/>' +
-                                        '<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>' +
-                                        '<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>' +
-                                        '<line x1="10" x2="10" y1="11" y2="17"/>' +
-                                        '<line x1="14" x2="14" y1="11" y2="17"/>' +
-                                    '</svg>' +
-                                    'Jira Analytics' +
-                                '</span>' +
-                                // Small inline button in the header
-                                (initiative.jira && initiative.jira.key ? 
-                                    '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1" style="background: #0052CC; color: white;" onmouseover="this.style.background=\'#003d99\'" onmouseout="this.style.background=\'#0052CC\'">' +
-                                        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                            '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>' +
-                                            '<polyline points="15,3 21,3 21,9"/>' +
-                                            '<line x1="10" x2="21" y1="14" y2="3"/>' +
-                                        '</svg>' +
-                                        'View' +
-                                    '</button>' 
-                                    : '') +
+                    '<div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.3);">' +
+                        '<div class="flex items-center justify-between mb-4">' +
+                            '<h3 class="text-base font-bold flex items-center gap-2" style="color: var(--accent-green);">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="m9 12 2 2 4-4"/></svg>' +
+                                'Jira Analytics' +
+                            '</h3>' +
+                            '<button onclick="openJiraEpic(\'' + initiative.epic_key + '\')" class="px-3 py-1 text-xs font-semibold rounded-md flex items-center gap-1" style="background: var(--accent-primary); color: white; border: none; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.transform=\'translateY(-2px)\'; this.style.boxShadow=\'0 4px 8px rgba(99, 102, 241, 0.3)\'" onmouseout="this.style.transform=\'translateY(0)\'; this.style.boxShadow=\'none\'">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+                                'View' +
+                            '</button>' +
+                        '</div>' +
+                        '<div class="grid grid-cols-2 gap-3 mb-3">' +
+                            '<div>' +
+                                '<div class="text-xs font-semibold mb-1" style="color: var(--text-secondary);">Epic Key</div>' +
+                                '<div class="text-sm font-bold" style="color: var(--text-primary);">' + initiative.epic_key + '</div>' +
                             '</div>' +
-                            '<div class="grid gap-3" style="grid-template-columns: 1fr 1fr;">' +
-                                '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Epic Key</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.key : 'N/A') + '</div>' +
-                                '</div>' +
-                                '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Status</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.status : 'N/A') + '</div>' +
-                                '</div>' +
-                                '<div>' +
-    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Risk Score</div>' +
-    '<div class="text-sm font-bold flex items-center gap-2">' +
-        '<span style="color: ' + getRiskLevelColor(analyzeInitiativeRisk(initiative).riskScore) + ';">' +
-            analyzeInitiativeRisk(initiative).riskScore + '/50' +
-        '</span>' +
-        '<button onclick="showRiskScoreInfoModalForInitiative(' + initiative.id + ')" ' +
-                'class="w-4 h-4 rounded-full flex items-center justify-center hover:bg-opacity-20 transition-colors" ' +
-                'style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);" ' +
-                'title="How is Risk Score calculated?">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" ' +
-                 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                '<circle cx="12" cy="12" r="10"/>' +
-                '<path d="M12 16v-4"/>' +
-                '<path d="M12 8h.01"/>' +
-            '</svg>' +
-        '</button>' +
-    '</div>' +
-'</div>' +
-                                '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Updated</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? new Date(initiative.jira.updated).toLocaleDateString() : 'N/A') + '</div>' +
-                                '</div>' +
+                            '<div>' +
+                                '<div class="text-xs font-semibold mb-1" style="color: var(--text-secondary);">Status</div>' +
+                                '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.priority === 'pipeline' ? 'Pipeline' : 'Priority ' + initiative.priority) + '</div>' +
                             '</div>' +
                         '</div>' +
-                        
-                        // Teams Section
-                        '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                            '<div class="text-sm font-bold mb-3 flex items-center gap-2" style="color: var(--text-primary);">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                    '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>' +
-                                    '<circle cx="9" cy="7" r="4"/>' +
-                                    '<path d="M22 21v-2a4 4 0 0 0-3-3.87"/>' +
-                                    '<path d="M16 3.13a4 4 0 0 1 0 7.75"/>' +
-                                '</svg>' +
-                                'Teams (' + initiative.teams.length + ')' +
+                        '<div class="grid grid-cols-2 gap-3">' +
+                            '<div>' +
+                                '<div class="text-xs font-semibold mb-1" style="color: var(--text-secondary);">Risk Score</div>' +
+                                '<div class="flex items-center gap-2">' +
+                                    '<div class="text-lg font-bold" style="color: ' + riskLevel.color + ';">' + riskAnalysis.riskScore + '/50</div>' +
+                                    '<button onclick="showRiskScoreInfoModalForInitiative(' + initiative.id + ')" class="text-xs" style="color: var(--accent-blue); background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline;">ℹ️</button>' +
+                                '</div>' +
                             '</div>' +
-                            '<div class="grid gap-2" style="grid-template-columns: 1fr;">' +
-                                initiative.teams.map(teamName => {
-                                    const teamData = boardData.teams[teamName];
-                                    const pillStyle = getTeamHealthPillStyle(teamData);
-                                    const healthIcon = getHealthIcon(teamData);
-                                    return '<button class="text-xs px-3 py-2 rounded cursor-pointer border flex items-center justify-between ' + pillStyle + '" onclick="closeModal(); showTeamModal(\'' + teamName + '\', boardData.teams[\'' + teamName + '\'])" aria-label="View ' + teamName + ' team details">' + 
-                                           '<span class="flex items-center gap-2">' +
-                                               '<span class="flex-shrink-0">' + healthIcon + '</span>' +
-                                               '<span>' + teamName + '</span>' +
-                                           '</span>' +
-                                           '<span class="text-xs opacity-75">View Details →</span>' +
-                                           '</button>';
-                                }).join('') +
+                            '<div>' +
+                                '<div class="text-xs font-semibold mb-1" style="color: var(--text-secondary);">Updated</div>' +
+                                '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.updated || 'N/A') + '</div>' +
                             '</div>' +
                         '</div>' +
-                        
-                        // Measures & Alternatives
-                        '<div class="space-y-3">' +
-                            '<div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                                '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Success Measures</div>' +
-                                '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.measures : 'N/A') + '</p>' +
-                            '</div>' +
-                            '<div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                                '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Alternatives</div>' +
-                                '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.alternatives : 'N/A') + '</p>' +
-                            '</div>' +
+                    '</div>' +
+                    '<div class="p-4 rounded-lg mt-4" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
+                        '<h3 class="text-base font-bold mb-3 flex items-center gap-2" style="color: var(--text-primary);">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' +
+                            'Teams (' + (initiative.teams ? initiative.teams.length : 0) + ')' +
+                        '</h3>' +
+                        '<div class="space-y-2">' +
+                            (initiative.teams && initiative.teams.length > 0 ? 
+                                initiative.teams.map(team => {
+                                    const teamData = boardData.teams[team];
+                                    const healthStatus = teamData ? getTeamOverallHealth(teamData) : 'UNKNOWN';
+                                    const healthColor = healthStatus === 'HEALTHY' ? 'var(--accent-green)' : healthStatus === 'CRITICAL' ? 'var(--accent-red)' : 'var(--accent-orange)';
+                                    return '<div class="flex items-center justify-between p-2 rounded-md" style="background: var(--bg-secondary); border: 1px solid var(--border-secondary);">' +
+                                        '<span class="text-sm font-semibold" style="color: var(--text-primary);">' + team + '</span>' +
+                                        '<span class="text-xs px-2 py-1 rounded-full font-bold" style="background: ' + healthColor + '20; color: ' + healthColor + ';">' + healthStatus + '</span>' +
+                                    '</div>';
+                                }).join('') 
+                                : '<p class="text-xs" style="color: var(--text-tertiary);">No teams assigned</p>'
+                            ) +
                         '</div>' +
                     '</div>' +
                 '</div>' +
             '</div>' +
+            '<div class="grid grid-cols-3 gap-4 mt-4">' +
+                '<div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
+                    '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Success Measures</div>' +
+                    '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.measures : 'N/A') + '</p>' +
+                '</div>' +
+                '<div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
+                    '<div class="text-sm font-bold mb-2" style="color: var(--text-primary);">Alternatives</div>' +
+                    '<p class="text-xs leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.alternatives : 'N/A') + '</p>' +
+                '</div>' +
+            '</div>' +
+            (initiative.priority !== 'pipeline' ?
+                '<div class="mt-4 p-4 rounded-lg" style="background: rgba(234, 88, 12, 0.1); border: 1px solid rgba(234, 88, 12, 0.3);">' +
+                    '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+                        '<div>' +
+                            '<div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Current Priority Position</div>' +
+                            '<div style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Priority ' + initiative.priority + '</div>' +
+                        '</div>' +
+                        '<button onclick="moveInitiativeToPipeline(' + initiative.id + ')" ' +
+                                'style="background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;" ' +
+                                'onmouseover="this.style.transform=\'translateY(-2px)\'; this.style.boxShadow=\'0 4px 12px rgba(234, 88, 12, 0.4)\'" ' +
+                                'onmouseout="this.style.transform=\'translateY(0)\'; this.style.boxShadow=\'none\'">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                '<path d="M19 12H5"/>' +
+                                '<path d="m12 19-7-7 7-7"/>' +
+                            '</svg>' +
+                            'Back to Pipeline' +
+                        '</button>' +
+                    '</div>' +
+                '</div>'
+            : '') +
         '</div>';
     
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
     
-    // Focus the close button for immediate keyboard navigation
     setTimeout(() => {
         const closeButton = modal.querySelector('button');
         if (closeButton) {
