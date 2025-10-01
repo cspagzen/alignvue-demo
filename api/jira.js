@@ -1,7 +1,4 @@
-// api/jira.js - Place this file in an 'api' folder in your project
-
 export default async function handler(req, res) {
-  // Enable CORS for your frontend
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -11,12 +8,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { endpoint, method = 'GET', body } = req.body || req.query;
+    // CHANGED: Extract endpoint and method, keep everything else as the body
+    const { endpoint, method = 'GET', ...jiraRequestBody } = req.body || {};
     
-    // Your Jira credentials (will be set as environment variables)
-    const JIRA_URL = process.env.JIRA_URL; // https://alignvue.atlassian.net
-    const JIRA_EMAIL = process.env.JIRA_EMAIL; // your email
-    const JIRA_TOKEN = process.env.JIRA_TOKEN; // your API token
+    const JIRA_URL = process.env.JIRA_URL;
+    const JIRA_EMAIL = process.env.JIRA_EMAIL;
+    const JIRA_TOKEN = process.env.JIRA_TOKEN;
     
     if (!JIRA_URL || !JIRA_EMAIL || !JIRA_TOKEN) {
       return res.status(500).json({ 
@@ -28,10 +25,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing endpoint parameter' });
     }
 
-    // Create authorization header
     const auth = Buffer.from(`${JIRA_EMAIL}:${JIRA_TOKEN}`).toString('base64');
     
-    // Make request to Jira
+    // CHANGED: Use jiraRequestBody (everything except endpoint and method)
     const jiraResponse = await fetch(`${JIRA_URL}${endpoint}`, {
       method,
       headers: {
@@ -39,7 +35,7 @@ export default async function handler(req, res) {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
-      body: body ? JSON.stringify(body) : undefined
+      body: Object.keys(jiraRequestBody).length > 0 ? JSON.stringify(jiraRequestBody) : undefined
     });
     
     if (!jiraResponse.ok) {
