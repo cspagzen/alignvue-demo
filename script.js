@@ -1546,9 +1546,26 @@ function showRiskScoreInfoModal() {
                         '</div>' +
                     '</div>' +
         
-                '</div>' +
-            '</div>' +
-        '</div>';
+               // ADD BACK TO PIPELINE BUTTON HERE
+'<div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-primary);">' +
+    (initiative.priority !== 'pipeline' && typeof initiative.priority === 'number' ? 
+        '<button onclick="confirmMoveToPipeline(' + initiative.id + ')" ' +
+                'class="pipeline-return-btn" ' +
+                'title="Move this initiative back to the pipeline">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="m16 16-3 3 3 3"/>' +
+                '<path d="M3 12h14.5a1 1 0 0 1 0 7H13"/>' +
+                '<path d="M3 19h6"/>' +
+                '<path d="M3 5h18"/>' +
+            '</svg>' +
+            'Back to Pipeline' +
+        '</button>'
+    : '') +
+'</div>' +
+
+'</div>' +
+'</div>' +
+'</div>';
     
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');

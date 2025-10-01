@@ -4067,3 +4067,33 @@ input[type="number"] {
 .pipeline-prioritize-icon-btn svg {
     flex-shrink: 0;
 }
+
+/* Move to Pipeline Button */
+.pipeline-return-btn {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.pipeline-return-btn:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.pipeline-return-btn:active {
+    transform: translateY(0);
+}
+
+.pipeline-return-btn svg {
+    flex-shrink: 0;
+}
