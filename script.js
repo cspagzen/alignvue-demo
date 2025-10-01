@@ -1547,7 +1547,7 @@ function showRiskScoreInfoModal() {
                     '</div>' +
         
                // ADD BACK TO PIPELINE BUTTON HERE
-'<div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-primary);">' +
+'<div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-primary);">' +
     (initiative.priority !== 'pipeline' && typeof initiative.priority === 'number' ? 
         '<button onclick="confirmMoveToPipeline(' + initiative.id + ')" ' +
                 'class="pipeline-return-btn" ' +
@@ -1558,7 +1558,7 @@ function showRiskScoreInfoModal() {
                 '<path d="M3 19h6"/>' +
                 '<path d="M3 5h18"/>' +
             '</svg>' +
-            'Back to Pipeline' +
+            'Move Back to Pipeline' +
         '</button>'
     : '') +
 '</div>' +
