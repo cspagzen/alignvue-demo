@@ -2329,15 +2329,29 @@ function updatePipelineCard() {
          onclick="showInitiativeModal(boardData.bullpen.find(init => init && init.id === ${initiative.id}))"
          style="position: relative;">
         <div class="bento-pipeline-item-header">
-    <div class="bento-pipeline-item-title">
+    <div class="bento-pipeline-item-title" 
+         onclick="showInitiativeModal(boardData.bullpen.find(init => init && init.id === ${initiative.id}))"
+         style="cursor: pointer; flex: 1;">
         ${initiative.title}
     </div>
-    <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
-        <span class="bento-type-badge bento-type-${initiative.type}">${initiative.type.toUpperCase()}</span>
-        <div class="bento-pipeline-validation">
-            ${getValidationIcon(initiative.validation)}
-            <span class="bento-validation-text">${getValidationText(initiative.validation)}</span>
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+            <span class="bento-type-badge bento-type-${initiative.type}">${initiative.type.toUpperCase()}</span>
+            <div class="bento-pipeline-validation">
+                ${getValidationIcon(initiative.validation)}
+                <span class="bento-validation-text">${getValidationText(initiative.validation)}</span>
+            </div>
         </div>
+        <button class="pipeline-prioritize-icon-btn" 
+                onclick="event.stopPropagation(); openQuickPrioritizeModal(boardData.bullpen.find(init => init && init.id === ${initiative.id}));"
+                title="Prioritize this initiative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 8 4-4 4 4"/>
+                <path d="M7 4v16"/>
+                <path d="M11 12h10"/>
+                <path d="m17 16 4-4-4-4"/>
+            </svg>
+        </button>
     </div>
 </div>
     </div>
