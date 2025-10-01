@@ -4018,7 +4018,7 @@ async function fetchKeyResultsData() {
             body: JSON.stringify({
                 endpoint: '/rest/api/3/search/jql',
                 method: 'POST',
-                body: {
+                
                     jql: `project = "OKRs" AND issuetype = Task AND parent IS NOT EMPTY ORDER BY key ASC`,
                     fields: [
                         "summary", "key", "parent",
@@ -4029,7 +4029,7 @@ async function fetchKeyResultsData() {
                         "customfield_10163"  // KR Short Names
                     ],
                     maxResults: 100
-                }
+                
             })
         });
         
@@ -4040,7 +4040,6 @@ async function fetchKeyResultsData() {
             body: JSON.stringify({
                 endpoint: '/rest/api/3/search/jql',
                 method: 'POST',
-                body: {
                     jql: `project = "OKRs" AND issuetype = "Value History" ORDER BY created ASC`,
                     fields: [
                         "customfield_10162", // Parent OKR
@@ -4048,7 +4047,6 @@ async function fetchKeyResultsData() {
                         "customfield_10158"  // New Value
                     ],
                     maxResults: 500
-                }
             })
         });
         
@@ -5362,7 +5360,6 @@ async function fetchCompletedInitiativesFromJira() {
             body: JSON.stringify({
                 endpoint: '/rest/api/3/search/jql',
                 method: 'POST',
-                body: {
                     // SIMPLIFIED: Just check if completion date exists (not empty)
                     jql: `project IN (STRAT, EMRG, KTLO) AND issuetype = Epic AND resolved >= -90d ORDER BY resolved DESC`,
                     fields: [
@@ -5378,7 +5375,6 @@ async function fetchCompletedInitiativesFromJira() {
                         "customfield_10066"  // alternatives
                     ],
                     maxResults: 100
-                }
             })
         });
 
@@ -10876,7 +10872,6 @@ async function fetchJiraData() {
         body: JSON.stringify({
             endpoint: '/rest/api/3/search/jql',
             method: 'POST',
-            body: {
                 jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
                 fields: ["*all"]
             }
@@ -10912,12 +10907,12 @@ async function fetchJiraData() {
                     body: JSON.stringify({
                         endpoint: '/rest/api/3/search/jql',
                         method: 'POST',
-                        body: {
+                       
                             jql: parentJQL,
                             fields: ['parent', 'status', 'key', 'summary', 'customfield_10190', 'customfield_10021'],
                             startAt: startAt,
                             maxResults: maxResults
-                        }
+                        
                     })
                 });
 
@@ -10967,11 +10962,11 @@ async function fetchJiraData() {
             body: JSON.stringify({
                 endpoint: '/rest/api/3/search/jql',
                 method: 'POST', 
-                body: {
+               
                     jql: 'project = "OKRs" ORDER BY key ASC',
                     fields: ["*all"],
                     maxResults: 100
-                }
+                
             })
         });
 
@@ -11653,7 +11648,7 @@ async function fetchTeamHealthData() {
             body: JSON.stringify({
                 endpoint: '/rest/api/3/search/jql',
                 method: 'POST',
-                body: {
+                
                     jql: 'project = TH AND issuetype = Team ORDER BY summary ASC',
                     fields: [
                         "summary",
@@ -11667,7 +11662,7 @@ async function fetchTeamHealthData() {
                         "customfield_10262", // Autonomy
                         "customfield_10263"  // Comments
                     ]
-                }
+                
             })
         });
 
