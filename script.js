@@ -10891,33 +10891,37 @@ if (initiatives.issues.length > 0) {
     console.log('Fetching child issue counts for epics...');
     
     try {
-        for (const epic of initiatives.issues) {
-    const countResponse = await fetch('/api/jira', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: '/rest/api/3/search/jql',
-            method: 'POST',
-            jql: `parent = ${epic.key}`,
-            fields: ['key', 'customfield_10190', 'status'],
-            maxResults: 500
-        })
-    });
+        // Fetch all epic child issues in parallel
+        const childPromises = initiatives.issues.map(async (epic) => {
+            const countResponse = await fetch('/api/jira', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endpoint: '/rest/api/3/search/jql',
+                    method: 'POST',
+                    jql: `parent = ${epic.key}`,
+                    fields: ['key', 'customfield_10190', 'status'],
+                    maxResults: 500
+                })
+            });
 
-    if (countResponse.ok) {
-        const countData = await countResponse.json();
-        epic.childIssues = countData.issues || [];
-        epic.childIssueCount = epic.childIssues.length;
+            if (countResponse.ok) {
+                const countData = await countResponse.json();
+                epic.childIssues = countData.issues || [];
+                epic.childIssueCount = epic.childIssues.length;
+                
+                // Alert user if we hit the limit
+                if (epic.childIssueCount === 500 && countData.nextPageToken) {
+                    console.warn(`⚠️ Epic ${epic.key} has 500+ child issues - only showing first 500`);
+                }
+            } else {
+                epic.childIssues = [];
+                epic.childIssueCount = 0;
+            }
+        });
         
-        // Alert user if we hit the limit
-        if (epic.childIssueCount === 500 && countData.nextPageToken) {
-            alert(`Warning: Epic ${epic.key} (${epic.fields?.summary || 'Unknown'}) has more than 500 child issues.\n\nOnly the first 500 are shown. Dashboard metrics may be incomplete for this epic.\n\nConsider breaking this epic into smaller epics in Jira.`);
-        }
-    } else {
-        epic.childIssues = [];
-        epic.childIssueCount = 0;
-    }
-}
+        // Wait for all requests to complete
+        await Promise.all(childPromises);
         
         console.log(`Fetched counts for ${initiatives.issues.length} epics`);
         
