@@ -4016,7 +4016,7 @@ async function fetchKeyResultsData() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                endpoint: '/rest/api/3/search',
+                endpoint: '/rest/api/3/search/jql',
                 method: 'POST',
                 body: {
                     jql: `project = "OKRs" AND issuetype = Task AND parent IS NOT EMPTY ORDER BY key ASC`,
@@ -4038,7 +4038,7 @@ async function fetchKeyResultsData() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                endpoint: '/rest/api/3/search',
+                endpoint: '/rest/api/3/search/jql',
                 method: 'POST',
                 body: {
                     jql: `project = "OKRs" AND issuetype = "Value History" ORDER BY created ASC`,
@@ -5360,7 +5360,7 @@ async function fetchCompletedInitiativesFromJira() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                endpoint: '/rest/api/3/search',
+                endpoint: '/rest/api/3/search/jql',
                 method: 'POST',
                 body: {
                     // SIMPLIFIED: Just check if completion date exists (not empty)
@@ -10874,7 +10874,7 @@ async function fetchJiraData() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            endpoint: '/rest/api/3/search',
+            endpoint: '/rest/api/3/search/jql',
             method: 'POST',
             body: {
                 jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
@@ -10910,7 +10910,7 @@ async function fetchJiraData() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        endpoint: '/rest/api/3/search',
+                        endpoint: '/rest/api/3/search/jql',
                         method: 'POST',
                         body: {
                             jql: parentJQL,
@@ -10965,7 +10965,7 @@ async function fetchJiraData() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                endpoint: '/rest/api/3/search',
+                endpoint: '/rest/api/3/search/jql',
                 method: 'POST', 
                 body: {
                     jql: 'project = "OKRs" ORDER BY key ASC',
@@ -11651,7 +11651,7 @@ async function fetchTeamHealthData() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                endpoint: '/rest/api/3/search',
+                endpoint: '/rest/api/3/search/jql',
                 method: 'POST',
                 body: {
                     jql: 'project = TH AND issuetype = Team ORDER BY summary ASC',
