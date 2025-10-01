@@ -1570,7 +1570,113 @@ function showInitiativeModal(initiative) {
     announceToScreenReader(`Opened details for ${initiative.title} initiative`);
 }
 
-// Confirmation dialog for moving initiative back to pipeline
+
+// REPLACE your existing moveToPipeline function with this version
+async function moveToPipeline(initiativeId) {
+    console.log('=== MOVE TO PIPELINE DEBUG ===');
+    console.log('Initiative ID:', initiativeId);
+    
+    const initiative = boardData.initiatives.find(init => init.id === initiativeId);
+    
+    if (!initiative) {
+        console.error('Initiative not found:', initiativeId);
+        return;
+    }
+    
+    console.log('Found initiative:', initiative.title, 'at priority:', initiative.priority);
+    
+    // Store the old slot for gap closing
+    const oldSlot = initiative.priority;
+    
+    // Close the initiative modal first
+    closeModal();
+    
+    // IMMEDIATELY show the sync overlay BEFORE any data changes
+    console.log('Showing sync overlay...');
+    showSyncIndicator('syncing');
+    
+    // Small delay to ensure overlay is visible
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    try {
+        // 1. Update Jira first - set Matrix Position to null
+        console.log(`Setting Matrix Position to null for ${initiative.jira?.key}...`);
+        await writeToJira(initiative, { priority: null });
+        console.log('âœ… Jira updated successfully');
+        
+        // 2. Update local data
+        console.log('Updating local data structures...');
+        
+        // Remove from initiatives array
+        const index = boardData.initiatives.findIndex(init => init.id === initiative.id);
+        if (index !== -1) {
+            boardData.initiatives.splice(index, 1);
+            console.log('Removed from initiatives array');
+        }
+        
+        // Set priority to "pipeline" 
+        initiative.priority = "pipeline";
+        
+        // Add to bullpen
+        const emptySlot = boardData.bullpen.findIndex(slot => !slot);
+        if (emptySlot !== -1) {
+            boardData.bullpen[emptySlot] = initiative;
+            console.log('Added to bullpen at slot:', emptySlot);
+        } else {
+            boardData.bullpen.push(initiative);
+            console.log('Added to end of bullpen');
+        }
+        
+        // 3. Close the gap by shifting initiatives up
+        console.log('Closing gap by shifting initiatives up from slot:', oldSlot);
+        shiftInitiativesUp(oldSlot);
+        
+        // 4. Batch sync ALL positions to Jira to ensure consistency
+        console.log('Starting batch sync of all positions...');
+        await batchSyncAllPositions();
+        
+        // 5. Refresh the UI
+        console.log('Refreshing UI...');
+        generatePyramid();
+        generateTeamHealthMatrix();
+        refreshMendozaState();
+        updatePipelineCard();
+        
+        // 6. Hide sync overlay and show success
+        showSyncIndicator('success');
+        showSuccessNotification(`âœ… "${initiative.title}" moved to Pipeline`);
+        
+        console.log('=== MOVE TO PIPELINE COMPLETE ===');
+        
+    } catch (error) {
+        console.error('Error moving initiative to pipeline:', error);
+        showSyncIndicator('error');
+        alert(`Failed to move initiative: ${error.message}`);
+    }
+}
+
+// ADD THIS NEW FUNCTION to shift initiatives UP (opposite of shiftInitiativesDown)
+function shiftInitiativesUp(fromSlot) {
+    console.log('Shifting initiatives UP from slot:', fromSlot);
+    
+    // Get all initiatives ABOVE the removed slot (higher priority numbers)
+    const toShift = boardData.initiatives.filter(init => 
+        typeof init.priority === 'number' && init.priority > fromSlot
+    );
+    
+    console.log(`Found ${toShift.length} initiatives to shift up`);
+    
+    // Shift each one up by 1 (decrease priority number)
+    toShift.forEach(init => {
+        const oldPriority = init.priority;
+        init.priority--;
+        console.log(`  Shifted ${init.title}: ${oldPriority} â†' ${init.priority}`);
+    });
+    
+    console.log('Gap closing complete');
+}
+
+// MAKE SURE you also have this helper function for the confirmation
 function confirmMoveToPipeline(initiativeId) {
     const initiative = boardData.initiatives.find(init => init.id === initiativeId);
     
@@ -1592,63 +1698,6 @@ function confirmMoveToPipeline(initiativeId) {
     if (confirmed) {
         moveToPipeline(initiativeId);
     }
-}
-
-// Move initiative back to pipeline
-function moveToPipeline(initiativeId) {
-    const initiative = boardData.initiatives.find(init => init.id === initiativeId);
-    
-    if (!initiative) {
-        console.error('Initiative not found:', initiativeId);
-        return;
-    }
-    
-    const oldPriority = initiative.priority;
-    
-    console.log(`Moving initiative ${initiative.title} from slot ${oldPriority} to pipeline`);
-    
-    // 1. Remove from initiatives array
-    const index = boardData.initiatives.findIndex(init => init.id === initiativeId);
-    if (index !== -1) {
-        boardData.initiatives.splice(index, 1);
-    }
-    
-    // 2. Update initiative priority to pipeline
-    initiative.priority = 'pipeline';
-    
-    // 3. Add to bullpen
-    const emptyBullpenSlot = boardData.bullpen.findIndex(slot => !slot);
-    if (emptyBullpenSlot !== -1) {
-        boardData.bullpen[emptyBullpenSlot] = initiative;
-    } else {
-        boardData.bullpen.push(initiative);
-    }
-    
-    // 4. Close the gap - shift all initiatives above the removed slot UP by 1
-    boardData.initiatives.forEach(init => {
-        if (init.priority > oldPriority) {
-            init.priority--;
-            // Queue Jira update for each shifted initiative
-            queueJiraUpdate(init, { priority: init.priority });
-        }
-    });
-    
-    // 5. Sync the moved initiative to Jira (set Matrix Position to null/0)
-    queueJiraUpdate(initiative, { priority: 0 });
-    
-    // 6. Show sync overlay
-    showSyncOverlay('Moving to Pipeline', 'Updating Jira and closing gaps...');
-    
-    // 7. Refresh UI after brief delay
-    setTimeout(() => {
-        generatePyramid();
-        generateTeamHealthMatrix();
-        updatePipelineCard();
-        closeModal();
-        hideSyncOverlay();
-    }, 1500);
-    
-    console.log(`Successfully moved ${initiative.title} to pipeline. Gap at slot ${oldPriority} closed.`);
 }
 
 function showRiskScoreInfoModalForInitiative(initiativeId) {
