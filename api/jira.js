@@ -8,7 +8,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // CHANGED: Extract endpoint and method, keep everything else as the body
     const { endpoint, method = 'GET', ...jiraRequestBody } = req.body || {};
     
     const JIRA_URL = process.env.JIRA_URL;
@@ -27,15 +26,34 @@ export default async function handler(req, res) {
 
     const auth = Buffer.from(`${JIRA_EMAIL}:${JIRA_TOKEN}`).toString('base64');
     
-    // CHANGED: Use jiraRequestBody (everything except endpoint and method)
-    const jiraResponse = await fetch(`${JIRA_URL}${endpoint}`, {
-      method,
+    // Special handling for search/jql endpoint - convert to GET with query params
+    let finalUrl = `${JIRA_URL}${endpoint}`;
+    let finalMethod = method;
+    let finalBody = Object.keys(jiraRequestBody).length > 0 ? JSON.stringify(jiraRequestBody) : undefined;
+    
+    if (endpoint.includes('/search') && method === 'POST') {
+      // Convert POST /rest/api/3/search to GET /rest/api/3/search/jql with query params
+      const { jql, fields, startAt, maxResults } = jiraRequestBody;
+      const params = new URLSearchParams();
+      
+      if (jql) params.append('jql', jql);
+      if (fields && Array.isArray(fields)) params.append('fields', fields.join(','));
+      if (startAt !== undefined) params.append('startAt', startAt);
+      if (maxResults !== undefined) params.append('maxResults', maxResults);
+      
+      finalUrl = `${JIRA_URL}/rest/api/3/search/jql?${params.toString()}`;
+      finalMethod = 'GET';
+      finalBody = undefined;
+    }
+    
+    const jiraResponse = await fetch(finalUrl, {
+      method: finalMethod,
       headers: {
         'Authorization': `Basic ${auth}`,
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
-      body: Object.keys(jiraRequestBody).length > 0 ? JSON.stringify(jiraRequestBody) : undefined
+      body: finalBody
     });
     
     if (!jiraResponse.ok) {
