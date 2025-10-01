@@ -1570,6 +1570,30 @@ function showInitiativeModal(initiative) {
     announceToScreenReader(`Opened details for ${initiative.title} initiative`);
 }
 
+// Confirmation dialog for moving initiative back to pipeline
+function confirmMoveToPipeline(initiativeId) {
+    const initiative = boardData.initiatives.find(init => init.id === initiativeId);
+    
+    if (!initiative) {
+        console.error('Initiative not found:', initiativeId);
+        return;
+    }
+    
+    const confirmed = confirm(
+        `Move "${initiative.title}" back to the pipeline?\n\n` +
+        `This will:\n` +
+        `• Remove it from priority slot ${initiative.priority}\n` +
+        `• Move it back to the Initiative Pipeline\n` +
+        `• Close any gaps in the priority matrix\n` +
+        `• Sync the change to Jira\n\n` +
+        `Continue?`
+    );
+    
+    if (confirmed) {
+        moveToPipeline(initiativeId);
+    }
+}
+
 function showRiskScoreInfoModalForInitiative(initiativeId) {
     const initiative = boardData.initiatives.find(i => i.id === initiativeId);
     if (!initiative) return;
