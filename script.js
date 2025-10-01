@@ -1594,6 +1594,63 @@ function confirmMoveToPipeline(initiativeId) {
     }
 }
 
+// Move initiative back to pipeline
+function moveToPipeline(initiativeId) {
+    const initiative = boardData.initiatives.find(init => init.id === initiativeId);
+    
+    if (!initiative) {
+        console.error('Initiative not found:', initiativeId);
+        return;
+    }
+    
+    const oldPriority = initiative.priority;
+    
+    console.log(`Moving initiative ${initiative.title} from slot ${oldPriority} to pipeline`);
+    
+    // 1. Remove from initiatives array
+    const index = boardData.initiatives.findIndex(init => init.id === initiativeId);
+    if (index !== -1) {
+        boardData.initiatives.splice(index, 1);
+    }
+    
+    // 2. Update initiative priority to pipeline
+    initiative.priority = 'pipeline';
+    
+    // 3. Add to bullpen
+    const emptyBullpenSlot = boardData.bullpen.findIndex(slot => !slot);
+    if (emptyBullpenSlot !== -1) {
+        boardData.bullpen[emptyBullpenSlot] = initiative;
+    } else {
+        boardData.bullpen.push(initiative);
+    }
+    
+    // 4. Close the gap - shift all initiatives above the removed slot UP by 1
+    boardData.initiatives.forEach(init => {
+        if (init.priority > oldPriority) {
+            init.priority--;
+            // Queue Jira update for each shifted initiative
+            queueJiraUpdate(init, { priority: init.priority });
+        }
+    });
+    
+    // 5. Sync the moved initiative to Jira (set Matrix Position to null/0)
+    queueJiraUpdate(initiative, { priority: 0 });
+    
+    // 6. Show sync overlay
+    showSyncOverlay('Moving to Pipeline', 'Updating Jira and closing gaps...');
+    
+    // 7. Refresh UI after brief delay
+    setTimeout(() => {
+        generatePyramid();
+        generateTeamHealthMatrix();
+        updatePipelineCard();
+        closeModal();
+        hideSyncOverlay();
+    }, 1500);
+    
+    console.log(`Successfully moved ${initiative.title} to pipeline. Gap at slot ${oldPriority} closed.`);
+}
+
 function showRiskScoreInfoModalForInitiative(initiativeId) {
     const initiative = boardData.initiatives.find(i => i.id === initiativeId);
     if (!initiative) return;
