@@ -10874,7 +10874,7 @@ async function fetchJiraData() {
             method: 'POST',
                 jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
                 fields: ["*all"]
-            }
+            
         })
     });
 
