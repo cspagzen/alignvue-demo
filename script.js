@@ -10898,7 +10898,7 @@ if (initiatives.issues.length > 0) {
                 body: JSON.stringify({
                     endpoint: '/rest/api/3/search/jql',
                     method: 'POST',
-                    jql: `parent = "${epic.key}"`,
+                    jql: `parent = ${epic.key}`,
                     fields: ['key'],
                     maxResults: 1
                 })
