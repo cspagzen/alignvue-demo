@@ -10892,27 +10892,44 @@ if (initiatives.issues.length > 0) {
     
     try {
         for (const epic of initiatives.issues) {
-            const countResponse = await fetch('/api/jira', {
+    let allChildIssues = [];
+    let startAt = 0;
+    const batchSize = 100;
+    let hasMore = true;
+    let safetyCounter = 0;
+    const maxPages = 20; // Safety: max 2000 issues per epic
+    
+    while (hasMore && safetyCounter < maxPages) {
+        const countResponse = await fetch('/api/jira', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: '/rest/api/3/search/jql',
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    endpoint: '/rest/api/3/search/jql',
-                    method: 'POST',
-                    jql: `parent = ${epic.key}`,
-                    fields: ['key'],
-                    maxResults: 1
-                })
-            });
+                jql: `parent = ${epic.key}`,
+                fields: ['key', 'customfield_10190', 'status'],
+                startAt: startAt,
+                maxResults: batchSize
+            })
+        });
 
-            if (countResponse.ok) {
-                const countData = await countResponse.json();
-                epic.childIssues = [];
-                epic.childIssueCount = countData.total || 0;
-            } else {
-                epic.childIssues = [];
-                epic.childIssueCount = 0;
-            }
+        if (countResponse.ok) {
+            const countData = await countResponse.json();
+            const issues = countData.issues || [];
+            allChildIssues = allChildIssues.concat(issues);
+            
+            // Check if there are more results
+            hasMore = issues.length === batchSize;
+            startAt += batchSize;
+            safetyCounter++;
+        } else {
+            hasMore = false;
         }
+    }
+    
+    epic.childIssues = allChildIssues;
+    epic.childIssueCount = allChildIssues.length;
+}
         
         console.log(`Fetched counts for ${initiatives.issues.length} epics`);
         
