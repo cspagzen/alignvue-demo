@@ -1370,7 +1370,7 @@ function showRiskScoreInfoModal() {
 }
 
 
-        function showInitiativeModal(initiative) {
+function showInitiativeModal(initiative) {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
@@ -1419,130 +1419,104 @@ function showRiskScoreInfoModal() {
                         '</div>' +
                         
                         // Related Key Result
-'<div class="mt-4 p-4 rounded-lg" style="background: var(--bg-tertiary); border: 2px solid var(--accent-purple);">' +
-    '<div class="flex items-center gap-2 mb-3">' +
-        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
-        '<div class="text-sm font-bold" style="color: var(--accent-purple);">Related Key Result</div>' +
-    '</div>' +
-    '<div class="text-sm leading-relaxed" style="color: var(--text-primary);">' +
-        (initiative.canvas ? initiative.canvas.keyResult : 'Launch 3 new strategic product capabilities') +
-    '</div>' +
-'</div>' +
-
-// ADD BUTTON HERE IN LEFT COLUMN
-(initiative.priority !== 'pipeline' && typeof initiative.priority === 'number' ? 
-    '<div style="margin-top: 1rem;">' +
-        '<button onclick="confirmMoveToPipeline(' + initiative.id + ')" ' +
-                'class="pipeline-return-btn" ' +
-                'title="Move this initiative back to the pipeline">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                '<path d="m16 16-3 3 3 3"/>' +
-                '<path d="M3 12h14.5a1 1 0 0 1 0 7H13"/>' +
-                '<path d="M3 19h6"/>' +
-                '<path d="M3 5h18"/>' +
-            '</svg>' +
-            'Move Back to Pipeline' +
-        '</button>' +
-    '</div>'
-: '') +
-
-'</div>' +  // Close left column
-
-// Right Column - Execution Details
-'<div>' +
-    '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                            '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>' +
-                            '<line x1="16" y1="2" x2="16" y2="6"/>' +
-                            '<line x1="8" y1="2" x2="8" y2="6"/>' +
-                            '<line x1="3" y1="10" x2="21" y2="10"/>' +
-                        '</svg>' +
+                        '<div class="mt-4 p-4 rounded-lg" style="background: var(--bg-tertiary); border: 2px solid var(--accent-purple);">' +
+                            '<div class="flex items-center gap-2 mb-3">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
+                                '<div class="text-sm font-bold" style="color: var(--accent-purple);">Related Key Result</div>' +
+                            '</div>' +
+                            '<div class="text-sm leading-relaxed" style="color: var(--text-primary);">' +
+                                (initiative.canvas ? initiative.canvas.keyResult : 'Launch 3 new strategic product capabilities') +
+                            '</div>' +
+                        '</div>' +
+                        
+                        // Move Back to Pipeline Button
+                        (initiative.priority !== 'pipeline' && typeof initiative.priority === 'number' ? 
+                            '<div style="margin-top: 1rem;">' +
+                                '<button onclick="confirmMoveToPipeline(' + initiative.id + ')" ' +
+                                        'class="pipeline-return-btn" ' +
+                                        'title="Move this initiative back to the pipeline">' +
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                        '<path d="m16 16-3 3 3 3"/>' +
+                                        '<path d="M3 12h14.5a1 1 0 0 1 0 7H13"/>' +
+                                        '<path d="M3 19h6"/>' +
+                                        '<path d="M3 5h18"/>' +
+                                    '</svg>' +
+                                    'Move Back to Pipeline' +
+                                '</button>' +
+                            '</div>'
+                        : '') +
+                    '</div>' +
+                '</div>' +
+                
+                // Right Column - Execution Details
+                '<div>' +
+                    '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
                         'Execution Details' +
                     '</h3>' +
                     
                     '<div class="space-y-4">' +
-                        // Jira Analytics with compact View button
-                        '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-green);">' +
-                            '<div class="text-sm font-bold mb-3 flex items-center justify-between" style="color: var(--accent-green);">' +
-                                '<span class="flex items-center gap-2">' +
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                        '<path d="M3 6h18"/>' +
-                                        '<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>' +
-                                        '<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>' +
-                                        '<line x1="10" x2="10" y1="11" y2="17"/>' +
-                                        '<line x1="14" x2="14" y1="11" y2="17"/>' +
-                                    '</svg>' +
-                                    'Jira Analytics' +
-                                '</span>' +
-                                // Small inline button in the header
-                                (initiative.jira && initiative.jira.key ? 
-                                    '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1" style="background: #0052CC; color: white;" onmouseover="this.style.background=\'#003d99\'" onmouseout="this.style.background=\'#0052CC\'">' +
-                                        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                            '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>' +
-                                            '<polyline points="15,3 21,3 21,9"/>' +
-                                            '<line x1="10" x2="21" y1="14" y2="3"/>' +
-                                        '</svg>' +
-                                        'View' +
-                                    '</button>' 
-                                    : '') +
+                        // Jira Analytics Box
+                        '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 2px solid var(--accent-green);">' +
+                            '<div class="flex items-center justify-between mb-4">' +
+                                '<div class="flex items-center gap-2">' +
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>' +
+                                    '<div class="text-sm font-bold" style="color: var(--accent-green);">Jira Analytics</div>' +
+                                '</div>' +
+                                '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="px-3 py-1.5 rounded text-xs font-semibold" style="background: var(--accent-blue); color: white;">View</button>' +
                             '</div>' +
-                            '<div class="grid gap-3" style="grid-template-columns: 1fr 1fr;">' +
+                            '<div class="grid grid-cols-2 gap-4 text-sm">' +
                                 '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Epic Key</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.key : 'N/A') + '</div>' +
+                                    '<div class="text-xs mb-1" style="color: var(--text-secondary);">Epic Key</div>' +
+                                    '<div class="font-bold" style="color: var(--text-primary);">' + initiative.jira.key + '</div>' +
                                 '</div>' +
                                 '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Status</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.status : 'N/A') + '</div>' +
+                                    '<div class="text-xs mb-1" style="color: var(--text-secondary);">Status</div>' +
+                                    '<div class="font-bold" style="color: var(--text-primary);">In Progress</div>' +
                                 '</div>' +
                                 '<div>' +
-    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Risk Score</div>' +
-    '<div class="text-sm font-bold flex items-center gap-2">' +
-        '<span style="color: ' + getRiskLevelColor(analyzeInitiativeRisk(initiative).riskScore) + ';">' +
-            analyzeInitiativeRisk(initiative).riskScore + '/50' +
-        '</span>' +
-        '<button onclick="showRiskScoreInfoModalForInitiative(' + initiative.id + ')" ' +
-                'class="w-4 h-4 rounded-full flex items-center justify-center hover:bg-opacity-20 transition-colors" ' +
-                'style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);" ' +
-                'title="How is Risk Score calculated?">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" ' +
-                 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                '<circle cx="12" cy="12" r="10"/>' +
-                '<path d="M12 16v-4"/>' +
-                '<path d="M12 8h.01"/>' +
-            '</svg>' +
-        '</button>' +
-    '</div>' +
-'</div>' +
+                                    '<div class="text-xs mb-1" style="color: var(--text-secondary);">Risk Score</div>' +
+                                    '<div class="flex items-center gap-2">' +
+                                        '<span class="font-bold text-lg" style="color: var(--accent-orange);">' + (initiative.riskScore || analyzeInitiativeRisk(initiative).riskScore) + '/50</span>' +
+                                        '<button onclick="showRiskScoreInfoModalForInitiative(' + initiative.id + ')" style="background: none; border: none; padding: 0; cursor: pointer;">' +
+                                            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
+                                        '</button>' +
+                                    '</div>' +
+                                '</div>' +
                                 '<div>' +
-                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Updated</div>' +
-                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? new Date(initiative.jira.updated).toLocaleDateString() : 'N/A') + '</div>' +
+                                    '<div class="text-xs mb-1" style="color: var(--text-secondary);">Updated</div>' +
+                                    '<div class="font-bold" style="color: var(--text-primary);">9/2/2025</div>' +
                                 '</div>' +
                             '</div>' +
                         '</div>' +
                         
                         // Teams Section
                         '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                            '<div class="text-sm font-bold mb-3 flex items-center gap-2" style="color: var(--text-primary);">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                    '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>' +
-                                    '<circle cx="9" cy="7" r="4"/>' +
-                                    '<path d="M22 21v-2a4 4 0 0 0-3-3.87"/>' +
-                                    '<path d="M16 3.13a4 4 0 0 1 0 7.75"/>' +
-                                '</svg>' +
-                                'Teams (' + initiative.teams.length + ')' +
+                            '<div class="flex items-center gap-2 mb-3">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="m16 3.13a4 4 0 0 1 0 7.75"/></svg>' +
+                                '<div class="text-sm font-bold" style="color: var(--text-primary);">Teams (' + initiative.teams.length + ')</div>' +
                             '</div>' +
-                            '<div class="grid gap-2" style="grid-template-columns: 1fr;">' +
+                            '<div class="space-y-2">' +
                                 initiative.teams.map(teamName => {
                                     const teamData = boardData.teams[teamName];
-                                    const pillStyle = getTeamHealthPillStyle(teamData);
-                                    const healthIcon = getHealthIcon(teamData);
-                                    return '<button class="text-xs px-3 py-2 rounded cursor-pointer border flex items-center justify-between ' + pillStyle + '" onclick="closeModal(); showTeamModal(\'' + teamName + '\', boardData.teams[\'' + teamName + '\'])" aria-label="View ' + teamName + ' team details">' + 
+                                    const healthLevel = teamData ? getTeamOverallHealth(teamData) : 'UNKNOWN';
+                                    const healthColor = healthLevel === 'HEALTHY' ? 'var(--accent-green)' :
+                                                       healthLevel === 'LOW RISK' ? 'var(--accent-blue)' :
+                                                       healthLevel === 'HIGH RISK' ? 'var(--accent-orange)' :
+                                                       healthLevel === 'CRITICAL' ? 'var(--accent-red)' : 'var(--text-tertiary)';
+                                    const healthIcon = healthLevel === 'HEALTHY' ? 'âœ"' :
+                                                      healthLevel === 'LOW RISK' ? 'âš ' :
+                                                      healthLevel === 'HIGH RISK' ? 'â š ' :
+                                                      healthLevel === 'CRITICAL' ? 'âš ï¸' : '?';
+                                    
+                                    return '<button onclick="showTeamHealthModal(\'' + teamName + '\', ' + initiative.id + ')" ' +
+                                           'class="w-full text-left px-3 py-2 rounded transition-all duration-200" ' +
+                                           'style="background: rgba(30, 27, 75, 0.6); border: 1px solid ' + healthColor + '; color: var(--text-primary); display: flex; align-items: center; justify-content: space-between;">' +
                                            '<span class="flex items-center gap-2">' +
                                                '<span class="flex-shrink-0">' + healthIcon + '</span>' +
                                                '<span>' + teamName + '</span>' +
                                            '</span>' +
-                                           '<span class="text-xs opacity-75">View Details →</span>' +
+                                           '<span class="text-xs opacity-75">View Details â†'</span>' +
                                            '</button>';
                                 }).join('') +
                             '</div>' +
@@ -1560,10 +1534,9 @@ function showRiskScoreInfoModal() {
                             '</div>' +
                         '</div>' +
                     '</div>' +
-
-'</div>' +
-'</div>' +
-'</div>';
+                '</div>' +
+            '</div>' +
+        '</div>';
     
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
