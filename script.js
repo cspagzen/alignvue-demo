@@ -1370,7 +1370,7 @@ function showRiskScoreInfoModal() {
 }
 
 
-function showInitiativeModal(initiative) {
+        function showInitiativeModal(initiative) {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
@@ -1430,11 +1430,10 @@ function showInitiativeModal(initiative) {
                             '</div>' +
                             '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.keyResult : 'N/A') + '</p>' +
                         '</div>' +
-                        
                     '</div>' +
                 '</div>' +
                 
-                // Right Column - Execution Details  
+                // Right Column - Execution Details
                 '<div>' +
                     '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
                         '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -1461,59 +1460,69 @@ function showInitiativeModal(initiative) {
                                     'Jira Analytics' +
                                 '</span>' +
                                 // Small inline button in the header
-                                (initiative.jira && initiative.jira.key ?
-                                    '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="text-xs px-3 py-1 rounded font-medium" style="background: var(--accent-blue); color: white; border: none; cursor: pointer;">View</button>'
-                                : '') +
+                                (initiative.jira && initiative.jira.key ? 
+                                    '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1" style="background: #0052CC; color: white;" onmouseover="this.style.background=\'#003d99\'" onmouseout="this.style.background=\'#0052CC\'">' +
+                                        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                            '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>' +
+                                            '<polyline points="15,3 21,3 21,9"/>' +
+                                            '<line x1="10" x2="21" y1="14" y2="3"/>' +
+                                        '</svg>' +
+                                        'View' +
+                                    '</button>' 
+                                    : '') +
                             '</div>' +
-                            '<div class="grid grid-cols-2 gap-3 text-sm">' +
+                            '<div class="grid gap-3" style="grid-template-columns: 1fr 1fr;">' +
                                 '<div>' +
-                                    '<div class="text-xs mb-1" style="color: var(--text-secondary);">Epic Key</div>' +
-                                    '<div class="font-semibold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.key : 'N/A') + '</div>' +
+                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Epic Key</div>' +
+                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.key : 'N/A') + '</div>' +
                                 '</div>' +
                                 '<div>' +
-                                    '<div class="text-xs mb-1" style="color: var(--text-secondary);">Status</div>' +
-                                    '<div class="font-semibold" style="color: var(--text-primary);">In Progress</div>' +
+                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Status</div>' +
+                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.status : 'N/A') + '</div>' +
                                 '</div>' +
                                 '<div>' +
-                                    '<div class="text-xs mb-1" style="color: var(--text-secondary);">Risk Score</div>' +
-                                    '<div class="flex items-center gap-2">' +
-                                        '<span class="font-bold text-lg" style="color: var(--accent-orange);">' + (initiative.riskScore || (typeof analyzeInitiativeRisk !== 'undefined' ? analyzeInitiativeRisk(initiative).riskScore : 0)) + '/50</span>' +
-                                        (typeof showRiskScoreInfoModalForInitiative !== 'undefined' ? 
-                                            '<button onclick="showRiskScoreInfoModalForInitiative(' + initiative.id + ')" style="background: none; border: none; padding: 0; cursor: pointer;">' +
-                                                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
-                                            '</button>'
-                                        : '') +
-                                    '</div>' +
-                                '</div>' +
+    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Risk Score</div>' +
+    '<div class="text-sm font-bold flex items-center gap-2">' +
+        '<span style="color: ' + getRiskLevelColor(analyzeInitiativeRisk(initiative).riskScore) + ';">' +
+            analyzeInitiativeRisk(initiative).riskScore + '/50' +
+        '</span>' +
+        '<button onclick="showRiskScoreInfoModalForInitiative(' + initiative.id + ')" ' +
+                'class="w-4 h-4 rounded-full flex items-center justify-center hover:bg-opacity-20 transition-colors" ' +
+                'style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);" ' +
+                'title="How is Risk Score calculated?">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" ' +
+                 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<circle cx="12" cy="12" r="10"/>' +
+                '<path d="M12 16v-4"/>' +
+                '<path d="M12 8h.01"/>' +
+            '</svg>' +
+        '</button>' +
+    '</div>' +
+'</div>' +
                                 '<div>' +
-                                    '<div class="text-xs mb-1" style="color: var(--text-secondary);">Updated</div>' +
-                                    '<div class="font-semibold" style="color: var(--text-primary);">9/2/2025</div>' +
+                                    '<div class="text-xs font-medium" style="color: var(--text-secondary);">Updated</div>' +
+                                    '<div class="text-sm font-bold" style="color: var(--text-primary);">' + (initiative.jira ? new Date(initiative.jira.updated).toLocaleDateString() : 'N/A') + '</div>' +
                                 '</div>' +
                             '</div>' +
                         '</div>' +
                         
                         // Teams Section
                         '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                            '<div class="flex items-center gap-2 mb-3">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="m16 3.13a4 4 0 0 1 0 7.75"/></svg>' +
-                                '<div class="text-sm font-bold" style="color: var(--text-primary);">Teams (' + initiative.teams.length + ')</div>' +
+                            '<div class="text-sm font-bold mb-3 flex items-center gap-2" style="color: var(--text-primary);">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                    '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>' +
+                                    '<circle cx="9" cy="7" r="4"/>' +
+                                    '<path d="M22 21v-2a4 4 0 0 0-3-3.87"/>' +
+                                    '<path d="M16 3.13a4 4 0 0 1 0 7.75"/>' +
+                                '</svg>' +
+                                'Teams (' + initiative.teams.length + ')' +
                             '</div>' +
-                            '<div class="space-y-2">' +
+                            '<div class="grid gap-2" style="grid-template-columns: 1fr;">' +
                                 initiative.teams.map(teamName => {
                                     const teamData = boardData.teams[teamName];
-                                    const healthLevel = teamData ? getTeamOverallHealth(teamData) : 'UNKNOWN';
-                                    const healthColor = healthLevel === 'HEALTHY' ? 'var(--accent-green)' :
-                                                       healthLevel === 'LOW RISK' ? 'var(--accent-blue)' :
-                                                       healthLevel === 'HIGH RISK' ? 'var(--accent-orange)' :
-                                                       healthLevel === 'CRITICAL' ? 'var(--accent-red)' : 'var(--text-tertiary)';
-                                    const healthIcon = healthLevel === 'HEALTHY' ? '✓' :
-                                                      healthLevel === 'LOW RISK' ? '⚠' :
-                                                      healthLevel === 'HIGH RISK' ? '⚠' :
-                                                      healthLevel === 'CRITICAL' ? '⚠️' : '?';
-                                    
-                                    return '<button onclick="showTeamHealthModal(\'' + teamName + '\', ' + initiative.id + ')" ' +
-                                           'class="w-full text-left px-3 py-2 rounded transition-all duration-200" ' +
-                                           'style="background: rgba(30, 27, 75, 0.6); border: 1px solid ' + healthColor + '; color: var(--text-primary); display: flex; align-items: center; justify-content: space-between;">' +
+                                    const pillStyle = getTeamHealthPillStyle(teamData);
+                                    const healthIcon = getHealthIcon(teamData);
+                                    return '<button class="text-xs px-3 py-2 rounded cursor-pointer border flex items-center justify-between ' + pillStyle + '" onclick="closeModal(); showTeamModal(\'' + teamName + '\', boardData.teams[\'' + teamName + '\'])" aria-label="View ' + teamName + ' team details">' + 
                                            '<span class="flex items-center gap-2">' +
                                                '<span class="flex-shrink-0">' + healthIcon + '</span>' +
                                                '<span>' + teamName + '</span>' +
@@ -2317,34 +2326,20 @@ function updatePipelineCard() {
     content.innerHTML = bullpenItems.map(initiative => `
     <div class="bento-pipeline-item validation-${initiative.validation}" 
          data-initiative-id="${initiative.id}"
+         onclick="showInitiativeModal(boardData.bullpen.find(init => init && init.id === ${initiative.id}))"
          style="position: relative;">
         <div class="bento-pipeline-item-header">
-            <div class="bento-pipeline-item-title" 
-                 onclick="showInitiativeModal(boardData.bullpen.find(init => init && init.id === ${initiative.id}))"
-                 style="cursor: pointer; flex: 1;">
-                ${initiative.title}
-            </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
-                    <span class="bento-type-badge bento-type-${initiative.type}">${initiative.type.toUpperCase()}</span>
-                    <div class="bento-pipeline-validation">
-                        ${getValidationIcon(initiative.validation)}
-                        <span class="bento-validation-text">${getValidationText(initiative.validation)}</span>
-                    </div>
-                </div>
-                <button class="pipeline-prioritize-icon-btn" 
-        onclick="event.stopPropagation(); openQuickPrioritizeModal(boardData.bullpen.find(init => init && init.id === ${initiative.id}));"
-        title="Prioritize this initiative">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m3 8 4-4 4 4"/>
-        <path d="M7 4v16"/>
-        <path d="M11 12h4"/>
-        <path d="M11 16h7"/>
-        <path d="M11 20h10"/>
-    </svg>
-</button>
-            </div>
+    <div class="bento-pipeline-item-title">
+        ${initiative.title}
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+        <span class="bento-type-badge bento-type-${initiative.type}">${initiative.type.toUpperCase()}</span>
+        <div class="bento-pipeline-validation">
+            ${getValidationIcon(initiative.validation)}
+            <span class="bento-validation-text">${getValidationText(initiative.validation)}</span>
         </div>
+    </div>
+</div>
     </div>
 `).join('');
     
@@ -9508,216 +9503,6 @@ function decrementKPIValue() {
     const currentValue = parseInt(input.value) || 0;
     const step = parseInt(input.step) || 1;
     input.value = Math.max(0, currentValue - step);
-}
-
-// Quick Prioritize Modal Functions
-function openQuickPrioritizeModal(initiative) {
-    console.log('Opening quick prioritize modal for:', initiative);
-    
-    const modal = document.getElementById('quick-prioritize-modal');
-    const nameElement = document.getElementById('prioritize-initiative-name');
-    const gridElement = document.getElementById('quick-prioritize-grid');
-    
-    if (!modal || !nameElement || !gridElement) {
-        console.error('Modal elements not found!');
-        return;
-    }
-    
-    nameElement.textContent = initiative.title;
-    
-    // Render the priority grid
-    renderPriorityGrid(gridElement);
-    
-    // Show the modal
-    modal.style.display = 'flex';
-    modal.style.opacity = '1';
-    modal.style.visibility = 'visible';
-    modal.style.position = 'fixed';
-    modal.style.top = '0';
-    modal.style.left = '0';
-    modal.style.right = '0';
-    modal.style.bottom = '0';
-    modal.style.zIndex = '10000';
-    modal.style.alignItems = 'center';
-    modal.style.justifyContent = 'center';
-    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.75)';
-    
-    // Store the current initiative for when a slot is clicked
-    modal.dataset.initiativeId = initiative.id;
-}
-
-function renderPriorityGrid(gridElement) {
-    gridElement.innerHTML = '';
-    
-    const rowConfigs = [
-        { row: 1, count: 1, label: 'NOW', color: '#dc2626' },
-        { row: 2, count: 2, label: 'NOW', color: '#dc2626' },
-        { row: 3, count: 3, label: 'NOW', color: '#dc2626' },
-        { row: 4, count: 4, label: 'NEXT', color: '#ea580c' },
-        { row: 5, count: 5, label: 'NEXT', color: '#ea580c' },
-        { row: 6, count: 6, label: 'LATER', color: '#d97706' },
-        { row: 7, count: 7, label: 'LATER', color: '#d97706' },
-        { row: 8, count: 8, label: 'LATER', color: '#6b7280' }
-    ];
-    
-    rowConfigs.forEach(config => {
-        const rowContainer = document.createElement('div');
-        rowContainer.className = 'priority-row-container';
-        
-        // Show label only for first row of each section
-        const showLabel = (config.row === 1 || config.row === 4 || config.row === 6);
-        if (showLabel) {
-            const label = document.createElement('div');
-            label.className = `priority-row-label row-${config.label.toLowerCase()}`;
-            label.textContent = config.label;
-            rowContainer.appendChild(label);
-        } else {
-            const spacer = document.createElement('div');
-            spacer.style.width = '60px';
-            rowContainer.appendChild(spacer);
-        }
-        
-        // Create slots container
-        const slotsContainer = document.createElement('div');
-        slotsContainer.className = 'priority-row-slots';
-        
-        // Create slots from right to left (col 1 = rightmost = lowest slot number in row)
-        for (let col = config.count; col >= 1; col--) {
-    const slotNumber = getSlotFromRowCol(config.row, col);
-    const slot = createPrioritySlot(slotNumber);
-    slotsContainer.appendChild(slot);
-        }
-        
-        rowContainer.appendChild(slotsContainer);
-        
-        // Row number circle
-        const rowNumber = document.createElement('div');
-        rowNumber.className = 'priority-row-number';
-        rowNumber.style.background = config.color;
-        rowNumber.textContent = config.row;
-        rowContainer.appendChild(rowNumber);
-        
-        gridElement.appendChild(rowContainer);
-    });
-}
-
-function createPrioritySlot(slotNumber) {
-    const slot = document.createElement('div');
-    slot.className = 'priority-slot';
-    
-    // Find if this slot has an initiative
-    const existingInitiative = boardData.initiatives.find(init => init.priority === slotNumber);
-    
-    if (existingInitiative) {
-        slot.classList.add('occupied');
-        slot.innerHTML = `
-            <div class="slot-number">${slotNumber}</div>
-            <div class="slot-initiative-title">${existingInitiative.title}</div>
-        `;
-    } else {
-        slot.innerHTML = `
-            <div class="slot-number">${slotNumber}</div>
-            <div class="slot-empty-text">Empty</div>
-        `;
-    }
-    
-    slot.onclick = () => handleSlotClick(slotNumber);
-    
-    return slot;
-}
-
-function handleSlotClick(slotNumber) {
-    console.log('Slot clicked:', slotNumber);
-    
-    const modal = document.getElementById('quick-prioritize-modal');
-    const initiativeId = parseInt(modal.dataset.initiativeId);
-    
-    // Find the initiative in the bullpen
-    const initiative = boardData.bullpen.find(init => init && init.id === initiativeId);
-    
-    if (!initiative) {
-        console.error('Initiative not found in bullpen:', initiativeId);
-        alert('Error: Initiative not found');
-        return;
-    }
-    
-    console.log('Moving initiative to slot:', slotNumber, initiative);
-    
-    // Close the modal first
-    closeQuickPrioritizeModal();
-    
-    // Use your existing function to move from bullpen to matrix
-    handleBullpenToMatrix(initiative, slotNumber);
-    
-    // Refresh the board and other views
-    generatePyramid();
-    generateTeamHealthMatrix();
-    refreshMendozaState();
-    updatePipelineCard(); // This will update the pipeline count
-    
-    // Show success notification
-    showSuccessNotification(`✅ "${initiative.title}" moved to Priority ${slotNumber}`);
-}
-
-function showSuccessNotification(message) {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-        z-index: 10001;
-        font-weight: 600;
-        font-size: 0.875rem;
-        animation: slideIn 0.3s ease;
-    `;
-    notification.textContent = message;
-    
-    // Add animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-    
-    document.body.appendChild(notification);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 300);
-    }, 3000);
-}
-
-function closeQuickPrioritizeModal() {
-    const modal = document.getElementById('quick-prioritize-modal');
-    modal.style.display = 'none';
 }
        
 async function init() {
