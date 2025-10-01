@@ -4036,3 +4036,34 @@ input[type="number"] {
 .row-now { color: #10b981; }
 .row-next { color: #f59e0b; }
 .row-later { color: #ef4444; }
+
+/* Square Icon-Only Prioritize Button */
+.pipeline-prioritize-icon-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.pipeline-prioritize-icon-btn:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.pipeline-prioritize-icon-btn:active {
+    transform: translateY(0);
+}
+
+.pipeline-prioritize-icon-btn svg {
+    flex-shrink: 0;
+}
