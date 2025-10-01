@@ -10892,43 +10892,31 @@ if (initiatives.issues.length > 0) {
     
     try {
         for (const epic of initiatives.issues) {
-    let allChildIssues = [];
-    let startAt = 0;
-    const batchSize = 100;
-    let hasMore = true;
-    let safetyCounter = 0;
-    const maxPages = 20; // Safety: max 2000 issues per epic
-    
-    while (hasMore && safetyCounter < maxPages) {
-        const countResponse = await fetch('/api/jira', {
+    const countResponse = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/search/jql',
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                endpoint: '/rest/api/3/search/jql',
-                method: 'POST',
-                jql: `parent = ${epic.key}`,
-                fields: ['key', 'customfield_10190', 'status'],
-                startAt: startAt,
-                maxResults: batchSize
-            })
-        });
+            jql: `parent = ${epic.key}`,
+            fields: ['key', 'customfield_10190', 'status'],
+            maxResults: 500
+        })
+    });
 
-        if (countResponse.ok) {
-            const countData = await countResponse.json();
-            const issues = countData.issues || [];
-            allChildIssues = allChildIssues.concat(issues);
-            
-            // Check if there are more results
-            hasMore = issues.length === batchSize;
-            startAt += batchSize;
-            safetyCounter++;
-        } else {
-            hasMore = false;
+    if (countResponse.ok) {
+        const countData = await countResponse.json();
+        epic.childIssues = countData.issues || [];
+        epic.childIssueCount = epic.childIssues.length;
+        
+        // Alert user if we hit the limit
+        if (epic.childIssueCount === 500 && countData.nextPageToken) {
+            alert(`Warning: Epic ${epic.key} (${epic.fields?.summary || 'Unknown'}) has more than 500 child issues.\n\nOnly the first 500 are shown. Dashboard metrics may be incomplete for this epic.\n\nConsider breaking this epic into smaller epics in Jira.`);
         }
+    } else {
+        epic.childIssues = [];
+        epic.childIssueCount = 0;
     }
-    
-    epic.childIssues = allChildIssues;
-    epic.childIssueCount = allChildIssues.length;
 }
         
         console.log(`Fetched counts for ${initiatives.issues.length} epics`);
