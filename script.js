@@ -10886,71 +10886,42 @@ async function fetchJiraData() {
     const initiatives = await initiativesResponse.json();
     console.log(`Found ${initiatives.issues.length} epics`);
 
-    // Get ALL child issues with proper pagination
-    if (initiatives.issues.length > 0) {
-        const epicKeys = initiatives.issues.map(epic => epic.key);
-        const parentJQL = `parent IN ("${epicKeys.join('","')}")`;
-        
-        console.log('Fetching all child issues with pagination...');
-        
-        try {
-            let allChildIssues = [];
-            let startAt = 0;
-            const maxResults = 100;
-            let hasMoreResults = true;
+    // Get child issue counts for each epic (fast - no actual issue fetching)
+if (initiatives.issues.length > 0) {
+    console.log('Fetching child issue counts for epics...');
+    
+    try {
+        for (const epic of initiatives.issues) {
+            const countResponse = await fetch('/api/jira', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endpoint: '/rest/api/3/search/jql',
+                    method: 'POST',
+                    jql: `parent = "${epic.key}"`,
+                    fields: ['key'],
+                    maxResults: 0
+                })
+            });
 
-            // Paginate through all child issues
-            while (hasMoreResults) {
-    const childrenResponse = await fetch('/api/jira', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: '/rest/api/3/search/jql',
-            method: 'POST',
-            jql: parentJQL,
-            fields: ['parent', 'status', 'key', 'summary', 'customfield_10190', 'customfield_10021'],
-            startAt: startAt,
-            maxResults: maxResults
-        })
-    });
-
-    if (childrenResponse.ok) {
-        const childrenData = await childrenResponse.json();
-        allChildIssues = allChildIssues.concat(childrenData.issues || []);
+            if (countResponse.ok) {
+                const countData = await countResponse.json();
+                epic.childIssues = [];
+                epic.childIssueCount = countData.total || 0;
+            } else {
+                epic.childIssues = [];
+                epic.childIssueCount = 0;
+            }
+        }
         
-        // NEW API: Check for more results using total vs fetched count
-        const total = childrenData.total || 0;
-        hasMoreResults = (startAt + childrenData.issues.length) < total && childrenData.issues.length > 0;
-        startAt += maxResults;
+        console.log(`Fetched counts for ${initiatives.issues.length} epics`);
         
-        console.log(`Fetched ${allChildIssues.length} of ${total} child issues...`);
-    } else {
-        console.error('Failed to fetch child issues');
-        break;
+    } catch (error) {
+        console.error('Error fetching child issue counts:', error);
     }
 }
 
-            // Group child issues by parent
-            const childIssuesByParent = {};
-            allChildIssues.forEach(child => {
-                const parentKey = child.fields.parent.key;
-                if (!childIssuesByParent[parentKey]) {
-                    childIssuesByParent[parentKey] = [];
-                }
-                childIssuesByParent[parentKey].push(child);
-            });
-
-            // Add child issues to each epic
-            initiatives.issues.forEach(epic => {
-                epic.childIssues = childIssuesByParent[epic.key] || [];
-            });
-
-            console.log(`Linked child issues to ${Object.keys(childIssuesByParent).length} epics`);
             
-        } catch (error) {
-            console.error('Error fetching child issues:', error);
-        }
-    }
     
     // Fetch OKRs data
     let okrs;
