@@ -1418,18 +1418,20 @@ function showInitiativeModal(initiative) {
                             '</div>' +
                         '</div>' +
                         
-                        // Related Key Result
-                        '<div class="mt-4 p-4 rounded-lg" style="background: var(--bg-tertiary); border: 2px solid var(--accent-purple);">' +
-                            '<div class="flex items-center gap-2 mb-3">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
-                                '<div class="text-sm font-bold" style="color: var(--accent-purple);">Related Key Result</div>' +
+                        // Key Result
+                        '<div class="p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%); border: 1px solid var(--accent-purple);">' +
+                            '<div class="text-sm font-bold mb-2 flex items-center gap-2" style="color: var(--accent-purple);">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                    '<path d="M12 13V2l8 4-8 4"/>' +
+                                    '<path d="M20.561 10.222a9 9 0 1 1-12.55-5.29"/>' +
+                                    '<path d="M8.002 9.997a5 5 0 1 0 8.9 2.02"/>' +
+                                '</svg>' +
+                                'Related Key Result' +
                             '</div>' +
-                            '<div class="text-sm leading-relaxed" style="color: var(--text-primary);">' +
-                                (initiative.canvas ? initiative.canvas.keyResult : 'Launch 3 new strategic product capabilities') +
-                            '</div>' +
+                            '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">' + (initiative.canvas ? initiative.canvas.keyResult : 'N/A') + '</p>' +
                         '</div>' +
                         
-                        // Move Back to Pipeline Button
+                        // BUTTON ADDED HERE
                         (initiative.priority !== 'pipeline' && typeof initiative.priority === 'number' ? 
                             '<div style="margin-top: 1rem;">' +
                                 '<button onclick="confirmMoveToPipeline(' + initiative.id + ')" ' +
@@ -1448,44 +1450,60 @@ function showInitiativeModal(initiative) {
                     '</div>' +
                 '</div>' +
                 
-                // Right Column - Execution Details
+                // Right Column - Execution Details  
                 '<div>' +
                     '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                            '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>' +
+                            '<line x1="16" y1="2" x2="16" y2="6"/>' +
+                            '<line x1="8" y1="2" x2="8" y2="6"/>' +
+                            '<line x1="3" y1="10" x2="21" y2="10"/>' +
+                        '</svg>' +
                         'Execution Details' +
                     '</h3>' +
                     
                     '<div class="space-y-4">' +
-                        // Jira Analytics Box
-                        '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 2px solid var(--accent-green);">' +
-                            '<div class="flex items-center justify-between mb-4">' +
-                                '<div class="flex items-center gap-2">' +
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>' +
-                                    '<div class="text-sm font-bold" style="color: var(--accent-green);">Jira Analytics</div>' +
-                                '</div>' +
-                                '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="px-3 py-1.5 rounded text-xs font-semibold" style="background: var(--accent-blue); color: white;">View</button>' +
+                        // Jira Analytics with compact View button
+                        '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--accent-green);">' +
+                            '<div class="text-sm font-bold mb-3 flex items-center justify-between" style="color: var(--accent-green);">' +
+                                '<span class="flex items-center gap-2">' +
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                        '<path d="M3 6h18"/>' +
+                                        '<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>' +
+                                        '<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>' +
+                                        '<line x1="10" x2="10" y1="11" y2="17"/>' +
+                                        '<line x1="14" x2="14" y1="11" y2="17"/>' +
+                                    '</svg>' +
+                                    'Jira Analytics' +
+                                '</span>' +
+                                // Small inline button in the header
+                                (initiative.jira && initiative.jira.key ?
+                                    '<button onclick="openJiraEpic(\'' + initiative.jira.key + '\')" class="text-xs px-3 py-1 rounded font-medium" style="background: var(--accent-blue); color: white; border: none; cursor: pointer;">View</button>'
+                                : '') +
                             '</div>' +
-                            '<div class="grid grid-cols-2 gap-4 text-sm">' +
+                            '<div class="grid grid-cols-2 gap-3 text-sm">' +
                                 '<div>' +
                                     '<div class="text-xs mb-1" style="color: var(--text-secondary);">Epic Key</div>' +
-                                    '<div class="font-bold" style="color: var(--text-primary);">' + initiative.jira.key + '</div>' +
+                                    '<div class="font-semibold" style="color: var(--text-primary);">' + (initiative.jira ? initiative.jira.key : 'N/A') + '</div>' +
                                 '</div>' +
                                 '<div>' +
                                     '<div class="text-xs mb-1" style="color: var(--text-secondary);">Status</div>' +
-                                    '<div class="font-bold" style="color: var(--text-primary);">In Progress</div>' +
+                                    '<div class="font-semibold" style="color: var(--text-primary);">In Progress</div>' +
                                 '</div>' +
                                 '<div>' +
                                     '<div class="text-xs mb-1" style="color: var(--text-secondary);">Risk Score</div>' +
                                     '<div class="flex items-center gap-2">' +
-                                        '<span class="font-bold text-lg" style="color: var(--accent-orange);">' + (initiative.riskScore || analyzeInitiativeRisk(initiative).riskScore) + '/50</span>' +
-                                        '<button onclick="showRiskScoreInfoModalForInitiative(' + initiative.id + ')" style="background: none; border: none; padding: 0; cursor: pointer;">' +
-                                            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
-                                        '</button>' +
+                                        '<span class="font-bold text-lg" style="color: var(--accent-orange);">' + (initiative.riskScore || (typeof analyzeInitiativeRisk !== 'undefined' ? analyzeInitiativeRisk(initiative).riskScore : 0)) + '/50</span>' +
+                                        (typeof showRiskScoreInfoModalForInitiative !== 'undefined' ? 
+                                            '<button onclick="showRiskScoreInfoModalForInitiative(' + initiative.id + ')" style="background: none; border: none; padding: 0; cursor: pointer;">' +
+                                                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
+                                            '</button>'
+                                        : '') +
                                     '</div>' +
                                 '</div>' +
                                 '<div>' +
                                     '<div class="text-xs mb-1" style="color: var(--text-secondary);">Updated</div>' +
-                                    '<div class="font-bold" style="color: var(--text-primary);">9/2/2025</div>' +
+                                    '<div class="font-semibold" style="color: var(--text-primary);">9/2/2025</div>' +
                                 '</div>' +
                             '</div>' +
                         '</div>' +
@@ -1504,10 +1522,10 @@ function showInitiativeModal(initiative) {
                                                        healthLevel === 'LOW RISK' ? 'var(--accent-blue)' :
                                                        healthLevel === 'HIGH RISK' ? 'var(--accent-orange)' :
                                                        healthLevel === 'CRITICAL' ? 'var(--accent-red)' : 'var(--text-tertiary)';
-                                    const healthIcon = healthLevel === 'HEALTHY' ? 'âœ"' :
-                                                      healthLevel === 'LOW RISK' ? 'âš ' :
-                                                      healthLevel === 'HIGH RISK' ? 'â š ' :
-                                                      healthLevel === 'CRITICAL' ? 'âš ï¸' : '?';
+                                    const healthIcon = healthLevel === 'HEALTHY' ? '✓' :
+                                                      healthLevel === 'LOW RISK' ? '⚠' :
+                                                      healthLevel === 'HIGH RISK' ? '⚠' :
+                                                      healthLevel === 'CRITICAL' ? '⚠️' : '?';
                                     
                                     return '<button onclick="showTeamHealthModal(\'' + teamName + '\', ' + initiative.id + ')" ' +
                                            'class="w-full text-left px-3 py-2 rounded transition-all duration-200" ' +
@@ -1516,7 +1534,7 @@ function showInitiativeModal(initiative) {
                                                '<span class="flex-shrink-0">' + healthIcon + '</span>' +
                                                '<span>' + teamName + '</span>' +
                                            '</span>' +
-                                           '<span class="text-xs opacity-75">View Details â†'</span>' +
+                                           '<span class="text-xs opacity-75">View Details →</span>' +
                                            '</button>';
                                 }).join('') +
                             '</div>' +
