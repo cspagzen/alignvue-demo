@@ -10867,15 +10867,16 @@ async function fetchJiraData() {
     
     // Get all epics first
     const initiativesResponse = await fetch('/api/jira', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        endpoint: '/rest/api/3/search/jql',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: '/rest/api/3/search/jql',
-            method: 'POST',
-                jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
-            
-        })
-    });
+        jql: 'project IN (STRAT, KTLO, EMRG) AND issuetype = Epic ORDER BY project ASC',
+        fields: ['*navigable'],
+        maxResults: 100
+    })
+});
 
     if (!initiativesResponse.ok) {
         const error = await initiativesResponse.json();
@@ -10962,6 +10963,7 @@ async function fetchJiraData() {
                 endpoint: '/rest/api/3/search/jql',
                 method: 'POST', 
                     jql: 'project = "OKRs" ORDER BY key ASC',
+                    fields: ['*navigable'],
                     maxResults: 100
             })
         });
