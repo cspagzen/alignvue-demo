@@ -10901,35 +10901,34 @@ async function fetchJiraData() {
 
             // Paginate through all child issues
             while (hasMoreResults) {
-                const childrenResponse = await fetch('/api/jira', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        endpoint: '/rest/api/3/search/jql',
-                        method: 'POST',
-                       
-                            jql: parentJQL,
-                            fields: ['parent', 'status', 'key', 'summary', 'customfield_10190', 'customfield_10021'],
-                            startAt: startAt,
-                            maxResults: maxResults
-                        
-                    })
-                });
+    const childrenResponse = await fetch('/api/jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: '/rest/api/3/search/jql',
+            method: 'POST',
+            jql: parentJQL,
+            fields: ['parent', 'status', 'key', 'summary', 'customfield_10190', 'customfield_10021'],
+            startAt: startAt,
+            maxResults: maxResults
+        })
+    });
 
-                if (childrenResponse.ok) {
-                    const childrenData = await childrenResponse.json();
-                    allChildIssues = allChildIssues.concat(childrenData.issues || []);
-                    
-                    // Check if there are more results
-                    hasMoreResults = childrenData.issues.length === maxResults;
-                    startAt += maxResults;
-                    
-                    console.log(`Fetched ${allChildIssues.length} child issues so far...`);
-                } else {
-                    console.error('Failed to fetch child issues');
-                    break;
-                }
-            }
+    if (childrenResponse.ok) {
+        const childrenData = await childrenResponse.json();
+        allChildIssues = allChildIssues.concat(childrenData.issues || []);
+        
+        // NEW API: Check for more results using total vs fetched count
+        const total = childrenData.total || 0;
+        hasMoreResults = (startAt + childrenData.issues.length) < total && childrenData.issues.length > 0;
+        startAt += maxResults;
+        
+        console.log(`Fetched ${allChildIssues.length} of ${total} child issues...`);
+    } else {
+        console.error('Failed to fetch child issues');
+        break;
+    }
+}
 
             // Group child issues by parent
             const childIssuesByParent = {};
