@@ -5404,8 +5404,8 @@ console.log('Card data:', completedInitiatives.map(init => ({title: init.title, 
     if (completedInitiatives.length === 0) {
         console.log('No completed initiatives found, showing 0');
         content.innerHTML = `
-            <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" 
-                 onclick="showRecentlyCompletedModal()" style="cursor: pointer;">
+            <div class="flex flex-col text-center kpi-gauge-card"
+     onclick="showRecentlyCompletedModal()" style="cursor: pointer; padding: 0.5rem 0;">
                 <div class="text-4xl font-bold mb-2" style="color: var(--accent-green);">0</div>
                 <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">Initiatives Completed</div>
                 <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
@@ -5440,8 +5440,8 @@ const breakdownText = generateBreakdownText(breakdown60);
     
     // Update the card HTML
     content.innerHTML = `
-        <div class="h-full flex flex-col items-center justify-center text-center kpi-gauge-card" 
-             onclick="showRecentlyCompletedModal()" style="cursor: pointer;">
+        <div class="flex flex-col text-center kpi-gauge-card"
+     onclick="showRecentlyCompletedModal()" style="cursor: pointer; padding: 0.5rem 0;">
             <div class="text-4xl font-bold mb-2" style="color: var(--accent-green);">${last60Days.length}</div>
             <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">Initiatives Completed</div>
             <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
