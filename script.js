@@ -5193,7 +5193,7 @@ function generateConfidenceTrendLine(color) {
     }).length;
     
     const blockedItems = boardData.initiatives.reduce((total, init) => {
-        return total + (init.jira?.blocked || 0);
+        return total + (init.jira?.flagged || 0);
     }, 0);
     
     // Reduce confidence based on risk factors
