@@ -4645,10 +4645,6 @@ function updateHealthCard() {
             </div>
         </div>
     `;
-    content.classList.add('under-construction-content');
-    const card = content.closest('.bento-card');
-    card.style.position = 'relative';
-    card.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"><div class="under-construction-text">Under Construction</div></div>');
 }
       
       function getHealthIndicatorCounts() {
