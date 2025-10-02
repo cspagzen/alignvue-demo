@@ -4255,7 +4255,7 @@ function updateProgressCard() {
                             
                             <div style="color: white; font-size: clamp(0.75rem, 1vw, 0.875rem); text-align: center; margin-bottom: 0.25rem;">Target: ${kpi.targetValue}${kpi.unit || ''}</div>
                             
-                            <div class="kpi-current-value" style="color: ${kpi.color};">${kpi.currentValue}${kpi.unit || ''}</div>
+                            <div class="kpi-current-value" style="color: ${kpi.color};">${parseFloat(kpi.currentValue)}</div>
                             
                             <div class="kpi-gauge-chart" style="margin-bottom: 2px;">
                                 <svg width="100%" height="80" viewBox="0 0 200 110" style="max-width: 200px;">
