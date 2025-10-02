@@ -4417,3 +4417,20 @@ input[type="number"] {
     padding: 0.5rem 0 0.25rem 0 !important;
     margin: 0 !important;
 }
+
+/* Force Recently Completed card to be compact */
+.completed-card {
+    max-height: 140px !important;
+    overflow: hidden;
+}
+
+.completed-card .bento-card-header {
+    margin-bottom: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+}
+
+.completed-card .bento-card-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    flex: 0 1 auto !important;
+}
