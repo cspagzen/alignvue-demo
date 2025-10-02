@@ -2717,8 +2717,7 @@ modalContent.innerHTML = `
 </div>
 
     <div class="efficiency-description">
-        Measures how well your organization allocates resources<br>
-        as the percentage of maximum possible optimal allocation.
+        Likelihood of on-time delivery based on capacity, skills,blockers, progress, utilization, support, and focus.
     </div>
 </div>
             
