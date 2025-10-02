@@ -4722,12 +4722,15 @@ function updateDeliveryConfidenceCard() {
     content.innerHTML = `
         <div class="efficiency-display">
             <div class="sweet-spot-section">
-                <h4 class="sweet-spot-title" style="color: ${zoneColor};">${zoneName}</h4>
-                <div class="efficiency-value-large" style="color: ${zoneColor};">${score}%</div>
+                <div class="efficiency-value-large" style="color: ${zoneColor};">
+                    ${zoneName}: ${score}%
+                </div>
             </div>
 
             <div class="efficiency-bar-container">
-                <div class="efficiency-bar delivery-confidence-bar" onmousemove="showDeliveryConfidenceTooltip(event, this)" onmouseleave="hideDeliveryConfidenceTooltip()">
+                <div class="efficiency-bar delivery-confidence-bar" 
+                     onmousemove="showDeliveryConfidenceTooltip(event, this)" 
+                     onmouseleave="hideDeliveryConfidenceTooltip()">
                     <div class="efficiency-indicator" style="left: ${score}%; background: ${zoneColor};"></div>
                 </div>
                 <div class="tooltip" id="delivery-confidence-tooltip"></div>
@@ -4740,6 +4743,7 @@ function updateDeliveryConfidenceCard() {
         </div>
     `;
 }
+
 
 // Helper functions for tooltip
 function getDeliveryConfidenceZone(score) {
