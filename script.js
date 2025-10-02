@@ -4701,20 +4701,38 @@ function updateDeliveryConfidenceCard() {
     
     // Calculate delivery confidence metrics
     const confidenceMetrics = calculateDeliveryConfidence();
+    const score = confidenceMetrics.score;
     
-    // Determine zone info based on score
-    const zoneInfo = getDeliveryConfidenceZone(confidenceMetrics.score);
+    // Determine zone color and name
+    let zoneColor, zoneName;
+    if (score >= 85) {
+        zoneColor = '#22c55e'; // Excellent - green
+        zoneName = 'Excellent';
+    } else if (score >= 70) {
+        zoneColor = '#3b82f6'; // Good - blue
+        zoneName = 'Good';
+    } else if (score >= 55) {
+        zoneColor = '#f97316'; // At Risk - orange
+        zoneName = 'At Risk';
+    } else {
+        zoneColor = '#ef4444'; // Critical - red
+        zoneName = 'Critical';
+    }
     
     content.innerHTML = `
         <div class="efficiency-display">
+            <div class="efficiency-header">
+                <h3 class="efficiency-title">Delivery Confidence</h3>
+            </div>
+
             <div class="sweet-spot-section">
-                <h4 class="sweet-spot-title" style="color: ${zoneInfo.color};">${zoneInfo.name}</h4>
-                <div class="efficiency-value-large" style="color: ${zoneInfo.color};">${confidenceMetrics.score}%</div>
+                <h4 class="sweet-spot-title" style="color: ${zoneColor};">${zoneName}</h4>
+                <div class="efficiency-value-large" style="color: ${zoneColor};">${score}%</div>
             </div>
 
             <div class="efficiency-bar-container">
-                <div class="efficiency-bar" onmousemove="showDeliveryConfidenceTooltip(event, this)" onmouseleave="hideDeliveryConfidenceTooltip()">
-                    <div class="efficiency-indicator" style="left: ${confidenceMetrics.score}%;"></div>
+                <div class="efficiency-bar delivery-confidence-bar" onmousemove="showDeliveryConfidenceTooltip(event, this)" onmouseleave="hideDeliveryConfidenceTooltip()">
+                    <div class="efficiency-indicator" style="left: ${score}%; background: ${zoneColor};"></div>
                 </div>
                 <div class="tooltip" id="delivery-confidence-tooltip"></div>
             </div>
@@ -4727,41 +4745,14 @@ function updateDeliveryConfidenceCard() {
     `;
 }
 
-// Helper function to determine delivery confidence zones
+// Helper functions for tooltip
 function getDeliveryConfidenceZone(score) {
-    if (score >= 85) {
-        return { 
-            name: 'Excellent', 
-            color: 'var(--accent-green)',
-            range: '85-100%',
-            description: 'Strong delivery capacity with minimal execution risks'
-        };
-    }
-    if (score >= 70) {
-        return { 
-            name: 'Good', 
-            color: '#22c55e',
-            range: '70-84%',
-            description: 'Solid delivery capability with some areas to address'
-        };
-    }
-    if (score >= 55) {
-        return { 
-            name: 'At Risk', 
-            color: '#eab308',
-            range: '55-69%',
-            description: 'Delivery capability compromised, intervention needed'
-        };
-    }
-    return { 
-        name: 'Critical', 
-        color: 'var(--accent-red)',
-        range: '0-54%',
-        description: 'Severe delivery risks requiring urgent action'
-    };
+    if (score >= 85) return { name: 'Excellent', range: '85-100%' };
+    if (score >= 70) return { name: 'Good', range: '70-84%' };
+    if (score >= 55) return { name: 'At Risk', range: '55-69%' };
+    return { name: 'Critical', range: '0-54%' };
 }
 
-// Tooltip handler for delivery confidence bar
 function showDeliveryConfidenceTooltip(event, barElement) {
     const rect = barElement.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -4782,7 +4773,6 @@ function hideDeliveryConfidenceTooltip() {
         tooltip.classList.remove('show');
     }
 }
-
 
 
 

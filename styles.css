@@ -4170,6 +4170,25 @@ input[type="number"] {
   pointer-events: none;  /* ADD THIS LINE */
 }
 
+/* Delivery Confidence Bar - SOLID color zones, NO gradients */
+.delivery-confidence-bar {
+    height: 20px;
+    border-radius: 10px;
+    background: linear-gradient(to right, 
+        #ef4444 0%, 
+        #ef4444 54%,      /* Critical: 0-54% solid red */
+        #f97316 54%, 
+        #f97316 69%,      /* At Risk: 55-69% solid orange */
+        #3b82f6 69%, 
+        #3b82f6 84%,      /* Good: 70-84% solid blue */
+        #22c55e 84%, 
+        #22c55e 100%      /* Excellent: 85-100% solid green */
+    );
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
 .efficiency-display {
     padding: 1.5rem;
     background: linear-gradient(135deg, rgba(30, 27, 75, 0.95) 0%, rgba(20, 18, 45, 0.9) 100%);
