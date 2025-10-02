@@ -6362,31 +6362,32 @@ async function calculateOKRProgress() {
 
 
 // Updated function to get team health counts for dashboard
+// Updated function to get team health counts for dashboard
 function getTeamHealthCounts() {
     const teams = Object.values(boardData.teams);
     
     return {
         healthy: teams.filter(team => {
             const atRiskCount = [team.capacity, team.skillset, team.vision, team.support, team.teamwork, team.autonomy]
-                .filter(status => status === 'at-risk').length;
+                .filter(status => isDimensionAtRisk(status)).length;
             return atRiskCount === 0;
         }).length,
         
         lowRisk: teams.filter(team => {
             const atRiskCount = [team.capacity, team.skillset, team.vision, team.support, team.teamwork, team.autonomy]
-                .filter(status => status === 'at-risk').length;
+                .filter(status => isDimensionAtRisk(status)).length;
             return atRiskCount >= 1 && atRiskCount <= 2;
         }).length,
         
         highRisk: teams.filter(team => {
             const atRiskCount = [team.capacity, team.skillset, team.vision, team.support, team.teamwork, team.autonomy]
-                .filter(status => status === 'at-risk').length;
+                .filter(status => isDimensionAtRisk(status)).length;
             return atRiskCount >= 3 && atRiskCount <= 4;
         }).length,
         
         critical: teams.filter(team => {
             const atRiskCount = [team.capacity, team.skillset, team.vision, team.support, team.teamwork, team.autonomy]
-                .filter(status => status === 'at-risk').length;
+                .filter(status => isDimensionAtRisk(status)).length;
             return atRiskCount >= 5;
         }).length
     };
@@ -8362,7 +8363,7 @@ function showHealthIndicatorModal(indicator) {
 function getTeamsByHealthLevel(healthLevel) {
     return Object.keys(boardData.teams).filter(teamName => {
         const team = boardData.teams[teamName];
-        const overallHealth = getTeamOverallHealth(team);
+        const overallHealth = getTeamHealthLevel(team);  // Changed from getTeamOverallHealth
         return overallHealth === healthLevel;
     });
 }
@@ -12746,6 +12747,23 @@ function getTeamOverallHealth(teamData) {
         color: 'text-red-700',
         level: 'critical'
     };
+}
+
+// Simple version that returns just the health level string
+function getTeamHealthLevel(teamData) {
+    let atRiskCount = 0;
+    
+    if (isDimensionAtRisk(teamData.capacity)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.skillset)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.vision)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.support)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.teamwork)) atRiskCount++;
+    if (isDimensionAtRisk(teamData.autonomy)) atRiskCount++;
+    
+    if (atRiskCount === 0) return 'healthy';
+    if (atRiskCount <= 2) return 'low-risk';
+    if (atRiskCount <= 4) return 'high-risk';
+    return 'critical';
 }
 
 // ==============================================================================
