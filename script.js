@@ -8390,7 +8390,7 @@ function getHealthLevelColor(healthLevel) {
 function createMiniTeamCard(teamName) {
     const teamData = boardData.teams[teamName];
     const healthIcon = getHealthIcon(teamData);
-    const healthStatus = getTeamOverallHealth(teamData);
+    const healthStatus = getTeamHealthLevel(teamData);  // Returns 'low-risk' string
     const pillStyle = getTeamHealthPillStyle(teamData);
     
     return `
@@ -12749,7 +12749,7 @@ function getTeamOverallHealth(teamData) {
     };
 }
 
-// Simple version that returns just the health level string
+// Simple version that returns just the health level string for filtering/grouping
 function getTeamHealthLevel(teamData) {
     let atRiskCount = 0;
     
@@ -13453,6 +13453,6 @@ window.testTeamHealthModal = testTeamHealthModal;
 
 console.log('Debug functions loaded. Use:');
 console.log('  checkTeamHealthStats() - Check team counts and distribution');
-console.log('  testTeamHealthModal("low-risk") - Test modal functionality');
+console.log('  testTeamHealthModal("low-risk") - Test modal functionality')
 
         init();
