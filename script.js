@@ -13345,4 +13345,114 @@ function closeQuickPrioritizeModal() {
     modal.style.display = 'none';
 }
 
+// ============================================================================
+// DEBUG & SANITY CHECK FUNCTIONS
+// ============================================================================
+
+// Function to check total unique teams and their health distribution
+function checkTeamHealthStats() {
+    const teams = boardData.teams;
+    const teamNames = Object.keys(teams);
+    
+    console.log('=== TEAM HEALTH SANITY CHECK ===');
+    console.log('Total Unique Teams:', teamNames.length);
+    console.log('Team Names:', teamNames);
+    console.log('');
+    
+    // Count by health level using the getTeamHealthLevel function
+    const healthDistribution = {
+        healthy: 0,
+        lowRisk: 0,
+        highRisk: 0,
+        critical: 0
+    };
+    
+    const teamDetails = [];
+    
+    teamNames.forEach(teamName => {
+        const team = teams[teamName];
+        let atRiskCount = 0;
+        
+        // Count at-risk dimensions
+        if (isDimensionAtRisk(team.capacity)) atRiskCount++;
+        if (isDimensionAtRisk(team.skillset)) atRiskCount++;
+        if (isDimensionAtRisk(team.vision)) atRiskCount++;
+        if (isDimensionAtRisk(team.support)) atRiskCount++;
+        if (isDimensionAtRisk(team.teamwork)) atRiskCount++;
+        if (isDimensionAtRisk(team.autonomy)) atRiskCount++;
+        
+        let healthLevel;
+        if (atRiskCount === 0) {
+            healthLevel = 'healthy';
+            healthDistribution.healthy++;
+        } else if (atRiskCount <= 2) {
+            healthLevel = 'low-risk';
+            healthDistribution.lowRisk++;
+        } else if (atRiskCount <= 4) {
+            healthLevel = 'high-risk';
+            healthDistribution.highRisk++;
+        } else {
+            healthLevel = 'critical';
+            healthDistribution.critical++;
+        }
+        
+        teamDetails.push({
+            name: teamName,
+            healthLevel: healthLevel,
+            atRiskCount: atRiskCount,
+            dimensions: {
+                capacity: team.capacity,
+                skillset: team.skillset,
+                vision: team.vision,
+                support: team.support,
+                teamwork: team.teamwork,
+                autonomy: team.autonomy
+            }
+        });
+    });
+    
+    console.log('HEALTH DISTRIBUTION:');
+    console.log('  Healthy (0 at-risk):', healthDistribution.healthy);
+    console.log('  Low Risk (1-2 at-risk):', healthDistribution.lowRisk);
+    console.log('  High Risk (3-4 at-risk):', healthDistribution.highRisk);
+    console.log('  Critical (5-6 at-risk):', healthDistribution.critical);
+    console.log('');
+    
+    console.log('DETAILED TEAM BREAKDOWN:');
+    console.table(teamDetails);
+    
+    // Test the actual chart function
+    console.log('');
+    console.log('CHART FUNCTION OUTPUT:');
+    const chartCounts = getTeamHealthCounts();
+    console.log('  getTeamHealthCounts():', chartCounts);
+    
+    return {
+        totalTeams: teamNames.length,
+        distribution: healthDistribution,
+        details: teamDetails,
+        chartCounts: chartCounts
+    };
+}
+
+// Test function for modal
+function testTeamHealthModal(healthLevel = 'low-risk') {
+    console.log(`Testing modal for health level: ${healthLevel}`);
+    try {
+        showTeamHealthModal(healthLevel);
+        console.log('✓ Modal function executed successfully');
+    } catch (error) {
+        console.error('✗ Error opening modal:', error);
+        console.error('Error stack:', error.stack);
+    }
+}
+
+// Make functions available globally
+window.checkTeamHealthStats = checkTeamHealthStats;
+window.testTeamHealthModal = testTeamHealthModal;
+
+console.log('Debug functions loaded. Use:');
+console.log('  checkTeamHealthStats() - Check team counts and distribution');
+console.log('  testTeamHealthModal("low-risk") - Test modal functionality');
+
         init();
