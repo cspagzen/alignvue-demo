@@ -4630,8 +4630,8 @@ function updateAtRiskCard() {
                         </div>
                         
                         <!-- Risk Score text -->
-<div class="text-xs opacity-90 mb-2" style="font-weight: 500; color: ${getRiskLevelColor(analyzeInitiativeRisk(initiative).riskScore)};">
-    Risk: ${analyzeInitiativeRisk(initiative).riskScore}/50
+<div class="mb-2" style="font-weight: bold; color: ${getRiskLevelColor(analyzeInitiativeRisk(initiative).riskScore)};">
+    <span style="font-size: 2rem;">${analyzeInitiativeRisk(initiative).riskScore}</span><span style="font-size: 1rem;">/50</span>
 </div>
                         
                         <!-- Type badge (styled like pipeline items) -->
