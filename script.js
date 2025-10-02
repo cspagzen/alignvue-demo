@@ -1,6 +1,7 @@
         let currentZoom = 1;
         let selectedInitiativeId = null;
         let draggedInitiative = null;
+        let riskFactorsChart = null;
 
 // Completion data caching
 const COMPLETION_CACHE_KEY = 'jira_completion_cache';
@@ -4568,145 +4569,22 @@ function updateHealthCard() {
                 </div>
             </div>
             
-            <!-- Risk Factors Card - Bottom (Purple gradations) -->
+            <!-- Risk Factors Card - Chart.js Version -->
 <div class="flex-1 kpi-gauge-card" style="display: flex; flex-direction: column; padding: 0.5rem;">
     <div class="flex justify-between items-center" style="margin-bottom: 0.5rem;">
         <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary);">Risk Factors</div>
         <div style="color: var(--accent-blue); font-size: 0.8rem;">Click segments for details</div>
     </div>
     
-    <!-- Single row of 6 dimensions with purple gradients -->
-    <div class="flex gap-1" style="flex: 1; height: 3rem;">
-        <!-- Capacity -->
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
-            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
-                <div class="cursor-pointer kpi-gauge-card"
-                     onclick="showHealthIndicatorModal('capacity')"
-                     title="Capacity Issues: ${indicatorCounts.capacity} teams"
-                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
-                            border: 1px solid #581c87;
-                            width: 100%; 
-                            height: ${(indicatorCounts.capacity / Math.max(1, maxIndicatorValue)) * 100}%; 
-                            border-radius: 0.25rem 0.25rem 0 0; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-size: 0.8rem; color: white; font-weight: 700; 
-                            transition: all 0.2s ease;
-                            min-height: 1.5rem;">
-                    ${indicatorCounts.capacity}
-                </div>
-            </div>
-            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Capacity</div>
-        </div>
-        
-        <!-- Skillset -->
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
-            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
-                <div class="cursor-pointer kpi-gauge-card"
-                     onclick="showHealthIndicatorModal('skillset')"
-                     title="Skillset Issues: ${indicatorCounts.skillset} teams"
-                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
-                            border: 1px solid #581c87;
-                            width: 100%; 
-                            height: ${(indicatorCounts.skillset / Math.max(1, maxIndicatorValue)) * 100}%; 
-                            border-radius: 0.25rem 0.25rem 0 0; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-size: 0.8rem; color: white; font-weight: 700; 
-                            transition: all 0.2s ease;
-                            min-height: 1.5rem;">
-                    ${indicatorCounts.skillset}
-                </div>
-            </div>
-            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Skillset</div>
-        </div>
-        
-        <!-- Vision -->
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
-            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
-                <div class="cursor-pointer kpi-gauge-card"
-                     onclick="showHealthIndicatorModal('vision')"
-                     title="Vision Issues: ${indicatorCounts.vision} teams"
-                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
-                            border: 1px solid #581c87;
-                            width: 100%; 
-                            height: ${(indicatorCounts.vision / Math.max(1, maxIndicatorValue)) * 100}%; 
-                            border-radius: 0.25rem 0.25rem 0 0; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-size: 0.8rem; color: white; font-weight: 700; 
-                            transition: all 0.2s ease;
-                            min-height: 1.5rem;">
-                    ${indicatorCounts.vision}
-                </div>
-            </div>
-            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Vision</div>
-        </div>
-        
-        <!-- Support -->
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
-            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
-                <div class="cursor-pointer kpi-gauge-card"
-                     onclick="showHealthIndicatorModal('support')"
-                     title="Support Issues: ${indicatorCounts.support} teams"
-                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
-                            border: 1px solid #581c87;
-                            width: 100%; 
-                            height: ${(indicatorCounts.support / Math.max(1, maxIndicatorValue)) * 100}%; 
-                            border-radius: 0.25rem 0.25rem 0 0; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-size: 0.8rem; color: white; font-weight: 700; 
-                            transition: all 0.2s ease;
-                            min-height: 1.5rem;">
-                    ${indicatorCounts.support}
-                </div>
-            </div>
-            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Support</div>
-        </div>
-        
-        <!-- Team Cohesion -->
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
-            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
-                <div class="cursor-pointer kpi-gauge-card"
-                     onclick="showHealthIndicatorModal('teamwork')"
-                     title="Team Cohesion Issues: ${indicatorCounts.teamwork} teams"
-                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
-                            border: 1px solid #581c87;
-                            width: 100%; 
-                            height: ${(indicatorCounts.teamwork / Math.max(1, maxIndicatorValue)) * 100}%; 
-                            border-radius: 0.25rem 0.25rem 0 0; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-size: 0.8rem; color: white; font-weight: 700; 
-                            transition: all 0.2s ease;
-                            min-height: 1.5rem;">
-                    ${indicatorCounts.teamwork}
-                </div>
-            </div>
-            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Team Cohesion</div>
-        </div>
-        
-        <!-- Autonomy -->
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
-            <div style="flex: 1; display: flex; align-items: end; width: 100%;">
-                <div class="cursor-pointer kpi-gauge-card"
-                     onclick="showHealthIndicatorModal('autonomy')"
-                     title="Autonomy Issues: ${indicatorCounts.autonomy} teams"
-                     style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6b21a8 100%); 
-                            border: 1px solid #581c87;
-                            width: 100%; 
-                            height: ${(indicatorCounts.autonomy / Math.max(1, maxIndicatorValue)) * 100}%; 
-                            border-radius: 0.25rem 0.25rem 0 0; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-size: 0.8rem; color: white; font-weight: 700; 
-                            transition: all 0.2s ease;
-                            min-height: 1.5rem;">
-                    ${indicatorCounts.autonomy}
-                </div>
-            </div>
-            <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; text-align: center;">Autonomy</div>
-        </div>
+    <!-- Chart.js Canvas -->
+    <div style="position: relative; height: 120px; width: 100%;">
+        <canvas id="riskFactorsChart"></canvas>
     </div>
 </div>
-            </div>
-        </div>
     `;
+    setTimeout(() => {
+    initializeRiskFactorsChart();
+}, 100);
 }
       
       function getHealthIndicatorCounts() {
@@ -13487,24 +13365,188 @@ function checkTeamHealthStats() {
     };
 }
 
-// Test function for modal
-function testTeamHealthModal(healthLevel = 'low-risk') {
-    console.log(`Testing modal for health level: ${healthLevel}`);
-    try {
-        showTeamHealthModal(healthLevel);
-        console.log('✓ Modal function executed successfully');
-    } catch (error) {
-        console.error('✗ Error opening modal:', error);
-        console.error('Error stack:', error.stack);
-    }
+function getDimensionCountsByState() {
+    const teams = Object.values(boardData.teams);
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    
+    const counts = {};
+    dimensions.forEach(dim => {
+        counts[dim] = {
+            critical: teams.filter(team => 
+                team[dim] === 'Critical' || team[dim] === 'critical'
+            ).length,
+            atRisk: teams.filter(team => 
+                team[dim] === 'At Risk' || team[dim] === 'at-risk'
+            ).length
+        };
+        counts[dim].total = counts[dim].critical + counts[dim].atRisk;
+    });
+    
+    return counts;
 }
 
-// Make functions available globally
-window.checkTeamHealthStats = checkTeamHealthStats;
-window.testTeamHealthModal = testTeamHealthModal;
+function initializeRiskFactorsChart() {
+    const canvas = document.getElementById('riskFactorsChart');
+    if (!canvas) {
+        console.warn('Risk Factors canvas not found');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    const dimensionCounts = getDimensionCountsByState();
+    
+    // Prepare data for Chart.js
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    const labels = dimensions.map(dim => {
+        if (dim === 'teamwork') return 'Cohesion';  // <-- Changed label here
+        return dim.charAt(0).toUpperCase() + dim.slice(1);
+    });
+    
+    const criticalData = dimensions.map(dim => dimensionCounts[dim].critical);
+    const atRiskData = dimensions.map(dim => dimensionCounts[dim].atRisk);
+    
+    // Destroy existing chart if it exists
+    if (riskFactorsChart) {
+        riskFactorsChart.destroy();
+    }
+    
+    // Create the stacked bar chart
+    riskFactorsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Critical',
+                    data: criticalData,
+                    backgroundColor: 'rgba(220, 38, 38, 0.9)',
+                    borderColor: 'rgba(127, 29, 29, 1)',
+                    borderWidth: 1,
+                    borderRadius: 0,
+                    barThickness: 'flex',
+                    maxBarThickness: 60
+                },
+                {
+                    label: 'At Risk',
+                    data: atRiskData,
+                    backgroundColor: 'rgba(245, 158, 11, 0.9)',
+                    borderColor: 'rgba(146, 64, 14, 1)',
+                    borderWidth: 1,
+                    borderRadius: {
+                        topLeft: 4,
+                        topRight: 4
+                    },
+                    barThickness: 'flex',
+                    maxBarThickness: 60
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: true
+            },
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const element = elements[0];
+                    const dimensionIndex = element.index;
+                    const dimensionKey = dimensions[dimensionIndex];
+                    showHealthIndicatorModal(dimensionKey);
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: 'rgba(156, 163, 175, 1)',
+                        font: {
+                            size: 11,
+                            weight: 600
+                        }
+                    },
+                    border: {
+                        display: false
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(99, 102, 241, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(156, 163, 175, 1)',
+                        font: {
+                            size: 10
+                        },
+                        stepSize: 1,
+                        precision: 0
+                    },
+                    border: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: 'rgba(229, 231, 235, 1)',
+                        font: {
+                            size: 11,
+                            weight: 500
+                        },
+                        padding: 10,
+                        usePointStyle: true,
+                        pointStyle: 'rect'
+                    }
+                },
+                tooltip: {
+                    enabled: true,
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                    titleColor: 'rgba(255, 255, 255, 1)',
+                    bodyColor: 'rgba(229, 231, 235, 1)',
+                    borderColor: 'rgba(99, 102, 241, 0.3)',
+                    borderWidth: 1,
+                    padding: 12,
+                    titleFont: {
+                        size: 13,
+                        weight: 600
+                    },
+                    bodyFont: {
+                        size: 12
+                    },
+                    displayColors: true,
+                    callbacks: {
+                        title: (tooltipItems) => {
+                            return tooltipItems[0].label + ' Issues';
+                        },
+                        label: (context) => {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y || 0;
+                            return `${label}: ${value} team${value !== 1 ? 's' : ''}`;
+                        },
+                        footer: () => {
+                            return 'Click to view details';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    console.log('✅ Risk Factors Chart.js chart initialized');
+}
 
-console.log('Debug functions loaded. Use:');
-console.log('  checkTeamHealthStats() - Check team counts and distribution');
-console.log('  testTeamHealthModal("low-risk") - Test modal functionality')
+    
 
         init();
