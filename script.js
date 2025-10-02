@@ -4721,10 +4721,6 @@ function updateDeliveryConfidenceCard() {
     
     content.innerHTML = `
         <div class="efficiency-display">
-            <div class="efficiency-header">
-                <h3 class="efficiency-title">Delivery Confidence</h3>
-            </div>
-
             <div class="sweet-spot-section">
                 <h4 class="sweet-spot-title" style="color: ${zoneColor};">${zoneName}</h4>
                 <div class="efficiency-value-large" style="color: ${zoneColor};">${score}%</div>

@@ -4189,100 +4189,96 @@ input[type="number"] {
     cursor: pointer;
 }
 
+/* The rest of these styles should already exist from Mendoza, but include them if missing: */
+
 .efficiency-display {
-    padding: 1.5rem;
-    background: linear-gradient(135deg, rgba(30, 27, 75, 0.95) 0%, rgba(20, 18, 45, 0.9) 100%);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
     border-radius: 12px;
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    padding: 24px;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.efficiency-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.efficiency-title {
+    color: var(--accent-orange);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
 }
 
 .sweet-spot-section {
     text-align: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 24px;
 }
 
 .sweet-spot-title {
-    font-size: 1rem;
+    font-size: 1.75rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
+    margin: 0 0 8px 0;
 }
 
 .efficiency-value-large {
-    font-size: 3rem;
-    font-weight: 800;
+    font-size: 4rem;
+    font-weight: 900;
+    margin: 0;
     line-height: 1;
-    letter-spacing: -0.02em;
 }
 
 .efficiency-bar-container {
+    margin: 24px 0;
     position: relative;
-    margin-bottom: 1rem;
-}
-
-.efficiency-bar {
-    height: 12px;
-    background: linear-gradient(
-        to right,
-        #ef4444 0%,
-        #ef4444 25%,
-        #f59e0b 25%,
-        #f59e0b 40%,
-        #eab308 40%,
-        #eab308 55%,
-        #22c55e 55%,
-        #22c55e 70%,
-        #10b981 70%,
-        #10b981 85%,
-        #059669 85%,
-        #059669 100%
-    );
-    border-radius: 6px;
-    position: relative;
-    cursor: pointer;
 }
 
 .efficiency-indicator {
     position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 20px;
-    height: 20px;
-    background: white;
-    border: 3px solid rgba(0, 0, 0, 0.2);
+    top: 1px;
+    width: 16px;
+    height: 16px;
+    border: none;
     border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    pointer-events: none;
+    transform: translateX(-50%);
     z-index: 10;
+    box-shadow: 
+        0 0 0 4px black,
+        0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .efficiency-description {
+    color: var(--text-primary);
+    font-size: 1rem;
     text-align: center;
-    font-size: 0.75rem;
-    color: var(--text-tertiary);
+    margin: 20px 0 0 0;
     line-height: 1.4;
 }
 
 .tooltip {
     position: absolute;
-    bottom: 100%;
-    margin-bottom: 8px;
     background: rgba(0, 0, 0, 0.9);
     color: white;
-    padding: 6px 12px;
+    padding: 8px 12px;
     border-radius: 6px;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
     white-space: nowrap;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    transform: translateX(-50%);
     z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+    transform: translateY(-35px);
 }
 
 .tooltip.show {
     opacity: 1;
+    visibility: visible;
 }
 
 .tooltip::after {
@@ -4291,6 +4287,6 @@ input[type="number"] {
     top: 100%;
     left: 50%;
     transform: translateX(-50%);
-    border: 4px solid transparent;
+    border: 5px solid transparent;
     border-top-color: rgba(0, 0, 0, 0.9);
 }
