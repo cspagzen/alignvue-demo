@@ -4811,7 +4811,7 @@ function showDeliveryConfidenceModal() {
     
     if (confidenceMetrics.score >= 85) {
         confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11v1a10 10 0 1 1-9-10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/><path d="M16 5h6"/><path d="M19 2v6"/></svg>';
-        confidenceText = 'High Confidence';
+        confidenceText = 'Excellent';
         confidenceColor = 'var(--accent-green)';
         confidenceRGB = '34, 197, 94';
     } else if (confidenceMetrics.score >= 70) {
@@ -4821,12 +4821,12 @@ function showDeliveryConfidenceModal() {
         confidenceRGB = '59, 130, 246';
     } else if (confidenceMetrics.score >= 55) {
         confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" x2="16" y1="15" y2="15"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'At Risk';
+        confidenceText = 'Fair';
         confidenceColor = 'var(--accent-orange)';
         confidenceRGB = '249, 115, 22';
     } else {
         confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'Critical';
+        confidenceText = 'Poor';
         confidenceColor = 'var(--accent-red)';
         confidenceRGB = '239, 68, 68';
     }
@@ -4972,13 +4972,20 @@ function showDeliveryConfidenceModal() {
                             </div>
                         </div>
                         ${rf.focusBonus > 0 ? `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.3);">
-                            <span style="font-size: 0.875rem; color: var(--accent-green); font-weight: 600;">🎯 Focus Bonus!</span>
-                            <div style="text-align: right;">
-                                <div style="font-weight: 600; color: var(--accent-green);">+${rf.focusBonus}%</div>
-                            </div>
-                        </div>
-                        ` : ''}
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.3);">
+    <span style="font-size: 0.875rem; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 13V2l8 4-8 4"/>
+            <path d="M20.561 10.222a9 9 0 1 1-12.55-5.29"/>
+            <path d="M8.002 9.997a5 5 0 1 0 8.9 2.02"/>
+        </svg>
+        Focus Bonus!
+    </span>
+    <div style="text-align: right;">
+        <div style="font-weight: 600; color: var(--accent-green);">+${rf.focusBonus}%</div>
+    </div>
+</div>
+` : ''}
                     </div>
                 </div>
             </div>
@@ -4992,15 +4999,22 @@ function showDeliveryConfidenceModal() {
                     Confidence starts at <strong>90%</strong> and adjusts based on where work sits in the priority stack. Above-the-line work (Rows 1-5) gets full penalty weight because it's critical. Below-the-line work (Rows 6-8) gets 50% weight.
                 </p>
                 
-                <div style="background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-blue); padding: 12px; border-radius: 6px; margin-top: 12px;">
-                    <div style="font-size: 0.8125rem; font-weight: 600; color: var(--accent-blue); margin-bottom: 8px;">Focus Bonus System 🎯</div>
-                    <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;">
-                        <div>• <strong>+3%</strong> for zero active work below the line (perfect focus!)</div>
-                        <div>• <strong>+2%</strong> for ≤2 active below the line</div>
-                        <div>• <strong>+1%</strong> for ≤4 active below the line</div>
-                        <div style="margin-top: 8px; font-style: italic;">Distraction penalty: -2% for every 3 active items below the line</div>
-                    </div>
-                </div>
+               <div style="background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-blue); padding: 12px; border-radius: 6px; margin-top: 12px;">
+    <div style="font-size: 0.8125rem; font-weight: 600; color: var(--accent-blue); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 13V2l8 4-8 4"/>
+            <path d="M20.561 10.222a9 9 0 1 1-12.55-5.29"/>
+            <path d="M8.002 9.997a5 5 0 1 0 8.9 2.02"/>
+        </svg>
+        Focus Bonus System
+    </div>
+    <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;">
+        <div>• <strong>+3%</strong> for zero active work below the line (perfect focus!)</div>
+        <div>• <strong>+2%</strong> for ≤2 active below the line</div>
+        <div>• <strong>+1%</strong> for ≤4 active below the line</div>
+        <div style="margin-top: 8px; font-style: italic;">Distraction penalty: -2% for every 3 active items below the line</div>
+    </div>
+</div>
             </div>
 
             <!-- Score Interpretation -->
@@ -5022,12 +5036,12 @@ function showDeliveryConfidenceModal() {
                     
                     <div style="display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center;">
                         <div style="background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 6px; padding: 4px; text-align: center; color: var(--accent-orange); font-weight: 700; font-size: 0.75rem;">55-69%</div>
-                        <div style="color: var(--text-secondary); font-size: 0.8125rem;"><strong style="color: var(--text-primary);">At Risk:</strong> Significant risks require active management</div>
+                        <div style="color: var(--text-secondary); font-size: 0.8125rem;"><strong style="color: var(--text-primary);">Fair:</strong> Significant risks require active management</div>
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center;">
                         <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 4px; text-align: center; color: var(--accent-red); font-weight: 700; font-size: 0.75rem;">45-54%</div>
-                        <div style="color: var(--text-secondary); font-size: 0.8125rem;"><strong style="color: var(--text-primary);">Critical:</strong> Severe risks need immediate attention</div>
+                        <div style="color: var(--text-secondary); font-size: 0.8125rem;"><strong style="color: var(--text-primary);">Poor:</strong> Severe risks need immediate attention</div>
                     </div>
                 </div>
             </div>
