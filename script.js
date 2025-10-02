@@ -10474,6 +10474,8 @@ function updateBoardWithLiveData(newData) {
         boardData.teams = { ...boardData.teams, ...newData.teams };
     }
     
+    aggregateTeamMetrics();
+    
     console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, and ${boardData.okrs.issues.length} OKR items`);
     
     // Regenerate the UI with new data
@@ -13559,6 +13561,34 @@ function initializeRiskFactorsChart() {
     console.log('✅ Risk Factors Chart.js chart initialized');
 }
 
+    // Add this function after fetchTeamHealthData()
+function aggregateTeamMetrics() {
+    console.log('📊 Aggregating team metrics from initiatives...');
     
+    // Reset all team metrics
+    Object.keys(boardData.teams).forEach(teamName => {
+        if (boardData.teams[teamName].jira) {
+            boardData.teams[teamName].jira.stories = 0;
+            boardData.teams[teamName].jira.blockers = 0;
+        }
+    });
+    
+    // Aggregate from initiatives
+    boardData.initiatives.forEach(init => {
+        if (init.priority === 'bullpen') return; // Skip pipeline items
+        
+        init.teams.forEach(teamName => {
+            const team = boardData.teams[teamName];
+            if (team && team.jira) {
+                // Add this initiative's stories to the team's total
+                team.jira.stories += (init.jira?.stories || 0);
+                // Add this initiative's flagged items as blockers
+                team.jira.blockers += (init.jira?.flagged || 0);
+            }
+        });
+    });
+    
+    console.log('✅ Team metrics aggregated');
+}
 
         init();
