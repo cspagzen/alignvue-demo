@@ -4713,10 +4713,10 @@ function updateDeliveryConfidenceCard() {
         zoneName = 'Good';
     } else if (score >= 55) {
         zoneColor = '#f97316'; // At Risk - orange
-        zoneName = 'At Risk';
+        zoneName = 'Fair';
     } else {
         zoneColor = '#ef4444'; // Critical - red
-        zoneName = 'Critical';
+        zoneName = 'Poor';
     }
     
     content.innerHTML = `
