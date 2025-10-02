@@ -8311,7 +8311,10 @@ function getTeamsByHealthLevel(healthLevel) {
 function getTeamsByIndicator(indicator) {
     return Object.keys(boardData.teams).filter(teamName => {
         const team = boardData.teams[teamName];
-        return team[indicator] === 'at-risk';
+        if (!team) return false;
+        
+        // Check if the indicator is at risk (either "At Risk" or "Critical")
+        return isDimensionAtRisk(team[indicator]);
     });
 }
 
