@@ -13439,22 +13439,22 @@ function initializeRiskFactorsChart() {
             labels: labels,
             datasets: [
     {
-        label: 'Critical',
-        data: criticalData,
-        backgroundColor: '#dc2626',  // Solid red to match
-        borderColor: '#7f1d1d',
+        label: 'At Risk',
+        data: atRiskData,
+        backgroundColor: atRiskGradient,
+        borderColor: '#b45309',
         borderWidth: 1,
-        borderRadius: 0,
+        borderRadius: 0,  // <-- Remove top radius since it's at bottom now
         barThickness: 'flex',
         maxBarThickness: 60
     },
     {
-        label: 'At Risk',
-        data: atRiskData,
-        backgroundColor: '#f59e0b',  // Solid orange to match  
-        borderColor: '#78350f',
+        label: 'Critical',
+        data: criticalData,
+        backgroundColor: criticalGradient,
+        borderColor: '#7f1d1d',
         borderWidth: 1,
-        borderRadius: {
+        borderRadius: {  // <-- Add top radius since it's at top now
             topLeft: 4,
             topRight: 4
         },
