@@ -10823,7 +10823,7 @@ if (initiatives.issues.length > 0) {
                     endpoint: '/rest/api/3/search/jql',
                     method: 'POST',
                     jql: `parent = ${epic.key}`,
-                    fields: ['key', 'customfield_10190', 'status'],
+                    fields: ['key', 'customfield_10190', 'status', 'customfield_10021'],
                     maxResults: 500
                 })
             });
