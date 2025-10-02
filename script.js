@@ -13438,30 +13438,30 @@ function initializeRiskFactorsChart() {
         data: {
             labels: labels,
             datasets: [
-                {
-                    label: 'Critical',
-                    data: criticalData,
-                    backgroundColor: 'rgba(220, 38, 38, 0.9)',
-                    borderColor: 'rgba(127, 29, 29, 1)',
-                    borderWidth: 1,
-                    borderRadius: 0,
-                    barThickness: 'flex',
-                    maxBarThickness: 60
-                },
-                {
-                    label: 'At Risk',
-                    data: atRiskData,
-                    backgroundColor: 'rgba(245, 158, 11, 0.9)',
-                    borderColor: 'rgba(146, 64, 14, 1)',
-                    borderWidth: 1,
-                    borderRadius: {
-                        topLeft: 4,
-                        topRight: 4
-                    },
-                    barThickness: 'flex',
-                    maxBarThickness: 60
-                }
-            ]
+    {
+        label: 'Critical',
+        data: criticalData,
+        backgroundColor: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%)',
+        borderColor: '#7f1d1d',
+        borderWidth: 1,
+        borderRadius: 0,
+        barThickness: 'flex',
+        maxBarThickness: 60
+    },
+    {
+        label: 'At Risk',
+        data: atRiskData,
+        backgroundColor: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)',
+        borderColor: '#78350f',
+        borderWidth: 1,
+        borderRadius: {
+            topLeft: 4,
+            topRight: 4
+        },
+        barThickness: 'flex',
+        maxBarThickness: 60
+    }
+]
         },
         options: {
             responsive: true,
