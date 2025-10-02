@@ -13398,7 +13398,7 @@ function initializeRiskFactorsChart() {
     // Prepare data for Chart.js
     const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
     const labels = dimensions.map(dim => {
-        if (dim === 'teamwork') return 'Cohesion';  // <-- Changed label here
+        if (dim === 'teamwork') return 'Cohesion';
         return dim.charAt(0).toUpperCase() + dim.slice(1);
     });
     
@@ -13409,6 +13409,28 @@ function initializeRiskFactorsChart() {
     if (riskFactorsChart) {
         riskFactorsChart.destroy();
     }
+    
+    // Custom plugin to show numbers on bars
+    const dataLabelsPlugin = {
+        id: 'customLabels',
+        afterDatasetDraw(chart, args) {
+            const { ctx, data } = chart;
+            const meta = args.meta;
+            
+            meta.data.forEach((bar, index) => {
+                const value = data.datasets[args.index].data[index];
+                if (value > 0 && bar.height > 15) {
+                    ctx.save();
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 12px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(value, bar.x, bar.y + (bar.height / 2));
+                    ctx.restore();
+                }
+            });
+        }
+    };
     
     // Create the stacked bar chart
     riskFactorsChart = new Chart(ctx, {
@@ -13476,37 +13498,12 @@ function initializeRiskFactorsChart() {
                 y: {
                     stacked: true,
                     beginAtZero: true,
-                    grid: {
-                        color: 'rgba(99, 102, 241, 0.1)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: 'rgba(156, 163, 175, 1)',
-                        font: {
-                            size: 10
-                        },
-                        stepSize: 1,
-                        precision: 0
-                    },
-                    border: {
-                        display: false
-                    }
+                    display: false
                 }
             },
             plugins: {
                 legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                        color: 'rgba(229, 231, 235, 1)',
-                        font: {
-                            size: 11,
-                            weight: 500
-                        },
-                        padding: 10,
-                        usePointStyle: true,
-                        pointStyle: 'rect'
-                    }
+                    display: false
                 },
                 tooltip: {
                     enabled: true,
@@ -13541,7 +13538,8 @@ function initializeRiskFactorsChart() {
                     }
                 }
             }
-        }
+        },
+        plugins: [dataLabelsPlugin]
     });
     
     console.log('✅ Risk Factors Chart.js chart initialized');
