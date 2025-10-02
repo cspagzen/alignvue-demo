@@ -10578,6 +10578,9 @@ function updateBoardWithLiveData(newData) {
         // Update progress card with Key Results data
         updateProgressCard();
         
+        // Update health card with latest team data
+        updateHealthCard();  
+        
         // Update pipeline if the function exists
         if (typeof updatePipelineCard === 'function') {
             updatePipelineCard();
