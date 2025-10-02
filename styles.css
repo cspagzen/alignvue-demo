@@ -2546,16 +2546,15 @@ mendoza-line:hover {
 }
 
 .kpi-current-value {
-    font-size: clamp(1.75rem, 2.8vw, 2.5rem);
+    font-size: clamp(1.5rem, 2.5vw, 2.2rem);
     font-weight: 700;
     line-height: 1;
     margin: 0.5rem 0;
     text-align: center;
-    padding-left: 0;
-    letter-spacing: -0.02em; /* Tighten spacing for decimals */
-    max-width: 100%; /* Prevent overflow */
-    overflow: hidden; /* Hide any overflow */
-    text-overflow: ellipsis; /* Add ellipsis if too long */
+    padding: 0 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+    white-space: nowrap;
 }
 
       
