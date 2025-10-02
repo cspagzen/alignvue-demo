@@ -4702,64 +4702,87 @@ function updateDeliveryConfidenceCard() {
     // Calculate delivery confidence metrics
     const confidenceMetrics = calculateDeliveryConfidence();
     
-    // Determine confidence level and styling
-    let confidenceLevel, confidenceIcon, confidenceText, confidenceColor;
-    
-    if (confidenceMetrics.score >= 85) {
-        confidenceLevel = 'high';
-        confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11v1a10 10 0 1 1-9-10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/><path d="M16 5h6"/><path d="M19 2v6"/></svg>';
-        confidenceText = 'High Confidence';
-        confidenceColor = 'var(--accent-green)';
-    } else if (confidenceMetrics.score >= 75) {
-        confidenceLevel = 'moderate-confidence';
-        confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'Moderate Confidence';
-        confidenceColor = '#eab308';
-    } else if (confidenceMetrics.score >= 65) {
-        confidenceLevel = 'moderate-risk';
-        confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" x2="16" y1="15" y2="15"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'Moderate Risk';
-        confidenceColor = 'var(--accent-orange)';
-    } else {
-        confidenceLevel = 'high-risk';
-        confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'High Risk';
-        confidenceColor = 'var(--accent-red)';
-    }
-    
-    // Get risk factor colors
-    const validationColor = getRiskColor('validation', confidenceMetrics.riskFactors.validation);
-    const capacityColor = getRiskColor('capacity', confidenceMetrics.riskFactors.capacity);
-    const blockersColor = getRiskColor('blockers', confidenceMetrics.riskFactors.blockers);
+    // Determine zone info based on score
+    const zoneInfo = getDeliveryConfidenceZone(confidenceMetrics.score);
     
     content.innerHTML = `
-    <div class="h-full flex gap-3">
-        <!-- Left: Confidence Icon and Text -->
-        <div class="flex-1 flex flex-col items-center justify-center text-center">
-            <div class="mb-2">${confidenceIcon.replace('width="90" height="90"', 'width="60" height="60"')}</div>
-            <div class="text-sm font-bold" style="color: ${confidenceColor};">${confidenceText}</div>
-        </div>
-        
-        <!-- Right: Risk Metrics -->
-        <div class="flex-1 flex flex-col justify-center space-y-2">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-medium" style="color: var(--text-tertiary);">Validation Risks</span>
-                <div class="text-xl font-bold" style="color: ${getRiskColor('validation', confidenceMetrics.riskFactors.validation)};">${confidenceMetrics.riskFactors.validation}</div>
+        <div class="efficiency-display">
+            <div class="sweet-spot-section">
+                <h4 class="sweet-spot-title" style="color: ${zoneInfo.color};">${zoneInfo.name}</h4>
+                <div class="efficiency-value-large" style="color: ${zoneInfo.color};">${confidenceMetrics.score}%</div>
             </div>
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-medium" style="color: var(--text-tertiary);">Capacity Risks</span>
-                <div class="text-xl font-bold" style="color: ${getRiskColor('capacity', confidenceMetrics.riskFactors.capacity)};">${confidenceMetrics.riskFactors.capacity}</div>
+
+            <div class="efficiency-bar-container">
+                <div class="efficiency-bar" onmousemove="showDeliveryConfidenceTooltip(event, this)" onmouseleave="hideDeliveryConfidenceTooltip()">
+                    <div class="efficiency-indicator" style="left: ${confidenceMetrics.score}%;"></div>
+                </div>
+                <div class="tooltip" id="delivery-confidence-tooltip"></div>
             </div>
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-medium" style="color: var(--text-tertiary);">Blocked Items</span>
-                <div class="text-xl font-bold" style="color: ${getRiskColor('blockers', confidenceMetrics.riskFactors.blockers)};">${confidenceMetrics.riskFactors.blockers}</div>
+
+            <div class="efficiency-description">
+                Team capacity and execution health across<br>
+                above-the-line priority initiatives.
             </div>
         </div>
-    </div>
-`;
-    content.classList.add('under-construction');
-content.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"><div class="under-construction-text">Under Construction</div></div>');
+    `;
 }
+
+// Helper function to determine delivery confidence zones
+function getDeliveryConfidenceZone(score) {
+    if (score >= 85) {
+        return { 
+            name: 'Excellent', 
+            color: 'var(--accent-green)',
+            range: '85-100%',
+            description: 'Strong delivery capacity with minimal execution risks'
+        };
+    }
+    if (score >= 70) {
+        return { 
+            name: 'Good', 
+            color: '#22c55e',
+            range: '70-84%',
+            description: 'Solid delivery capability with some areas to address'
+        };
+    }
+    if (score >= 55) {
+        return { 
+            name: 'At Risk', 
+            color: '#eab308',
+            range: '55-69%',
+            description: 'Delivery capability compromised, intervention needed'
+        };
+    }
+    return { 
+        name: 'Critical', 
+        color: 'var(--accent-red)',
+        range: '0-54%',
+        description: 'Severe delivery risks requiring urgent action'
+    };
+}
+
+// Tooltip handler for delivery confidence bar
+function showDeliveryConfidenceTooltip(event, barElement) {
+    const rect = barElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const percentage = Math.round((x / rect.width) * 100);
+    const clampedPercentage = Math.max(0, Math.min(100, percentage));
+    
+    const zoneInfo = getDeliveryConfidenceZone(clampedPercentage);
+    
+    const tooltip = document.getElementById('delivery-confidence-tooltip');
+    tooltip.textContent = `${zoneInfo.name} (${zoneInfo.range})`;
+    tooltip.style.left = `${x}px`;
+    tooltip.classList.add('show');
+}
+
+function hideDeliveryConfidenceTooltip() {
+    const tooltip = document.getElementById('delivery-confidence-tooltip');
+    if (tooltip) {
+        tooltip.classList.remove('show');
+    }
+}
+
 
 
 
