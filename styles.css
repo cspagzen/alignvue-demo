@@ -4335,3 +4335,75 @@ input[type="number"] {
     border: 5px solid transparent;
     border-top-color: rgba(0, 0, 0, 0.9);
 }
+
+/* Compact Recently Completed Card */
+.completed-card {
+    padding: 0.75rem 1rem 0.5rem 1rem;
+}
+
+.completed-card .bento-card-header {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.375rem;
+}
+
+.completed-card .bento-card-content {
+    padding-top: 0;
+    gap: 0.5rem;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.completed-card .bento-large-metric {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+    line-height: 1;
+}
+
+.completed-card .text-sm {
+    font-size: 0.75rem;
+    margin-bottom: 0.125rem;
+}
+
+.completed-card .text-xs {
+    font-size: 0.625rem;
+}
+
+.completed-card .kpi-gauge-card {
+    padding-bottom: 0.5rem;
+}
+
+.completed-card .mt-3 {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0 !important;
+}
+
+.completed-card .pt-3 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0 !important;
+}
+
+/* Compact list items in Recently Completed modal */
+.completed-card .bento-pipeline-item {
+    padding: 0.375rem 0.5rem;
+    margin-bottom: 0.25rem;
+    min-height: 2.25rem;
+}
+
+.completed-card .bento-pipeline-item-header {
+    padding: 0;
+    margin-bottom: 0.125rem;
+}
+
+.completed-card .bento-pipeline-item-title {
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+.completed-card .bento-pipeline-submitter {
+    font-size: 0.625rem;
+}
+
+.completed-card .bento-type-badge {
+    font-size: 0.5rem;
+    padding: 0.0625rem 0.25rem;
+}
