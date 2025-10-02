@@ -5383,79 +5383,44 @@ function getTypeBreakdown(initiatives) {
 
 // Update Recently Completed Card
 function updateRecentlyCompletedCard() {
-    console.log('=== UPDATE RECENTLY COMPLETED CARD DEBUG ===');
     const content = document.getElementById('completed-content');
     
     if (!content) {
-        console.log('❌ completed-content element not found');
         return;
     }
     
-    console.log('✅ Content element found');
-    
-    // Get completed initiatives - use empty array if undefined
     const completedInitiatives = boardData.recentlyCompleted || [];
     
-    
-    // ADD THIS DEBUG BLOCK RIGHT HERE:
-console.log('=== CARD VS MODAL DEBUG ===');
-console.log('Card sees boardData.recentlyCompleted:', completedInitiatives.length);
-console.log('Card data:', completedInitiatives.map(init => ({title: init.title, type: init.type, date: init.completedDate})));
-    
-    console.log('Raw completed initiatives:', completedInitiatives.length);
-    
-    // If no data, show 0 and return
     if (completedInitiatives.length === 0) {
-        console.log('No completed initiatives found, showing 0');
         content.innerHTML = `
-            <div class="flex flex-col text-center kpi-gauge-card"
-     onclick="showRecentlyCompletedModal()" style="cursor: pointer; padding: 0.5rem 0;">
-                <div class="text-4xl font-bold mb-2" style="color: var(--accent-green);">0</div>
-                <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">Initiatives Completed</div>
-                <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
-                <div class="mt-3 pt-3 border-t border-gray-700 w-full text-xs" style="color: var(--text-secondary);">
-                    No initiatives completed
-                </div>
+            <div onclick="showRecentlyCompletedModal()" style="cursor: pointer; padding: 1rem; text-center;">
+                <div style="font-size: 2rem; font-weight: bold; color: var(--accent-green); margin-bottom: 0.5rem;">0</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">No completed initiatives</div>
             </div>
         `;
         return;
     }
     
-    console.log('Sample completed initiative:', completedInitiatives[0]);
+    const last30Days = getCompletedInitiativesInDays(completedInitiatives, 30);
+    const last60Days = getCompletedInitiativesInDays(completedInitiatives, 60);
     
-    // Use same functions as modal
-const last60Days = getCompletedInitiativesInDays(completedInitiatives, 60);
-const breakdown60 = getTypeBreakdown(last60Days);
-
-console.log('60-day filtered result:', last60Days.length);
-console.log('Type counts:', breakdown60);
-    
-    console.log('Type counts:', breakdown60);
-    
-   // Use same function as modal  
-const generateBreakdownText = (breakdown) => {
-    return Object.entries(breakdown)
-        .filter(([type, data]) => data.count > 0)
-        .map(([type, data]) => `<span style="color: ${data.color};">${data.count} ${type.charAt(0).toUpperCase() + type.slice(1)}</span>`)
-        .join(' • ');
-};
-
-const breakdownText = generateBreakdownText(breakdown60);
-    
-    // Update the card HTML
     content.innerHTML = `
-        <div class="flex flex-col text-center kpi-gauge-card"
-     onclick="showRecentlyCompletedModal()" style="cursor: pointer; padding: 0.5rem 0;">
-            <div class="text-4xl font-bold mb-2" style="color: var(--accent-green);">${last60Days.length}</div>
-            <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">Initiatives Completed</div>
-            <div class="text-xs" style="color: var(--text-secondary);">in Last 60 Days</div>
-            <div class="mt-3 pt-3 border-t border-gray-700 w-full text-xs" style="color: var(--text-secondary);">
-                ${breakdownText || 'No type breakdown available'}
+        <div onclick="showRecentlyCompletedModal()" style="cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem; height: 100%;">
+            <!-- Last 30 Days Card -->
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 0.75rem; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <div style="font-size: 1.75rem; font-weight: bold; color: var(--accent-green);">${last30Days.length}</div>
+                <div style="font-size: 0.7rem; font-weight: 500; color: var(--text-primary);">Completed</div>
+                <div style="font-size: 0.625rem; color: var(--text-secondary);">Last 30 Days</div>
+            </div>
+            
+            <!-- Last 60 Days Card -->
+            <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 0.75rem; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <div style="font-size: 1.75rem; font-weight: bold; color: rgba(16, 185, 129, 0.8);">${last60Days.length}</div>
+                <div style="font-size: 0.7rem; font-weight: 500; color: var(--text-primary);">Completed</div>
+                <div style="font-size: 0.625rem; color: var(--text-secondary);">Last 60 Days</div>
             </div>
         </div>
     `;
-    
-    console.log('✅ Card HTML updated');
 }
 
 // Show Recently Completed Modal
