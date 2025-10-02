@@ -4737,8 +4737,8 @@ function updateDeliveryConfidenceCard() {
             </div>
 
             <div class="efficiency-description">
-                Likelihood of on-time delivery based on capacity, skills,blockers, progress, utilization, support, and focus.
-            </div>
+    Confidence in our ability to continuously deliver across the portfolio: capacity, skills, blockers, progress, and focus.
+</div>
         </div>
     `;
 }
@@ -4831,7 +4831,7 @@ function showDeliveryConfidenceModal() {
         confidenceRGB = '239, 68, 68';
     }
     
-    title.textContent = 'Delivery Confidence Analysis';
+    title.textContent = 'Portfolio Delivery Capability Analysis';
     
     content.innerHTML = `
         <div style="max-height: 70vh; overflow-y: auto; padding-right: 12px;">
@@ -4842,7 +4842,7 @@ function showDeliveryConfidenceModal() {
                         <path d="M9 12l2 2 4-4"/>
                         <path d="M21 12c.552 0 1-.448 1-1V5l-8-3-8 3v6c0 .552.448 1 1 1z"/>
                     </svg>
-                    Overall Delivery Confidence
+                    Overall Portfolio Delivery Capability
                 </h3>
                 
                 <div style="padding: 20px; border-radius: 12px; margin-bottom: 16px; background: linear-gradient(135deg, rgba(${confidenceRGB}, 0.15) 0%, rgba(${confidenceRGB}, 0.05) 100%); border: 1px solid rgba(${confidenceRGB}, 0.3);">
