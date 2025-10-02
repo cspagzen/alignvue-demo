@@ -13395,6 +13395,17 @@ function initializeRiskFactorsChart() {
     const ctx = canvas.getContext('2d');
     const dimensionCounts = getDimensionCountsByState();
     
+    // Create gradients for bars - vertical direction for stacked bars
+    const criticalGradient = ctx.createLinearGradient(0, 120, 0, 0);  // Bottom to top
+    criticalGradient.addColorStop(0, '#991b1b');
+    criticalGradient.addColorStop(0.5, '#b91c1c');
+    criticalGradient.addColorStop(1, '#dc2626');
+
+    const atRiskGradient = ctx.createLinearGradient(0, 120, 0, 0);  // Bottom to top
+    atRiskGradient.addColorStop(0, '#d97706');
+    atRiskGradient.addColorStop(0.5, '#f59e0b');
+    atRiskGradient.addColorStop(1, '#fbbf24');
+    
     // Prepare data for Chart.js
     const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
     const labels = dimensions.map(dim => {
@@ -13438,30 +13449,30 @@ function initializeRiskFactorsChart() {
         data: {
             labels: labels,
             datasets: [
-    {
-        label: 'At Risk',
-        data: atRiskData,
-        backgroundColor: atRiskGradient,
-        borderColor: '#b45309',
-        borderWidth: 1,
-        borderRadius: 0,  // <-- Remove top radius since it's at bottom now
-        barThickness: 'flex',
-        maxBarThickness: 60
-    },
-    {
-        label: 'Critical',
-        data: criticalData,
-        backgroundColor: criticalGradient,
-        borderColor: '#7f1d1d',
-        borderWidth: 1,
-        borderRadius: {  // <-- Add top radius since it's at top now
-            topLeft: 4,
-            topRight: 4
-        },
-        barThickness: 'flex',
-        maxBarThickness: 60
-    }
-]
+                {
+                    label: 'At Risk',
+                    data: atRiskData,
+                    backgroundColor: atRiskGradient,
+                    borderColor: '#b45309',
+                    borderWidth: 1,
+                    borderRadius: 0,
+                    barThickness: 'flex',
+                    maxBarThickness: 60
+                },
+                {
+                    label: 'Critical',
+                    data: criticalData,
+                    backgroundColor: criticalGradient,
+                    borderColor: '#7f1d1d',
+                    borderWidth: 1,
+                    borderRadius: {
+                        topLeft: 4,
+                        topRight: 4
+                    },
+                    barThickness: 'flex',
+                    maxBarThickness: 60
+                }
+            ]
         },
         options: {
             responsive: true,
