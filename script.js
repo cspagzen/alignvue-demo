@@ -13520,7 +13520,7 @@ function initializeRiskFactorsChart() {
                     display: false
                 },
                 tooltip: {
-                    enabled: true,
+                    enabled: false,
                     mode: 'index',
                     intersect: false,
                     backgroundColor: 'rgba(15, 15, 35, 0.95)',
