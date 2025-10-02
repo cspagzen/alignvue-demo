@@ -2717,7 +2717,8 @@ modalContent.innerHTML = `
 </div>
 
     <div class="efficiency-description">
-        Likelihood of on-time delivery based on capacity, skills,blockers, progress, utilization, support, and focus.
+        Measures how well your organization allocates resources<br>
+        as the percentage of maximum possible optimal allocation.
     </div>
 </div>
             
@@ -4736,8 +4737,7 @@ function updateDeliveryConfidenceCard() {
             </div>
 
             <div class="efficiency-description">
-                Team capacity and execution health across<br>
-                above-the-line priority initiatives.
+                Likelihood of on-time delivery based on capacity, skills,blockers, progress, utilization, support, and focus.
             </div>
         </div>
     `;
