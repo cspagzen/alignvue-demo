@@ -4720,7 +4720,7 @@ function updateDeliveryConfidenceCard() {
     }
     
     content.innerHTML = `
-        <div class="efficiency-display">
+        <div class="efficiency-display" onclick="showDeliveryConfidenceModal()" style="cursor: pointer;">
             <div class="sweet-spot-section">
                 <div class="efficiency-value-large" style="color: ${zoneColor};">
                     ${zoneName}: ${score}%
