@@ -13441,7 +13441,7 @@ function initializeRiskFactorsChart() {
     {
         label: 'Critical',
         data: criticalData,
-        backgroundColor: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%)',
+        backgroundColor: '#dc2626',  // Solid red to match
         borderColor: '#7f1d1d',
         borderWidth: 1,
         borderRadius: 0,
@@ -13451,7 +13451,7 @@ function initializeRiskFactorsChart() {
     {
         label: 'At Risk',
         data: atRiskData,
-        backgroundColor: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)',
+        backgroundColor: '#f59e0b',  // Solid orange to match  
         borderColor: '#78350f',
         borderWidth: 1,
         borderRadius: {
