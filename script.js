@@ -4699,7 +4699,7 @@ function updateResourceCard() {
 function updateDeliveryConfidenceCard() {
     const content = document.getElementById('delivery-confidence-content');
     
-    // Calculate delivery confidence metrics
+    // Calculate delivery confidence metrics (NOW uses the corrected calculation)
     const confidenceMetrics = calculateDeliveryConfidence();
     const score = confidenceMetrics.score;
     
@@ -4798,213 +4798,242 @@ function hideDeliveryConfidenceTooltip() {
     return 'var(--accent-red)';
 }
       
-      function showDeliveryConfidenceModal() {
+function showDeliveryConfidenceModal() {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
     
     // Calculate delivery confidence metrics
     const confidenceMetrics = calculateDeliveryConfidence();
+    const rf = confidenceMetrics.riskFactors; // Shorthand
     
     // Determine confidence level styling
-    let confidenceIcon, confidenceText, confidenceColor;
+    let confidenceIcon, confidenceText, confidenceColor, confidenceRGB;
     
     if (confidenceMetrics.score >= 85) {
         confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11v1a10 10 0 1 1-9-10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/><path d="M16 5h6"/><path d="M19 2v6"/></svg>';
         confidenceText = 'High Confidence';
         confidenceColor = 'var(--accent-green)';
-    } else if (confidenceMetrics.score >= 75) {
-        confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'Moderate Confidence';
-        confidenceColor = '#eab308';
-    } else if (confidenceMetrics.score >= 65) {
+        confidenceRGB = '34, 197, 94';
+    } else if (confidenceMetrics.score >= 70) {
+        confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
+        confidenceText = 'Good';
+        confidenceColor = '#3b82f6';
+        confidenceRGB = '59, 130, 246';
+    } else if (confidenceMetrics.score >= 55) {
         confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" x2="16" y1="15" y2="15"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'Moderate Risk';
+        confidenceText = 'At Risk';
         confidenceColor = 'var(--accent-orange)';
+        confidenceRGB = '249, 115, 22';
     } else {
         confidenceIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
-        confidenceText = 'High Risk';
+        confidenceText = 'Critical';
         confidenceColor = 'var(--accent-red)';
+        confidenceRGB = '239, 68, 68';
     }
     
     title.textContent = 'Delivery Confidence Analysis';
-    content.innerHTML = 
-        '<div class="space-y-6">' +
-            // Header Section with Face Icon and Confidence Level
-            '<div>' +
-                '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                        '<path d="M9 12l2 2 4-4"/>' +
-                        '<path d="M21 12c.552 0 1-.448 1-1V5l-8-3-8 3v6c0 .552.448 1 1 1z"/>' +
-                    '</svg>' +
-                    'Overall Delivery Confidence' +
-                '</h3>' +
+    
+    content.innerHTML = `
+        <div style="max-height: 70vh; overflow-y: auto; padding-right: 12px;">
+            <!-- Header Section -->
+            <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 16px; color: var(--text-primary); display: flex; align-items: center; gap: 12px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 12l2 2 4-4"/>
+                        <path d="M21 12c.552 0 1-.448 1-1V5l-8-3-8 3v6c0 .552.448 1 1 1z"/>
+                    </svg>
+                    Overall Delivery Confidence
+                </h3>
                 
-                // Confidence Status Display
-'<div class="p-6 rounded-lg mb-6" style="background: linear-gradient(135deg, rgba(' + (confidenceColor === 'var(--accent-green)' ? '16, 185, 129' : confidenceColor === '#eab308' ? '234, 179, 8' : confidenceColor === 'var(--accent-orange)' ? '251, 146, 60' : '239, 68, 68') + ', 0.1) 0%, rgba(' + (confidenceColor === 'var(--accent-green)' ? '16, 185, 129' : confidenceColor === '#eab308' ? '234, 179, 8' : confidenceColor === 'var(--accent-orange)' ? '251, 146, 60' : '239, 68, 68') + ', 0.05) 100%); border: 1px solid ' + confidenceColor + ';">' +
-    '<div class="flex items-center justify-center gap-6">' +
-        '<div class="text-5xl font-bold" style="color: ' + confidenceColor + ';">' + confidenceMetrics.score + '%</div>' +
-        '<div style="color: ' + confidenceColor + ';">' + confidenceIcon.replace('width="48" height="48"', 'width="96" height="96"') + '</div>' +
-        '<div class="text-5xl font-bold" style="color: ' + confidenceColor + ';">' + confidenceText + '</div>' +
-    '</div>' +
-'</div>' +
-            
-            // How Confidence Score is Calculated
-'<div class="p-4 rounded-lg mb-4" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid var(--accent-blue);">' +
-    '<div class="flex items-center gap-3 mb-3">' +
-        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-            '<circle cx="12" cy="12" r="10"/>' +
-            '<path d="M12 16v-4"/>' +
-            '<path d="M12 8h.01"/>' +
-        '</svg>' +
-        '<span class="font-medium text-sm" style="color: var(--accent-blue);">How is the confidence score calculated</span>' +
-    '</div>' +
-    '<p class="text-sm leading-relaxed" style="color: var(--text-secondary);">Confidence starts at 85% and deducts points based on:</p>' +
-    '<div class="space-y-3 mt-4">' +
-        '<div class="flex items-start gap-3">' +
-    '<div class="w-2 h-2 rounded-full mt-2 flex-shrink-0" style="background: var(--accent-blue);"></div>' +
-    '<div class="text-sm" style="color: var(--text-secondary);"><strong>Validation risks:</strong> -5% per high-priority initiative that\'s not validated</div>' +
-'</div>' +
-'<div class="flex items-start gap-3">' +
-    '<div class="w-2 h-2 rounded-full mt-2 flex-shrink-0" style="background: var(--accent-blue);"></div>' +
-    '<div class="text-sm" style="color: var(--text-secondary);"><strong>Capacity risks:</strong> -3% per team with >95% utilization or at-risk capacity</div>' +
-'</div>' +
-'<div class="flex items-start gap-3">' +
-    '<div class="w-2 h-2 rounded-full mt-2 flex-shrink-0" style="background: var(--accent-blue);"></div>' +
-    '<div class="text-sm" style="color: var(--text-secondary);"><strong>Blocked items:</strong> -0.5% per blocked story (max 15% deduction)</div>' +
-'</div>' +
-        '</div>' +
-    '</div>' +
-'</div>' +
-            
-            // Risk Factor Breakdown
-            '<div>' +
-                '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                        '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>' +
-                        '<path d="M12 9v4"/>' +
-                        '<path d="M12 17h.01"/>' +
-                    '</svg>' +
-                    'Risk Factor Breakdown' +
-                '</h3>' +
+                <div style="padding: 20px; border-radius: 12px; margin-bottom: 16px; background: linear-gradient(135deg, rgba(${confidenceRGB}, 0.15) 0%, rgba(${confidenceRGB}, 0.05) 100%); border: 1px solid rgba(${confidenceRGB}, 0.3);">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="flex-shrink: 0;">
+                            ${confidenceIcon}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 2rem; font-weight: 700; color: ${confidenceColor}; margin-bottom: 4px;">
+                                ${confidenceMetrics.score}%
+                            </div>
+                            <div style="font-size: 1rem; color: var(--text-secondary); font-weight: 500;">
+                                ${confidenceText}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+                <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-green);">${rf.totalAboveLineInitiatives}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">Above Line</div>
+                </div>
+                <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-orange);">${rf.totalBelowLineInitiatives}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">Below Line</div>
+                </div>
+                <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: ${rf.activeWorkBelowLine > 4 ? 'var(--accent-red)' : rf.activeWorkBelowLine > 2 ? 'var(--accent-orange)' : 'var(--accent-green)'};">${rf.activeWorkBelowLine}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">Active Below</div>
+                </div>
+            </div>
+
+            <!-- Risk Breakdown -->
+            <div style="background: var(--bg-tertiary); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-primary);">
+                <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0;">
+                    Risk Factor Breakdown
+                </h3>
                 
-                '<div class="grid gap-4" style="grid-template-columns: 1fr 1fr 1fr;">' +
-                    // Validation Risks
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="flex items-center justify-between mb-3">' +
-                            '<div class="flex items-center gap-2">' +
-                                '<div class="w-3 h-3 rounded-full" style="background: ' + getRiskColor('validation', confidenceMetrics.riskFactors.validation) + ';"></div>' +
-                                '<span class="font-bold text-sm" style="color: var(--text-primary);">Validation</span>' +
-                            '</div>' +
-                            '<div class="flex items-center gap-1">' +
-                                getTrendArrow('validation') +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="text-3xl font-bold mb-1" style="color: ' + getRiskColor('validation', confidenceMetrics.riskFactors.validation) + ';">' + confidenceMetrics.riskFactors.validation + '</div>' +
-                        '<div class="text-xs" style="color: var(--text-tertiary);">High-priority unvalidated</div>' +
-                        '<div class="text-xs mt-1" style="color: var(--text-secondary);">Impact severity: ' + getImpactSeverity('validation', confidenceMetrics.riskFactors.validation) + '</div>' +
-                    '</div>' +
+                <!-- Above the Line Risks -->
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--accent-green); margin: 0;">Above the Line (Rows 1-5)</h4>
+                        <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(34, 197, 94, 0.2); color: var(--accent-green); font-weight: 600;">FULL WEIGHT</span>
+                    </div>
+                    <div style="display: grid; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);">Capacity Risks</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: ${rf.capacityAbove > 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">${rf.capacityAbove} teams</div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">-${rf.capacityAbove * 4}%</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);">Skillset Risks</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: ${rf.skillsetAbove > 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">${rf.skillsetAbove} teams</div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">-${rf.skillsetAbove * 3}%</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);">Blocked Items</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: ${rf.blockersAbove > 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">${rf.blockersAbove} items</div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">-${rf.blockerPenalty.toFixed(1)}%</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);">Stagnant Work</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: ${rf.stagnantAbove > 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">${rf.stagnantAbove} items</div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">-${rf.stagnantAbove * 3}%</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);">Support Risks</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: ${rf.supportAbove > 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">${rf.supportAbove} teams</div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">-${rf.supportAbove * 2}%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Below the Line Risks -->
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--accent-orange); margin: 0;">Below the Line (Rows 6-8)</h4>
+                        <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(249, 115, 22, 0.2); color: var(--accent-orange); font-weight: 600;">50% WEIGHT</span>
+                    </div>
+                    <div style="display: grid; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);">Capacity Risks</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: ${rf.capacityBelow > 0 ? 'var(--accent-orange)' : 'var(--accent-green)'};">${rf.capacityBelow} teams</div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">-${rf.capacityBelow * 2}%</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);">Skillset Risks</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: ${rf.skillsetBelow > 0 ? 'var(--accent-orange)' : 'var(--accent-green)'};">${rf.skillsetBelow} teams</div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">-${(rf.skillsetBelow * 1.5).toFixed(1)}%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cross-Cutting & Focus -->
+                <div>
+                    <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--accent-blue); margin: 0 0 10px 0;">Focus & Utilization</h4>
+                    <div style="display: grid; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);">Over-Utilized Teams</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: ${rf.overUtilization > 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">${rf.overUtilization} teams</div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">-${rf.overUtilization * 2}%</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: ${rf.distractionPenalty > 0 ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-secondary)'}; border-radius: 6px;">
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);">Distraction Penalty</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: ${rf.distractionPenalty > 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">${rf.activeWorkBelowLine} active</div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">-${rf.distractionPenalty}%</div>
+                            </div>
+                        </div>
+                        ${rf.focusBonus > 0 ? `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.3);">
+                            <span style="font-size: 0.875rem; color: var(--accent-green); font-weight: 600;">🎯 Focus Bonus!</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: var(--accent-green);">+${rf.focusBonus}%</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+
+            <!-- How It Works -->
+            <div style="background: var(--bg-tertiary); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-primary);">
+                <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 12px 0;">
+                    How It Works
+                </h3>
+                <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.875rem; margin-bottom: 12px;">
+                    Confidence starts at <strong>90%</strong> and adjusts based on where work sits in the priority stack. Above-the-line work (Rows 1-5) gets full penalty weight because it's critical. Below-the-line work (Rows 6-8) gets 50% weight.
+                </p>
+                
+                <div style="background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-blue); padding: 12px; border-radius: 6px; margin-top: 12px;">
+                    <div style="font-size: 0.8125rem; font-weight: 600; color: var(--accent-blue); margin-bottom: 8px;">Focus Bonus System 🎯</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;">
+                        <div>• <strong>+3%</strong> for zero active work below the line (perfect focus!)</div>
+                        <div>• <strong>+2%</strong> for ≤2 active below the line</div>
+                        <div>• <strong>+1%</strong> for ≤4 active below the line</div>
+                        <div style="margin-top: 8px; font-style: italic;">Distraction penalty: -2% for every 3 active items below the line</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score Interpretation -->
+            <div style="background: var(--bg-tertiary); border-radius: 12px; padding: 16px; border: 1px solid var(--border-primary);">
+                <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 12px 0;">
+                    Score Interpretation
+                </h3>
+                
+                <div style="display: grid; gap: 8px;">
+                    <div style="display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center;">
+                        <div style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; padding: 4px; text-align: center; color: var(--accent-green); font-weight: 700; font-size: 0.75rem;">85-95%</div>
+                        <div style="color: var(--text-secondary); font-size: 0.8125rem;"><strong style="color: var(--text-primary);">Excellent:</strong> Minimal risk, high confidence in delivery</div>
+                    </div>
                     
-                    // Capacity Risks
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="flex items-center justify-between mb-3">' +
-                            '<div class="flex items-center gap-2">' +
-                                '<div class="w-3 h-3 rounded-full" style="background: ' + getRiskColor('capacity', confidenceMetrics.riskFactors.capacity) + ';"></div>' +
-                                '<span class="font-bold text-sm" style="color: var(--text-primary);">Capacity</span>' +
-                            '</div>' +
-                            '<div class="flex items-center gap-1">' +
-                                getTrendArrow('capacity') +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="text-3xl font-bold mb-1" style="color: ' + getRiskColor('capacity', confidenceMetrics.riskFactors.capacity) + ';">' + confidenceMetrics.riskFactors.capacity + '</div>' +
-                        '<div class="text-xs" style="color: var(--text-tertiary);">Overloaded teams</div>' +
-                        '<div class="text-xs mt-1" style="color: var(--text-secondary);">Impact severity: ' + getImpactSeverity('capacity', confidenceMetrics.riskFactors.capacity) + '</div>' +
-                    '</div>' +
+                    <div style="display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center;">
+                        <div style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; padding: 4px; text-align: center; color: #3b82f6; font-weight: 700; font-size: 0.75rem;">70-84%</div>
+                        <div style="color: var(--text-secondary); font-size: 0.8125rem;"><strong style="color: var(--text-primary);">Good:</strong> Some risks but manageable with monitoring</div>
+                    </div>
                     
-                    // Blocked Items
-                    '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                        '<div class="flex items-center justify-between mb-3">' +
-                            '<div class="flex items-center gap-2">' +
-                                '<div class="w-3 h-3 rounded-full" style="background: ' + getRiskColor('blockers', confidenceMetrics.riskFactors.blockers) + ';"></div>' +
-                                '<span class="font-bold text-sm" style="color: var(--text-primary);">Blockers</span>' +
-                            '</div>' +
-                            '<div class="flex items-center gap-1">' +
-                                getTrendArrow('blockers') +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="text-3xl font-bold mb-1" style="color: ' + getRiskColor('blockers', confidenceMetrics.riskFactors.blockers) + ';">' + confidenceMetrics.riskFactors.blockers + '</div>' +
-                        '<div class="text-xs" style="color: var(--text-tertiary);">Total blocked stories</div>' +
-                        '<div class="text-xs mt-1" style="color: var(--text-secondary);">Impact severity: ' + getImpactSeverity('blockers', confidenceMetrics.riskFactors.blockers) + '</div>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-            
-            // Action-Oriented Insights
-            '<div>' +
-                '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                        '<path d="M9 12l2 2 4-4"/>' +
-                        '<path d="M21 12c.552 0 1-.448 1-1V5l-8-3-8 3v6c0 .552.448 1 1 1z"/>' +
-                    '</svg>' +
-                    'Action-Oriented Insights' +
-                '</h3>' +
-                
-                '<div class="grid gap-4" style="grid-template-columns: 1fr 1fr 1fr;">' +
-                    getActionInsights(confidenceMetrics) +
-                '</div>' +
-            '</div>' +
-            
-            // Historical Trend
-            '<div>' +
-                '<h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                        '<path d="M3 3v16a2 2 0 0 0 2 2h16"/>' +
-                        '<path d="m19 9-5 5-4-4-3 3"/>' +
-                    '</svg>' +
-                    'Historical Trend' +
-                '</h3>' +
-                
-                '<div class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">' +
-                    '<div class="flex items-center justify-between mb-4">' +
-                        '<div class="text-sm font-medium" style="color: var(--text-primary);">Confidence Over Last 30 Days</div>' +
-                        '<div class="flex items-center gap-2">' +
-                            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                '<path d="M16 7h6v6"/>' +
-                                '<path d="m22 7-8.5 8.5-5-5L2 17"/>' +
-                            '</svg>' +
-                            '<span class="text-sm font-medium" style="color: var(--accent-green);">Up 12% from last month</span>' +
-                        '</div>' +
-                    '</div>' +
+                    <div style="display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center;">
+                        <div style="background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 6px; padding: 4px; text-align: center; color: var(--accent-orange); font-weight: 700; font-size: 0.75rem;">55-69%</div>
+                        <div style="color: var(--text-secondary); font-size: 0.8125rem;"><strong style="color: var(--text-primary);">At Risk:</strong> Significant risks require active management</div>
+                    </div>
                     
-                    // Sparkline Chart
-                    '<div style="height: 100px;">' +
-                        '<svg width="100%" height="100" viewBox="0 0 400 100" style="background: rgba(255,255,255,0.02); border-radius: 4px;">' +
-                            // Define gradient
-                            '<defs>' +
-                                '<linearGradient id="confidenceGradient" x1="0%" y1="0%" x2="0%" y2="100%">' +
-                                    '<stop offset="0%" style="stop-color:' + confidenceColor + ';stop-opacity:0.3" />' +
-                                    '<stop offset="100%" style="stop-color:' + confidenceColor + ';stop-opacity:0" />' +
-                                '</linearGradient>' +
-                            '</defs>' +
-                            
-                            // Grid lines
-                            '<line x1="0" y1="25" x2="400" y2="25" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>' +
-                            '<line x1="0" y1="50" x2="400" y2="50" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>' +
-                            '<line x1="0" y1="75" x2="400" y2="75" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>' +
-                            
-                            // X-axis' +
-                            '<line x1="0" y1="90" x2="400" y2="90" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>' +
-                            
-                            // Data points for upward trend (65% to 77%)
-                            generateConfidenceTrendLine(confidenceColor) +
-                            
-                            // Current point highlight
-                            '<circle cx="400" cy="23" r="4" fill="' + confidenceColor + '" stroke="white" stroke-width="2"/>' +
-                        '</svg>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-        '</div>';
+                    <div style="display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center;">
+                        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 4px; text-align: center; color: var(--accent-red); font-weight: 700; font-size: 0.75rem;">45-54%</div>
+                        <div style="color: var(--text-secondary); font-size: 0.8125rem;"><strong style="color: var(--text-primary);">Critical:</strong> Severe risks need immediate attention</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
     
     modal.classList.add('show');
 }
@@ -5190,29 +5219,124 @@ function generateConfidenceTrendLine(color) {
 }
       
       function calculateDeliveryConfidence() {
-    // Start with base confidence of 85%
-    let confidence = 85;
+    let confidence = 90; // Start at 90%
     
-    // Calculate risk factors
-    const validationRisks = boardData.initiatives.filter(init => 
-        init.validation === 'not-validated' && 
-        init.priority !== 'bullpen' && 
-        getRowColFromSlot(init.priority).row <= 4
-    ).length;
+    // Define "above the line" and "below the line" 
+    // Rows 1-5 are above the line (NOW and NEXT timeframes)
+    // Rows 6-8 are below the line (LATER timeframe)
+    const aboveTheLine = boardData.initiatives.filter(init => {
+        if (init.priority === 'bullpen') return false;
+        const row = getRowColFromSlot(init.priority).row;
+        return row <= 5;
+    });
     
-    const capacityRisks = Object.values(boardData.teams).filter(team => {
-        const jiraData = team.jira || {};
-        return jiraData.utilization > 95 || team.capacity === 'at-risk';
+    const belowTheLine = boardData.initiatives.filter(init => {
+        if (init.priority === 'bullpen') return false;
+        const row = getRowColFromSlot(init.priority).row;
+        return row > 5;
+    });
+    
+    // =========================================================================
+    // SECTION 1: ABOVE THE LINE RISKS (High Priority Work) - FULL WEIGHT
+    // =========================================================================
+    
+    const aboveLineTeams = new Set();
+    aboveTheLine.forEach(init => {
+        init.teams.forEach(team => aboveLineTeams.add(team));
+    });
+    
+    // 1A. CAPACITY RISKS - Above the line (-4% each)
+    const capacityRisksAbove = Array.from(aboveLineTeams).filter(teamName => {
+        const team = boardData.teams[teamName];
+        return team && (team.capacity === 'Critical' || team.capacity === 'At Risk' || 
+               team.capacity === 'critical' || team.capacity === 'at-risk');
     }).length;
+    confidence -= capacityRisksAbove * 4;
     
-    const blockedItems = boardData.initiatives.reduce((total, init) => {
+    // 1B. SKILLSET RISKS - Above the line (-3% each)
+    const skillsetRisksAbove = Array.from(aboveLineTeams).filter(teamName => {
+        const team = boardData.teams[teamName];
+        return team && (team.skillset === 'Critical' || team.skillset === 'At Risk' || 
+               team.skillset === 'critical' || team.skillset === 'at-risk');
+    }).length;
+    confidence -= skillsetRisksAbove * 3;
+    
+    // 1C. BLOCKED WORK - Above the line only (-0.5% per item, max -15%)
+    const blockedItemsAbove = aboveTheLine.reduce((total, init) => {
         return total + (init.jira?.flagged || 0);
     }, 0);
+    const blockerPenalty = Math.min(blockedItemsAbove * 0.5, 15);
+    confidence -= blockerPenalty;
     
-    // Reduce confidence based on risk factors
-    confidence -= validationRisks * 5;  // 5% per validation risk
-    confidence -= capacityRisks * 3;    // 3% per capacity risk
-    confidence -= Math.min(blockedItems * 0.5, 15); // 0.5% per blocked item, max 15%
+    // 1D. STAGNANT INITIATIVES - Above the line only (-3% each)
+    const stagnantAbove = aboveTheLine.filter(init => {
+        return init.progress < 25;
+    }).length;
+    confidence -= stagnantAbove * 3;
+    
+    // 1E. OVER-UTILIZATION - All teams (-2% each)
+    const overUtilizedTeams = Object.values(boardData.teams).filter(team => {
+        return (team.jira?.utilization || 0) > 95;
+    }).length;
+    confidence -= overUtilizedTeams * 2;
+    
+    // 1F. SUPPORT RISKS - Above the line teams only (-2% each)
+    const supportRisksAbove = Array.from(aboveLineTeams).filter(teamName => {
+        const team = boardData.teams[teamName];
+        return team && (team.support === 'Critical' || team.support === 'At Risk' || 
+               team.support === 'critical' || team.support === 'at-risk');
+    }).length;
+    confidence -= supportRisksAbove * 2;
+    
+    // =========================================================================
+    // SECTION 2: BELOW THE LINE RISKS - REDUCED WEIGHT (50%)
+    // =========================================================================
+    
+    const belowLineTeams = new Set();
+    belowTheLine.forEach(init => {
+        init.teams.forEach(team => belowLineTeams.add(team));
+    });
+    
+    // 2A. CAPACITY RISKS - Below the line (-2% each, 50% weight)
+    const capacityRisksBelow = Array.from(belowLineTeams).filter(teamName => {
+        const team = boardData.teams[teamName];
+        return team && (team.capacity === 'Critical' || team.capacity === 'At Risk' || 
+               team.capacity === 'critical' || team.capacity === 'at-risk');
+    }).length;
+    confidence -= capacityRisksBelow * 2;
+    
+    // 2B. SKILLSET RISKS - Below the line (-1.5% each, 50% weight)
+    const skillsetRisksBelow = Array.from(belowLineTeams).filter(teamName => {
+        const team = boardData.teams[teamName];
+        return team && (team.skillset === 'Critical' || team.skillset === 'At Risk' || 
+               team.skillset === 'critical' || team.skillset === 'at-risk');
+    }).length;
+    confidence -= skillsetRisksBelow * 1.5;
+    
+    // =========================================================================
+    // SECTION 3: DISTRACTION PENALTY
+    // =========================================================================
+    
+    const activeWorkBelowLine = belowTheLine.filter(init => {
+        return init.progress > 10; // More than just started
+    }).length;
+    
+    const distractionPenalty = Math.floor(activeWorkBelowLine / 3) * 2;
+    confidence -= distractionPenalty;
+    
+    // =========================================================================
+    // SECTION 4: FOCUS BONUS
+    // =========================================================================
+    
+    let focusBonus = 0;
+    if (activeWorkBelowLine === 0) {
+        focusBonus = 3; // Perfect focus!
+    } else if (activeWorkBelowLine <= 2) {
+        focusBonus = 2;
+    } else if (activeWorkBelowLine <= 4) {
+        focusBonus = 1;
+    }
+    confidence += focusBonus;
     
     // Ensure confidence stays within reasonable bounds
     confidence = Math.max(confidence, 45);
@@ -5220,25 +5344,46 @@ function generateConfidenceTrendLine(color) {
     
     // Determine color based on confidence level
     let color;
-    if (confidence >= 80) {
-        color = 'var(--accent-green)';
-    } else if (confidence >= 65) {
-        color = 'var(--accent-orange)';
+    if (confidence >= 85) {
+        color = '#22c55e'; // Excellent - green
+    } else if (confidence >= 70) {
+        color = '#3b82f6'; // Good - blue
+    } else if (confidence >= 55) {
+        color = '#f97316'; // At Risk - orange
     } else {
-        color = 'var(--accent-red)';
+        color = '#ef4444'; // Critical - red
     }
     
     return {
         score: Math.round(confidence),
         color: color,
         riskFactors: {
-            validation: validationRisks,
-            capacity: capacityRisks,
-            blockers: blockedItems
+            // Above the line
+            capacityAbove: capacityRisksAbove,
+            skillsetAbove: skillsetRisksAbove,
+            blockersAbove: blockedItemsAbove,
+            blockerPenalty: blockerPenalty,
+            stagnantAbove: stagnantAbove,
+            supportAbove: supportRisksAbove,
+            
+            // Below the line
+            capacityBelow: capacityRisksBelow,
+            skillsetBelow: skillsetRisksBelow,
+            
+            // Cross-cutting
+            overUtilization: overUtilizedTeams,
+            
+            // Focus metrics
+            activeWorkBelowLine: activeWorkBelowLine,
+            distractionPenalty: distractionPenalty,
+            focusBonus: focusBonus,
+            
+            // Summary
+            totalAboveLineInitiatives: aboveTheLine.length,
+            totalBelowLineInitiatives: belowTheLine.length
         }
     };
 }
-
 // Function to transform Jira completed initiatives to our data format
 // Fixed transform function for completed initiatives
 function transformJiraCompletedInitiatives(jiraIssues) {
