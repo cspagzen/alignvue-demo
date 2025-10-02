@@ -2089,10 +2089,31 @@ function getTeamHealthPillStyle(teamData) {
 }
 
 function isDimensionAtRisk(dimensionValue) {
-    return dimensionValue === 'At Risk' || 
-           dimensionValue === 'at-risk' || 
-           dimensionValue === 'Critical' || 
-           dimensionValue === 'critical';
+    // Handle null/undefined/empty
+    if (!dimensionValue || dimensionValue === '') {
+        return false;
+    }
+    
+    // Convert to string and normalize for comparison
+    const normalizedValue = String(dimensionValue).toLowerCase().trim();
+    
+    // Check if it's healthy (should NOT be at risk)
+    if (normalizedValue === 'healthy') {
+        return false;
+    }
+    
+    // Check if it's at-risk (handle all variations)
+    if (normalizedValue === 'at risk' || normalizedValue === 'at-risk') {
+        return true;
+    }
+    
+    // Check if it's critical
+    if (normalizedValue === 'critical') {
+        return true;
+    }
+    
+    // Default to false for unknown values
+    return false;
 }
         
         function generateTeamHealthMatrix() {
@@ -4651,12 +4672,12 @@ function updateHealthCard() {
     const teams = Object.values(boardData.teams);
     
     return {
-        capacity: teams.filter(team => team.capacity === 'at-risk').length,
-        skillset: teams.filter(team => team.skillset === 'at-risk').length,
-        vision: teams.filter(team => team.vision === 'at-risk').length,
-        support: teams.filter(team => team.support === 'at-risk').length,
-        teamwork: teams.filter(team => team.teamwork === 'at-risk').length,
-        autonomy: teams.filter(team => team.autonomy === 'at-risk').length
+        capacity: teams.filter(team => isDimensionAtRisk(team.capacity)).length,
+        skillset: teams.filter(team => isDimensionAtRisk(team.skillset)).length,
+        vision: teams.filter(team => isDimensionAtRisk(team.vision)).length,
+        support: teams.filter(team => isDimensionAtRisk(team.support)).length,
+        teamwork: teams.filter(team => isDimensionAtRisk(team.teamwork)).length,
+        autonomy: teams.filter(team => isDimensionAtRisk(team.autonomy)).length
     };
 }
       
