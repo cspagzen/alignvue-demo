@@ -211,10 +211,10 @@ class VueSenseModal {
       
       
       const boardData = window.boardData || null;
-      const response = await aiEngine.askQuestion(message, boardData);
+      const response = await aiEngine.sendMessage(message, boardData);
       
       this.hideTyping();
-      this.addMessage(response.answer, 'ai');
+      this.addMessage(response.response, 'ai');
       
       if (response.cost && AI_CHAT_CONFIG.costTrackingVisible) {
         this.updateCostDisplay(response);
