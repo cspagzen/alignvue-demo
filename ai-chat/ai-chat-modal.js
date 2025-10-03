@@ -518,3 +518,49 @@ class VueSenseModal {
   return safe;
 }
 }
+// Initialize the VueSense modal when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeVueSenseModal);
+} else {
+  // DOM already loaded
+  initializeVueSenseModal();
+}
+
+function initializeVueSenseModal() {
+  try {
+    // Create the modal instance
+    window.vuesenseModal = new VueSenseModal({
+      position: 'center',
+      size: 'default',
+      closeOnBackdrop: true,
+      maxCharacters: 2000
+    });
+    
+    console.log('✅ VueSense AI Modal initialized successfully');
+    
+    // Verify trigger button exists
+    const trigger = document.getElementById('vuesense-trigger');
+    if (trigger) {
+      console.log('✅ Trigger button found');
+    } else {
+      console.error('❌ Trigger button not found');
+    }
+    
+  } catch (error) {
+    console.error('❌ Failed to initialize VueSense AI Modal:', error);
+  }
+}
+
+// Optional: Add keyboard shortcut (Ctrl/Cmd + K) to open modal
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    if (window.vuesenseModal) {
+      if (window.vuesenseModal.isOpen) {
+        window.vuesenseModal.close();
+      } else {
+        window.vuesenseModal.open();
+      }
+    }
+  }
+});
