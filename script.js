@@ -10656,6 +10656,8 @@ function updateBoardWithLiveData(newData) {
         updateMendozaCard();
     }
     
+window.boardData = boardData;
+    console.log('✅ boardData exposed globally with', boardData.initiatives.length, 'initiatives and', Object.keys(boardData.teams).length, 'teams');
 }
 
 // Smart Bidirectional Sync State
