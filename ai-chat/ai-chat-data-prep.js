@@ -1,11 +1,11 @@
 /**
- * VueSense AI Data Preparation
+ * VueSense AI Data Preparation - FIXED
  * Extracts and formats portfolio data for AI context
  */
 
 function preparePortfolioContext(boardData) {
   if (!boardData || typeof boardData !== 'object') {
-    console.warn('Invalid boardData provided to preparePortfolioContext');
+    console.warn('Invalid boardData provided');
     return null;
   }
   
@@ -18,6 +18,7 @@ function preparePortfolioContext(boardData) {
       timestamp: new Date().toISOString()
     };
     
+    console.log('✅ Portfolio context prepared:', context);
     return context;
   } catch (error) {
     console.error('Error preparing portfolio context:', error);
@@ -28,155 +29,75 @@ function preparePortfolioContext(boardData) {
 function generateSummary(boardData) {
   const teams = boardData.teams || {};
   const teamCount = Object.keys(teams).length;
-  
-  let totalInitiatives = 0;
-  let criticalInitiatives = 0;
-  let healthyInitiatives = 0;
-  
-  Object.values(teams).forEach(team => {
-    if (team.initiatives) {
-      totalInitiatives += team.initiatives.length;
-      team.initiatives.forEach(init => {
-        if (init.health === 'critical') criticalInitiatives++;
-        if (init.health === 'healthy') healthyInitiatives++;
-      });
-    }
-  });
+  const initiatives = boardData.initiatives || [];
   
   return {
     totalTeams: teamCount,
-    totalInitiatives,
-    criticalInitiatives,
-    healthyInitiatives,
-    atRiskInitiatives: totalInitiatives - criticalInitiatives - healthyInitiatives
+    totalInitiatives: initiatives.length,
+    pipelineInitiatives: (boardData.bullpen || []).filter(x => x).length
   };
 }
 
 function extractTeamData(boardData) {
   const teams = boardData.teams || {};
+  const initiatives = boardData.initiatives || [];
   
   return Object.entries(teams).map(([name, data]) => {
-    const health = calculateTeamHealth(data);
+    // Find initiatives this team is working on
+    const teamInitiatives = initiatives.filter(init => 
+      init.teams && init.teams.includes(name)
+    );
     
     return {
       name,
       capacity: data.capacity || 'unknown',
-      skillsets: data.skillsets || 'unknown',
-      leadership: data.leadership || 'unknown',
-      initiativeCount: data.initiatives?.length || 0,
-      health,
-      currentWork: data.initiatives?.map(i => i.name) || []
+      skillset: data.skillset || 'unknown',
+      vision: data.vision || 'unknown',
+      support: data.support || 'unknown',
+      teamwork: data.teamwork || 'unknown',
+      autonomy: data.autonomy || 'unknown',
+      initiativeCount: teamInitiatives.length,
+      utilization: data.jira?.utilization || 0,
+      comments: data.comments || '',
+      currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5)
     };
   });
 }
 
 function extractInitiativeData(boardData) {
-  const teams = boardData.teams || {};
-  const initiatives = [];
+  const initiatives = boardData.initiatives || [];
   
-  Object.entries(teams).forEach(([teamName, teamData]) => {
-    if (teamData.initiatives) {
-      teamData.initiatives.forEach(init => {
-        initiatives.push({
-          name: init.name,
-          team: teamName,
-          health: init.health || 'unknown',
-          status: init.status || 'unknown',
-          priority: init.priority || 'unknown',
-          type: init.type || 'unknown'
-        });
-      });
-    }
-  });
-  
-  return initiatives;
+  return initiatives.map(init => ({
+    title: init.title || init.name || 'Untitled',
+    teams: init.teams || [],
+    priority: init.priority,
+    type: init.type || 'unknown',
+    validation: init.validation || 'unknown',
+    progress: init.progress || 0,
+    stories: init.jira?.stories || 0,
+    flagged: init.jira?.flagged || 0
+  }));
 }
 
 function detectPatterns(boardData) {
   const teams = extractTeamData(boardData);
   const initiatives = extractInitiativeData(boardData);
   
-  // Detect capacity issues
-  const overloadedTeams = teams.filter(t => 
-    t.capacity === 'red' || t.initiativeCount > 3
+  // Teams with capacity issues
+  const capacityIssues = teams.filter(t => 
+    t.capacity === 'Critical' || t.capacity === 'At Risk'
   );
   
-  // Detect health trends
-  const criticalTeams = teams.filter(t => t.health === 'critical');
-  const healthyTeams = teams.filter(t => t.health === 'healthy');
+  // Teams with high utilization
+  const overloaded = teams.filter(t => t.utilization > 90);
   
-  // Detect initiative risks
-  const criticalInitiatives = initiatives.filter(i => i.health === 'critical');
-  const blockedInitiatives = initiatives.filter(i => i.status === 'blocked');
+  // Initiatives with issues
+  const flaggedInits = initiatives.filter(i => i.flagged > 0);
   
   return {
-    capacity: {
-      overloadedTeams: overloadedTeams.map(t => t.name),
-      overloadCount: overloadedTeams.length
-    },
-    health: {
-      criticalTeams: criticalTeams.map(t => t.name),
-      healthyTeams: healthyTeams.map(t => t.name),
-      criticalCount: criticalTeams.length
-    },
-    initiatives: {
-      critical: criticalInitiatives.map(i => i.name),
-      blocked: blockedInitiatives.map(i => i.name),
-      atRiskCount: criticalInitiatives.length + blockedInitiatives.length
-    }
+    capacityIssues: capacityIssues.map(t => t.name),
+    overloadedTeams: overloaded.map(t => t.name),
+    flaggedInitiatives: flaggedInits.map(i => i.title),
+    totalIssues: capacityIssues.length + overloaded.length + flaggedInits.length
   };
-}
-
-function calculateTeamHealth(teamData) {
-  const redFlags = [];
-  
-  if (teamData.capacity === 'red') redFlags.push('capacity');
-  if (teamData.skillsets === 'red') redFlags.push('skills');
-  if (teamData.leadership === 'red') redFlags.push('leadership');
-  
-  if (redFlags.length >= 2) return 'critical';
-  if (redFlags.length === 1) return 'at-risk';
-  return 'healthy';
-}
-
-function formatContextForAI(context) {
-  if (!context) return 'No portfolio data available.';
-  
-  let formatted = `PORTFOLIO OVERVIEW:
-- Total Teams: ${context.summary.totalTeams}
-- Total Initiatives: ${context.summary.totalInitiatives}
-- Critical Initiatives: ${context.summary.criticalInitiatives}
-- Healthy Initiatives: ${context.summary.healthyInitiatives}
-
-`;
-
-  if (context.patterns.capacity.overloadCount > 0) {
-    formatted += `CAPACITY CONCERNS:
-- Overloaded Teams (${context.patterns.capacity.overloadCount}): ${context.patterns.capacity.overloadedTeams.join(', ')}
-
-`;
-  }
-  
-  if (context.patterns.health.criticalCount > 0) {
-    formatted += `HEALTH ALERTS:
-- Critical Teams (${context.patterns.health.criticalCount}): ${context.patterns.health.criticalTeams.join(', ')}
-
-`;
-  }
-  
-  if (context.patterns.initiatives.atRiskCount > 0) {
-    formatted += `AT-RISK INITIATIVES:
-- Critical: ${context.patterns.initiatives.critical.join(', ') || 'None'}
-- Blocked: ${context.patterns.initiatives.blocked.join(', ') || 'None'}
-
-`;
-  }
-  
-  // Add top teams summary
-  const topTeams = context.teams.slice(0, 5);
-  formatted += `TOP TEAMS:
-${topTeams.map(t => `- ${t.name}: ${t.initiativeCount} initiatives, Capacity: ${t.capacity}, Health: ${t.health}`).join('\n')}
-`;
-  
-  return formatted;
 }
