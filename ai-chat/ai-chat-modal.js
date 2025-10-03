@@ -1,6 +1,6 @@
 /**
- * VueSense AI Modal - Phase 1
- * UI Controller for modal interactions
+ * VueSense AI Modal - Phase 2: Chat Interface
+ * Complete chat functionality with messages, input, and suggestions
  */
 
 class VueSenseModal {
@@ -9,33 +9,35 @@ class VueSenseModal {
       position: options.position || 'center',
       size: options.size || 'default',
       closeOnBackdrop: options.closeOnBackdrop !== false,
+      maxCharacters: options.maxCharacters || 500,
       ...options
     };
     
     this.isOpen = false;
     this.isMinimized = false;
     this.isExpanded = false;
+    this.isTyping = false;
+    this.messages = [];
     
     this.init();
   }
   
   init() {
-    // Create modal structure if it doesn't exist
     if (!document.getElementById('vuesense-modal-overlay')) {
       this.createModal();
     }
     
-    // Cache DOM elements
     this.overlay = document.getElementById('vuesense-modal-overlay');
     this.modal = document.getElementById('vuesense-modal');
     this.trigger = document.getElementById('vuesense-trigger');
+    this.messagesContainer = document.getElementById('vuesense-messages');
+    this.inputField = document.getElementById('vuesense-input');
+    this.sendBtn = document.getElementById('vuesense-send-btn');
     
-    // Attach event listeners
     this.attachEventListeners();
-    
-    // Apply initial position and size
     this.setPosition(this.options.position);
     this.setSize(this.options.size);
+    this.renderWelcome();
   }
   
   createModal() {
@@ -93,28 +95,31 @@ class VueSenseModal {
             </div>
           </div>
           
-          <!-- Body -->
-          <div id="vuesense-modal-body" class="vuesense-modal-body">
-            <div style="color: var(--text-primary, #ffffff);">
-              <h3 style="margin-top: 0;">Welcome to VueSense AI</h3>
-              <p style="color: var(--text-secondary, rgba(255, 255, 255, 0.6));">
-                This is the Phase 1 modal foundation. The chat interface will be added in the next phase.
-              </p>
-              <ul style="color: var(--text-secondary, rgba(255, 255, 255, 0.6));">
-                <li>✓ Modal positioning system</li>
-                <li>✓ Responsive sizing (optimized for 1600×900)</li>
-                <li>✓ Smooth animations</li>
-                <li>✓ Control buttons (minimize, expand, close)</li>
-                <li>✓ VueSense AI branding</li>
-              </ul>
+          <!-- Chat Body -->
+          <div class="vuesense-modal-body" style="padding: 0;">
+            <div class="vuesense-chat-container">
+              <div id="vuesense-messages" class="vuesense-messages"></div>
+              
+              <!-- Input Area -->
+              <div class="vuesense-input-area">
+                <div class="vuesense-input-wrapper">
+                  <textarea 
+                    id="vuesense-input" 
+                    class="vuesense-input-field" 
+                    placeholder="Ask me anything about your portfolio..."
+                    rows="1"
+                    maxlength="${this.options.maxCharacters}"
+                  ></textarea>
+                  <button id="vuesense-send-btn" class="vuesense-send-btn" aria-label="Send message">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m22 2-7 20-4-9-9-4Z"/>
+                      <path d="M22 2 11 13"/>
+                    </svg>
+                  </button>
+                </div>
+                <div id="vuesense-char-counter" class="vuesense-char-counter">0 / ${this.options.maxCharacters}</div>
+              </div>
             </div>
-          </div>
-          
-          <!-- Footer -->
-          <div class="vuesense-modal-footer">
-            <button onclick="window.vuesenseModal.close()" style="padding: 8px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: white; cursor: pointer; transition: all 150ms;">
-              Close
-            </button>
           </div>
         </div>
       </div>
@@ -131,6 +136,25 @@ class VueSenseModal {
     document.getElementById('vuesense-close-btn')?.addEventListener('click', () => this.close());
     document.getElementById('vuesense-minimize-btn')?.addEventListener('click', () => this.minimize());
     document.getElementById('vuesense-expand-btn')?.addEventListener('click', () => this.toggleExpand());
+    
+    // Send button
+    this.sendBtn?.addEventListener('click', () => this.sendMessage());
+    
+    // Input field
+    this.inputField?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.sendMessage();
+      }
+    });
+    
+    this.inputField?.addEventListener('input', () => this.updateCharCounter());
+    
+    // Auto-resize textarea
+    this.inputField?.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
     
     // Backdrop click
     if (this.options.closeOnBackdrop) {
@@ -149,6 +173,180 @@ class VueSenseModal {
     });
   }
   
+  renderWelcome() {
+    const welcomeHTML = `
+      <div class="vuesense-welcome">
+        <div class="vuesense-welcome-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+            <path d="M20 2v4"/>
+            <path d="M22 4h-4"/>
+            <circle cx="4" cy="20" r="2"/>
+          </svg>
+        </div>
+        <h3>Welcome to VueSense AI</h3>
+        <p>Ask me anything about your portfolio, teams, or initiatives. I'm here to help you make data-driven decisions.</p>
+        
+        <div class="vuesense-suggestions">
+          <div class="vuesense-suggestions-title">Try asking:</div>
+          ${this.getSuggestedQuestions().map(q => `
+            <button class="vuesense-suggestion-btn" onclick="window.vuesenseModal.askQuestion('${q.text}')">
+              <svg class="vuesense-suggestion-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+              </svg>
+              <span>${q.text}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    
+    this.messagesContainer.innerHTML = welcomeHTML;
+  }
+  
+  getSuggestedQuestions() {
+    return [
+      { text: "What should I focus on this week?" },
+      { text: "Which teams need the most support?" },
+      { text: "Are any initiatives at risk?" },
+      { text: "Show me capacity bottlenecks" }
+    ];
+  }
+  
+  askQuestion(question) {
+    this.inputField.value = question;
+    this.sendMessage();
+  }
+  
+  sendMessage() {
+    const message = this.inputField?.value.trim();
+    
+    if (!message || this.isTyping) return;
+    
+    // Clear welcome if first message
+    if (this.messages.length === 0) {
+      this.messagesContainer.innerHTML = '';
+    }
+    
+    // Add user message
+    this.addMessage(message, 'user');
+    
+    // Clear input
+    this.inputField.value = '';
+    this.inputField.style.height = 'auto';
+    this.updateCharCounter();
+    
+    // Show typing indicator
+    this.showTyping();
+    
+    // Simulate AI response (Phase 3 will connect to real AI)
+    setTimeout(() => {
+      this.hideTyping();
+      this.addMessage(this.generateMockResponse(message), 'ai');
+    }, 1500);
+  }
+  
+  addMessage(text, type) {
+    const time = new Date().toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit' 
+    });
+    
+    const avatarIcon = type === 'user' 
+      ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+      : '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg>';
+    
+    const messageHTML = `
+      <div class="vuesense-message ${type}">
+        <div class="vuesense-message-avatar">
+          ${avatarIcon}
+        </div>
+        <div class="vuesense-message-content">
+          <div class="vuesense-message-bubble">${this.escapeHtml(text)}</div>
+          <div class="vuesense-message-time">${time}</div>
+        </div>
+      </div>
+    `;
+    
+    this.messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+    this.messages.push({ text, type, time });
+    this.scrollToBottom();
+  }
+  
+  showTyping() {
+    this.isTyping = true;
+    this.sendBtn.disabled = true;
+    
+    const typingHTML = `
+      <div id="vuesense-typing-indicator" class="vuesense-message ai">
+        <div class="vuesense-message-avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+          </svg>
+        </div>
+        <div class="vuesense-typing">
+          <div class="vuesense-typing-dots">
+            <div class="vuesense-typing-dot"></div>
+            <div class="vuesense-typing-dot"></div>
+            <div class="vuesense-typing-dot"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    this.messagesContainer.insertAdjacentHTML('beforeend', typingHTML);
+    this.scrollToBottom();
+  }
+  
+  hideTyping() {
+    this.isTyping = false;
+    this.sendBtn.disabled = false;
+    document.getElementById('vuesense-typing-indicator')?.remove();
+  }
+  
+  generateMockResponse(question) {
+    const responses = {
+      'focus': "Based on current data, I recommend focusing on initiatives in critical status and teams with capacity issues. The top priority should be addressing blocked dependencies.",
+      'support': "Teams with red capacity indicators need immediate support. Consider redistributing work or bringing in additional resources for high-priority initiatives.",
+      'risk': "Yes, I've identified 3 initiatives at risk: those with critical health status and overloaded team assignments. We should review these in your next planning session.",
+      'capacity': "Current capacity bottlenecks are in Development and Infrastructure teams. They're at 120% utilization with multiple critical initiatives."
+    };
+    
+    const lowerQ = question.toLowerCase();
+    
+    for (const [key, response] of Object.entries(responses)) {
+      if (lowerQ.includes(key)) {
+        return response;
+      }
+    }
+    
+    return "I can help you analyze your portfolio data. In Phase 3, I'll be connected to your actual portfolio data to provide specific insights. For now, try asking about focus areas, team support needs, or initiative risks.";
+  }
+  
+  updateCharCounter() {
+    const counter = document.getElementById('vuesense-char-counter');
+    const length = this.inputField?.value.length || 0;
+    const max = this.options.maxCharacters;
+    
+    if (counter) {
+      counter.textContent = `${length} / ${max}`;
+      counter.classList.toggle('warning', length > max * 0.8);
+      counter.classList.toggle('error', length >= max);
+    }
+  }
+  
+  scrollToBottom() {
+    requestAnimationFrame(() => {
+      this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+    });
+  }
+  
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+  
   open() {
     this.isOpen = true;
     this.isMinimized = false;
@@ -156,11 +354,12 @@ class VueSenseModal {
     this.trigger?.classList.add('hidden');
     document.body.style.overflow = 'hidden';
     
-    // Restore previous size if was expanded
     if (this.wasExpanded) {
       this.setSize('fullscreen');
       this.isExpanded = true;
     }
+    
+    setTimeout(() => this.inputField?.focus(), 300);
   }
   
   close() {
@@ -168,16 +367,13 @@ class VueSenseModal {
     this.overlay?.classList.remove('active');
     this.trigger?.classList.remove('hidden');
     document.body.style.overflow = '';
-    
-    // Remember expanded state
     this.wasExpanded = this.isExpanded;
   }
   
   minimize() {
     this.isMinimized = true;
     this.close();
-    // In Phase 2, this will minimize to a bubble
-    console.log('Minimize functionality will be enhanced in Phase 2');
+    console.log('Minimize to bubble - will be enhanced in future phase');
   }
   
   toggleExpand() {
@@ -192,14 +388,8 @@ class VueSenseModal {
   
   setPosition(position) {
     this.options.position = position;
-    
-    // Remove all position classes
     const positions = ['center', 'bottom-right', 'bottom-left', 'top-right', 'top-left'];
-    positions.forEach(pos => {
-      this.overlay?.classList.remove(`position-${pos}`);
-    });
-    
-    // Add new position class
+    positions.forEach(pos => this.overlay?.classList.remove(`position-${pos}`));
     if (position !== 'center') {
       this.overlay?.classList.add(`position-${position}`);
     }
@@ -207,41 +397,30 @@ class VueSenseModal {
   
   setSize(size) {
     this.options.size = size;
-    
-    // Remove all size classes
     const sizes = ['small', 'default', 'large', 'fullscreen'];
-    sizes.forEach(sz => {
-      this.modal?.classList.remove(`size-${sz}`);
-    });
-    
-    // Add new size class
+    sizes.forEach(sz => this.modal?.classList.remove(`size-${sz}`));
     this.modal?.classList.add(`size-${size}`);
   }
   
-  setContent(content) {
-    const body = document.getElementById('vuesense-modal-body');
-    if (body) {
-      if (typeof content === 'string') {
-        body.innerHTML = content;
-      } else {
-        body.innerHTML = '';
-        body.appendChild(content);
-      }
-    }
+  clearConversation() {
+    this.messages = [];
+    this.renderWelcome();
   }
 }
 
-// Auto-initialize when DOM is ready
+// Auto-initialize
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     window.vuesenseModal = new VueSenseModal({
       position: 'center',
-      size: 'default'
+      size: 'default',
+      maxCharacters: 500
     });
   });
 } else {
   window.vuesenseModal = new VueSenseModal({
     position: 'center',
-    size: 'default'
+    size: 'default',
+    maxCharacters: 500
   });
 }
