@@ -2,27 +2,6 @@
 // VueSense AI Chat Engine - Backend Version
 // ==========================================
 
-const AI_CHAT_CONFIG = {
-  backendUrl: 'https://vuesense-ai-backend-od6hrtkre.vercel.app',
-  model: 'gpt-4o-mini',
-  maxTokens: 1000,
-  temperature: 0.7,
-  inputCostPer1M: 0.150,
-  outputCostPer1M: 0.600,
-  messages: {
-    welcome: 'Hi! I\'m VueSense AI. I can help you analyze your portfolio, understand initiative priorities, and answer questions about your strategic planning.',
-    thinkingPrefix: '💭 ',
-    errorPrefix: '❌ ',
-    placeholder: 'Ask me anything about your portfolio...',
-    apiError: 'Unable to reach AI service. Please check your connection and try again.',
-    rateLimitError: 'Rate limit exceeded. Please wait a moment and try again.',
-    networkError: 'Network error. Please check your internet connection.',
-    invalidKey: 'Invalid API key. Please check with your administrator.',
-    quotaExceeded: 'API quota exceeded. Please check your OpenAI account.',
-    backendError: 'Backend service unavailable. Please try again later.'
-  }
-};
-
 // Cost Tracking (client-side only for display)
 class CostTracker {
   constructor() {
