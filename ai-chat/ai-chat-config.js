@@ -5,7 +5,7 @@
 
 const AI_CHAT_CONFIG = {
   // Backend Configuration
-  backendUrl: 'https://vuesense-backend.vercel.app',
+  backendUrl: 'https://vuesense-backend.onrender.com',
   
   // Model Configuration (for reference only - actual values used by backend)
   model: 'gpt-4o-mini',
