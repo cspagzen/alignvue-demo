@@ -460,14 +460,108 @@
   padding: 12px 16px;
   border-radius: 12px;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
   word-wrap: break-word;
+}
+
+/* Markdown formatting styles for AI messages */
+.vuesense-message.ai .vuesense-message-bubble h2,
+.vuesense-message.ai .vuesense-message-bubble h3,
+.vuesense-message.ai .vuesense-message-bubble h4 {
+  margin: 16px 0 8px 0;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary, #ffffff);
+}
+
+.vuesense-message.ai .vuesense-message-bubble h2 {
+  font-size: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 4px;
+}
+
+.vuesense-message.ai .vuesense-message-bubble h3 {
+  font-size: 16px;
+}
+
+.vuesense-message.ai .vuesense-message-bubble h4 {
+  font-size: 14px;
+  color: var(--accent-blue, #3b82f6);
+}
+
+.vuesense-message.ai .vuesense-message-bubble h2:first-child,
+.vuesense-message.ai .vuesense-message-bubble h3:first-child,
+.vuesense-message.ai .vuesense-message-bubble h4:first-child {
+  margin-top: 0;
+}
+
+.vuesense-message.ai .vuesense-message-bubble p {
+  margin: 0 0 12px 0;
+}
+
+.vuesense-message.ai .vuesense-message-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.vuesense-message.ai .vuesense-message-bubble ul,
+.vuesense-message.ai .vuesense-message-bubble ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.vuesense-message.ai .vuesense-message-bubble li {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.vuesense-message.ai .vuesense-message-bubble strong {
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+.vuesense-message.ai .vuesense-message-bubble em {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.vuesense-message.ai .vuesense-message-bubble code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 13px;
+  color: #7dd3fc;
+}
+
+.vuesense-message.ai .vuesense-message-bubble pre {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.vuesense-message.ai .vuesense-message-bubble pre code {
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  color: #e2e8f0;
+  display: block;
+  white-space: pre;
+}
+
+.vuesense-message.ai .vuesense-message-bubble br {
+  display: block;
+  content: "";
+  margin: 6px 0;
 }
 
 .vuesense-message.user .vuesense-message-bubble {
   background: var(--accent-blue, #3b82f6);
   color: white;
   border-bottom-right-radius: 4px;
+  max-width: 400px;
 }
 
 .vuesense-message.ai .vuesense-message-bubble {
@@ -475,6 +569,7 @@
   color: var(--text-primary, #ffffff);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-bottom-left-radius: 4px;
+  max-width: 600px;
 }
 
 .vuesense-message-time {

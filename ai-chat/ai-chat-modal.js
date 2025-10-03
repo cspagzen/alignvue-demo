@@ -279,31 +279,34 @@ class VueSenseModal {
 }
   
   addMessage(text, type) {
-    const time = new Date().toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit' 
-    });
-    
-    const avatarIcon = type === 'user' 
-      ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
-      : '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg>';
-    
-    const messageHTML = `
-      <div class="vuesense-message ${type}">
-        <div class="vuesense-message-avatar">
-          ${avatarIcon}
-        </div>
-        <div class="vuesense-message-content">
-          <div class="vuesense-message-bubble">${this.escapeHtml(text)}</div>
-          <div class="vuesense-message-time">${time}</div>
-        </div>
+  const time = new Date().toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit' 
+  });
+  
+  const avatarIcon = type === 'user' 
+    ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+    : '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg>';
+  
+  // Format AI messages with markdown, escape user messages
+  const formattedText = type === 'ai' ? this.formatMarkdown(text) : this.escapeHtml(text);
+  
+  const messageHTML = `
+    <div class="vuesense-message ${type}">
+      <div class="vuesense-message-avatar">
+        ${avatarIcon}
       </div>
-    `;
-    
-    this.messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
-    this.messages.push({ text, type, time });
-    this.scrollToBottom();
-  }
+      <div class="vuesense-message-content">
+        <div class="vuesense-message-bubble">${formattedText}</div>
+        <div class="vuesense-message-time">${time}</div>
+      </div>
+    </div>
+  `;
+  
+  this.messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+  this.messages.push({ text, type, time });
+  this.scrollToBottom();
+}
   
   showTyping() {
     this.isTyping = true;
@@ -436,4 +439,71 @@ if (document.readyState === 'loading') {
     size: 'default',
     maxCharacters: 2000
   });
+}
+
+formatMarkdown(text) {
+  // First escape any HTML to prevent XSS
+  let safe = this.escapeHtml(text);
+  
+  // Process code blocks first (multiline)
+  safe = safe.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+    return `<pre><code class="language-${lang || 'text'}">${code.trim()}</code></pre>`;
+  });
+  
+  // Inline code
+  safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  // Bold
+  safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  
+  // Italic
+  safe = safe.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  
+  // Headers (must be at start of line)
+  safe = safe.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+  safe = safe.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+  safe = safe.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+  
+  // Bullet lists
+  const lines = safe.split('\n');
+  let inList = false;
+  const processed = [];
+  
+  lines.forEach(line => {
+    const bulletMatch = line.match(/^[•\-\*]\s+(.+)$/);
+    if (bulletMatch) {
+      if (!inList) {
+        processed.push('<ul>');
+        inList = true;
+      }
+      processed.push(`<li>${bulletMatch[1]}</li>`);
+    } else {
+      if (inList) {
+        processed.push('</ul>');
+        inList = false;
+      }
+      processed.push(line);
+    }
+  });
+  
+  if (inList) {
+    processed.push('</ul>');
+  }
+  
+  safe = processed.join('\n');
+  
+  // Numbered lists
+  safe = safe.replace(/^(\d+)\.\s+(.+)$/gm, '<li>$2</li>');
+  safe = safe.replace(/(<li>.*<\/li>\n?)+/g, '<ol>$&</ol>');
+  
+  // Line breaks (preserve double line breaks as paragraphs)
+  safe = safe.replace(/\n\n/g, '</p><p>');
+  safe = safe.replace(/\n/g, '<br>');
+  
+  // Wrap in paragraph if not already wrapped
+  if (!safe.startsWith('<')) {
+    safe = `<p>${safe}</p>`;
+  }
+  
+  return safe;
 }
