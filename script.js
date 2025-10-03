@@ -13718,3 +13718,6 @@ function aggregateTeamMetrics() {
 }
 
         init();
+
+// Expose boardData globally for VueSense AI
+window.boardData = boardData;
