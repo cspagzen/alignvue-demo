@@ -73,26 +73,25 @@ class VueSenseModal {
             </div>
             
             <div class="vuesense-modal-controls">
-              <button id="vuesense-minimize-btn" class="vuesense-modal-btn" title="Minimize" aria-label="Minimize modal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </button>
-              <button id="vuesense-expand-btn" class="vuesense-modal-btn" title="Expand" aria-label="Expand modal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="m21 21-6-6m6 6v-4.8m0 4.8h-4.8"/>
-                  <path d="M3 16.2V21m0 0h4.8M3 21l6-6"/>
-                  <path d="M21 7.8V3m0 0h-4.8M21 3l-6 6"/>
-                  <path d="M3 7.8V3m0 0h4.8M3 3l6 6"/>
-                </svg>
-              </button>
-              <button id="vuesense-close-btn" class="vuesense-modal-btn" title="Close" aria-label="Close modal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 6 6 18"/>
-                  <path d="m6 6 12 12"/>
-                </svg>
-              </button>
-            </div>
+  <!-- ADD THIS SETTINGS BUTTON FIRST -->
+  <button onclick="openSettingsModal()" class="vuesense-modal-btn" title="Settings" aria-label="Open settings">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  </button>
+  
+  <!-- THEN THE REST OF THE EXISTING BUTTONS -->
+  <button id="vuesense-minimize-btn" class="vuesense-modal-btn" title="Minimize" aria-label="Minimize modal">
+    <!-- minimize icon -->
+  </button>
+  <button id="vuesense-expand-btn" class="vuesense-modal-btn" title="Expand" aria-label="Expand modal">
+    <!-- expand icon -->
+  </button>
+  <button id="vuesense-close-btn" class="vuesense-modal-btn" title="Close" aria-label="Close modal">
+    <!-- close icon -->
+  </button>
+</div>
           </div>
           
           <!-- Chat Body -->
@@ -218,33 +217,66 @@ class VueSenseModal {
     this.sendMessage();
   }
   
-  sendMessage() {
-    const message = this.inputField?.value.trim();
+  async sendMessage() {
+  const message = this.inputField?.value.trim();
+  
+  if (!message || this.isTyping) return;
+  
+  // Clear welcome if first message
+  if (this.messages.length === 0) {
+    this.messagesContainer.innerHTML = '';
+  }
+  
+  // Add user message
+  this.addMessage(message, 'user');
+  
+  // Clear input
+  this.inputField.value = '';
+  this.inputField.style.height = 'auto';
+  this.updateCharCounter();
+  
+  // Show typing indicator
+  this.showTyping();
+  
+  try {
+    // Get boardData from global scope (your app should have this)
+    const boardData = window.boardData || null;
     
-    if (!message || this.isTyping) return;
+    // Call real AI
+    const response = await aiEngine.askQuestion(message, boardData);
     
-    // Clear welcome if first message
-    if (this.messages.length === 0) {
-      this.messagesContainer.innerHTML = '';
+    // Hide typing indicator
+    this.hideTyping();
+    
+    // Add AI response
+    this.addMessage(response.answer, 'ai');
+    
+    // Show cost info if available
+    if (response.cost && AI_CHAT_CONFIG.costTrackingVisible) {
+      this.updateCostDisplay(response);
     }
     
-    // Add user message
-    this.addMessage(message, 'user');
-    
-    // Clear input
-    this.inputField.value = '';
-    this.inputField.style.height = 'auto';
-    this.updateCharCounter();
-    
-    // Show typing indicator
-    this.showTyping();
-    
-    // Simulate AI response (Phase 3 will connect to real AI)
-    setTimeout(() => {
-      this.hideTyping();
-      this.addMessage(this.generateMockResponse(message), 'ai');
-    }, 1500);
+  } catch (error) {
+    this.hideTyping();
+    this.addMessage(
+      'Sorry, I encountered an error. Please check your API key in settings and try again.',
+      'ai'
+    );
+    console.error('AI Error:', error);
   }
+}
+    
+    updateCostDisplay(response) {
+  const stats = costTracker.getStats();
+  const costText = response.cached 
+    ? '(cached)' 
+    : `$${response.cost.toFixed(4)}`;
+  
+  console.log(`💰 Cost: ${costText} | Total: $${stats.totalCost.toFixed(4)} | Questions: ${stats.questionCount}`);
+  
+  // Optional: Add visual cost indicator in UI
+  // You can enhance this later to show costs in the modal header
+}
   
   addMessage(text, type) {
     const time = new Date().toLocaleTimeString('en-US', { 
@@ -302,25 +334,6 @@ class VueSenseModal {
     this.isTyping = false;
     this.sendBtn.disabled = false;
     document.getElementById('vuesense-typing-indicator')?.remove();
-  }
-  
-  generateMockResponse(question) {
-    const responses = {
-      'focus': "Based on current data, I recommend focusing on initiatives in critical status and teams with capacity issues. The top priority should be addressing blocked dependencies.",
-      'support': "Teams with red capacity indicators need immediate support. Consider redistributing work or bringing in additional resources for high-priority initiatives.",
-      'risk': "Yes, I've identified 3 initiatives at risk: those with critical health status and overloaded team assignments. We should review these in your next planning session.",
-      'capacity': "Current capacity bottlenecks are in Development and Infrastructure teams. They're at 120% utilization with multiple critical initiatives."
-    };
-    
-    const lowerQ = question.toLowerCase();
-    
-    for (const [key, response] of Object.entries(responses)) {
-      if (lowerQ.includes(key)) {
-        return response;
-      }
-    }
-    
-    return "I can help you analyze your portfolio data. In Phase 3, I'll be connected to your actual portfolio data to provide specific insights. For now, try asking about focus areas, team support needs, or initiative risks.";
   }
   
   updateCharCounter() {
