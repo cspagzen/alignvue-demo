@@ -1,223 +1,113 @@
-/**
- * VueSense AI Engine
- * Handles OpenAI API calls and response generation
- */
+// ==========================================
+// VueSense AI Chat Engine - Backend Version
+// ==========================================
 
-class VueSenseAIEngine {
-  constructor() {
-    this.conversationHistory = [];
+const AI_CHAT_CONFIG = {
+  backendUrl: 'https://vuesense-ai-backend-od6hrtkre.vercel.app',
+  model: 'gpt-4o-mini',
+  maxTokens: 1000,
+  temperature: 0.7,
+  inputCostPer1M: 0.150,
+  outputCostPer1M: 0.600,
+  messages: {
+    welcome: 'Hi! I\'m VueSense AI. I can help you analyze your portfolio, understand initiative priorities, and answer questions about your strategic planning.',
+    thinkingPrefix: '💭 ',
+    errorPrefix: '❌ ',
+    placeholder: 'Ask me anything about your portfolio...',
+    apiError: 'Unable to reach AI service. Please check your connection and try again.',
+    rateLimitError: 'Rate limit exceeded. Please wait a moment and try again.',
+    networkError: 'Network error. Please check your internet connection.',
+    invalidKey: 'Invalid API key. Please check with your administrator.',
+    quotaExceeded: 'API quota exceeded. Please check your OpenAI account.',
+    backendError: 'Backend service unavailable. Please try again later.'
   }
-  
-  async askQuestion(question, boardData = null) {
-    try {
-      // 1. Check API key
-      if (!apiKeyManager.hasKey()) {
-        throw new Error(AI_CHAT_CONFIG.errors.apiKeyMissing);
-      }
-      
-      // 2. Check cache
-      const context = boardData ? preparePortfolioContext(boardData) : null;
-      const cachedResponse = responseCache.get(question, context);
-      
-      if (cachedResponse) {
-        return {
-          answer: cachedResponse,
-          cached: true,
-          timestamp: new Date().toISOString()
-        };
-      }
-      
-      // 3. Prepare messages for OpenAI
-      const messages = this.buildMessages(question, context);
-      
-      // 4. Call OpenAI API
-      const response = await this.callOpenAI(messages);
-      
-      // 5. Track costs
-      const costInfo = costTracker.trackUsage(
-        response.usage.prompt_tokens,
-        response.usage.completion_tokens
-      );
-      
-      // 6. Cache response
-      responseCache.set(question, context, response.content);
-      
-      // 7. Update conversation history
-      this.conversationHistory.push(
-        { role: 'user', content: question },
-        { role: 'assistant', content: response.content }
-      );
-      
-      // Keep history limited to last 10 messages
-      if (this.conversationHistory.length > 10) {
-        this.conversationHistory = this.conversationHistory.slice(-10);
-      }
-      
-      return {
-        answer: response.content,
-        usage: response.usage,
-        cost: costInfo.cost,
-        totalCost: costInfo.totalCost,
-        cached: false,
-        timestamp: new Date().toISOString()
-      };
-      
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-  
-  buildMessages(question, context) {
-    const messages = [];
-    
-    // System prompt with portfolio context
-    let systemContent = AI_CHAT_CONFIG.systemPrompt;
-    
-    if (context) {
-      systemContent += '\n\nCURRENT PORTFOLIO DATA:\n' + formatContextForAI(context);
-    } else {
-      systemContent += '\n\nNote: No portfolio data available. Provide general guidance.';
-    }
-    
-    messages.push({
-      role: 'system',
-      content: systemContent
-    });
-    
-    // Add recent conversation history (if enabled)
-    if (AI_CHAT_CONFIG.conversationHistoryEnabled && this.conversationHistory.length > 0) {
-      // Only include last 6 messages to save tokens
-      const recentHistory = this.conversationHistory.slice(-6);
-      messages.push(...recentHistory);
-    }
-    
-    // Add current question
-    messages.push({
-      role: 'user',
-      content: question
-    });
-    
-    return messages;
-  }
-  
-  async callOpenAI(messages) {
-    const apiKey = apiKeyManager.getKey();
-    
-    const requestBody = {
-  model: AI_CHAT_CONFIG.apiModel,
-  messages: messages,
-  temperature: AI_CHAT_CONFIG.temperature,
-  max_completion_tokens: AI_CHAT_CONFIG.maxOutputTokens  // ✅ NEW - Correct parameter
 };
-    
-    const response = await fetch(AI_CHAT_CONFIG.apiEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(requestBody)
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(this.mapAPIError(response.status, errorData));
+
+// Cost Tracking (client-side only for display)
+class CostTracker {
+  constructor() {
+    this.storageKey = 'vuesense_cost_tracker';
+    this.load();
+  }
+  
+  load() {
+    const saved = localStorage.getItem(this.storageKey);
+    if (saved) {
+      const data = JSON.parse(saved);
+      this.totalInputTokens = data.totalInputTokens || 0;
+      this.totalOutputTokens = data.totalOutputTokens || 0;
+      this.totalCost = data.totalCost || 0;
+      this.questionCount = data.questionCount || 0;
+      this.lastReset = data.lastReset || new Date().toISOString();
+    } else {
+      this.reset();
     }
+  }
+  
+  save() {
+    localStorage.setItem(this.storageKey, JSON.stringify({
+      totalInputTokens: this.totalInputTokens,
+      totalOutputTokens: this.totalOutputTokens,
+      totalCost: this.totalCost,
+      questionCount: this.questionCount,
+      lastReset: this.lastReset
+    }));
+  }
+  
+  trackUsage(inputTokens, outputTokens) {
+    this.totalInputTokens += inputTokens;
+    this.totalOutputTokens += outputTokens;
     
-    const data = await response.json();
+    const inputCost = (inputTokens / 1000000) * AI_CHAT_CONFIG.inputCostPer1M;
+    const outputCost = (outputTokens / 1000000) * AI_CHAT_CONFIG.outputCostPer1M;
+    
+    this.totalCost += (inputCost + outputCost);
+    this.questionCount += 1;
+    
+    this.save();
     
     return {
-      content: data.choices[0].message.content,
-      usage: data.usage
+      inputTokens,
+      outputTokens,
+      cost: inputCost + outputCost,
+      totalCost: this.totalCost
     };
   }
   
-  mapAPIError(status, errorData) {
-    const errorMessage = errorData.error?.message || '';
-    
-    if (status === 401) {
-      return AI_CHAT_CONFIG.errors.invalidKey;
-    }
-    if (status === 429) {
-      if (errorMessage.includes('quota')) {
-        return AI_CHAT_CONFIG.errors.quotaExceeded;
-      }
-      return AI_CHAT_CONFIG.errors.rateLimitError;
-    }
-    if (status >= 500) {
-      return AI_CHAT_CONFIG.errors.apiError;
-    }
-    
-    return `API Error: ${errorMessage || 'Unknown error occurred'}`;
-  }
-  
-  handleError(error) {
-    console.error('VueSense AI Error:', error);
-    
-    let userMessage = error.message || AI_CHAT_CONFIG.errors.apiError;
-    
-    // Check for network errors
-    if (error.message.includes('fetch') || error.message.includes('network')) {
-      userMessage = AI_CHAT_CONFIG.errors.networkError;
-    }
-    
+  getStats() {
     return {
-      answer: `⚠️ ${userMessage}`,
-      error: true,
-      timestamp: new Date().toISOString()
+      totalInputTokens: this.totalInputTokens,
+      totalOutputTokens: this.totalOutputTokens,
+      totalCost: this.totalCost,
+      questionCount: this.questionCount,
+      avgCostPerQuestion: this.questionCount > 0 
+        ? this.totalCost / this.questionCount 
+        : 0,
+      lastReset: this.lastReset
     };
   }
   
-  clearHistory() {
-    this.conversationHistory = [];
-  }
-  
-  getHistory() {
-    return this.conversationHistory;
+  reset() {
+    this.totalInputTokens = 0;
+    this.totalOutputTokens = 0;
+    this.totalCost = 0;
+    this.questionCount = 0;
+    this.lastReset = new Date().toISOString();
+    this.save();
   }
 }
 
-// Create global instance
-const aiEngine = new VueSenseAIEngine();
-
-// ==========================================
-// API Key Manager
-// ==========================================
-const apiKeyManager = {
-  STORAGE_KEY: 'vuesense_api_key',
-  
-  setKey(key) {
-    if (!key || !key.startsWith('sk-')) {
-      throw new Error('Invalid API key format');
-    }
-    localStorage.setItem(this.STORAGE_KEY, key);
-  },
-  
-  getKey() {
-    return localStorage.getItem(this.STORAGE_KEY);
-  },
-  
-  hasKey() {
-    const key = this.getKey();
-    return key && key.length > 0;
-  },
-  
-  removeKey() {
-    localStorage.removeItem(this.STORAGE_KEY);
-  }
-};
-
-// ==========================================
 // Response Cache
-// ==========================================
-const responseCache = {
-  cache: new Map(),
-  CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
+class ResponseCache {
+  constructor() {
+    this.cache = new Map();
+    this.cacheDuration = 5 * 60 * 1000;
+  }
   
   generateKey(question, context) {
-    const contextStr = context ? JSON.stringify(context).substring(0, 100) : '';
+    const contextStr = context ? JSON.stringify(context) : '';
     return `${question.toLowerCase().trim()}_${contextStr}`;
-  },
+  }
   
   set(question, context, response) {
     const key = this.generateKey(question, context);
@@ -225,13 +115,7 @@ const responseCache = {
       response,
       timestamp: Date.now()
     });
-    
-    // Limit cache size
-    if (this.cache.size > 50) {
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
-    }
-  },
+  }
   
   get(question, context) {
     const key = this.generateKey(question, context);
@@ -239,97 +123,172 @@ const responseCache = {
     
     if (!cached) return null;
     
-    // Check if expired
-    if (Date.now() - cached.timestamp > this.CACHE_DURATION) {
+    const age = Date.now() - cached.timestamp;
+    if (age > this.cacheDuration) {
       this.cache.delete(key);
       return null;
     }
     
     return cached.response;
-  },
+  }
   
   clear() {
     this.cache.clear();
   }
-};
+}
 
-// ==========================================
-// Cost Tracker
-// ==========================================
-const costTracker = {
-  STORAGE_KEY: 'vuesense_cost_tracker',
-  
-  // Pricing per 1M tokens
-  INPUT_COST_PER_1M: 0.15,  // $0.15 per 1M input tokens
-  OUTPUT_COST_PER_1M: 0.60, // $0.60 per 1M output tokens
-  
-  loadStats() {
-    const saved = localStorage.getItem(this.STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to load cost stats:', e);
-      }
-    }
-    return {
-      questionCount: 0,
-      totalInputTokens: 0,
-      totalOutputTokens: 0,
-      totalCost: 0,
-      sessionStart: new Date().toISOString()
-    };
-  },
-  
-  saveStats(stats) {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(stats));
-  },
-  
-  trackUsage(inputTokens, outputTokens) {
-    const stats = this.loadStats();
-    
-    // Calculate costs
-    const inputCost = (inputTokens / 1000000) * this.INPUT_COST_PER_1M;
-    const outputCost = (outputTokens / 1000000) * this.OUTPUT_COST_PER_1M;
-    const totalCost = inputCost + outputCost;
-    
-    // Update stats
-    stats.questionCount++;
-    stats.totalInputTokens += inputTokens;
-    stats.totalOutputTokens += outputTokens;
-    stats.totalCost += totalCost;
-    
-    this.saveStats(stats);
-    
-    return {
-      cost: totalCost,
-      totalCost: stats.totalCost,
-      questionCount: stats.questionCount
-    };
-  },
-  
-  getStats() {
-    const stats = this.loadStats();
-    return {
-      questionCount: stats.questionCount,
-      totalCost: stats.totalCost,
-      totalInputTokens: stats.totalInputTokens,
-      totalOutputTokens: stats.totalOutputTokens,
-      avgCostPerQuestion: stats.questionCount > 0 
-        ? stats.totalCost / stats.questionCount 
-        : 0,
-      sessionStart: stats.sessionStart
-    };
-  },
-  
-  reset() {
-    const newStats = {
-      questionCount: 0,
-      totalInputTokens: 0,
-      totalOutputTokens: 0,
-      totalCost: 0,
-      sessionStart: new Date().toISOString()
-    };
-    this.saveStats(newStats);
+// Main AI Engine
+class AIEngine {
+  constructor() {
+    this.conversationHistory = [];
+    this.costTracker = new CostTracker();
+    this.responseCache = new ResponseCache();
+    this.backendUrl = AI_CHAT_CONFIG.backendUrl;
   }
-};
+  
+  async checkBackendHealth() {
+    try {
+      const response = await fetch(`${this.backendUrl}/api/health`);
+      if (!response.ok) return false;
+      const data = await response.json();
+      return data.status === 'ok';
+    } catch (error) {
+      console.error('Backend health check failed:', error);
+      return false;
+    }
+  }
+  
+  async sendMessage(userMessage, context = null) {
+    try {
+      const cachedResponse = this.responseCache.get(userMessage, context);
+      if (cachedResponse) {
+        console.log('📦 Using cached response');
+        return {
+          response: cachedResponse,
+          cached: true,
+          cost: 0,
+          usage: { inputTokens: 0, outputTokens: 0 }
+        };
+      }
+      
+      const isHealthy = await this.checkBackendHealth();
+      if (!isHealthy) {
+        throw new Error(AI_CHAT_CONFIG.messages.backendError);
+      }
+      
+      this.conversationHistory.push({
+        role: 'user',
+        content: userMessage
+      });
+      
+      const payload = {
+        messages: this.conversationHistory,
+        context: context ? this.buildContextPrompt(context) : null
+      };
+      
+      const response = await fetch(`${this.backendUrl}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || AI_CHAT_CONFIG.messages.apiError);
+      }
+      
+      const data = await response.json();
+      
+      this.conversationHistory.push({
+        role: 'assistant',
+        content: data.response
+      });
+      
+      const costInfo = this.costTracker.trackUsage(
+        data.usage.inputTokens,
+        data.usage.outputTokens
+      );
+      
+      this.responseCache.set(userMessage, context, data.response);
+      
+      if (this.conversationHistory.length > 10) {
+        this.conversationHistory = this.conversationHistory.slice(-10);
+      }
+      
+      return {
+        response: data.response,
+        cached: false,
+        cost: costInfo.cost,
+        usage: data.usage,
+        totalCost: costInfo.totalCost
+      };
+      
+    } catch (error) {
+      console.error('AI Engine Error:', error);
+      throw error;
+    }
+  }
+  
+  buildContextPrompt(context) {
+    let prompt = 'You are VueSense AI, a helpful assistant for a product management application. ';
+    
+    if (context.initiatives && context.initiatives.length > 0) {
+      prompt += '\n\nCurrent Portfolio Context:\n';
+      prompt += `Total Initiatives: ${context.initiatives.length}\n`;
+      
+      const byType = {};
+      const byStatus = {};
+      
+      context.initiatives.forEach(init => {
+        byType[init.type] = (byType[init.type] || 0) + 1;
+        byStatus[init.validation] = (byStatus[init.validation] || 0) + 1;
+      });
+      
+      prompt += '\nBy Type:\n';
+      Object.entries(byType).forEach(([type, count]) => {
+        prompt += `- ${type}: ${count}\n`;
+      });
+      
+      prompt += '\nBy Status:\n';
+      Object.entries(byStatus).forEach(([status, count]) => {
+        prompt += `- ${status}: ${count}\n`;
+      });
+    }
+    
+    if (context.selectedInitiative) {
+      const init = context.selectedInitiative;
+      prompt += `\n\nCurrently Viewing Initiative:\n`;
+      prompt += `Title: ${init.title}\n`;
+      prompt += `Type: ${init.type}\n`;
+      prompt += `Status: ${init.validation}\n`;
+      prompt += `Priority: ${init.priority}\n`;
+      prompt += `Teams: ${init.teams.join(', ')}\n`;
+      prompt += `Progress: ${init.progress}%\n`;
+    }
+    
+    if (context.currentView) {
+      prompt += `\n\nCurrent View: ${context.currentView}\n`;
+    }
+    
+    prompt += '\n\nProvide helpful, specific insights based on this context.';
+    
+    return prompt;
+  }
+  
+  clearHistory() {
+    this.conversationHistory = [];
+    this.responseCache.clear();
+  }
+  
+  getCostStats() {
+    return this.costTracker.getStats();
+  }
+  
+  resetCosts() {
+    this.costTracker.reset();
+  }
+}
+
+const aiEngine = new AIEngine();
