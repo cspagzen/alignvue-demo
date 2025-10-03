@@ -496,22 +496,53 @@
 }
 
 .vuesense-message.ai .vuesense-message-bubble p {
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
+  line-height: 1.6;
+}
+
+.vuesense-message.ai .vuesense-message-bubble p + h2,
+.vuesense-message.ai .vuesense-message-bubble p + h3,
+.vuesense-message.ai .vuesense-message-bubble p + h4 {
+  margin-top: 20px;
 }
 
 .vuesense-message.ai .vuesense-message-bubble p:last-child {
   margin-bottom: 0;
 }
 
-.vuesense-message.ai .vuesense-message-bubble ul,
+/* Better list styling */
+.vuesense-message.ai .vuesense-message-bubble ul {
+  margin: 12px 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
 .vuesense-message.ai .vuesense-message-bubble ol {
-  margin: 8px 0;
-  padding-left: 24px;
+  margin: 12px 0;
+  padding-left: 20px;
+  list-style-type: decimal;
 }
 
 .vuesense-message.ai .vuesense-message-bubble li {
-  margin: 4px 0;
-  line-height: 1.5;
+  margin: 6px 0;
+  line-height: 1.6;
+  padding-left: 4px;
+}
+
+/* Nested lists */
+.vuesense-message.ai .vuesense-message-bubble li > ul,
+.vuesense-message.ai .vuesense-message-bubble li > ol {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+/* First/last element spacing */
+.vuesense-message.ai .vuesense-message-bubble > *:first-child {
+  margin-top: 0 !important;
+}
+
+.vuesense-message.ai .vuesense-message-bubble > *:last-child {
+  margin-bottom: 0 !important;
 }
 
 .vuesense-message.ai .vuesense-message-bubble strong {
@@ -524,22 +555,34 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* Inline code */
 .vuesense-message.ai .vuesense-message-bubble code {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(96, 165, 250, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.3);
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-  font-size: 13px;
-  color: #7dd3fc;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #93c5fd;
 }
 
+/* Code blocks */
 .vuesense-message.ai .vuesense-message-bubble pre {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 12px;
-  margin: 12px 0;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
   overflow-x: auto;
+}
+
+.vuesense-message.ai .vuesense-message-bubble pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  color: #e2e8f0;
+  line-height: 1.5;
 }
 
 .vuesense-message.ai .vuesense-message-bubble pre code {

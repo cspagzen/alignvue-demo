@@ -258,56 +258,107 @@ class VueSenseModal {
   }
   
   formatMarkdown(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    let safe = div.innerHTML;
+  // Escape HTML first
+  const div = document.createElement('div');
+  div.textContent = text;
+  let safe = div.innerHTML;
+  
+  // 1. Extract and protect code blocks
+  const codeBlocks = [];
+  safe = safe.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+    const index = codeBlocks.length;
+    codeBlocks.push({ lang: lang || 'text', code: code.trim() });
+    return `__CODE_BLOCK_${index}__`;
+  });
+  
+  // 2. Inline code (before other formatting)
+  safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  // 3. Headers (before bold/italic)
+  safe = safe.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+  safe = safe.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+  safe = safe.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+  
+  // 4. Bold (before italic)
+  safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  
+  // 5. Italic
+  safe = safe.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+  
+  // 6. Process lists properly
+  const lines = safe.split('\n');
+  const processed = [];
+  let inBulletList = false;
+  let inNumberedList = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const bulletMatch = line.match(/^[\s]*[-*•]\s+(.+)$/);
+    const numberedMatch = line.match(/^[\s]*\d+\.\s+(.+)$/);
     
-    safe = safe.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-      return `<pre><code class="language-${lang || 'text'}">${code.trim()}</code></pre>`;
-    });
-    
-    safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
-    safe = safe.replace(/^### (.+)$/gm, '<h4>$1</h4>');
-    safe = safe.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-    safe = safe.replace(/^# (.+)$/gm, '<h2>$1</h2>');
-    safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    safe = safe.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
-    
-    const lines = safe.split('\n');
-    const processed = [];
-    let inList = false;
-    
-    for (const line of lines) {
-      const bulletMatch = line.match(/^[\s]*[-*•]\s+(.+)$/);
-      if (bulletMatch) {
-        if (!inList) {
-          processed.push('<ul>');
-          inList = true;
-        }
-        processed.push(`<li>${bulletMatch[1]}</li>`);
-      } else {
-        if (inList) {
-          processed.push('</ul>');
-          inList = false;
-        }
-        processed.push(line);
+    if (bulletMatch) {
+      if (inNumberedList) {
+        processed.push('</ol>');
+        inNumberedList = false;
       }
+      if (!inBulletList) {
+        processed.push('<ul>');
+        inBulletList = true;
+      }
+      processed.push(`<li>${bulletMatch[1]}</li>`);
+    } else if (numberedMatch) {
+      if (inBulletList) {
+        processed.push('</ul>');
+        inBulletList = false;
+      }
+      if (!inNumberedList) {
+        processed.push('<ol>');
+        inNumberedList = true;
+      }
+      processed.push(`<li>${numberedMatch[1]}</li>`);
+    } else {
+      if (inBulletList) {
+        processed.push('</ul>');
+        inBulletList = false;
+      }
+      if (inNumberedList) {
+        processed.push('</ol>');
+        inNumberedList = false;
+      }
+      processed.push(line);
     }
-    
-    if (inList) processed.push('</ul>');
-    
-    safe = processed.join('\n');
-    safe = safe.replace(/\n\n+/g, '</p><p>');
-    safe = safe.replace(/\n(?!<)/g, '<br>');
-    
-    if (!safe.match(/^</)) {
-      safe = '<p>' + safe + '</p>';
-    }
-    
-    safe = safe.replace(/<p><\/p>/g, '');
-    
-    return safe;
   }
+  
+  // Close any open lists
+  if (inBulletList) processed.push('</ul>');
+  if (inNumberedList) processed.push('</ol>');
+  
+  safe = processed.join('\n');
+  
+  // 7. Paragraphs - handle double line breaks
+  const chunks = safe.split(/\n\n+/);
+  safe = chunks.map(chunk => {
+    chunk = chunk.trim();
+    // Don't wrap if already has block-level tags
+    if (chunk.match(/^<(h[2-4]|ul|ol|pre|div)/)) {
+      return chunk;
+    }
+    // Wrap in paragraph
+    return chunk ? `<p>${chunk.replace(/\n/g, '<br>')}</p>` : '';
+  }).filter(c => c).join('\n');
+  
+  // 8. Restore code blocks
+  safe = safe.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
+    const block = codeBlocks[index];
+    return `<pre><code class="language-${block.lang}">${block.code}</code></pre>`;
+  });
+  
+  // 9. Clean up empty paragraphs
+  safe = safe.replace(/<p><\/p>/g, '');
+  safe = safe.replace(/<p>\s*<\/p>/g, '');
+  
+  return safe;
+}
   
   escapeHtml(text) {
     const div = document.createElement('div');
