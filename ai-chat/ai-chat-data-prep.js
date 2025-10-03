@@ -101,3 +101,48 @@ function detectPatterns(boardData) {
     totalIssues: capacityIssues.length + overloaded.length + flaggedInits.length
   };
 }
+
+function formatContextForAI(context) {
+  if (!context) return 'No portfolio data available.';
+  
+  let formatted = `PORTFOLIO OVERVIEW:
+- Total Teams: ${context.summary.totalTeams}
+- Total Initiatives: ${context.summary.totalInitiatives}
+- Pipeline Initiatives: ${context.summary.pipelineInitiatives || 0}
+
+`;
+
+  // Teams with issues
+  if (context.patterns.capacityIssues.length > 0) {
+    formatted += `CAPACITY CONCERNS:
+- Teams with capacity issues: ${context.patterns.capacityIssues.join(', ')}
+
+`;
+  }
+  
+  if (context.patterns.overloadedTeams.length > 0) {
+    formatted += `OVERLOADED TEAMS (>90% utilization):
+- ${context.patterns.overloadedTeams.join(', ')}
+
+`;
+  }
+  
+  if (context.patterns.flaggedInitiatives.length > 0) {
+    formatted += `FLAGGED INITIATIVES:
+- ${context.patterns.flaggedInitiatives.join(', ')}
+
+`;
+  }
+  
+  // Top teams summary
+  const topTeams = context.teams.slice(0, 8);
+  formatted += `KEY TEAMS:\n`;
+  topTeams.forEach(t => {
+    formatted += `- ${t.name}: ${t.initiativeCount} initiatives, Capacity: ${t.capacity}, Utilization: ${t.utilization}%\n`;
+    if (t.comments) {
+      formatted += `  Comments: ${t.comments.substring(0, 100)}...\n`;
+    }
+  });
+  
+  return formatted;
+}
