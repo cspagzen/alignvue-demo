@@ -422,6 +422,73 @@ class VueSenseModal {
     this.messages = [];
     this.renderWelcome();
   }
+  
+  formatMarkdown(text) {
+    // First escape any HTML to prevent XSS
+    let safe = this.escapeHtml(text);
+    
+    // Process code blocks first (multiline)
+    safe = safe.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+      return `<pre><code class="language-${lang || 'text'}">${code.trim()}</code></pre>`;
+    });
+    
+    // Inline code
+    safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    // Bold
+    safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Italic
+    safe = safe.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    // Headers (must be at start of line)
+    safe = safe.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+    safe = safe.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+    safe = safe.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+    
+    // Bullet lists
+    const lines = safe.split('\n');
+    let inList = false;
+    const processed = [];
+    
+    lines.forEach(line => {
+      const bulletMatch = line.match(/^[•\-\*]\s+(.+)$/);
+      if (bulletMatch) {
+        if (!inList) {
+          processed.push('<ul>');
+          inList = true;
+        }
+        processed.push(`<li>${bulletMatch[1]}</li>`);
+      } else {
+        if (inList) {
+          processed.push('</ul>');
+          inList = false;
+        }
+        processed.push(line);
+      }
+    });
+    
+    if (inList) {
+      processed.push('</ul>');
+    }
+    
+    safe = processed.join('\n');
+    
+    // Numbered lists
+    safe = safe.replace(/^(\d+)\.\s+(.+)$/gm, '<li>$2</li>');
+    safe = safe.replace(/(<li>.*<\/li>\n?)+/g, '<ol>$&</ol>');
+    
+    // Line breaks (preserve double line breaks as paragraphs)
+    safe = safe.replace(/\n\n/g, '</p><p>');
+    safe = safe.replace(/\n/g, '<br>');
+    
+    // Wrap in paragraph if not already wrapped
+    if (!safe.startsWith('<')) {
+      safe = `<p>${safe}</p>`;
+    }
+    
+    return safe;
+  }
 }
 
 // Auto-initialize
@@ -439,71 +506,4 @@ if (document.readyState === 'loading') {
     size: 'default',
     maxCharacters: 2000
   });
-}
-
-formatMarkdown(text) {
-  // First escape any HTML to prevent XSS
-  let safe = this.escapeHtml(text);
-  
-  // Process code blocks first (multiline)
-  safe = safe.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-    return `<pre><code class="language-${lang || 'text'}">${code.trim()}</code></pre>`;
-  });
-  
-  // Inline code
-  safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
-  
-  // Bold
-  safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  
-  // Italic
-  safe = safe.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  
-  // Headers (must be at start of line)
-  safe = safe.replace(/^### (.+)$/gm, '<h4>$1</h4>');
-  safe = safe.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-  safe = safe.replace(/^# (.+)$/gm, '<h2>$1</h2>');
-  
-  // Bullet lists
-  const lines = safe.split('\n');
-  let inList = false;
-  const processed = [];
-  
-  lines.forEach(line => {
-    const bulletMatch = line.match(/^[•\-\*]\s+(.+)$/);
-    if (bulletMatch) {
-      if (!inList) {
-        processed.push('<ul>');
-        inList = true;
-      }
-      processed.push(`<li>${bulletMatch[1]}</li>`);
-    } else {
-      if (inList) {
-        processed.push('</ul>');
-        inList = false;
-      }
-      processed.push(line);
-    }
-  });
-  
-  if (inList) {
-    processed.push('</ul>');
-  }
-  
-  safe = processed.join('\n');
-  
-  // Numbered lists
-  safe = safe.replace(/^(\d+)\.\s+(.+)$/gm, '<li>$2</li>');
-  safe = safe.replace(/(<li>.*<\/li>\n?)+/g, '<ol>$&</ol>');
-  
-  // Line breaks (preserve double line breaks as paragraphs)
-  safe = safe.replace(/\n\n/g, '</p><p>');
-  safe = safe.replace(/\n/g, '<br>');
-  
-  // Wrap in paragraph if not already wrapped
-  if (!safe.startsWith('<')) {
-    safe = `<p>${safe}</p>`;
-  }
-  
-  return safe;
 }
