@@ -517,3 +517,4 @@ class VueSenseModal {
   
   return safe;
 }
+}
