@@ -324,17 +324,19 @@
   flex-direction: column;
   height: 100%;
   min-height: 500px;
-  overflow: hidden;  /* ADD THIS */
+  overflow: hidden;
 }
 
 /* Messages Area */
 .vuesense-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 0; /* IMPORTANT: allows flex child to shrink */
 }
 
 /* Welcome Screen */
@@ -670,11 +672,11 @@
   padding: 16px 20px;
   border-top: 1px solid var(--border-primary, rgba(255, 255, 255, 0.1));
   background: var(--bg-secondary, #16213e);
-  flex-shrink: 0;  /* ADD THIS - prevents input from shrinking */
-  position: sticky;  /* ADD THIS - keeps it at bottom */
-  bottom: 0;  /* ADD THIS */
-  z-index: 10;  /* ADD THIS - keeps it above messages */
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
 }
+
 .vuesense-input-wrapper {
   display: flex;
   gap: 8px;
