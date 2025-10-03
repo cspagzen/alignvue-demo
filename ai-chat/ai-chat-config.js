@@ -12,7 +12,7 @@ const AI_CHAT_CONFIG = {
   // Model Parameters
   maxInputTokens: 8000,      // Context window for portfolio data
   maxOutputTokens: 2000,     // Maximum response length
-  temperature: 0.3,          // Lower = more focused, higher = more creative
+  temperature: 1,          // Lower = more focused, higher = more creative
   
   // Cost Tracking (GPT-5 Mini estimated pricing)
   inputCostPer1M: 0.15,      // $0.15 per 1M input tokens
