@@ -179,3 +179,157 @@ class VueSenseAIEngine {
 
 // Create global instance
 const aiEngine = new VueSenseAIEngine();
+
+// ==========================================
+// API Key Manager
+// ==========================================
+const apiKeyManager = {
+  STORAGE_KEY: 'vuesense_api_key',
+  
+  setKey(key) {
+    if (!key || !key.startsWith('sk-')) {
+      throw new Error('Invalid API key format');
+    }
+    localStorage.setItem(this.STORAGE_KEY, key);
+  },
+  
+  getKey() {
+    return localStorage.getItem(this.STORAGE_KEY);
+  },
+  
+  hasKey() {
+    const key = this.getKey();
+    return key && key.length > 0;
+  },
+  
+  removeKey() {
+    localStorage.removeItem(this.STORAGE_KEY);
+  }
+};
+
+// ==========================================
+// Response Cache
+// ==========================================
+const responseCache = {
+  cache: new Map(),
+  CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
+  
+  generateKey(question, context) {
+    const contextStr = context ? JSON.stringify(context).substring(0, 100) : '';
+    return `${question.toLowerCase().trim()}_${contextStr}`;
+  },
+  
+  set(question, context, response) {
+    const key = this.generateKey(question, context);
+    this.cache.set(key, {
+      response,
+      timestamp: Date.now()
+    });
+    
+    // Limit cache size
+    if (this.cache.size > 50) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+  },
+  
+  get(question, context) {
+    const key = this.generateKey(question, context);
+    const cached = this.cache.get(key);
+    
+    if (!cached) return null;
+    
+    // Check if expired
+    if (Date.now() - cached.timestamp > this.CACHE_DURATION) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return cached.response;
+  },
+  
+  clear() {
+    this.cache.clear();
+  }
+};
+
+// ==========================================
+// Cost Tracker
+// ==========================================
+const costTracker = {
+  STORAGE_KEY: 'vuesense_cost_tracker',
+  
+  // Pricing per 1M tokens
+  INPUT_COST_PER_1M: 0.15,  // $0.15 per 1M input tokens
+  OUTPUT_COST_PER_1M: 0.60, // $0.60 per 1M output tokens
+  
+  loadStats() {
+    const saved = localStorage.getItem(this.STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to load cost stats:', e);
+      }
+    }
+    return {
+      questionCount: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      totalCost: 0,
+      sessionStart: new Date().toISOString()
+    };
+  },
+  
+  saveStats(stats) {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(stats));
+  },
+  
+  trackUsage(inputTokens, outputTokens) {
+    const stats = this.loadStats();
+    
+    // Calculate costs
+    const inputCost = (inputTokens / 1000000) * this.INPUT_COST_PER_1M;
+    const outputCost = (outputTokens / 1000000) * this.OUTPUT_COST_PER_1M;
+    const totalCost = inputCost + outputCost;
+    
+    // Update stats
+    stats.questionCount++;
+    stats.totalInputTokens += inputTokens;
+    stats.totalOutputTokens += outputTokens;
+    stats.totalCost += totalCost;
+    
+    this.saveStats(stats);
+    
+    return {
+      cost: totalCost,
+      totalCost: stats.totalCost,
+      questionCount: stats.questionCount
+    };
+  },
+  
+  getStats() {
+    const stats = this.loadStats();
+    return {
+      questionCount: stats.questionCount,
+      totalCost: stats.totalCost,
+      totalInputTokens: stats.totalInputTokens,
+      totalOutputTokens: stats.totalOutputTokens,
+      avgCostPerQuestion: stats.questionCount > 0 
+        ? stats.totalCost / stats.questionCount 
+        : 0,
+      sessionStart: stats.sessionStart
+    };
+  },
+  
+  reset() {
+    const newStats = {
+      questionCount: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      totalCost: 0,
+      sessionStart: new Date().toISOString()
+    };
+    this.saveStats(newStats);
+  }
+};
