@@ -6,20 +6,17 @@
 const AI_CHAT_CONFIG = {
   // API Configuration
   apiProvider: 'openai',
-  apiModel: 'gpt-5-mini', // Using GPT-5 Mini for best performance
+  apiModel: 'gpt-4o-mini', // Using GPT-4o Mini for best cost/performance
   apiEndpoint: 'https://api.openai.com/v1/chat/completions',
   
   // Model Parameters
   maxInputTokens: 8000,      // Context window for portfolio data
   maxOutputTokens: 2000,     // Maximum response length
-  temperature: 1,          // Lower = more focused, higher = more creative
+  temperature: 0.3,          // Lower = more focused, higher = more creative
   
-  // Cost Tracking (GPT-5 Mini estimated pricing)
+  // Cost Tracking (GPT-4o Mini pricing)
   inputCostPer1M: 0.15,      // $0.15 per 1M input tokens
   outputCostPer1M: 0.60,     // $0.60 per 1M output tokens
-  
-  // Note: Actual GPT-5 Mini pricing will be updated when available
-  // These are conservative estimates based on GPT-4o Mini
   
   // Caching
   cacheEnabled: true,
@@ -34,7 +31,7 @@ const AI_CHAT_CONFIG = {
   conversationHistoryEnabled: true,
   costTrackingVisible: true,
   
-  // System Prompt
+  // System Prompt with EXPLICIT markdown formatting instructions
   systemPrompt: `You are VueSense AI, an expert portfolio management consultant analyzing real-time data for an organization.
 
 YOUR ROLE:
@@ -44,12 +41,47 @@ YOUR ROLE:
 - Be concise but thorough
 - Use natural, conversational language
 
+CRITICAL FORMATTING REQUIREMENTS:
+You MUST format EVERY response using markdown. This is not optional.
+
+**Required Formatting:**
+1. Wrap ALL team names in **double asterisks** like **Core Platform** or **Data Engineering**
+2. Wrap ALL important metrics and key terms in **double asterisks**
+3. Use ## for main section headers (e.g., ## Top Priority Teams)
+4. Use ### for sub-sections
+5. Use bullet lists with - (dash + space) for lists of items
+6. Use numbered lists (1. 2. 3.) for sequential steps or prioritized actions
+
+**Example Response Format:**
+
+## Critical Teams Requiring Support
+
+**Core Platform** — Critical status; 92% utilization, 13 initiatives
+
+Key risks:
+- Single biggest dependency for downstream teams
+- Blocking API v3, App Unification, Customer Portal v2
+- Team capacity severely constrained
+
+**Data Engineering** — Critical status; 98% utilization, 5 initiatives
+
+Immediate concerns:
+- Blocker for Data Lake v2 and Analytics v3
+- No bandwidth for incoming requests
+
+## Recommended Actions
+
+1. Reduce workload on Core Platform immediately
+2. Add temporary capacity to Data Engineering
+3. Reassess initiative priorities above the line
+
 RESPONSE GUIDELINES:
 1. Answer the specific question directly
 2. Provide evidence from the portfolio data
 3. Highlight non-obvious patterns or risks
 4. Suggest concrete next steps when appropriate
-5. Keep responses under 200 words unless asked for details
+5. Keep responses under 250 words unless asked for details
+6. ALWAYS use the markdown formatting shown above
 
 TONE:
 - Professional but approachable
@@ -66,169 +98,3 @@ TONE:
     quotaExceeded: 'API quota exceeded. Please check your OpenAI account.'
   }
 };
-
-// API Key Management
-class APIKeyManager {
-  constructor() {
-    this.storageKey = 'vuesense_openai_key';
-  }
-  
-  setKey(apiKey) {
-    if (!apiKey || apiKey.trim().length === 0) {
-      throw new Error('API key cannot be empty');
-    }
-    
-    // Basic validation (OpenAI keys start with 'sk-')
-    if (!apiKey.startsWith('sk-')) {
-      console.warn('Warning: OpenAI API keys typically start with "sk-"');
-    }
-    
-    localStorage.setItem(this.storageKey, apiKey.trim());
-    return true;
-  }
-  
-  getKey() {
-    return localStorage.getItem(this.storageKey);
-  }
-  
-  hasKey() {
-    const key = this.getKey();
-    return key && key.length > 0;
-  }
-  
-  removeKey() {
-    localStorage.removeItem(this.storageKey);
-  }
-  
-  validateKey(apiKey) {
-    return apiKey && apiKey.startsWith('sk-') && apiKey.length > 20;
-  }
-}
-
-// Cost Tracking
-class CostTracker {
-  constructor() {
-    this.storageKey = 'vuesense_cost_tracker';
-    this.load();
-  }
-  
-  load() {
-    const saved = localStorage.getItem(this.storageKey);
-    if (saved) {
-      const data = JSON.parse(saved);
-      this.totalInputTokens = data.totalInputTokens || 0;
-      this.totalOutputTokens = data.totalOutputTokens || 0;
-      this.totalCost = data.totalCost || 0;
-      this.questionCount = data.questionCount || 0;
-      this.lastReset = data.lastReset || new Date().toISOString();
-    } else {
-      this.reset();
-    }
-  }
-  
-  save() {
-    localStorage.setItem(this.storageKey, JSON.stringify({
-      totalInputTokens: this.totalInputTokens,
-      totalOutputTokens: this.totalOutputTokens,
-      totalCost: this.totalCost,
-      questionCount: this.questionCount,
-      lastReset: this.lastReset
-    }));
-  }
-  
-  trackUsage(inputTokens, outputTokens) {
-    this.totalInputTokens += inputTokens;
-    this.totalOutputTokens += outputTokens;
-    
-    const inputCost = (inputTokens / 1000000) * AI_CHAT_CONFIG.inputCostPer1M;
-    const outputCost = (outputTokens / 1000000) * AI_CHAT_CONFIG.outputCostPer1M;
-    
-    this.totalCost += (inputCost + outputCost);
-    this.questionCount += 1;
-    
-    this.save();
-    
-    return {
-      inputTokens,
-      outputTokens,
-      cost: inputCost + outputCost,
-      totalCost: this.totalCost
-    };
-  }
-  
-  getStats() {
-    return {
-      totalInputTokens: this.totalInputTokens,
-      totalOutputTokens: this.totalOutputTokens,
-      totalCost: this.totalCost,
-      questionCount: this.questionCount,
-      avgCostPerQuestion: this.questionCount > 0 
-        ? this.totalCost / this.questionCount 
-        : 0,
-      lastReset: this.lastReset
-    };
-  }
-  
-  reset() {
-    this.totalInputTokens = 0;
-    this.totalOutputTokens = 0;
-    this.totalCost = 0;
-    this.questionCount = 0;
-    this.lastReset = new Date().toISOString();
-    this.save();
-  }
-}
-
-// Response Cache
-class ResponseCache {
-  constructor() {
-    this.cache = new Map();
-    this.maxSize = 50;
-  }
-  
-  getCacheKey(question, context) {
-    // Create a simple hash from question + context summary
-    const contextSummary = context ? JSON.stringify(context.summary) : '';
-    return `${question.toLowerCase().trim()}_${contextSummary}`.substring(0, 100);
-  }
-  
-  get(question, context) {
-    if (!AI_CHAT_CONFIG.cacheEnabled) return null;
-    
-    const key = this.getCacheKey(question, context);
-    const cached = this.cache.get(key);
-    
-    if (cached && (Date.now() - cached.timestamp < AI_CHAT_CONFIG.cacheDuration)) {
-      console.log('Cache hit:', key);
-      return cached.response;
-    }
-    
-    return null;
-  }
-  
-  set(question, context, response) {
-    if (!AI_CHAT_CONFIG.cacheEnabled) return;
-    
-    const key = this.getCacheKey(question, context);
-    
-    this.cache.set(key, {
-      response,
-      timestamp: Date.now()
-    });
-    
-    // Limit cache size
-    if (this.cache.size > this.maxSize) {
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
-    }
-  }
-  
-  clear() {
-    this.cache.clear();
-  }
-}
-
-// Export instances
-const apiKeyManager = new APIKeyManager();
-const costTracker = new CostTracker();
-const responseCache = new ResponseCache();
