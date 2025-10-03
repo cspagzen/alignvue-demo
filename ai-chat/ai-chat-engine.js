@@ -152,7 +152,7 @@ class AIEngine {
       
       const isHealthy = await this.checkBackendHealth();
       if (!isHealthy) {
-        throw new Error(AI_CHAT_CONFIG.messages.backendError);
+        throw new Error(AI_CHAT_CONFIG.errors.backendError || 'Backend service unavailable');
       }
       
       this.conversationHistory.push({
@@ -175,7 +175,7 @@ class AIEngine {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || AI_CHAT_CONFIG.messages.apiError);
+        throw new Error(errorData.error || AI_CHAT_CONFIG.errors.apiError || 'API error occurred');
       }
       
       const data = await response.json();
