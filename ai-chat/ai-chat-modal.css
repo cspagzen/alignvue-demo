@@ -1,0 +1,315 @@
+/* ========================================
+   VueSense AI Modal - Phase 1 Styles
+   Optimized for 1600×900 baseline
+   ======================================== */
+
+/* Modal Container */
+.vuesense-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease-in-out;
+}
+
+.vuesense-modal-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Modal Window */
+.vuesense-modal {
+  background: var(--bg-primary, #1a1a2e);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  width: 90%;
+  max-width: 800px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.95) translateY(20px);
+  transition: transform 200ms ease-in-out;
+  overflow: hidden;
+}
+
+.vuesense-modal-overlay.active .vuesense-modal {
+  transform: scale(1) translateY(0);
+}
+
+/* Position Variants */
+.vuesense-modal-overlay.position-bottom-right {
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 24px;
+}
+
+.vuesense-modal-overlay.position-bottom-left {
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 24px;
+}
+
+.vuesense-modal-overlay.position-top-right {
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 24px;
+}
+
+.vuesense-modal-overlay.position-top-left {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 24px;
+}
+
+/* Size Variants */
+.vuesense-modal.size-small {
+  max-width: 480px;
+}
+
+.vuesense-modal.size-default {
+  max-width: 800px;
+}
+
+.vuesense-modal.size-large {
+  max-width: 1200px;
+}
+
+.vuesense-modal.size-fullscreen {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+}
+
+/* Modal Header */
+.vuesense-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-primary, rgba(255, 255, 255, 0.1));
+  background: linear-gradient(135deg, var(--bg-secondary, #16213e) 0%, var(--bg-tertiary, #0f1923) 100%);
+}
+
+.vuesense-modal-branding {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vuesense-modal-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--accent-blue, #3b82f6);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.vuesense-modal-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.vuesense-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin: 0;
+}
+
+.vuesense-modal-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  margin: 0;
+}
+
+.vuesense-modal-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vuesense-modal-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+}
+
+.vuesense-modal-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #ffffff);
+}
+
+.vuesense-modal-btn:active {
+  transform: scale(0.95);
+}
+
+/* Modal Body */
+.vuesense-modal-body {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background: var(--bg-primary, #1a1a2e);
+}
+
+/* Custom Scrollbar */
+.vuesense-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.vuesense-modal-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.vuesense-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.vuesense-modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Modal Footer */
+.vuesense-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-primary, rgba(255, 255, 255, 0.1));
+  background: var(--bg-secondary, #16213e);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Trigger Button */
+.vuesense-trigger {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-blue, #3b82f6), var(--accent-purple, #8b5cf6));
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+  z-index: 9998;
+  transition: all 200ms ease;
+}
+
+.vuesense-trigger:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 30px rgba(59, 130, 246, 0.6);
+}
+
+.vuesense-trigger:active {
+  transform: scale(0.95);
+}
+
+.vuesense-trigger.hidden {
+  display: none;
+}
+
+/* Responsive Design */
+
+/* Tablet (1024×768 and below) */
+@media (max-width: 1024px) {
+  .vuesense-modal {
+    max-width: 600px;
+  }
+  
+  .vuesense-modal.size-large {
+    max-width: 90%;
+  }
+}
+
+/* Small Tablet/Large Mobile (900px and below) */
+@media (max-width: 900px) {
+  .vuesense-modal-overlay.position-bottom-right,
+  .vuesense-modal-overlay.position-bottom-left,
+  .vuesense-modal-overlay.position-top-right,
+  .vuesense-modal-overlay.position-top-left {
+    padding: 16px;
+  }
+  
+  .vuesense-modal {
+    max-width: 95%;
+  }
+}
+
+/* Mobile (768px and below - minimum 1366×768 support) */
+@media (max-width: 768px) {
+  .vuesense-modal-overlay {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  
+  .vuesense-modal-overlay.position-bottom-right,
+  .vuesense-modal-overlay.position-bottom-left,
+  .vuesense-modal-overlay.position-top-right,
+  .vuesense-modal-overlay.position-top-left {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  
+  .vuesense-modal {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+  }
+  
+  .vuesense-trigger {
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Animation Keyframes */
+@keyframes vuesense-fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vuesense-slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
