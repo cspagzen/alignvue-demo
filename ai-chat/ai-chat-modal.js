@@ -367,24 +367,28 @@ class VueSenseModal {
   }
   
   showTyping() {
-    this.isTyping = true;
-    const typingHTML = `
-      <div class="vuesense-message ai" id="vuesense-typing">
-        <div class="vuesense-message-avatar">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
-          </svg>
-        </div>
-        <div class="vuesense-message-content">
-          <div class="vuesense-typing-indicator">
-            <span></span><span></span><span></span>
+  this.isTyping = true;
+  const typingHTML = `
+    <div class="vuesense-message ai" id="vuesense-typing">
+      <div class="vuesense-message-avatar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+        </svg>
+      </div>
+      <div class="vuesense-message-content">
+        <div class="vuesense-typing">
+          <div class="vuesense-typing-dots">
+            <div class="vuesense-typing-dot"></div>
+            <div class="vuesense-typing-dot"></div>
+            <div class="vuesense-typing-dot"></div>
           </div>
         </div>
       </div>
-    `;
-    this.messagesContainer.insertAdjacentHTML('beforeend', typingHTML);
-    this.scrollToBottom();
-  }
+    </div>
+  `;
+  this.messagesContainer.insertAdjacentHTML('beforeend', typingHTML);
+  this.scrollToBottom();
+}
   
   hideTyping() {
     this.isTyping = false;
