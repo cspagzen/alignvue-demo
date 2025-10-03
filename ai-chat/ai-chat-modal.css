@@ -774,3 +774,24 @@
     font-size: 20px;
   }
 }
+
+.vuesense-message.ai strong {
+  font-weight: 600;
+  color: var(--accent-blue);
+}
+
+.vuesense-message.ai h2 {
+  font-size: 1.1em;
+  font-weight: 700;
+  margin: 12px 0 8px 0;
+  color: var(--text-primary);
+}
+
+.vuesense-message.ai ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.vuesense-message.ai li {
+  margin: 4px 0;
+}
