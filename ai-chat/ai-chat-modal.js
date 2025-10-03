@@ -208,11 +208,7 @@ class VueSenseModal {
     this.showTyping();
     
     try {
-      if (typeof apiKeyManager === 'undefined' || !apiKeyManager.hasKey()) {
-        this.hideTyping();
-        this.addMessage('⚠️ Please set your API key in settings (gear icon) before asking questions.', 'ai');
-        return;
-      }
+      
       
       const boardData = window.boardData || null;
       const response = await aiEngine.askQuestion(message, boardData);

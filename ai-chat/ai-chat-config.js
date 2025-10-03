@@ -6,24 +6,27 @@
 const AI_CHAT_CONFIG = {
   // API Configuration
   apiProvider: 'openai',
-  apiModel: 'gpt-4o-mini', // Using GPT-4o Mini for best cost/performance
+  apiModel: 'gpt-5-nano',
   apiEndpoint: 'https://api.openai.com/v1/chat/completions',
   
-  // Model Parameters
-  maxInputTokens: 8000,      // Context window for portfolio data
-  maxOutputTokens: 2000,     // Maximum response length
-  temperature: 0.3,          // Lower = more focused, higher = more creative
+  // DEMO: Default API key for everyone (REPLACE WITH YOUR ACTUAL KEY)
+  defaultApiKey: 'sk-proj-PASTE-YOUR-ACTUAL-API-KEY-HERE',
   
-  // Cost Tracking (GPT-4o Mini pricing)
-  inputCostPer1M: 0.15,      // $0.15 per 1M input tokens
-  outputCostPer1M: 0.60,     // $0.60 per 1M output tokens
+  // Model Parameters
+  maxInputTokens: 8000,
+  maxOutputTokens: 2000,
+  temperature: 0.3,
+  
+  // Cost Tracking (GPT-5 nano pricing)
+  inputCostPer1M: 0.05,
+  outputCostPer1M: 0.40,
   
   // Caching
   cacheEnabled: true,
-  cacheDuration: 300000,     // 5 minutes in milliseconds
+  cacheDuration: 300000,
   
   // UI Settings
-  typingDelay: 1500,         // Simulated AI thinking time (ms)
+  typingDelay: 1500,
   messageAnimationSpeed: 300,
   
   // Feature Flags
