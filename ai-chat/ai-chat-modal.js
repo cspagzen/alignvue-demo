@@ -1,6 +1,5 @@
 /**
- * VueSense AI Modal - Phase 2: Chat Interface
- * Complete chat functionality with messages, input, and suggestions
+ * VueSense AI Modal - Complete Working Version
  */
 
 class VueSenseModal {
@@ -42,28 +41,20 @@ class VueSenseModal {
   
   createModal() {
     const modalHTML = `
-      <!-- VueSense AI Trigger Button -->
       <button id="vuesense-trigger" class="vuesense-trigger" aria-label="Open VueSense AI">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
-          <path d="M20 2v4"/>
-          <path d="M22 4h-4"/>
-          <circle cx="4" cy="20" r="2"/>
+          <path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>
         </svg>
       </button>
       
-      <!-- VueSense AI Modal -->
       <div id="vuesense-modal-overlay" class="vuesense-modal-overlay">
         <div id="vuesense-modal" class="vuesense-modal">
-          <!-- Header -->
           <div class="vuesense-modal-header">
             <div class="vuesense-modal-branding">
               <div class="vuesense-modal-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
-                  <path d="M20 2v4"/>
-                  <path d="M22 4h-4"/>
-                  <circle cx="4" cy="20" r="2"/>
                 </svg>
               </div>
               <div class="vuesense-modal-title-group">
@@ -71,35 +62,34 @@ class VueSenseModal {
                 <p class="vuesense-modal-subtitle">Your intelligent assistant</p>
               </div>
             </div>
-            
             <div class="vuesense-modal-controls">
-  <!-- ADD THIS SETTINGS BUTTON FIRST -->
-  <button onclick="openSettingsModal()" class="vuesense-modal-btn" title="Settings" aria-label="Open settings">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-  </button>
-  
-  <!-- THEN THE REST OF THE EXISTING BUTTONS -->
-  <button id="vuesense-minimize-btn" class="vuesense-modal-btn" title="Minimize" aria-label="Minimize modal">
-    <!-- minimize icon -->
-  </button>
-  <button id="vuesense-expand-btn" class="vuesense-modal-btn" title="Expand" aria-label="Expand modal">
-    <!-- expand icon -->
-  </button>
-  <button id="vuesense-close-btn" class="vuesense-modal-btn" title="Close" aria-label="Close modal">
-    <!-- close icon -->
-  </button>
-</div>
+              <button onclick="openSettingsModal()" class="vuesense-modal-btn" title="Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button id="vuesense-minimize-btn" class="vuesense-modal-btn" title="Minimize">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </button>
+              <button id="vuesense-expand-btn" class="vuesense-modal-btn" title="Expand">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m21 21-6-6m6 6v-4.8m0 4.8h-4.8"/><path d="M3 16.2V21m0 0h4.8M3 21l6-6"/><path d="M21 7.8V3m0 0h-4.8M21 3l-6 6"/><path d="M3 7.8V3m0 0h4.8M3 3l6 6"/>
+                </svg>
+              </button>
+              <button id="vuesense-close-btn" class="vuesense-modal-btn" title="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+              </button>
+            </div>
           </div>
           
-          <!-- Chat Body -->
           <div class="vuesense-modal-body" style="padding: 0;">
             <div class="vuesense-chat-container">
               <div id="vuesense-messages" class="vuesense-messages"></div>
               
-              <!-- Input Area -->
               <div class="vuesense-input-area">
                 <div class="vuesense-input-wrapper">
                   <textarea 
@@ -107,16 +97,15 @@ class VueSenseModal {
                     class="vuesense-input-field" 
                     placeholder="Ask me anything about your portfolio..."
                     rows="1"
-                    maxlength=2000
+                    maxlength="2000"
                   ></textarea>
                   <button id="vuesense-send-btn" class="vuesense-send-btn" aria-label="Send message">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="m22 2-7 20-4-9-9-4Z"/>
-                      <path d="M22 2 11 13"/>
+                      <path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>
                     </svg>
                   </button>
                 </div>
-                <div id="vuesense-char-counter" class="vuesense-char-counter">0 / ${this.options.maxCharacters}</div>
+                <div id="vuesense-char-counter" class="vuesense-char-counter">0 / 2000</div>
               </div>
             </div>
           </div>
@@ -128,18 +117,13 @@ class VueSenseModal {
   }
   
   attachEventListeners() {
-    // Trigger button
     this.trigger?.addEventListener('click', () => this.open());
-    
-    // Control buttons
     document.getElementById('vuesense-close-btn')?.addEventListener('click', () => this.close());
     document.getElementById('vuesense-minimize-btn')?.addEventListener('click', () => this.minimize());
     document.getElementById('vuesense-expand-btn')?.addEventListener('click', () => this.toggleExpand());
     
-    // Send button
     this.sendBtn?.addEventListener('click', () => this.sendMessage());
     
-    // Input field
     this.inputField?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -149,26 +133,19 @@ class VueSenseModal {
     
     this.inputField?.addEventListener('input', () => this.updateCharCounter());
     
-    // Auto-resize textarea
     this.inputField?.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 120) + 'px';
     });
     
-    // Backdrop click
     if (this.options.closeOnBackdrop) {
       this.overlay?.addEventListener('click', (e) => {
-        if (e.target === this.overlay) {
-          this.close();
-        }
+        if (e.target === this.overlay) this.close();
       });
     }
     
-    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen) {
-        this.close();
-      }
+      if (e.key === 'Escape' && this.isOpen) this.close();
     });
   }
   
@@ -176,11 +153,8 @@ class VueSenseModal {
     const welcomeHTML = `
       <div class="vuesense-welcome">
         <div class="vuesense-welcome-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
-            <path d="M20 2v4"/>
-            <path d="M22 4h-4"/>
-            <circle cx="4" cy="20" r="2"/>
           </svg>
         </div>
         <h3>Welcome to VueSense AI</h3>
@@ -190,7 +164,7 @@ class VueSenseModal {
           <div class="vuesense-suggestions-title">Try asking:</div>
           ${this.getSuggestedQuestions().map(q => `
             <button class="vuesense-suggestion-btn" onclick="window.vuesenseModal.askQuestion('${q.text}')">
-              <svg class="vuesense-suggestion-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg class="vuesense-suggestion-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
               </svg>
               <span>${q.text}</span>
@@ -218,143 +192,125 @@ class VueSenseModal {
   }
   
   async sendMessage() {
-  const message = this.inputField?.value.trim();
-  
-  if (!message || this.isTyping) return;
-  
-  // Clear welcome if first message
-  if (this.messages.length === 0) {
-    this.messagesContainer.innerHTML = '';
-  }
-  
-  // Add user message
-  this.addMessage(message, 'user');
-  
-  // Clear input
-  this.inputField.value = '';
-  this.inputField.style.height = 'auto';
-  this.updateCharCounter();
-  
-  // Show typing indicator
-  this.showTyping();
-  
-  try {
-    // Get boardData from global scope (your app should have this)
-    const boardData = window.boardData || null;
+    const message = this.inputField?.value.trim();
     
-    // Call real AI
-    const response = await aiEngine.askQuestion(message, boardData);
+    if (!message || this.isTyping) return;
     
-    // Hide typing indicator
-    this.hideTyping();
-    
-    // Add AI response
-    this.addMessage(response.answer, 'ai');
-    
-    // Show cost info if available
-    if (response.cost && AI_CHAT_CONFIG.costTrackingVisible) {
-      this.updateCostDisplay(response);
+    if (this.messages.length === 0) {
+      this.messagesContainer.innerHTML = '';
     }
     
-  } catch (error) {
-    this.hideTyping();
-    this.addMessage(
-      'Sorry, I encountered an error. Please check your API key in settings and try again.',
-      'ai'
-    );
-    console.error('AI Error:', error);
-  }
-}
+    this.addMessage(message, 'user');
+    this.inputField.value = '';
+    this.inputField.style.height = 'auto';
+    this.updateCharCounter();
     
-    updateCostDisplay(response) {
-  const stats = costTracker.getStats();
-  const costText = response.cached 
-    ? '(cached)' 
-    : `$${response.cost.toFixed(4)}`;
-  
-  console.log(`💰 Cost: ${costText} | Total: $${stats.totalCost.toFixed(4)} | Questions: ${stats.questionCount}`);
-  
-  // Optional: Add visual cost indicator in UI
-  // You can enhance this later to show costs in the modal header
-}
+    this.showTyping();
+    
+    try {
+      if (typeof apiKeyManager === 'undefined' || !apiKeyManager.hasKey()) {
+        this.hideTyping();
+        this.addMessage('⚠️ Please set your API key in settings (gear icon) before asking questions.', 'ai');
+        return;
+      }
+      
+      const boardData = window.boardData || null;
+      const response = await aiEngine.askQuestion(message, boardData);
+      
+      this.hideTyping();
+      this.addMessage(response.answer, 'ai');
+      
+      if (response.cost && AI_CHAT_CONFIG.costTrackingVisible) {
+        this.updateCostDisplay(response);
+      }
+      
+    } catch (error) {
+      this.hideTyping();
+      console.error('VueSense AI Error:', error);
+      this.addMessage('Sorry, I encountered an error. Please check your API key in settings and try again.', 'ai');
+    }
+  }
+    
+  updateCostDisplay(response) {
+    const stats = costTracker.getStats();
+    const costText = response.cached ? '(cached)' : `$${response.cost.toFixed(4)}`;
+    console.log(`💰 Cost: ${costText} | Total: $${stats.totalCost.toFixed(4)} | Questions: ${stats.questionCount}`);
+  }
   
   addMessage(text, type) {
-  const time = new Date().toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
-    minute: '2-digit' 
-  });
-  
-  const avatarIcon = type === 'user' 
-    ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
-    : '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg>';
-  
-  // Format AI messages with markdown, escape user messages
-  const formattedText = type === 'ai' ? this.formatMarkdown(text) : this.escapeHtml(text);
-  
-  const messageHTML = `
-    <div class="vuesense-message ${type}">
-      <div class="vuesense-message-avatar">
-        ${avatarIcon}
-      </div>
-      <div class="vuesense-message-content">
-        <div class="vuesense-message-bubble">${formattedText}</div>
-        <div class="vuesense-message-time">${time}</div>
-      </div>
-    </div>
-  `;
-  
-  this.messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
-  this.messages.push({ text, type, time });
-  this.scrollToBottom();
-}
-  
-  showTyping() {
-    this.isTyping = true;
-    this.sendBtn.disabled = true;
+    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     
-    const typingHTML = `
-      <div id="vuesense-typing-indicator" class="vuesense-message ai">
-        <div class="vuesense-message-avatar">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
-          </svg>
-        </div>
-        <div class="vuesense-typing">
-          <div class="vuesense-typing-dots">
-            <div class="vuesense-typing-dot"></div>
-            <div class="vuesense-typing-dot"></div>
-            <div class="vuesense-typing-dot"></div>
-          </div>
+    const avatarIcon = type === 'user' 
+      ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+      : '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg>';
+    
+    const formattedText = type === 'ai' ? this.formatMarkdown(text) : this.escapeHtml(text);
+    
+    const messageHTML = `
+      <div class="vuesense-message ${type}">
+        <div class="vuesense-message-avatar">${avatarIcon}</div>
+        <div class="vuesense-message-content">
+          <div class="vuesense-message-bubble">${formattedText}</div>
+          <div class="vuesense-message-time">${time}</div>
         </div>
       </div>
     `;
     
-    this.messagesContainer.insertAdjacentHTML('beforeend', typingHTML);
+    this.messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+    this.messages.push({ type, text, time });
     this.scrollToBottom();
   }
   
-  hideTyping() {
-    this.isTyping = false;
-    this.sendBtn.disabled = false;
-    document.getElementById('vuesense-typing-indicator')?.remove();
-  }
-  
-  updateCharCounter() {
-    const counter = document.getElementById('vuesense-char-counter');
-    const length = this.inputField?.value.length || 0;
-    const max = this.options.maxCharacters;
+  formatMarkdown(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    let safe = div.innerHTML;
     
-    if (counter) {
-      counter.textContent = `${length} / ${max}`;
-      counter.classList.toggle('warning', length > max * 0.8);
-      counter.classList.toggle('error', length >= max);
-    }
-  }
-  
-  scrollToBottom() {
-    requestAnimationFrame(() => {
-      this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+    safe = safe.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+      return `<pre><code class="language-${lang || 'text'}">${code.trim()}</code></pre>`;
     });
+    
+    safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
+    safe = safe.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+    safe = safe.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+    safe = safe.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+    safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    safe = safe.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+    
+    const lines = safe.split('\n');
+    const processed = [];
+    let inList = false;
+    
+    for (const line of lines) {
+      const bulletMatch = line.match(/^[\s]*[-*•]\s+(.+)$/);
+      if (bulletMatch) {
+        if (!inList) {
+          processed.push('<ul>');
+          inList = true;
+        }
+        processed.push(`<li>${bulletMatch[1]}</li>`);
+      } else {
+        if (inList) {
+          processed.push('</ul>');
+          inList = false;
+        }
+        processed.push(line);
+      }
+    }
+    
+    if (inList) processed.push('</ul>');
+    
+    safe = processed.join('\n');
+    safe = safe.replace(/\n\n+/g, '</p><p>');
+    safe = safe.replace(/\n(?!<)/g, '<br>');
+    
+    if (!safe.match(/^</)) {
+      safe = '<p>' + safe + '</p>';
+    }
+    
+    safe = safe.replace(/<p><\/p>/g, '');
+    
+    return safe;
   }
   
   escapeHtml(text) {
@@ -363,18 +319,50 @@ class VueSenseModal {
     return div.innerHTML;
   }
   
+  showTyping() {
+    this.isTyping = true;
+    const typingHTML = `
+      <div class="vuesense-message ai" id="vuesense-typing">
+        <div class="vuesense-message-avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+          </svg>
+        </div>
+        <div class="vuesense-message-content">
+          <div class="vuesense-typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    `;
+    this.messagesContainer.insertAdjacentHTML('beforeend', typingHTML);
+    this.scrollToBottom();
+  }
+  
+  hideTyping() {
+    this.isTyping = false;
+    document.getElementById('vuesense-typing')?.remove();
+  }
+  
+  scrollToBottom() {
+    this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+  }
+  
+  updateCharCounter() {
+    const count = this.inputField?.value.length || 0;
+    const counter = document.getElementById('vuesense-char-counter');
+    if (counter) {
+      counter.textContent = `${count} / ${this.options.maxCharacters}`;
+      counter.classList.toggle('warning', count > this.options.maxCharacters * 0.8);
+      counter.classList.toggle('error', count >= this.options.maxCharacters);
+    }
+  }
+  
   open() {
     this.isOpen = true;
-    this.isMinimized = false;
     this.overlay?.classList.add('active');
     this.trigger?.classList.add('hidden');
     document.body.style.overflow = 'hidden';
-    
-    if (this.wasExpanded) {
-      this.setSize('fullscreen');
-      this.isExpanded = true;
-    }
-    
     setTimeout(() => this.inputField?.focus(), 300);
   }
   
@@ -383,13 +371,11 @@ class VueSenseModal {
     this.overlay?.classList.remove('active');
     this.trigger?.classList.remove('hidden');
     document.body.style.overflow = '';
-    this.wasExpanded = this.isExpanded;
   }
   
   minimize() {
     this.isMinimized = true;
     this.close();
-    console.log('Minimize to bubble - will be enhanced in future phase');
   }
   
   toggleExpand() {
@@ -422,137 +408,29 @@ class VueSenseModal {
     this.messages = [];
     this.renderWelcome();
   }
-  
- formatMarkdown(text) {
-  // First escape any HTML to prevent XSS
-  const div = document.createElement('div');
-  div.textContent = text;
-  let safe = div.innerHTML;
-  
-  // Process code blocks FIRST (before other formatting)
-  safe = safe.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, lang, code) {
-    return '<pre><code class="language-' + (lang || 'text') + '">' + code.trim() + '</code></pre>';
-  });
-  
-  // Inline code (must come before other formatting)
-  safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
-  
-  // Headers - MUST be at line start and on their own line
-  safe = safe.replace(/^### (.+)$/gm, '<h4>$1</h4>');
-  safe = safe.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-  safe = safe.replace(/^# (.+)$/gm, '<h2>$1</h2>');
-  
-  // Bold - Match non-greedy to avoid spanning multiple bold sections
-  safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  
-  // Italic - Match non-greedy and avoid matching bold markers
-  safe = safe.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
-  
-  // Process lists line by line
-  const lines = safe.split('\n');
-  const processed = [];
-  let inUnorderedList = false;
-  let inOrderedList = false;
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    
-    // Check for bullet list item (-, *, •)
-    const bulletMatch = line.match(/^[\s]*[-*•]\s+(.+)$/);
-    // Check for numbered list item (1., 2., etc.)
-    const numberedMatch = line.match(/^[\s]*(\d+)\.\s+(.+)$/);
-    
-    if (bulletMatch) {
-      if (inOrderedList) {
-        processed.push('</ol>');
-        inOrderedList = false;
-      }
-      if (!inUnorderedList) {
-        processed.push('<ul>');
-        inUnorderedList = true;
-      }
-      processed.push('<li>' + bulletMatch[1] + '</li>');
-    } else if (numberedMatch) {
-      if (inUnorderedList) {
-        processed.push('</ul>');
-        inUnorderedList = false;
-      }
-      if (!inOrderedList) {
-        processed.push('<ol>');
-        inOrderedList = true;
-      }
-      processed.push('<li>' + numberedMatch[2] + '</li>');
-    } else {
-      if (inUnorderedList) {
-        processed.push('</ul>');
-        inUnorderedList = false;
-      }
-      if (inOrderedList) {
-        processed.push('</ol>');
-        inOrderedList = false;
-      }
-      processed.push(line);
-    }
-  }
-  
-  if (inUnorderedList) processed.push('</ul>');
-  if (inOrderedList) processed.push('</ol>');
-  
-  safe = processed.join('\n');
-  
-  // Convert double line breaks to paragraph breaks
-  safe = safe.replace(/\n\n+/g, '</p><p>');
-  
-  // Convert single line breaks to <br> tags (simplified pattern)
-  safe = safe.replace(/\n(?!<)/g, '<br>');
-  
-  // Wrap entire content in paragraph tags if not already wrapped
-  if (!safe.match(/^</)) {
-    safe = '<p>' + safe + '</p>';
-  }
-  
-  // Clean up any empty paragraphs
-  safe = safe.replace(/<p><\/p>/g, '');
-  safe = safe.replace(/<p>\s*<\/p>/g, '');
-  
-  return safe;
-}
-}
-// Initialize the VueSense modal when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeVueSenseModal);
-} else {
-  // DOM already loaded
-  initializeVueSenseModal();
 }
 
-function initializeVueSenseModal() {
+// Initialize
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initVueSense);
+} else {
+  initVueSense();
+}
+
+function initVueSense() {
   try {
-    // Create the modal instance
     window.vuesenseModal = new VueSenseModal({
       position: 'center',
       size: 'default',
-      closeOnBackdrop: true,
-      maxCharacters: 2000
+      closeOnBackdrop: true
     });
-    
-    console.log('✅ VueSense AI Modal initialized successfully');
-    
-    // Verify trigger button exists
-    const trigger = document.getElementById('vuesense-trigger');
-    if (trigger) {
-      console.log('✅ Trigger button found');
-    } else {
-      console.error('❌ Trigger button not found');
-    }
-    
+    console.log('✅ VueSense AI initialized');
   } catch (error) {
-    console.error('❌ Failed to initialize VueSense AI Modal:', error);
+    console.error('❌ VueSense AI init failed:', error);
   }
 }
 
-// Optional: Add keyboard shortcut (Ctrl/Cmd + K) to open modal
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
     e.preventDefault();
     if (window.vuesenseModal) {
