@@ -104,11 +104,11 @@ class VueSenseAIEngine {
     const apiKey = apiKeyManager.getKey();
     
     const requestBody = {
-      model: AI_CHAT_CONFIG.apiModel,
-      messages: messages,
-      temperature: AI_CHAT_CONFIG.temperature,
-      max_tokens: AI_CHAT_CONFIG.maxOutputTokens
-    };
+  model: AI_CHAT_CONFIG.apiModel,
+  messages: messages,
+  temperature: AI_CHAT_CONFIG.temperature,
+  max_completion_tokens: AI_CHAT_CONFIG.maxOutputTokens  // ✅ NEW - Correct parameter
+};
     
     const response = await fetch(AI_CHAT_CONFIG.apiEndpoint, {
       method: 'POST',
