@@ -4845,38 +4845,28 @@ function showDeliveryConfidenceModal() {
                     Overall Portfolio Delivery Capability
                 </h3>
                 
-                <div style="padding: 20px; border-radius: 12px; margin-bottom: 16px; background: linear-gradient(135deg, rgba(${confidenceRGB}, 0.15) 0%, rgba(${confidenceRGB}, 0.05) 100%); border: 1px solid rgba(${confidenceRGB}, 0.3);">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <div style="flex-shrink: 0;">
-                            ${confidenceIcon}
-                        </div>
-                        <div style="flex: 1;">
-                            <div style="font-size: 2rem; font-weight: 700; color: ${confidenceColor}; margin-bottom: 4px;">
-                                ${confidenceMetrics.score}%
-                            </div>
-                            <div style="font-size: 1rem; color: var(--text-secondary); font-weight: 500;">
-                                ${confidenceText}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+               <div style="padding: 20px; border-radius: 12px; margin-bottom: 16px; 
+            background: linear-gradient(135deg, rgba(${confidenceRGB}, 0.15) 0%, rgba(${confidenceRGB}, 0.05) 100%); 
+            border: 1px solid rgba(${confidenceRGB}, 0.3);">
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-weight: 600; color: ${confidenceColor};">
+        
+        <!-- Icon -->
+        <div style="flex-shrink: 0; display: flex; align-items: center;">
+            ${confidenceIcon}
+        </div>
 
-            <!-- Summary Stats -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
-                <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-green);">${rf.totalAboveLineInitiatives}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">Above Line</div>
-                </div>
-                <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-orange);">${rf.totalBelowLineInitiatives}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">Below Line</div>
-                </div>
-                <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid var(--border-primary);">
-                    <div style="font-size: 1.5rem; font-weight: 700; color: ${rf.activeWorkBelowLine > 4 ? 'var(--accent-red)' : rf.activeWorkBelowLine > 2 ? 'var(--accent-orange)' : 'var(--accent-green)'};">${rf.activeWorkBelowLine}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">Active Below</div>
-                </div>
-            </div>
+        <!-- Text label -->
+        <div style="display: flex; align-items: center;">
+            ${confidenceText}
+        </div>
+
+        <!-- Percentage -->
+        <div style="display: flex; align-items: center;">
+            ${confidenceMetrics.score}%
+        </div>
+
+    </div>
+</div>
 
             <!-- Risk Breakdown -->
             <div style="background: var(--bg-tertiary); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-primary);">
