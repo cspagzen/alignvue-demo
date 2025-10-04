@@ -263,13 +263,17 @@ class AIEngine {
       const portfolioContext = preparePortfolioContextForAI();
       const systemMessage = buildSystemMessageWithKnowledge(portfolioContext);
       
-      // Add system message to conversation history (ONLY ONCE at the start)
-      if (this.conversationHistory.length === 0) {
-        this.conversationHistory.push({
-          role: 'system',
-          content: systemMessage
-        });
-      }
+      /// Add system message to conversation history (ONLY ONCE at the start)
+if (this.conversationHistory.length === 0) {
+  // Only send a summary, not the full knowledge base
+  const portfolioSummary = `You are VueSense AI, a portfolio management assistant. 
+Current portfolio: ${Object.keys(window.boardData?.teams || {}).length} teams, ${(window.boardData?.initiatives || []).length} initiatives.`;
+  
+  this.conversationHistory.push({
+    role: 'system',
+    content: portfolioSummary
+  });
+}
       
       this.conversationHistory.push({
         role: 'user',
