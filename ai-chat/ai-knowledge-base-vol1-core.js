@@ -1,548 +1,350 @@
 /**
- * VueSense Portfolio AI - Knowledge Base Volume 2
- * STRATEGIC FRAMEWORKS: OKRs, Four Square, OST, Validation, Initiative Canvas, Portfolio Board, Three Horizons
+ * VueSense Portfolio AI - Knowledge Base Volume 1
+ * CORE FOUNDATION: Credits, Data Model, Mendoza Line, Scoring Calculations
  */
 
-const AI_KB_VOL2_STRATEGIC = `
-# VOLUME 2: STRATEGIC FRAMEWORKS
+const AI_KB_VOL1_CORE = `
+# VOLUME 1: CORE FOUNDATION
 
-## STRATEGIC PLANNING FRAMEWORK INTRODUCTION
-
-### The Four Meta-Components
-
-Portfolio and product planning is the process of deciding where to invest, how much, and ensuring that products deliver on customer problems AND business objectives.
-
-**The four interconnected meta-components:**
-
-1. **Cascading OKRs**: Alignment of goals from executive level down through all teams
-2. **Opportunity Solution Tree**: Mapping from outcomes to validated solutions
-3. **Opportunity Validation**: Testing assumptions before committing resources
-4. **Portfolio Prioritization**: Stack-ranking and visualizing work with team health
-
-These components work together in a non-linear, continuous learning feedback loop.
-
-### Portfolio Review Goals
-
-On a regular basis, review the portfolio to:
-- Maximize portfolio value over time
-- Ensure portfolio is balanced and diversified (risk, duration, timing, technologies)
-- Consider constraints of people and expertise
-- Make best use of available resources
-- Maintain holistic view across products, services, business units
+## CRITICAL INSTRUCTION
+This document contains the CORE data model, business logic, and calculation formulas for the VueSense portfolio management system. The AI MUST understand ALL of this before attempting to answer ANY questions.
 
 ---
 
-## 1. CASCADING OKRs (OBJECTIVES AND KEY RESULTS)
+## CREDITS AND GENESIS
 
-### 1.1 OKR Structure
+### Primary Architect
+**Chris Spagnuolo** is the primary architect of the entire VueSense application, including all scoring systems, team health models, dashboards, and AI prompts.
 
-**Objective**: Qualitative, inspiring, ambitious goal
-**Key Results**: 3-5 quantitative, measurable outcomes with timeboxes
+- Website: https://www.chrisspagnuolo.info/
+- LinkedIn: linkedin.com/in/chrisspagnuolo
 
-**Example (Football Team)**:
-- Objective: "Dominate the league"
-- KR1: Win 1 Super Bowl
-- KR2: Increase average attendance to 98%
+### Model Genesis
+This model began as a thought experiment at Riot Games with:
+- Aðalsteinn "Alli" Óttarsson
+- Richard Hensley  
+- Michael Robillard
 
-### 1.2 OKR Cascade Process
+Richard and Michael provided systems thinking skills to refine the flow of the model and the work items. It all started as post-it notes that Alli put up on a whitboard in a small conference room in Santa Monica.
 
-1. **Executive Level**: Sets top-level organizational OKRs
-2. **Next-Level Business Units**: Create aligned OKRs that support top-level
-3. **Team Level**: Each team creates OKRs aligned to their business unit
-4. **Individual Level** (optional): Personal OKRs aligned to team
+### Evolution
+The model has undergone many changes and evolved as Chris implemented it at numerous clients including:
+- HealtheSystems
+- Jackson Hewitt
+- Deloitte
+- PwC
+- Wander Maps
+- And many others
 
-**Critical Rule**: Each level's OKRs must directly contribute to the level above.
-
-**Football Team Example - Complete Cascade**:
-
-**Executive Level**:
-- Objective: "Be the top revenue generating franchise in the NFL"
-- KR1: Win 1 Super Bowl
-- KR2: Increase average attendance to 98%
-
-**Head Coach (Next Level)**:
-- Objective: "Have a winning season"
-- KR1: Average 200 yards passing per game
-- KR2: Give up less than 14 points per game
-- KR3: 25 yard punt return average
-
-**Offensive Coordinator (Team Level)**:
-- Objective: "Have the best passing game in the league"
-- KR1: Have a 75% completion rate
-- KR2: Give up less than 1 sack per game
-- KR3: Average 200 yards receiving per game
-
-**Defensive Coordinator (Team Level)**:
-- Objective: "Never let them score!"
-- KR1: Keep opponents to less than 100 yards passing
-- KR2: Keep opponents to less than 75 yards rushing
-- KR3: Average 2 sacks per game
-
-**Special Teams (Team Level)**:
-- Objective: "Big returns baby!"
-- KR1: Zero fair catches per game
-- KR2: Zero return penalties per game
-- KR3: Average return >25 yards per game
-
-**Public Relations (Alternative Business Unit)**:
-- Objective: "Fill the stadium every Sunday"
-- KR1: Increase national media coverage by 60%
-- KR2: Highlight key players 1 time/day in local media
-- KR3: Increase social media engagement by 45%
-
-### 1.3 OKR Grading Scale
-
-Score key results on 0-1.0 scale:
-- **1.0** = Sandbagged (too easy, set harder next time)
-- **0.6-0.7** = Ideal (stretch goal achieved)
-- **Below 0.6** = Missed target (learn why)
-
-**Example**: If KR was "increase signups by 10,000" and you got 6,200:
-- Grade = 0.62 (missed target, but close)
-
-**Important**: Scores should NEVER be used for:
-- Team or personal evaluation
-- Punishment
-- Compensation or bonuses
-
-**Low scores are NOT failures** - they're learning opportunities to:
-- Evaluate if objective is still worth pursuing
-- Rethink the objective
-- Figure out different approaches for next time
-
-### 1.4 OKR Timing & Cadences
-
-**Quarterly Cadence** (Standard):
-- Shorter than quarterly = too tactical (becomes epics/stories)
-- Longer than quarterly = lacks agility, causes whiplash
-
-**Day-to-Day Cadence**:
-- Align ALL work to OKRs (opportunities, epics, stories)
-- State which OKR each item relates to and expected impact
-- Prioritize work by impact on advancing OKRs
-- Challenge non-aligned work respectfully
-- Focus on OKR metrics instead of process metrics
-- Help each other meet goals and stay on track
-
-**Weekly Cadence**:
-- Check progress toward OKR target (PUSH)
-- Set team's intention for the week (PLAN)
-- Forecast big impediments for the month (PIPELINE)
-- Check health metrics (PROTECT)
-- Celebrate! Friday win sessions to demo progress
-
-**Quarterly Cadence**:
-- Grade your OKRs
-- Review hits and misses
-- Assess learnings
-- Build next quarter's OKRs
-- All Hands Meeting to Celebrate:
-  - Review previous OKRs and progress
-  - Share grades, results, adjustments
-  - Announce next quarter's top-level OKRs
-
-**ALWAYS Cadence**:
-- Enhance collaboration using OKRs
-- Focus communication around advancing shared OKRs
-- Put personal agendas and pet projects into perspective
-- Stay positive and always learn from experiences
-
-### 1.5 OKR Failure Modes to Avoid
-
-- Lack of cultural commitment (everyone should know top-level OKR)
-- Too many OKRs (causes lack of focus)
-- Using OKRs for performance evaluation or compensation
-- Metric-driven objectives (keep metrics in key results)
-- Changing OKRs mid-stream (causes organizational whiplash)
-- Sandbagging (setting easy targets)
-- Letting projects/tasks become objectives
-- Lack of regular tracking and assessment
-- Using as status report instead of conversation starter
-- Organizational blinders to why goals aren't being met
-
-### 1.6 Benefits of OKRs
-
-- **Alignment**: High alignment to top-level strategic goals across entire organization
-- **Focus**: Eliminates waste by reducing non-strategic work
-- **Commitment**: High visibility drives commitment
-- **Tracking**: Ensures impediment removal
-- **Stretching**: Drives amazing results by setting stretch goals
+After years of refinement of a very analog system, in 2025 Chris finally put everything he has learned into this app and the AI that supports it. It will continue to evolve and grow as we learn more about using it.
 
 ---
 
-## 2. THE FOUR SQUARE FRAMEWORK
+## 1. DATA MODEL & CORE CONCEPTS
 
-### 2.1 Four Square Structure
+### 1.1 TEAMS
+Teams are the fundamental delivery units. Each team has:
 
-A weekly execution tool with four quadrants:
+**6 Health Dimensions** (4-state system):
+- **Capacity**: Team's bandwidth to take on work
+  - Healthy (Green): Team has capacity
+  - At Risk (Yellow/Orange): Team is stretched
+  - Critical (Red): Team is overloaded
+  - Not Set (Gray): No data
+  
+- **Skillset**: Technical capabilities needed
+  - Healthy: Has all required skills
+  - At Risk: Missing some skills
+  - Critical: Severe skill gaps
+  - Not Set: No assessment
+  
+- **Vision**: Clarity of direction and goals
+  - Healthy: Clear vision and alignment
+  - At Risk: Some confusion
+  - Critical: No clear direction
+  - Not Set: No assessment
+  
+- **Support**: Tools, resources, org backing
+  - Healthy: Well-supported
+  - At Risk: Some support gaps
+  - Critical: Severely under-resourced
+  - Not Set: No assessment
+  
+- **Team Cohesion** (Teamwork): Collaboration quality
+  - Healthy: Strong collaboration
+  - At Risk: Some friction
+  - Critical: Serious dysfunction
+  - Not Set: No assessment
+  
+- **Autonomy**: Decision-making independence
+  - Healthy: Can self-direct
+  - At Risk: Some blocking dependencies
+  - Critical: Constantly blocked
+  - Not Set: No assessment
 
-**PUSH (Top Left)**: OKRs and Confidence
-- State your OKR
-- Confidence level (1-10 scale) for each key result
-- Drives discussion on why you will/won't reach objective
-- Review weekly: Are we closer or further from the result?
-- Rate confidence in achieving EACH key result EVERY week
-- If confidence goes up or down, know why and what changed
-- Helps learn as we go along
+**Additional Team Metrics**:
+- **Utilization**: Percentage of capacity used (0-100%)
+  - Over 95% = Overloaded (critical risk)
+  - 70-95% = Healthy range
+  - Under 50% = Underutilized
+  
+- **Velocity**: Story points completed per sprint
+- **Active Stories**: Number of current work items
+- **Flagged/Blocked Stories**: Items with impediments
+- **Blockers**: Critical impediments
+- **Comments**: Text notes about team status
 
-**PLAN (Top Right)**: Weekly Tactics
-- P1 = Must do this week
-- P2 = Should do this week
-- Hypotheses for moving key results
-- Tactics to achieve the OKR
-- Think of items as hypotheses around HOW to move key results
-
-**PROTECT (Bottom Left)**: Health Metrics
-- Customer satisfaction
-- Team health  
-- Code health
-- Sustainable pace
-- Things to protect while pursuing OKRs
-- The things we want to PROTECT as we go after our big goals
-- When starting, ask "Where should we set these today to start?"
-- Metrics should be baselined and tracked like OKR metrics
-
-**PIPELINE (Bottom Right)**: Next 4 Weeks
-- BIG upcoming items
-- Heads up / important-urgent items
-- Allows honest conversations about ability to achieve objectives
-- Things coming up that can get in the way of reaching objective
-- While we may not be able to do anything about pipeline items, allows honest conversation with broader org about ability to achieve objectives
-
-### 2.2 Four Square Cadence
-
-- **Weekly reviews**: 30 minutes per week per team
-- Attendees: All stakeholders specific to the OKR
-- Update confidence levels on each KR
-- Discuss upcoming tactics
-- Review and address protect quadrant issues
-- Review and update pipeline events
-
-**NOT a status report - it's a CONVERSATION STARTER**
-
-### 2.3 Four Square Key Questions
-
-The Four Square should drive conversations within teams:
-- Do our tactical priorities lead to hitting our OKR target?
-- Why is confidence dropping? What can we do to help?
-- Are we prepared for major new efforts?
-- Is crap making it into our code base?
-- Are our teams healthy and able to do the work?
-
-### 2.4 Four Square Best Practices
-
-- Store Four Squares in highly visible location (anyone can view anytime)
-- Accountability and high-level planning on regular basis
-- Focus on learning and adaptation
-- Use for honest conversation, not blame
+**Team Health Levels** (Overall):
+- **Healthy**: 0 dimensions at-risk or critical
+- **Low Risk**: 1-2 dimensions at-risk or critical
+- **High Risk**: 3-4 dimensions at-risk or critical  
+- **Critical**: 5-6 dimensions at-risk or critical
 
 ---
 
-## 3. OPPORTUNITY SOLUTION TREE
+### 1.2 INITIATIVES
+Initiatives are the work efforts that teams execute on.
 
-### 3.1 OST Purpose
+**Initiative Types**:
+- **Strategic** (Blue): Core business value initiatives explicitly solving customer problems, defined by product strategy
+- **KTLO** (Yellow): Keep-The-Lights-On operational work, tech debt, platform maintenance
+- **Emergent** (Purple): Unplanned critical work, significant business/customer needs
 
-Map from desired outcomes (OKRs) to validated solutions through opportunities and experiments.
+**Validation Status**:
+- **not-validated** (Red dot): Assumptions untested, high risk
+- **in-validation** (Teal dot): Currently running experiments
+- **validated** (Green dot): All hypotheses confirmed, ready to build
 
-**Key Principle**: 
-- Start with problem, not solution
-- Multiple solutions per opportunity
-- Test before committing resources
+**Priority System**:
+- **1-15**: Above the Mendoza Line (deliverable work)
+- **16+**: Below the Mendoza Line (backlog, cannot deliver with current capacity)
+- **bullpen**: Pipeline (future work not yet prioritized)
 
-### 3.2 OST Structure (4 Levels)
-
-1. **Desired Outcome** (Top) - From OKRs
-2. **Opportunities** - Problems to solve
-3. **Solutions** - Ways to solve problems
-4. **Experiments** - Tests to validate solutions
-
-**Visual Flow**:
-Outcome → Branches to multiple Opportunities → Each Opportunity branches to multiple Solutions → Each Solution branches to multiple Experiments
-
-### 3.3 OST Process (4 Steps)
-
-**Step 1**: Define desired outcome from OKR
-**Step 2**: Discover opportunities through continuous customer interviews and research
-**Step 3**: Generate multiple solution ideas for each opportunity
-**Step 4**: Design experiments to test assumptions for each solution
-
-### 3.4 Continuous Discovery
-
-**Teresa Torres' Framework**:
-- Engage in generative research to identify compelling opportunities
-- Always entertain new solutions
-- Run experiments every week
-- Connect all activities using OST structure
-
-### 3.5 OST Failure Modes to Avoid
-
-- Too many ideas (causes analysis paralysis)
-- No clear prioritization of opportunities or solutions
-- Orphaned solutions (don't connect to opportunities or outcomes)
-- Fixating on one opportunity, one solution, one experiment at a time
-- Considering far too many opportunities, solutions, experiments at once
-- Yes, it's a Goldilocks scenario - need right balance between depth and breadth
-- "Whether or not to do this specific thing" decisions (avoid binary thinking - consider multiple options at every decision point)
-- Discovery without delivery (discovery has to lead to delivery)
-
-### 3.6 OST Key Questions (Continuous Assessment)
-
-- Does your team have a clear desired outcome?
-- Are you engaging in generative research to identify compelling opportunities in the market?
-- Are you always entertaining new solutions?
-- Are you running experiments every week?
-- Can you connect the dots between all these activities using this structure?
+**Data Fields**:
+- id (unique identifier)
+- title/name
+- type (strategic/KTLO/emergent)
+- validation status
+- priority (number or "bullpen")
+- progress (0-100%)
+- teams (array of team names)
+- stories count
+- flagged count (blocked/impediment stories)
+- blockers
+- activity type (development, research, compliance, etc.)
+- canvas data (outcome, customer, problem, solution, etc.)
 
 ---
 
-## 4. OPPORTUNITY VALIDATION
+### 1.3 THE MENDOZA LINE CONCEPT
+**Critical Portfolio Concept:**
 
-### 4.1 Validation Purpose
+The Mendoza Line (named after baseball player Mario Mendoza's batting incompetence threshold) is the divider between:
+- **Above the Line (Rows 1-5)**: Work we CAN deliver with current capacity
+- **Below the Line (Rows 6+)**: Work we CANNOT deliver with current capacity
 
-Must test assumptions before committing resources to development. Validation reduces risk and ensures we're building the right thing.
+**Strategic Implications**:
+- Expensive work (development, infrastructure, integration) below the line = WASTE
+- Discovery work (research, validation, prototyping) SHOULD be below the line (validate before committing)
+- Line position based on historical delivery capacity
+- Line should move UP as organizational constraints grow
+- Teams can accept NO additional work when capacity indicators turn red
 
-### 4.2 Scientific Method for Validation
-
-1. Define your hypotheses
-2. Define your assumptions
-3. Select the riskiest assumption
-4. Develop an experiment to test it
-5. State minimum criteria for validation
-6. Run experiment with existing/potential customers
-7. Document learnings
-8. Pivot hypotheses based on learnings
-9. Rinse and repeat until all hypotheses validated
-
-### 4.3 Three Hypotheses to Validate
-
-1. **Customer Hypothesis**: Who wants this?
-2. **Problem Hypothesis**: What problem exists?
-3. **Solution Hypothesis**: Does our solution work?
-
-### 4.4 Validation Board
-
-Use LeanStartupMachine's Validation Board:
-- Simple one-page visualization
-- Easy to use and consume
-- Share across organization for transparency
-
-**Tracks**:
-- Hypotheses
-- Riskiest Assumption
-- Method (experiment design)
-- Results
-- Validated/Invalidated status
-
-### 4.5 Validation Timing
-
-- Continuous process
-- Each validation effort: 1-2 weeks (depending on problem/experiment type)
-- Desired outcome: Validated customer, problem, solution compiled into Initiative Canvas
-
-### 4.6 Validation Status Meanings (in Portfolio Board)
-
-- **Not Validated** (Red dot): Assumptions untested - HIGH RISK
-- **In Validation** (Teal dot): Currently running experiments
-- **Validated** (Green dot): All hypotheses confirmed - LOW RISK, ready to build
-
-**Rule for Portfolio**: First 3 rows should be fully validated and ready to work.
+**Visual Representation**:
+- Red dotted line between rows (typically rows 5 and 6)
+- Above = active deliverable work
+- Below = backlog/discovery/future work
 
 ---
 
-## 5. INITIATIVE CANVAS
+## 2. SCORING MODELS & CALCULATIONS
 
-### 5.1 Purpose
+### 2.1 INITIATIVE RISK SCORING
+**Each initiative gets a risk score from multiple factors:**
 
-When opportunity and solution are validated, capture learnings in a simple one-page document to communicate validated conclusions.
+**Team Health Risk Points** (for each team assigned):
+- **Capacity**:
+  - At Risk = 3 points
+  - Critical = 6 points
+  
+- **Skillset**:
+  - At Risk = 3 points
+  - Critical = 6 points
+  
+- **Support**:
+  - At Risk = 2 points
+  - Critical = 4 points
+  
+- **Vision**:
+  - At Risk = 1 point
+  - Critical = 2 points
+  
+- **Team Cohesion/Teamwork**:
+  - At Risk = 1 point
+  - Critical = 2 points
+  
+- **Autonomy**:
+  - At Risk = 1 point
+  - Critical = 2 points
+  
+- **Over-Utilization** (>95% capacity): 2 points per team
 
-### 5.2 Nine Key Questions
+**Flagged Work Points** (based on percentage of flagged stories):
+- 50%+ flagged = 8 points
+- 25-49% flagged = 5 points
+- 15-24% flagged = 3 points
+- 5-14% flagged = 2 points
+- 1-4% flagged = 1 point
 
-1. **What is the desired outcome?**
-   - From Opportunity Solution Tree
-   - The overarching goal of this opportunity
+**Validation Risk Points** (Above-the-line ONLY, priority 1-15):
+- Strategic not-validated = 2 points
+- KTLO/Emergent not-validated = 1 point
+- Below-the-line or validated = 0 points
 
-2. **What are the measures of success?**
-   - Specific measurable metrics to determine if goal has been met
-   - Set a target value
+**Priority Amplification**:
+- IF priority ≤ 10 (row 1-2) AND base risk score > 4: ADD 1 point
+- (Top priorities with existing risk factors get extra scrutiny)
 
-3. **How big is this opportunity?**
-   - What is the addressable market size?
+**Risk Severity Levels**:
+- **0-3 points**: Low Risk (Green)
+- **4-7 points**: Medium Risk (Yellow)
+- **8-11 points**: High Risk (Orange)  
+- **12+ points**: Critical Risk (Red)
 
-4. **Who wants this?**
-   - Target customer (be as specific as possible)
-   - May be more than one customer segment
-   - Validated personas are a great way to describe target group
-
-5. **What problem are we solving?**
-   - Simply stated, do we solve if we deliver this to our customers?
-   - Think about from customer perspective, not our perspective
-
-6. **What is the possible solution?**
-   - Validated solution idea
-   - Can be more than one (because you wrote it there, doesn't mean this is THE solution)
-
-7. **What is the big picture?**
-   - Desired user experience (UX)
-   - User journeys
-   - Product functionality
-   - Visual design
-   - Non-functional properties
-   - Technical implementation
-   - Scenarios, storyboards, workflows, design sketches, mock-ups, constraint stories are helpful
-
-8. **What alternatives are out there?**
-   - Describe the competitive landscape
-
-9. **How does this advance our strategy?**
-   - What OKR does this align to?
-   - How do we expect this opportunity to impact one or more of our key results?
-   - Provide projected values
-
----
-
-## 6. PORTFOLIO PRIORITIZATION AND TEAM HEALTH BOARD
-
-### 6.1 Board Purpose
-
-Comprehensive portfolio visualization tool to generate discussion about:
-- Strategic priorities
-- Resourcing decisions  
-- Strategic alignment of work
-- Team health and capacity
-
-**Tool Origin**: Proprietary tool built by Chris Spagnuolo and colleagues at Riot Games.
-
-### 6.2 Board Structure
-
-**Initiative Cards (Left Side)**:
-- Stack-ranked by priority
-- Row 1 = highest priority (1 initiative max)
-- Row 2 = 2nd priority (2 initiatives max)
-- Row N = Nth priority (N initiatives max)
-- Within rows: rightmost card = highest priority in that row
-
-**Team Health Cards (Right Side)**:
-- Show which teams work on which initiatives
-- One card per team per initiative row
-- Team name white text = currently working
-- Team name faded = slated to work (not yet active)
-- Shows row and column number of initiative they're working against
-
-### 6.3 Initiative Color Coding
-
-- **Blue (Strategic)**: Explicitly solving customer problems, defined by product strategy
-- **Yellow (KTLO/Tech)**: Keep systems operational, support delivery teams
-- **Purple (Emergent)**: Significant business/customer needs, unplanned/unexpected
-
-### 6.4 Validation Status Dots
-
-- **Red dot**: Not validated
-- **Teal dot**: Currently in validation
-- **Green dot**: Fully validated
-
-**Rule**: First 3 rows should be fully validated and ready to work. Lower rows may not be validated or only partially validated.
-
-### 6.5 Team Health Indicators (Original 3-Dimension System)
-
-**Capacity**: Does team currently have bandwidth?
-- Green: Team has capacity for this initiative
-- Red: Team does not have capacity
-- Note: Can and should change as cards move down the stack
-- When capacity indicator turns red = message to org that team can accept NO additional WIP
-
-**Skillset**: Does team have technical skills required?
-- Green: Has all required skills
-- Red: Missing one or more skillsets
-- Note: May have skills for current work but not future work (hiring/training opportunity)
-
-**Leadership/Vision**: Does team have clear direction?
-- Green: Solid vision, well-written epics/stories, detailed acceptance criteria
-- Red: Lacking vision, incomplete/ambiguous stories
-- Note: Expected green for top 3 rows, may be red for discovery-phase work
-
-**Evolution Note**: Current app uses evolved 6-dimension system (Capacity, Skillset, Vision, Support, Teamwork, Autonomy) from Volume 1.
-
-### 6.6 Portfolio Prioritization Cadence
-
-**Every 2 weeks - 1 hour meeting**:
-- Attendees: All stakeholders (minimum: all VPs, Directors, Team Leads)
-- Wider audience = more valuable conversations
-
-**Pre-meeting**: 
-- Teams update health cards
-- PMs update validation status
-
-**Agenda**:
-1. Remove completed initiatives, re-adjust positions
-2. Introduce and place new initiatives at appropriate priority
-3. Re-prioritize if necessary
-4. Discuss impact of new initiatives and re-prioritization
-5. Address items below Mendoza line (do we still care?)
-6. Address and resolve red items on active team health cards
+**Maximum Possible Score**: 50 points (though rarely achieved)
 
 ---
 
-## 7. THREE HORIZONS OF STRATEGIC PLANNING
+### 2.2 DELIVERY CONFIDENCE SCORING
+**Starts at 90%, adjusted by risk factors:**
 
-### 7.1 McKinsey's Three Horizons Framework
+**ABOVE THE LINE (Full Weight) - Rows 1-5**:
+- Capacity risks: -4% per team at-risk or critical
+- Skillset risks: -3% per team at-risk or critical
+- Blocked work: -0.5% per blocked item (maximum -15% total)
+- Stagnant work (<25% progress): -3% per stagnant initiative
+- Support risks: -2% per team at-risk or critical
 
-Ensures portfolio is balanced for value now, near future, and far future.
+**BELOW THE LINE (50% Reduced Weight) - Rows 6+**:
+- Capacity risks: -2% per team at-risk or critical (50% of above-line penalty)
+- Skillset risks: -1.5% per team at-risk or critical (50% of above-line penalty)
 
-**Horizon 1: Core Business**
-- Greatest profits and cash flow
-- Focus: Defend and extend the core
-- Innovate and create efficiencies within core
-- Reinvest to accelerate customer and revenue growth
+**DISTRACTION PENALTY** (All initiatives below the line):
+- -2% for every 3 active initiatives below the line
+- Rationale: Resources not focused on deliverable priorities
 
-**Horizon 2: Emerging Opportunities**  
-- Considerable investment required
-- Push into new markets or use new technologies
-- Focus: Deliver market results, gain market share
-- Grow customer base and revenue
-- Scale business with trajectory to profitability
+**FOCUS BONUS** (Rewards concentration):
+- +3% for ZERO active work below line (perfect focus)
+- +2% for ≤2 active initiatives below line (good focus)
+- +1% for ≤4 active initiatives below line (decent focus)
 
-**Horizon 3: New Capabilities and Business**
-- Create new capabilities for disruptive opportunities
-- Counter disruption threats
-- Focus: Deliver delightful "love metrics", measurable customer benefit
-- Gain active use and positive word-of-mouth
-- Develop compelling business model hypothesis
-- Validate customers willing to pay
+**OVER-UTILIZATION PENALTY** (Applies to ALL teams, regardless of line):
+- -2% per team over 95% capacity utilization
 
-### 7.2 Investment Allocation
+**Final Range**: 40% to 100%
 
-**Historical Approach** (OUTDATED):
-- H1: 3-12 months delivery
-- H2: 24-36 months delivery
-- H3: 36-72 months delivery
-
-**Modern Approach**: NO TIME ASSIGNMENTS
-- Work continuously delivering value across all 3 horizons
-- Deliver as rapidly as possible
-- Horizons are about type of work, NOT delivery timeline
-
-**Resource Allocation Strategies**:
-- Traditional: 70-20-10 or 60-30-10 (H1-H2-H3)
-- Fast-moving markets: 50-30-20 or 40-30-30
-- True disruptors: H3=100% until viable business model established
-- Evaluate regularly based on market conditions
-- Portfolio board should clearly reflect chosen investment strategy
-
-### 7.3 Strategic Balance
-
-The investment split depends on:
-- Current product maturity
-- Market conditions
-- Competitive pressure
-- Innovation requirements
-
-**Key Rule**: Portfolio board visualization should clearly show the three horizons investment strategy in action.
+**Confidence Zones**:
+- 85-100%: Excellent (Green)
+- 70-84%: Good (Blue)
+- 55-69%: Fair/At Risk (Orange)
+- 40-54%: Poor/Critical (Red)
 
 ---
 
-## VOLUME 2 COMPLETE
-This volume contains strategic frameworks. Core foundation is in Volume 1. Analysis methods are in Volume 3. Reference materials are in Volume 4.
+### 2.3 RESOURCE EFFICIENCY SCORING
+
+**Activity Type Weights & Ideal Placement**:
+
+**Expensive Work** (Weight: 3.0):
+- Types: Development, Integration, Infrastructure, Defects/Fixes, Go-to-Market
+- SHOULD be: Above Mendoza Line
+- Rationale: High-cost work below line = pure waste
+
+**Discovery Work** (Weight: 1.5):
+- Types: Research, Prototyping, Validation, Experimentation
+- SHOULD be: Below Mendoza Line
+- Rationale: Validate before committing expensive resources
+
+**Support Work** (Weight: 0.5):
+- Types: Compliance, Documentation, Operational Support
+- Placement: Either position acceptable
+- Rationale: Lower strategic impact, necessary regardless
+
+**Calculation Formula**:
+\`\`\`
+Efficiency Score = (Actual Weighted Score / Maximum Possible Score) × 100
+
+Where:
+- Expensive work ABOVE line = Full points (weight × count)
+- Expensive work BELOW line = Zero points (pure waste)
+- Discovery work BELOW line = Full points (weight × count)
+- Discovery work ABOVE line = Partial credit (weight × count × 0.6)
+- Support work = Full points regardless of position
+\`\`\`
+
+**Efficiency Thresholds**:
+- **85%+**: Excellent allocation (Green)
+- **75-84%**: Good allocation (Blue)
+- **60-74%**: Fair allocation, needs optimization (Orange)
+- **<60%**: Poor allocation, major waste (Red)
+
+**Example Calculation**:
+If portfolio has:
+- 5 expensive initiatives above line = 5 × 3.0 = 15 points
+- 2 expensive initiatives below line = 0 points (waste!)
+- 3 discovery initiatives below line = 3 × 1.5 = 4.5 points
+- 1 discovery initiative above line = 1 × 1.5 × 0.6 = 0.9 points
+- 2 support initiatives (any position) = 2 × 0.5 = 1.0 point
+
+Actual Score = 15 + 0 + 4.5 + 0.9 + 1.0 = 21.4 points
+Max Possible = (7 × 3.0) + (4 × 1.5) + (2 × 0.5) = 21 + 6 + 1 = 28 points
+Efficiency = (21.4 / 28) × 100 = 76% (Good)
+
+---
+
+## 3. DATA ACCESS PATTERNS
+
+### 3.1 Accessing Portfolio Data
+All data is stored in: \`window.boardData\`
+
+**Structure**:
+\`\`\`javascript
+window.boardData = {
+  initiatives: [...],  // Array of initiative objects
+  teams: {...},        // Object with team names as keys
+  bullpen: [...],      // Pipeline initiatives
+  okrs: {...}          // OKR data with key results
+}
+\`\`\`
+
+### 3.2 Common Data Queries
+
+**Get all initiatives**:
+\`window.boardData.initiatives\`
+
+**Get initiatives above Mendoza line**:
+\`window.boardData.initiatives.filter(i => i.priority >= 1 && i.priority <= 15)\`
+
+**Get initiatives below Mendoza line**:
+\`window.boardData.initiatives.filter(i => i.priority >= 16)\`
+
+**Get bullpen/pipeline**:
+\`window.boardData.bullpen\`
+
+**Get specific team**:
+\`window.boardData.teams['Team Name']\`
+
+**Get team health for initiative**:
+For each team in initiative.teams array, check:
+\`window.boardData.teams[teamName].capacity\` (healthy/at-risk/critical/not-set)
+\`window.boardData.teams[teamName].skillset\`
+etc.
+
+---
+
+## VOLUME 1 COMPLETE
+This volume contains the core foundation. Strategic frameworks are in Volume 2. Analysis methods are in Volume 3. Reference materials are in Volume 4.
 `;
 
 // Export to global scope
-window.AI_KB_VOL2_STRATEGIC = AI_KB_VOL2_STRATEGIC;
+window.AI_KB_VOL1_CORE = AI_KB_VOL1_CORE;
