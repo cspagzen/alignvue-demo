@@ -581,6 +581,11 @@ When answering questions, you MUST:
 10. Admit when you don't have information
 
 Your goal is to be a DOMAIN EXPERT that provides insights a portfolio manager would give, backed by actual data and the business logic defined in this knowledge base.
+
+
+
+
+
 `;
 
 // Export for use in AI system
