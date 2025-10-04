@@ -1,35 +1,32 @@
-// ==========================================
-// VueSense AI Chat Engine - Backend Version WITH KNOWLEDGE BASE
-// ==========================================
+/**
+ * AI Chat Engine - Clean, Simple, Working Version
+ * This version actually answers questions about your portfolio
+ */
 
-// Cost Tracking (client-side only for display)
+// Cost Tracker
 class CostTracker {
   constructor() {
-    this.storageKey = 'vuesense_cost_tracker';
+    this.totalInputTokens = 0;
+    this.totalOutputTokens = 0;
+    this.totalCost = 0;
+    this.questionCount = 0;
     this.load();
   }
   
   load() {
-    const saved = localStorage.getItem(this.storageKey);
+    const saved = localStorage.getItem('ai_cost_tracker');
     if (saved) {
       const data = JSON.parse(saved);
-      this.totalInputTokens = data.totalInputTokens || 0;
-      this.totalOutputTokens = data.totalOutputTokens || 0;
-      this.totalCost = data.totalCost || 0;
-      this.questionCount = data.questionCount || 0;
-      this.lastReset = data.lastReset || new Date().toISOString();
-    } else {
-      this.reset();
+      Object.assign(this, data);
     }
   }
   
   save() {
-    localStorage.setItem(this.storageKey, JSON.stringify({
+    localStorage.setItem('ai_cost_tracker', JSON.stringify({
       totalInputTokens: this.totalInputTokens,
       totalOutputTokens: this.totalOutputTokens,
       totalCost: this.totalCost,
-      questionCount: this.questionCount,
-      lastReset: this.lastReset
+      questionCount: this.questionCount
     }));
   }
   
@@ -37,32 +34,23 @@ class CostTracker {
     this.totalInputTokens += inputTokens;
     this.totalOutputTokens += outputTokens;
     
-    const inputCost = (inputTokens / 1000000) * AI_CHAT_CONFIG.inputCostPer1M;
-    const outputCost = (outputTokens / 1000000) * AI_CHAT_CONFIG.outputCostPer1M;
+    const inputCost = (inputTokens / 1000000) * (AI_CHAT_CONFIG.inputCostPer1M || 0.15);
+    const outputCost = (outputTokens / 1000000) * (AI_CHAT_CONFIG.outputCostPer1M || 0.60);
+    const cost = inputCost + outputCost;
     
-    this.totalCost += (inputCost + outputCost);
-    this.questionCount += 1;
+    this.totalCost += cost;
+    this.questionCount++;
     
     this.save();
     
-    return {
-      inputTokens,
-      outputTokens,
-      cost: inputCost + outputCost,
-      totalCost: this.totalCost
-    };
+    return { cost, totalCost: this.totalCost };
   }
   
   getStats() {
     return {
-      totalInputTokens: this.totalInputTokens,
-      totalOutputTokens: this.totalOutputTokens,
-      totalCost: this.totalCost,
       questionCount: this.questionCount,
-      avgCostPerQuestion: this.questionCount > 0 
-        ? this.totalCost / this.questionCount 
-        : 0,
-      lastReset: this.lastReset
+      totalCost: this.totalCost,
+      avgCostPerQuestion: this.questionCount > 0 ? this.totalCost / this.questionCount : 0
     };
   }
   
@@ -71,223 +59,91 @@ class CostTracker {
     this.totalOutputTokens = 0;
     this.totalCost = 0;
     this.questionCount = 0;
-    this.lastReset = new Date().toISOString();
     this.save();
   }
 }
 
-// Response Cache
-class ResponseCache {
-  constructor() {
-    this.cache = new Map();
-    this.cacheDuration = 5 * 60 * 1000;
-  }
-  
-  generateKey(question, context) {
-    const contextStr = context ? JSON.stringify(context) : '';
-    return `${question.toLowerCase().trim()}_${contextStr}`;
-  }
-  
-  set(question, context, response) {
-    const key = this.generateKey(question, context);
-    this.cache.set(key, {
-      response,
-      timestamp: Date.now()
-    });
-  }
-  
-  get(question, context) {
-    const key = this.generateKey(question, context);
-    const cached = this.cache.get(key);
-    
-    if (!cached) return null;
-    
-    const age = Date.now() - cached.timestamp;
-    if (age > this.cacheDuration) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return cached.response;
-  }
-  
-  clear() {
-    this.cache.clear();
-  }
-}
-
-// ============================================================================
-// NEW FUNCTIONS: Portfolio Context Preparation
-// ============================================================================
-
-function preparePortfolioContextForAI() {
-  if (!window.boardData) {
-    return "ERROR: No portfolio data available";
-  }
-  
-  // Extract complete board data for AI
-  const fullData = {
-    initiatives: window.boardData.initiatives || [],
-    teams: window.boardData.teams || {},
-    okrs: window.boardData.okrs || {},
-    bullpen: window.boardData.bullpen || []
-  };
-  
-  // Extract key portfolio metrics
-  const teams = Object.keys(window.boardData.teams || {});
-  const initiatives = window.boardData.initiatives || [];
-  
-  // Calculate summary stats
-  const teamsAtRisk = teams.filter(teamName => {
-    const team = window.boardData.teams[teamName];
-    return team.capacity === 'Critical' || team.capacity === 'At Risk' ||
-           team.skillset === 'Critical' || team.skillset === 'At Risk' ||
-           team.vision === 'Critical' || team.vision === 'At Risk' ||
-           team.support === 'Critical' || team.support === 'At Risk' ||
-           team.teamwork === 'Critical' || team.teamwork === 'At Risk' ||
-           team.autonomy === 'Critical' || team.autonomy === 'At Risk';
-  }).length;
-  
-  const initiativesAboveLine = initiatives.filter(i => i.priority <= 15).length;
-  const initiativesBelowLine = initiatives.filter(i => i.priority > 15).length;
-  const notValidated = initiatives.filter(i => i.validation === 'not-validated').length;
-  
-  // Return formatted context with complete data
-  return `
-CURRENT PORTFOLIO STATE:
-- Total Teams: ${teams.length}
-- Teams At Risk: ${teamsAtRisk}
-- Total Initiatives: ${initiatives.length}
-- Above Mendoza Line: ${initiativesAboveLine}
-- Below Mendoza Line: ${initiativesBelowLine}
-- Not Validated: ${notValidated}
-- window.boardData.mendozaLineRow (currently: ${window.boardData.mendozaLineRow || 5})
-
-COMPLETE BOARD DATA:
-${JSON.stringify(fullData, null, 2)}
-
-TEAM NAMES: ${teams.join(', ')}
-
-INITIATIVE NAMES: ${initiatives.map(i => i.name || i.title).filter(n => n).slice(0, 10).join(', ')}${initiatives.length > 10 ? '...' : ''}
-`.trim();
-}
-
-function buildSystemMessageWithKnowledge(portfolioContext) {
-  if (!window.AI_SYSTEM_PROMPT) {
-    console.error('AI_SYSTEM_PROMPT not loaded!');
-    return 'You are a helpful portfolio management assistant.';
-  }
-  
-  return window.AI_SYSTEM_PROMPT + "\n\nCURRENT PORTFOLIO DATA:\n" + portfolioContext;
-}
-// ============================================================================
-// Main AI Engine (MODIFIED)
-// ============================================================================
-
+// Main AI Engine
 class AIEngine {
   constructor() {
     this.conversationHistory = [];
     this.costTracker = new CostTracker();
-    this.responseCache = new ResponseCache();
-    this.backendUrl = AI_CHAT_CONFIG.backendUrl;
+    this.backendUrl = AI_CHAT_CONFIG.backendUrl || 'https://vuesense-backend.onrender.com';
   }
   
-  async checkBackendHealth() {
+  async sendMessage(userMessage) {
     try {
-      const response = await fetch(`${this.backendUrl}/api/health`);
-      if (!response.ok) return false;
-      const data = await response.json();
-      return data.status === 'ok';
-    } catch (error) {
-      console.error('Backend health check failed:', error);
-      return false;
-    }
-  }
-  
-  async sendMessage(userMessage, context = null) {
-    try {
-      const cachedResponse = this.responseCache.get(userMessage, context);
-      if (cachedResponse) {
-        console.log('📦 Using cached response');
-        return {
-          response: cachedResponse,
-          cached: true,
-          cost: 0,
-          usage: { inputTokens: 0, outputTokens: 0 }
-        };
+      // Build the system message with ACTUAL PORTFOLIO DATA
+      const systemMessage = this.buildSystemMessage();
+      
+      // Initialize conversation with system message if needed
+      if (this.conversationHistory.length === 0) {
+        this.conversationHistory.push({
+          role: 'system',
+          content: systemMessage
+        });
       }
       
-      const isHealthy = await this.checkBackendHealth();
-      if (!isHealthy) {
-        throw new Error(AI_CHAT_CONFIG.errors.backendError || 'Backend service unavailable');
-      }
-      
-      // MODIFIED: Build system message with knowledge base
-      const portfolioContext = preparePortfolioContextForAI();
-      const systemMessage = buildSystemMessageWithKnowledge(portfolioContext);
-      
-      /// Add system message to conversation history (ONLY ONCE at the start)
-if (this.conversationHistory.length === 0) {
-  // Only send a summary, not the full knowledge base
-  const portfolioSummary = `You are VueSense AI, a portfolio management assistant. 
-Current portfolio: ${Object.keys(window.boardData?.teams || {}).length} teams, ${(window.boardData?.initiatives || []).length} initiatives.`;
-  
-  this.conversationHistory.push({
-    role: 'system',
-    content: portfolioSummary
-  });
-}
-      
+      // Add user message
       this.conversationHistory.push({
         role: 'user',
         content: userMessage
       });
       
-      const payload = {
-        messages: this.conversationHistory,
-        context: context ? this.buildContextPrompt(context) : null
-      };
-      
+      // Call the backend
       const response = await fetch(`${this.backendUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          messages: this.conversationHistory
+        })
       });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || AI_CHAT_CONFIG.errors.apiError || 'API error occurred');
+        
+        // Check for payload too large error
+        if (response.status === 413) {
+          // Reset conversation and try again with smaller payload
+          this.conversationHistory = [
+            {
+              role: 'system',
+              content: this.buildMinimalSystemMessage()
+            },
+            {
+              role: 'user',
+              content: userMessage
+            }
+          ];
+          
+          // Retry with smaller payload
+          const retryResponse = await fetch(`${this.backendUrl}/api/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              messages: this.conversationHistory
+            })
+          });
+          
+          if (!retryResponse.ok) {
+            throw new Error('Failed to get AI response. Please try again.');
+          }
+          
+          const retryData = await retryResponse.json();
+          this.handleResponse(retryData);
+          return retryData;
+        }
+        
+        throw new Error(errorData.error || 'Failed to get AI response');
       }
       
       const data = await response.json();
-      
-      this.conversationHistory.push({
-        role: 'assistant',
-        content: data.response
-      });
-      
-      const costInfo = this.costTracker.trackUsage(
-        data.usage.inputTokens,
-        data.usage.outputTokens
-      );
-      
-      this.responseCache.set(userMessage, context, data.response);
-      
-      if (this.conversationHistory.length > 20) {
-        // Keep system message + last 10 exchanges
-        const systemMsg = this.conversationHistory[0];
-        this.conversationHistory = [systemMsg, ...this.conversationHistory.slice(-19)];
-      }
-      
-      return {
-        response: data.response,
-        cached: false,
-        cost: costInfo.cost,
-        usage: data.usage,
-        totalCost: costInfo.totalCost
-      };
+      this.handleResponse(data);
+      return data;
       
     } catch (error) {
       console.error('AI Engine Error:', error);
@@ -295,64 +151,108 @@ Current portfolio: ${Object.keys(window.boardData?.teams || {}).length} teams, $
     }
   }
   
-  buildContextPrompt(context) {
-    let prompt = 'Additional context: ';
+  handleResponse(data) {
+    // Add AI response to history
+    this.conversationHistory.push({
+      role: 'assistant',
+      content: data.response
+    });
     
-    if (context.initiatives && context.initiatives.length > 0) {
-      prompt += '\n\nCurrent Portfolio Context:\n';
-      prompt += `Total Initiatives: ${context.initiatives.length}\n`;
-      
-      const byType = {};
-      const byStatus = {};
-      
-      context.initiatives.forEach(init => {
-        byType[init.type] = (byType[init.type] || 0) + 1;
-        byStatus[init.validation] = (byStatus[init.validation] || 0) + 1;
-      });
-      
-      prompt += '\nBy Type:\n';
-      Object.entries(byType).forEach(([type, count]) => {
-        prompt += `- ${type}: ${count}\n`;
-      });
-      
-      prompt += '\nBy Status:\n';
-      Object.entries(byStatus).forEach(([status, count]) => {
-        prompt += `- ${status}: ${count}\n`;
-      });
+    // Track costs
+    if (data.usage) {
+      this.costTracker.trackUsage(
+        data.usage.inputTokens || 0,
+        data.usage.outputTokens || 0
+      );
     }
     
-    if (context.selectedInitiative) {
-      const init = context.selectedInitiative;
-      prompt += `\n\nCurrently Viewing Initiative:\n`;
-      prompt += `Title: ${init.title}\n`;
-      prompt += `Type: ${init.type}\n`;
-      prompt += `Status: ${init.validation}\n`;
-      prompt += `Priority: ${init.priority}\n`;
-      prompt += `Teams: ${init.teams.join(', ')}\n`;
-      prompt += `Progress: ${init.progress}%\n`;
+    // Limit history size to prevent payload issues
+    if (this.conversationHistory.length > 10) {
+      // Keep system message and last 4 exchanges (8 messages)
+      this.conversationHistory = [
+        this.conversationHistory[0],
+        ...this.conversationHistory.slice(-8)
+      ];
     }
+  }
+  
+  buildSystemMessage() {
+    // Get the actual board data
+    const teams = window.boardData?.teams || {};
+    const initiatives = window.boardData?.initiatives || [];
     
-    if (context.currentView) {
-      prompt += `\n\nCurrent View: ${context.currentView}\n`;
-    }
+    // Extract team data with health status
+    const teamData = Object.entries(teams).map(([name, data]) => {
+      const issues = [];
+      if (data.capacity === 'critical') issues.push('Critical capacity');
+      if (data.capacity === 'at-risk') issues.push('At-risk capacity');
+      if (data.skillset === 'critical') issues.push('Critical skillset');
+      if (data.skillset === 'at-risk') issues.push('At-risk skillset');
+      if (data.vision === 'critical') issues.push('Critical vision');
+      if (data.vision === 'at-risk') issues.push('At-risk vision');
+      if (data.utilization > 95) issues.push(`Overloaded at ${data.utilization}% utilization`);
+      
+      return {
+        name: name,
+        capacity: data.capacity,
+        skillset: data.skillset,
+        vision: data.vision,
+        support: data.support,
+        teamwork: data.teamwork,
+        autonomy: data.autonomy,
+        utilization: data.utilization || 0,
+        issues: issues
+      };
+    });
     
-    prompt += '\n\nProvide helpful, specific insights based on this context.';
+    // Extract initiative data with teams
+    const initiativeData = initiatives.map(init => ({
+      title: init.title || init.name,
+      type: init.type,
+      priority: init.priority,
+      validationStatus: init.validationStatus || init.validation,
+      teams: init.teams || [],
+      progress: init.progress || 0
+    }));
     
-    return prompt;
+    // Build the system message
+    return `You are VueSense AI, a portfolio management assistant.
+
+CURRENT PORTFOLIO DATA:
+
+TEAMS (${Object.keys(teams).length} total):
+${JSON.stringify(teamData, null, 2)}
+
+INITIATIVES (${initiatives.length} total):
+${JSON.stringify(initiativeData, null, 2)}
+
+INSTRUCTIONS:
+- When asked "Which teams need support?", list the SPECIFIC team names that have issues
+- When asked "What initiatives is [Team] working on?", find all initiatives where that team appears in the teams array
+- When asked "What teams are working on [Initiative]?", find that initiative and list its teams
+- Always use the actual data provided above
+- Never give generic advice - always reference specific teams and initiatives by name
+- For team health questions, look at capacity, skillset, vision, support, teamwork, autonomy
+- Teams with "critical" or "at-risk" status or >95% utilization need support`;
+  }
+  
+  buildMinimalSystemMessage() {
+    // Minimal version if full data is too large
+    return `You are VueSense AI, a portfolio management assistant.
+    
+Current portfolio: ${Object.keys(window.boardData?.teams || {}).length} teams, ${(window.boardData?.initiatives || []).length} initiatives.
+
+Instructions: Answer questions about the portfolio using specific team and initiative names. Never give generic advice.`;
   }
   
   clearHistory() {
     this.conversationHistory = [];
-    this.responseCache.clear();
   }
   
   getCostStats() {
     return this.costTracker.getStats();
   }
-  
-  resetCosts() {
-    this.costTracker.reset();
-  }
 }
 
-const aiEngine = new AIEngine();
+// Create and export the engine
+window.aiEngine = new AIEngine();
