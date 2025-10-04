@@ -173,57 +173,13 @@ INITIATIVE NAMES: ${initiatives.map(i => i.name || i.title).filter(n => n).slice
 }
 
 function buildSystemMessageWithKnowledge(portfolioContext) {
-  // Check if knowledge base and system prompt are loaded
   if (!window.AI_SYSTEM_PROMPT) {
     console.error('AI_SYSTEM_PROMPT not loaded!');
     return 'You are a helpful portfolio management assistant.';
   }
   
-  if (!window.AI_KNOWLEDGE_BASE) {
-    console.error('AI_KNOWLEDGE_BASE not loaded!');
-    return window.AI_SYSTEM_PROMPT;
-  }
-  
-  return `
-${window.AI_SYSTEM_PROMPT}
-
----
-
-# KNOWLEDGE BASE (Domain Expert Reference)
-
-${window.AI_KNOWLEDGE_BASE}
-
----
-
-# CURRENT PORTFOLIO DATA
-
-${portfolioContext}
-
----
-
-# YOUR TASK
-
-Answer the user's question using:
-1. The SYSTEM PROMPT rules for how to behave
-2. The KNOWLEDGE BASE for domain understanding
-3. The CURRENT PORTFOLIO DATA for specific facts
-
-CRITICAL INSTRUCTIONS:
-- When asked about teams, list SPECIFIC team names from the data
-- Show their ACTUAL health status (capacity, skillset, vision, support, teamwork, autonomy)
-- Include their utilization percentage
-- List which initiatives they're working on
-- For "which teams need support", rank them by criticality
-
-NEVER give generic analysis. ALWAYS give specific team names and data.
-Example: "Platform Team needs support - Critical capacity, 95% utilization, working on 3 initiatives"
-
-Remember: 
-- ALWAYS query actual data from window.boardData
-- NEVER give generic responses without specific names
-- Calculate risk scores using the exact formulas provided
-`.trim();
-
+  return window.AI_SYSTEM_PROMPT + "\n\nCURRENT PORTFOLIO DATA:\n" + portfolioContext;
+}
 // ============================================================================
 // Main AI Engine (MODIFIED)
 // ============================================================================
