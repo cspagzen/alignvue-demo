@@ -208,14 +208,21 @@ Answer the user's question using:
 2. The KNOWLEDGE BASE for domain understanding
 3. The CURRENT PORTFOLIO DATA for specific facts
 
+CRITICAL INSTRUCTIONS:
+- When asked about teams, list SPECIFIC team names from the data
+- Show their ACTUAL health status (capacity, skillset, vision, support, teamwork, autonomy)
+- Include their utilization percentage
+- List which initiatives they're working on
+- For "which teams need support", rank them by criticality
+
+NEVER give generic analysis. ALWAYS give specific team names and data.
+Example: "Platform Team needs support - Critical capacity, 95% utilization, working on 3 initiatives"
+
 Remember: 
 - ALWAYS query actual data from window.boardData
-- NEVER give generic responses
-- ALWAYS return specific team names, initiative names, and numbers
+- NEVER give generic responses without specific names
 - Calculate risk scores using the exact formulas provided
-- Format answers with: Direct Answer → Specific Data → Analysis → Recommendation
 `.trim();
-}
 
 // ============================================================================
 // Main AI Engine (MODIFIED)
