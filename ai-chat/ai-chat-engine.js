@@ -1,5 +1,5 @@
 // ==========================================
-// VueSense AI Chat Engine - Backend Version
+// VueSense AI Chat Engine - Backend Version WITH KNOWLEDGE BASE
 // ==========================================
 
 // Cost Tracking (client-side only for display)
@@ -116,7 +116,105 @@ class ResponseCache {
   }
 }
 
-// Main AI Engine
+// ============================================================================
+// NEW FUNCTIONS: Portfolio Context Preparation
+// ============================================================================
+
+function preparePortfolioContextForAI() {
+  if (!window.boardData) {
+    return "ERROR: No portfolio data available";
+  }
+  
+  // Extract key portfolio metrics
+  const teams = Object.keys(window.boardData.teams || {});
+  const initiatives = window.boardData.initiatives || [];
+  
+  // Calculate summary stats
+  const teamsAtRisk = teams.filter(teamName => {
+    const team = window.boardData.teams[teamName];
+    return team.capacity === 'Critical' || team.capacity === 'At Risk' ||
+           team.skillset === 'Critical' || team.skillset === 'At Risk' ||
+           team.vision === 'Critical' || team.vision === 'At Risk' ||
+           team.support === 'Critical' || team.support === 'At Risk' ||
+           team.teamwork === 'Critical' || team.teamwork === 'At Risk' ||
+           team.autonomy === 'Critical' || team.autonomy === 'At Risk';
+  }).length;
+  
+  const initiativesAboveLine = initiatives.filter(i => i.priority <= 15).length;
+  const initiativesBelowLine = initiatives.filter(i => i.priority > 15).length;
+  const notValidated = initiatives.filter(i => i.validation === 'not-validated').length;
+  
+  // Return formatted context
+  return `
+CURRENT PORTFOLIO STATE:
+- Total Teams: ${teams.length}
+- Teams At Risk: ${teamsAtRisk}
+- Total Initiatives: ${initiatives.length}
+- Above Mendoza Line: ${initiativesAboveLine}
+- Below Mendoza Line: ${initiativesBelowLine}
+- Not Validated: ${notValidated}
+
+FULL DATA ACCESS:
+You have complete access to window.boardData which contains:
+- window.boardData.teams (${teams.length} teams with full health dimensions)
+- window.boardData.initiatives (${initiatives.length} initiatives with teams, validation, priority, etc.)
+- window.boardData.mendozaLineRow (currently: ${window.boardData.mendozaLineRow || 5})
+
+TEAM NAMES: ${teams.join(', ')}
+
+INITIATIVE NAMES: ${initiatives.map(i => i.name || i.title).filter(n => n).slice(0, 10).join(', ')}${initiatives.length > 10 ? '...' : ''}
+`.trim();
+}
+
+function buildSystemMessageWithKnowledge(portfolioContext) {
+  // Check if knowledge base and system prompt are loaded
+  if (!window.AI_SYSTEM_PROMPT) {
+    console.error('AI_SYSTEM_PROMPT not loaded!');
+    return 'You are a helpful portfolio management assistant.';
+  }
+  
+  if (!window.AI_KNOWLEDGE_BASE) {
+    console.error('AI_KNOWLEDGE_BASE not loaded!');
+    return window.AI_SYSTEM_PROMPT;
+  }
+  
+  return `
+${window.AI_SYSTEM_PROMPT}
+
+---
+
+# KNOWLEDGE BASE (Domain Expert Reference)
+
+${window.AI_KNOWLEDGE_BASE}
+
+---
+
+# CURRENT PORTFOLIO DATA
+
+${portfolioContext}
+
+---
+
+# YOUR TASK
+
+Answer the user's question using:
+1. The SYSTEM PROMPT rules for how to behave
+2. The KNOWLEDGE BASE for domain understanding
+3. The CURRENT PORTFOLIO DATA for specific facts
+
+Remember: 
+- ALWAYS query actual data from window.boardData
+- NEVER give generic responses
+- ALWAYS return specific team names, initiative names, and numbers
+- Calculate risk scores using the exact formulas provided
+- Format answers with: Direct Answer → Specific Data → Analysis → Recommendation
+`.trim();
+}
+
+// ============================================================================
+// Main AI Engine (MODIFIED)
+// ============================================================================
+
 class AIEngine {
   constructor() {
     this.conversationHistory = [];
@@ -153,6 +251,18 @@ class AIEngine {
       const isHealthy = await this.checkBackendHealth();
       if (!isHealthy) {
         throw new Error(AI_CHAT_CONFIG.errors.backendError || 'Backend service unavailable');
+      }
+      
+      // MODIFIED: Build system message with knowledge base
+      const portfolioContext = preparePortfolioContextForAI();
+      const systemMessage = buildSystemMessageWithKnowledge(portfolioContext);
+      
+      // Add system message to conversation history (ONLY ONCE at the start)
+      if (this.conversationHistory.length === 0) {
+        this.conversationHistory.push({
+          role: 'system',
+          content: systemMessage
+        });
       }
       
       this.conversationHistory.push({
@@ -192,8 +302,10 @@ class AIEngine {
       
       this.responseCache.set(userMessage, context, data.response);
       
-      if (this.conversationHistory.length > 10) {
-        this.conversationHistory = this.conversationHistory.slice(-10);
+      if (this.conversationHistory.length > 20) {
+        // Keep system message + last 10 exchanges
+        const systemMsg = this.conversationHistory[0];
+        this.conversationHistory = [systemMsg, ...this.conversationHistory.slice(-19)];
       }
       
       return {
@@ -211,7 +323,7 @@ class AIEngine {
   }
   
   buildContextPrompt(context) {
-    let prompt = 'You are VueSense AI, a helpful assistant for a product management application. ';
+    let prompt = 'Additional context: ';
     
     if (context.initiatives && context.initiatives.length > 0) {
       prompt += '\n\nCurrent Portfolio Context:\n';
