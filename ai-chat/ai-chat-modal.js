@@ -18,8 +18,7 @@ class VueSenseModal {
     this.isTyping = false;
     this.messages = [];
     
-     this.conversations = this.loadConversations();
-    this.currentConversationId = null;
+    
     
     this.init();
   }
