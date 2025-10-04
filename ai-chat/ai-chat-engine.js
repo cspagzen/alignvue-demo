@@ -1,385 +1,411 @@
-// ==========================================
-// VueSense AI Chat Engine - Backend Version WITH KNOWLEDGE BASE
-// ==========================================
-
-// Cost Tracking (client-side only for display)
-class CostTracker {
-  constructor() {
-    this.storageKey = 'vuesense_cost_tracker';
-    this.load();
-  }
-  
-  load() {
-    const saved = localStorage.getItem(this.storageKey);
-    if (saved) {
-      const data = JSON.parse(saved);
-      this.totalInputTokens = data.totalInputTokens || 0;
-      this.totalOutputTokens = data.totalOutputTokens || 0;
-      this.totalCost = data.totalCost || 0;
-      this.questionCount = data.questionCount || 0;
-      this.lastReset = data.lastReset || new Date().toISOString();
-    } else {
-      this.reset();
-    }
-  }
-  
-  save() {
-    localStorage.setItem(this.storageKey, JSON.stringify({
-      totalInputTokens: this.totalInputTokens,
-      totalOutputTokens: this.totalOutputTokens,
-      totalCost: this.totalCost,
-      questionCount: this.questionCount,
-      lastReset: this.lastReset
-    }));
-  }
-  
-  trackUsage(inputTokens, outputTokens) {
-    this.totalInputTokens += inputTokens;
-    this.totalOutputTokens += outputTokens;
-    
-    const inputCost = (inputTokens / 1000000) * AI_CHAT_CONFIG.inputCostPer1M;
-    const outputCost = (outputTokens / 1000000) * AI_CHAT_CONFIG.outputCostPer1M;
-    
-    this.totalCost += (inputCost + outputCost);
-    this.questionCount += 1;
-    
-    this.save();
-    
-    return {
-      inputTokens,
-      outputTokens,
-      cost: inputCost + outputCost,
-      totalCost: this.totalCost
-    };
-  }
-  
-  getStats() {
-    return {
-      totalInputTokens: this.totalInputTokens,
-      totalOutputTokens: this.totalOutputTokens,
-      totalCost: this.totalCost,
-      questionCount: this.questionCount,
-      avgCostPerQuestion: this.questionCount > 0 
-        ? this.totalCost / this.questionCount 
-        : 0,
-      lastReset: this.lastReset
-    };
-  }
-  
-  reset() {
-    this.totalInputTokens = 0;
-    this.totalOutputTokens = 0;
-    this.totalCost = 0;
-    this.questionCount = 0;
-    this.lastReset = new Date().toISOString();
-    this.save();
-  }
-}
-
-// Response Cache
-class ResponseCache {
-  constructor() {
-    this.cache = new Map();
-    this.cacheDuration = 5 * 60 * 1000;
-  }
-  
-  generateKey(question, context) {
-    const contextStr = context ? JSON.stringify(context) : '';
-    return `${question.toLowerCase().trim()}_${contextStr}`;
-  }
-  
-  set(question, context, response) {
-    const key = this.generateKey(question, context);
-    this.cache.set(key, {
-      response,
-      timestamp: Date.now()
-    });
-  }
-  
-  get(question, context) {
-    const key = this.generateKey(question, context);
-    const cached = this.cache.get(key);
-    
-    if (!cached) return null;
-    
-    const age = Date.now() - cached.timestamp;
-    if (age > this.cacheDuration) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return cached.response;
-  }
-  
-  clear() {
-    this.cache.clear();
-  }
-}
+/**
+ * AI Chat Engine - Main conversation handler
+ * Manages AI interactions with proper data context
+ */
 
 // ============================================================================
-// NEW FUNCTIONS: Portfolio Context Preparation
+// CORE AI INTERACTION
 // ============================================================================
 
-function preparePortfolioContextForAI() {
-  if (!window.boardData) {
-    return "ERROR: No portfolio data available";
-  }
-  
-  // Extract key portfolio metrics
-  const teams = Object.keys(window.boardData.teams || {});
-  const initiatives = window.boardData.initiatives || [];
-  
-  // Calculate summary stats
-  const teamsAtRisk = teams.filter(teamName => {
-    const team = window.boardData.teams[teamName];
-    return team.capacity === 'Critical' || team.capacity === 'At Risk' ||
-           team.skillset === 'Critical' || team.skillset === 'At Risk' ||
-           team.vision === 'Critical' || team.vision === 'At Risk' ||
-           team.support === 'Critical' || team.support === 'At Risk' ||
-           team.teamwork === 'Critical' || team.teamwork === 'At Risk' ||
-           team.autonomy === 'Critical' || team.autonomy === 'At Risk';
-  }).length;
-  
-  const initiativesAboveLine = initiatives.filter(i => i.priority <= 15).length;
-  const initiativesBelowLine = initiatives.filter(i => i.priority > 15).length;
-  const notValidated = initiatives.filter(i => i.validation === 'not-validated').length;
-  
-  // Return formatted context
-  return `
-CURRENT PORTFOLIO STATE:
-- Total Teams: ${teams.length}
-- Teams At Risk: ${teamsAtRisk}
-- Total Initiatives: ${initiatives.length}
-- Above Mendoza Line: ${initiativesAboveLine}
-- Below Mendoza Line: ${initiativesBelowLine}
-- Not Validated: ${notValidated}
-
-FULL DATA ACCESS:
-You have complete access to window.boardData which contains:
-- window.boardData.teams (${teams.length} teams with full health dimensions)
-- window.boardData.initiatives (${initiatives.length} initiatives with teams, validation, priority, etc.)
-- window.boardData.mendozaLineRow (currently: ${window.boardData.mendozaLineRow || 5})
-
-TEAM NAMES: ${teams.join(', ')}
-
-INITIATIVE NAMES: ${initiatives.map(i => i.name || i.title).filter(n => n).slice(0, 10).join(', ')}${initiatives.length > 10 ? '...' : ''}
-`.trim();
-}
-
-function buildSystemMessageWithKnowledge(portfolioContext) {
-  // Check if knowledge base and system prompt are loaded
-  if (!window.AI_SYSTEM_PROMPT) {
-    console.error('AI_SYSTEM_PROMPT not loaded!');
-    return 'You are a helpful portfolio management assistant.';
-  }
-  
-  if (!window.AI_KNOWLEDGE_BASE) {
-    console.error('AI_KNOWLEDGE_BASE not loaded!');
-    return window.AI_SYSTEM_PROMPT;
-  }
-  
-  return `
-${window.AI_SYSTEM_PROMPT}
-
----
-
-# KNOWLEDGE BASE (Domain Expert Reference)
-
-${window.AI_KNOWLEDGE_BASE}
-
----
-
-# CURRENT PORTFOLIO DATA
-
-${portfolioContext}
-
----
-
-# YOUR TASK
-
-Answer the user's question using:
-1. The SYSTEM PROMPT rules for how to behave
-2. The KNOWLEDGE BASE for domain understanding
-3. The CURRENT PORTFOLIO DATA for specific facts
-
-Remember: 
-- ALWAYS query actual data from window.boardData
-- NEVER give generic responses
-- ALWAYS return specific team names, initiative names, and numbers
-- Calculate risk scores using the exact formulas provided
-- Format answers with: Direct Answer → Specific Data → Analysis → Recommendation
-`.trim();
-}
-
-// ============================================================================
-// Main AI Engine (MODIFIED)
-// ============================================================================
-
-class AIEngine {
-  constructor() {
-    this.conversationHistory = [];
-    this.costTracker = new CostTracker();
-    this.responseCache = new ResponseCache();
-    this.backendUrl = AI_CHAT_CONFIG.backendUrl;
-  }
-  
-  async checkBackendHealth() {
+async function askAI(question, conversationHistory = []) {
     try {
-      const response = await fetch(`${this.backendUrl}/api/health`);
-      if (!response.ok) return false;
-      const data = await response.json();
-      return data.status === 'ok';
-    } catch (error) {
-      console.error('Backend health check failed:', error);
-      return false;
-    }
-  }
-  
-  async sendMessage(userMessage, context = null) {
-    try {
-      const cachedResponse = this.responseCache.get(userMessage, context);
-      if (cachedResponse) {
-        console.log('📦 Using cached response');
-        return {
-          response: cachedResponse,
-          cached: true,
-          cost: 0,
-          usage: { inputTokens: 0, outputTokens: 0 }
-        };
-      }
-      
-      const isHealthy = await this.checkBackendHealth();
-      if (!isHealthy) {
-        throw new Error(AI_CHAT_CONFIG.errors.backendError || 'Backend service unavailable');
-      }
-      
-      // MODIFIED: Build system message with knowledge base
-      const portfolioContext = preparePortfolioContextForAI();
-      const systemMessage = buildSystemMessageWithKnowledge(portfolioContext);
-      
-      // Add system message to conversation history (ONLY ONCE at the start)
-      if (this.conversationHistory.length === 0) {
-        this.conversationHistory.push({
-          role: 'system',
-          content: systemMessage
+        // Check if API key exists
+        if (!AI_CHAT_CONFIG.apiKey && !apiKeyManager.getKey()) {
+            throw new Error('API key not configured. Please add your OpenAI API key in settings.');
+        }
+
+        // Get the relevant knowledge base based on question
+        const knowledge = getRelevantKnowledge ? getRelevantKnowledge(question) : 
+                         (window.AI_KNOWLEDGE_BASE || '');
+
+        // CRITICAL: Extract current board data for AI context
+        const currentData = extractBoardData();
+        
+        // Build the complete system prompt with data
+        const systemPrompt = buildSystemPrompt(knowledge, currentData);
+
+        // Prepare messages for API
+        const messages = [
+            {
+                role: "system",
+                content: systemPrompt
+            },
+            ...conversationHistory,
+            {
+                role: "user",
+                content: question
+            }
+        ];
+
+        // Make API call
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${AI_CHAT_CONFIG.apiKey || apiKeyManager.getKey()}`
+            },
+            body: JSON.stringify({
+                model: AI_CHAT_CONFIG.model || 'gpt-4o-mini',
+                messages: messages,
+                temperature: AI_CHAT_CONFIG.temperature || 0.7,
+                max_tokens: AI_CHAT_CONFIG.maxOutputTokens || 1500,
+                top_p: 1,
+                frequency_penalty: 0,
+                presence_penalty: 0
+            })
         });
-      }
-      
-      this.conversationHistory.push({
-        role: 'user',
-        content: userMessage
-      });
-      
-      const payload = {
-        messages: this.conversationHistory,
-        context: context ? this.buildContextPrompt(context) : null
-      };
-      
-      const response = await fetch(`${this.backendUrl}/api/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || AI_CHAT_CONFIG.errors.apiError || 'API error occurred');
-      }
-      
-      const data = await response.json();
-      
-      this.conversationHistory.push({
-        role: 'assistant',
-        content: data.response
-      });
-      
-      const costInfo = this.costTracker.trackUsage(
-        data.usage.inputTokens,
-        data.usage.outputTokens
-      );
-      
-      this.responseCache.set(userMessage, context, data.response);
-      
-      if (this.conversationHistory.length > 20) {
-        // Keep system message + last 10 exchanges
-        const systemMsg = this.conversationHistory[0];
-        this.conversationHistory = [systemMsg, ...this.conversationHistory.slice(-19)];
-      }
-      
-      return {
-        response: data.response,
-        cached: false,
-        cost: costInfo.cost,
-        usage: data.usage,
-        totalCost: costInfo.totalCost
-      };
-      
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.error?.message || `API Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Track costs if enabled
+        if (window.costTracker && AI_CHAT_CONFIG.costTrackingVisible) {
+            const inputTokens = data.usage?.prompt_tokens || 0;
+            const outputTokens = data.usage?.completion_tokens || 0;
+            costTracker.addUsage(inputTokens, outputTokens);
+        }
+
+        return data.choices[0].message.content;
+
     } catch (error) {
-      console.error('AI Engine Error:', error);
-      throw error;
+        console.error('AI Chat Error:', error);
+        throw error;
     }
-  }
-  
-  buildContextPrompt(context) {
-    let prompt = 'Additional context: ';
-    
-    if (context.initiatives && context.initiatives.length > 0) {
-      prompt += '\n\nCurrent Portfolio Context:\n';
-      prompt += `Total Initiatives: ${context.initiatives.length}\n`;
-      
-      const byType = {};
-      const byStatus = {};
-      
-      context.initiatives.forEach(init => {
-        byType[init.type] = (byType[init.type] || 0) + 1;
-        byStatus[init.validation] = (byStatus[init.validation] || 0) + 1;
-      });
-      
-      prompt += '\nBy Type:\n';
-      Object.entries(byType).forEach(([type, count]) => {
-        prompt += `- ${type}: ${count}\n`;
-      });
-      
-      prompt += '\nBy Status:\n';
-      Object.entries(byStatus).forEach(([status, count]) => {
-        prompt += `- ${status}: ${count}\n`;
-      });
-    }
-    
-    if (context.selectedInitiative) {
-      const init = context.selectedInitiative;
-      prompt += `\n\nCurrently Viewing Initiative:\n`;
-      prompt += `Title: ${init.title}\n`;
-      prompt += `Type: ${init.type}\n`;
-      prompt += `Status: ${init.validation}\n`;
-      prompt += `Priority: ${init.priority}\n`;
-      prompt += `Teams: ${init.teams.join(', ')}\n`;
-      prompt += `Progress: ${init.progress}%\n`;
-    }
-    
-    if (context.currentView) {
-      prompt += `\n\nCurrent View: ${context.currentView}\n`;
-    }
-    
-    prompt += '\n\nProvide helpful, specific insights based on this context.';
-    
-    return prompt;
-  }
-  
-  clearHistory() {
-    this.conversationHistory = [];
-    this.responseCache.clear();
-  }
-  
-  getCostStats() {
-    return this.costTracker.getStats();
-  }
-  
-  resetCosts() {
-    this.costTracker.reset();
-  }
 }
 
-const aiEngine = new AIEngine();
+// ============================================================================
+// DATA EXTRACTION
+// ============================================================================
+
+function extractBoardData() {
+    // Check if boardData exists
+    if (!window.boardData) {
+        console.warn('BoardData not available');
+        return {
+            error: 'Portfolio data not loaded',
+            initiatives: [],
+            teams: {},
+            okrs: {},
+            bullpen: []
+        };
+    }
+
+    // Extract complete portfolio data
+    const data = {
+        timestamp: new Date().toISOString(),
+        initiatives: extractInitiativesData(),
+        teams: extractTeamsData(),
+        okrs: extractOKRData(),
+        bullpen: extractBullpenData(),
+        summary: generatePortfolioSummary()
+    };
+
+    return data;
+}
+
+function extractInitiativesData() {
+    if (!window.boardData?.initiatives) return [];
+    
+    return window.boardData.initiatives.map(initiative => ({
+        id: initiative.id,
+        title: initiative.title || initiative.name,
+        type: initiative.type,
+        priority: initiative.priority,
+        row: initiative.row,
+        column: initiative.column,
+        validationStatus: initiative.validationStatus,
+        teams: initiative.teams || [],
+        progress: initiative.progress || 0,
+        status: initiative.status,
+        jira: initiative.jira || {},
+        canvas: initiative.canvas || {},
+        description: initiative.description,
+        blockedCount: initiative.jira?.blockedStories || 0,
+        flaggedCount: initiative.jira?.flaggedStories || 0
+    }));
+}
+
+function extractTeamsData() {
+    if (!window.boardData?.teams) return {};
+    
+    const teamsData = {};
+    
+    for (const [teamName, teamData] of Object.entries(window.boardData.teams)) {
+        teamsData[teamName] = {
+            name: teamName,
+            // 6 Health Dimensions
+            capacity: teamData.capacity || 'not-set',
+            skillset: teamData.skillset || 'not-set',
+            vision: teamData.vision || 'not-set',
+            support: teamData.support || 'not-set',
+            teamwork: teamData.teamwork || 'not-set',
+            autonomy: teamData.autonomy || 'not-set',
+            // Metrics
+            utilization: teamData.utilization || 0,
+            velocity: teamData.jira?.velocity || 0,
+            activeStories: teamData.jira?.activeStories || 0,
+            blockedStories: teamData.jira?.blockedStories || 0,
+            flaggedStories: teamData.jira?.flaggedStories || 0,
+            // Additional info
+            comments: teamData.comments || '',
+            initiativeCount: countTeamInitiatives(teamName)
+        };
+    }
+    
+    return teamsData;
+}
+
+function extractOKRData() {
+    if (!window.boardData?.okrs) return {};
+    
+    return {
+        objective: window.boardData.okrs.objective || '',
+        keyResults: (window.boardData.okrs.keyResults || []).map(kr => ({
+            id: kr.id,
+            title: kr.title || kr.name,
+            currentValue: kr.currentValue || 0,
+            targetValue: kr.targetValue || 0,
+            unit: kr.unit || '',
+            progress: kr.progress || 0,
+            trend: kr.trend || 'stable',
+            history: kr.history || []
+        }))
+    };
+}
+
+function extractBullpenData() {
+    if (!window.boardData?.bullpen) return [];
+    
+    return window.boardData.bullpen.map(item => ({
+        id: item.id,
+        title: item.title || item.name,
+        type: item.type,
+        validationStatus: item.validationStatus,
+        teams: item.teams || [],
+        description: item.description
+    }));
+}
+
+function generatePortfolioSummary() {
+    const initiatives = window.boardData?.initiatives || [];
+    const teams = window.boardData?.teams || {};
+    
+    return {
+        totalInitiatives: initiatives.length,
+        aboveMendozaLine: initiatives.filter(i => i.row <= 5).length,
+        belowMendozaLine: initiatives.filter(i => i.row > 5).length,
+        totalTeams: Object.keys(teams).length,
+        criticalTeams: countCriticalTeams(),
+        atRiskTeams: countAtRiskTeams(),
+        healthyTeams: countHealthyTeams()
+    };
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function countTeamInitiatives(teamName) {
+    if (!window.boardData?.initiatives) return 0;
+    return window.boardData.initiatives.filter(init => 
+        init.teams && init.teams.includes(teamName)
+    ).length;
+}
+
+function countCriticalTeams() {
+    if (!window.boardData?.teams) return 0;
+    return Object.values(window.boardData.teams).filter(team => 
+        getTeamHealthLevel(team) === 'critical'
+    ).length;
+}
+
+function countAtRiskTeams() {
+    if (!window.boardData?.teams) return 0;
+    return Object.values(window.boardData.teams).filter(team => {
+        const level = getTeamHealthLevel(team);
+        return level === 'high-risk' || level === 'low-risk';
+    }).length;
+}
+
+function countHealthyTeams() {
+    if (!window.boardData?.teams) return 0;
+    return Object.values(window.boardData.teams).filter(team => 
+        getTeamHealthLevel(team) === 'healthy'
+    ).length;
+}
+
+function getTeamHealthLevel(team) {
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    let riskCount = 0;
+    
+    dimensions.forEach(dim => {
+        if (team[dim] === 'at-risk' || team[dim] === 'critical') {
+            riskCount++;
+        }
+    });
+    
+    if (riskCount === 0) return 'healthy';
+    if (riskCount <= 2) return 'low-risk';
+    if (riskCount <= 4) return 'high-risk';
+    return 'critical';
+}
+
+// ============================================================================
+// PROMPT BUILDING
+// ============================================================================
+
+function buildSystemPrompt(knowledge, currentData) {
+    const basePrompt = window.AI_SYSTEM_PROMPT || `
+You are VueSense AI, an expert portfolio management assistant. 
+You help analyze and optimize strategic portfolio decisions.`;
+
+    return `${basePrompt}
+
+==== CURRENT PORTFOLIO DATA ====
+${JSON.stringify(currentData, null, 2)}
+
+==== KNOWLEDGE BASE ====
+${knowledge}
+
+==== INSTRUCTIONS ====
+1. ALWAYS use the actual data provided above when answering questions
+2. When referencing initiatives or teams, use the exact names from the data
+3. For team questions, look at ALL teams in an initiative's teams array
+4. Calculate metrics using the exact formulas from the knowledge base
+5. If data is missing or unclear, state that explicitly
+6. Provide specific, actionable recommendations based on the data
+
+Remember: The user is looking at the actual board, so be precise and reference specific initiatives, teams, and metrics.`;
+}
+
+// ============================================================================
+// CONVERSATION MANAGEMENT
+// ============================================================================
+
+const conversationHistory = [];
+const MAX_HISTORY_LENGTH = 10;
+
+function addToHistory(role, content) {
+    conversationHistory.push({ role, content });
+    
+    // Keep only recent messages
+    while (conversationHistory.length > MAX_HISTORY_LENGTH * 2) {
+        conversationHistory.splice(0, 2);
+    }
+}
+
+async function askAIWithHistory(question) {
+    // Add user question to history
+    addToHistory('user', question);
+    
+    try {
+        // Get AI response with full context
+        const response = await askAI(question, conversationHistory);
+        
+        // Add AI response to history
+        addToHistory('assistant', response);
+        
+        return response;
+    } catch (error) {
+        // Remove the question if there was an error
+        conversationHistory.pop();
+        throw error;
+    }
+}
+
+function clearConversationHistory() {
+    conversationHistory.length = 0;
+}
+
+// ============================================================================
+// CACHING
+// ============================================================================
+
+const responseCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+function getCachedResponse(question) {
+    const cached = responseCache.get(question);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        return cached.response;
+    }
+    return null;
+}
+
+function cacheResponse(question, response) {
+    responseCache.set(question, {
+        response,
+        timestamp: Date.now()
+    });
+    
+    // Limit cache size
+    if (responseCache.size > 50) {
+        const firstKey = responseCache.keys().next().value;
+        responseCache.delete(firstKey);
+    }
+}
+
+async function askAIWithCache(question) {
+    // Check cache first
+    const cached = getCachedResponse(question);
+    if (cached && AI_CHAT_CONFIG.cacheEnabled) {
+        console.log('Using cached response');
+        return cached;
+    }
+    
+    // Get fresh response
+    const response = await askAIWithHistory(question);
+    
+    // Cache it
+    if (AI_CHAT_CONFIG.cacheEnabled) {
+        cacheResponse(question, response);
+    }
+    
+    return response;
+}
+
+// ============================================================================
+// ERROR HANDLING
+// ============================================================================
+
+function handleAIError(error) {
+    console.error('AI Error:', error);
+    
+    if (error.message.includes('API key')) {
+        return 'Please configure your OpenAI API key in settings to use AI features.';
+    }
+    
+    if (error.message.includes('rate limit')) {
+        return 'Rate limit reached. Please wait a moment and try again.';
+    }
+    
+    if (error.message.includes('network')) {
+        return 'Network error. Please check your connection and try again.';
+    }
+    
+    if (error.message.includes('Portfolio data not loaded')) {
+        return 'Portfolio data is not available. Please refresh the page and try again.';
+    }
+    
+    return 'An error occurred while processing your request. Please try again.';
+}
+
+// ============================================================================
+// PUBLIC API
+// ============================================================================
+
+window.VueSenseAI = {
+    ask: askAIWithCache,
+    askDirect: askAI,
+    clearHistory: clearConversationHistory,
+    getHistory: () => [...conversationHistory],
+    extractData: extractBoardData,
+    handleError: handleAIError
+};
+
+// Log successful load
+console.log('✅ AI Chat Engine loaded with data extraction');
