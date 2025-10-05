@@ -5110,8 +5110,8 @@ function populateCriticalTeamStatus() {
     // Render the card
     content.innerHTML = `
         <div style="display: flex; flex-direction: column; height: 100%;">
-            <div style="flex: 1; position: relative; min-height: 0;">
-                <canvas id="critical-team-chart"></canvas>
+            <div style="flex: 1; position: relative; min-height: 150px; height: 100%;">
+                <canvas id="critical-team-chart" style="width: 100% !important; height: 100% !important;"></canvas>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-secondary); padding-top: 4px; border-top: 1px solid rgba(99, 102, 241, 0.1);">
                 <span>Risk: 0-10 Low, 11-20 Med, 21-30 High, 30+ Critical</span>
@@ -5161,6 +5161,9 @@ function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
         health: team.health,
         utilization: team.utilization
     }));
+    
+    console.log('Bubble chart data:', bubbleData);
+    console.log('Color mapping:', bubbleData.map(d => ({ team: d.teamName, health: d.health, color: colorMap[d.health] })));
     
     const datasets = [{
         data: bubbleData,
