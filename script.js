@@ -2336,7 +2336,7 @@ teamCard.innerHTML =
     updateAtRiskCard();
     updateResourceCard();
     updateDeliveryConfidenceCard();
-    updateCriticalTeamStatusCard();
+    updateCapacityRiskMapCard();
     updateRecentlyCompletedCard();
     updateValidationCard();
     updateMendozaCard();
