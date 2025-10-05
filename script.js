@@ -5095,7 +5095,7 @@ function populateCriticalTeamStatus() {
         const initiativeCount = boardData.initiatives.filter(init => 
             init.teams && init.teams.includes(teamName)
         ).length;
-        const overallHealth = getTeamOverallHealth(team);
+        const overallHealth = getTeamHealthLevel(team); // FIXED: Use correct function name
         
         return {
             name: teamName,
@@ -5106,6 +5106,8 @@ function populateCriticalTeamStatus() {
             utilization
         };
     });
+    
+    console.log('Team data for bubble chart:', teamData.map(t => ({ name: t.name, health: t.health })));
     
     // Render the card
     content.innerHTML = `
@@ -5167,8 +5169,11 @@ function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
     
     const datasets = [{
         data: bubbleData,
-        backgroundColor: bubbleData.map(d => colorMap[d.health] + '40'),
-        borderColor: bubbleData.map(d => colorMap[d.health]),
+        backgroundColor: bubbleData.map(d => {
+            const color = colorMap[d.health] || colorMap['low-risk']; // fallback to yellow
+            return color + '40';
+        }),
+        borderColor: bubbleData.map(d => colorMap[d.health] || colorMap['low-risk']),
         borderWidth: 2
     }];
     
@@ -5207,11 +5212,12 @@ function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
                         title: (context) => context[0].raw.teamName,
                         label: (context) => {
                             const data = context.raw;
+                            const healthText = data.health ? String(data.health).replace('-', ' ') : 'unknown';
                             const labels = [
                                 `Risk: ${data.x} pts`,
                                 `Capacity: ${data.y}%`,
                                 `Initiatives: ${data.initiatives}`,
-                                `Health: ${data.health.replace('-', ' ')}`
+                                `Health: ${healthText}`
                             ];
                             if (isExpanded) labels.push('', 'Click for breakdown →');
                             return labels;
