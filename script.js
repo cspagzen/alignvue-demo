@@ -5041,57 +5041,426 @@ function showDeliveryConfidenceModal() {
     modal.classList.add('show');
 }
 
-function updateCriticalTeamStatusCard() {
-    const content = document.getElementById('critical-team-content');
+
+// ============================================================================
+// CRITICAL TEAM STATUS - RISK VS CAPACITY BUBBLE CHART
+// Location: Bento Grid - grid-column: 5/7, grid-row: 4/5
+// ============================================================================
+
+// Global variable for chart instance
+let criticalTeamChart = null;
+
+// Function to calculate team's total portfolio risk points
+function calculateTeamRiskPoints(teamName) {
+    let totalRisk = 0;
+    const team = boardData.teams[teamName];
     
-    // Get teams in critical status
-    const criticalTeams = Object.entries(boardData.teams)
-        .filter(([name, data]) => {
-            const atRiskCount = [data.capacity, data.skillset, data.vision, data.support, data.teamwork, data.autonomy]
-                .filter(status => status === 'at-risk').length;
-            return atRiskCount >= 5; // Critical = 5+ at-risk dimensions
-        })
-        .map(([name]) => name);
+    // Find all initiatives this team is working on
+    const teamInitiatives = boardData.initiatives.filter(init => 
+        init.teams && init.teams.includes(teamName)
+    );
     
-    content.innerHTML = `
-        <div class="text-center space-y-2">
-            <div class="bento-medium-metric" style="color: var(--accent-red);">${criticalTeams.length}</div>
-            <div class="text-xs" style="color: var(--text-secondary);">Teams in Critical Status</div>
-            ${criticalTeams.length > 0 ? 
-                `<div class="text-xs" style="color: var(--text-tertiary);">${criticalTeams.slice(0, 2).join(', ')}</div>` 
-                : ''}
+    teamInitiatives.forEach(initiative => {
+        let initiativeRisk = 0;
+        
+        // Team Health Contribution (from THIS team only)
+        if (team.capacity === 'At Risk' || team.capacity === 'at-risk') initiativeRisk += 3;
+        if (team.capacity === 'Critical' || team.capacity === 'critical') initiativeRisk += 6;
+        
+        if (team.skillset === 'At Risk' || team.skillset === 'at-risk') initiativeRisk += 3;
+        if (team.skillset === 'Critical' || team.skillset === 'critical') initiativeRisk += 6;
+        
+        if (team.support === 'At Risk' || team.support === 'at-risk') initiativeRisk += 2;
+        if (team.support === 'Critical' || team.support === 'critical') initiativeRisk += 4;
+        
+        if (team.vision === 'At Risk' || team.vision === 'at-risk') initiativeRisk += 1;
+        if (team.vision === 'Critical' || team.vision === 'critical') initiativeRisk += 2;
+        
+        if (team.teamwork === 'At Risk' || team.teamwork === 'at-risk') initiativeRisk += 1;
+        if (team.teamwork === 'Critical' || team.teamwork === 'critical') initiativeRisk += 2;
+        
+        if (team.autonomy === 'At Risk' || team.autonomy === 'at-risk') initiativeRisk += 1;
+        if (team.autonomy === 'Critical' || team.autonomy === 'critical') initiativeRisk += 2;
+        
+        if (team.jira?.utilization > 95) initiativeRisk += 2;
+        
+        // Flagged Work (shared across teams)
+        if (initiative.jira?.flagged > 0 && initiative.jira?.stories > 0) {
+            const flaggedPct = (initiative.jira.flagged / initiative.jira.stories) * 100;
+            let flaggedPoints = 0;
+            if (flaggedPct >= 50) flaggedPoints = 8;
+            else if (flaggedPct >= 25) flaggedPoints = 5;
+            else if (flaggedPct >= 15) flaggedPoints = 3;
+            else if (flaggedPct >= 5) flaggedPoints = 2;
+            else if (flaggedPct > 0) flaggedPoints = 1;
+            
+            const teamCount = initiative.teams?.length || 1;
+            initiativeRisk += flaggedPoints / teamCount;
+        }
+        
+        // Validation Risk (shared across teams)
+        if (initiative.priority <= 15 && initiative.validation === 'not-validated') {
+            let validationPoints = 0;
+            if (initiative.type === 'strategic') validationPoints = 2;
+            else if (initiative.type === 'ktlo' || initiative.type === 'emergent') validationPoints = 1;
+            
+            const teamCount = initiative.teams?.length || 1;
+            initiativeRisk += validationPoints / teamCount;
+        }
+        
+        // Priority Amplification (shared)
+        const row = getRowColFromSlot(initiative.priority).row;
+        if (row <= 2 && initiativeRisk > 4) {
+            const teamCount = initiative.teams?.length || 1;
+            initiativeRisk += 1 / teamCount;
+        }
+        
+        totalRisk += initiativeRisk;
+    });
+    
+    return Math.round(totalRisk);
+}
+
+// Function to populate Critical Team Status card
+function  updateCriticalTeamStatusCard() {
+    const container = document.getElementById('critical-team-content');
+    if (!container) return;
+    
+    // Prepare team data
+    const teamData = Object.keys(boardData.teams).map(teamName => {
+        const team = boardData.teams[teamName];
+        const riskPoints = calculateTeamRiskPoints(teamName);
+        const utilization = team.jira?.utilization || 0;
+        const availableCapacity = Math.max(0, 100 - utilization);
+        const initiativeCount = boardData.initiatives.filter(init => 
+            init.teams && init.teams.includes(teamName)
+        ).length;
+        const overallHealth = getTeamOverallHealth(team);
+        
+        return {
+            name: teamName,
+            riskPoints,
+            availableCapacity,
+            initiatives: initiativeCount,
+            health: overallHealth,
+            utilization
+        };
+    });
+    
+    container.innerHTML = `
+        <div style="display: flex; flex-direction: column; height: 100%; gap: 8px;">
+            <div style="flex: 1; position: relative; min-height: 0;">
+                <canvas id="critical-team-chart"></canvas>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-secondary); padding-top: 4px; border-top: 1px solid rgba(99, 102, 241, 0.1);">
+                <span>Risk: 0-10 Low, 11-20 Med, 21-30 High, 30+ Critical</span>
+                <button onclick="expandCriticalTeamChart()" class="expand-btn" style="background: transparent; border: 1px solid rgba(99, 102, 241, 0.3); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <polyline points="9 21 3 21 3 15"></polyline>
+                        <line x1="21" y1="3" x2="14" y2="10"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                    Expand
+                </button>
+            </div>
         </div>
     `;
     
-    // ADD THE BLUR OVERLAY
-    content.classList.add('under-construction-content');
-    const card = content.closest('.bento-card');
-    card.style.position = 'relative';
-    card.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"><div class="under-construction-text">Under Construction</div></div>');
+    // Create small chart
+    createCriticalTeamChart('critical-team-chart', teamData, false);
 }
 
-
-      
-      function getTrendArrow(riskType) {
-    // Simulate trend direction based on risk type
-    const trends = {
-        'validation': 'stable', // Same level of validation risks
-        'capacity': 'down',     // Improving (fewer capacity risks)
-        'blockers': 'up'        // Getting worse (more blockers)
+// Function to create the bubble chart
+function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Color mapping
+    const colorMap = {
+        'healthy': '#10b981',
+        'low-risk': '#fbbf24',
+        'high-risk': '#f59e0b',
+        'critical': '#ef4444'
     };
     
-    const trend = trends[riskType] || 'stable';
+    const bubbleData = teamData.map(team => ({
+        x: team.riskPoints,
+        y: team.availableCapacity,
+        r: isExpanded ? team.initiatives * 10 : team.initiatives * 6,
+        teamName: team.name,
+        initiatives: team.initiatives,
+        health: team.health,
+        utilization: team.utilization
+    }));
     
-    switch(trend) {
-        case 'up':
-            return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/></svg>';
-        case 'down':
-            return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>';
-        case 'stable':
-        default:
-            return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>';
+    const datasets = [{
+        data: bubbleData,
+        backgroundColor: bubbleData.map(d => colorMap[d.health] + '40'),
+        borderColor: bubbleData.map(d => colorMap[d.health]),
+        borderWidth: 2
+    }];
+    
+    // Destroy existing chart if it exists
+    if (criticalTeamChart) {
+        criticalTeamChart.destroy();
+    }
+    
+    criticalTeamChart = new Chart(ctx, {
+        type: 'bubble',
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const team = teamData[index];
+                    console.log('Team clicked:', team.name);
+                    // TODO: Open team risk breakdown modal
+                    alert(`Team Risk Breakdown Modal\n\nTeam: ${team.name}\nRisk Points: ${team.riskPoints}\nCapacity: ${team.availableCapacity}%\n\n(Modal implementation coming next)`);
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#cbd5e1',
+                    borderColor: '#475569',
+                    borderWidth: 1,
+                    padding: isExpanded ? 16 : 12,
+                    displayColors: false,
+                    titleFont: { size: isExpanded ? 15 : 13, weight: 'bold' },
+                    bodyFont: { size: isExpanded ? 13 : 11 },
+                    callbacks: {
+                        title: (context) => context[0].raw.teamName,
+                        label: (context) => {
+                            const data = context.raw;
+                            const labels = [
+                                `Risk: ${data.x} pts`,
+                                `Capacity: ${data.y}%`,
+                                `Initiatives: ${data.initiatives}`,
+                                `Health: ${data.health.replace('-', ' ')}`
+                            ];
+                            if (isExpanded) labels.push('', 'Click for breakdown →');
+                            return labels;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: isExpanded,
+                        text: 'Risk Points',
+                        color: '#94a3b8',
+                        font: { size: isExpanded ? 15 : 11, weight: '600' }
+                    },
+                    min: 0,
+                    max: 50,
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawTicks: false
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        padding: isExpanded ? 10 : 4,
+                        font: { size: isExpanded ? 12 : 9 },
+                        callback: (value) => isExpanded ? value + ' pts' : value
+                    },
+                    border: { display: false }
+                },
+                y: {
+                    title: {
+                        display: isExpanded,
+                        text: 'Available Capacity %',
+                        color: '#94a3b8',
+                        font: { size: isExpanded ? 15 : 11, weight: '600' }
+                    },
+                    min: 0,
+                    max: 60,
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawTicks: false
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        padding: isExpanded ? 10 : 4,
+                        font: { size: isExpanded ? 12 : 9 },
+                        callback: (value) => value + '%'
+                    },
+                    border: { display: false }
+                }
+            }
+        },
+        plugins: isExpanded ? [{
+            id: 'quadrantOverlay',
+            beforeDraw: (chart) => {
+                const ctx = chart.ctx;
+                const chartArea = chart.chartArea;
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+
+                // Danger line at 30
+                const dangerLine = xScale.getPixelForValue(30);
+                ctx.save();
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([10, 5]);
+                ctx.beginPath();
+                ctx.moveTo(dangerLine, chartArea.top);
+                ctx.lineTo(dangerLine, chartArea.bottom);
+                ctx.stroke();
+                ctx.restore();
+
+                // Danger label
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('CRITICAL THRESHOLD', dangerLine, chartArea.top - 10);
+
+                // Quadrant lines
+                const xLine = xScale.getPixelForValue(15);
+                const yLine = yScale.getPixelForValue(25);
+                
+                ctx.save();
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(xLine, chartArea.top);
+                ctx.lineTo(xLine, chartArea.bottom);
+                ctx.moveTo(chartArea.left, yLine);
+                ctx.lineTo(chartArea.right, yLine);
+                ctx.stroke();
+                ctx.restore();
+
+                // Quadrant labels
+                const drawLabel = (text, x, y, align, color, bgColor) => {
+                    ctx.textAlign = align;
+                    ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    const metrics = ctx.measureText(text);
+                    const padding = 10;
+                    const bgX = align === 'left' ? x : x - metrics.width - padding * 2;
+                    ctx.fillStyle = bgColor;
+                    ctx.fillRect(bgX, y - 14 - padding, metrics.width + padding * 2, 14 + padding * 2);
+                    ctx.fillStyle = color;
+                    ctx.fillText(text, align === 'left' ? x + padding : x - padding, y);
+                };
+                
+                drawLabel('READY FOR MORE WORK', chartArea.left + 15, chartArea.top + 30, 'left', '#10b981', 'rgba(16, 185, 129, 0.15)');
+                drawLabel('HIGH RISK BUT HAVE CAPACITY', chartArea.right - 15, chartArea.top + 30, 'right', '#f59e0b', 'rgba(245, 158, 11, 0.15)');
+                drawLabel('FULLY LOADED', chartArea.left + 15, chartArea.bottom - 20, 'left', '#3b82f6', 'rgba(59, 130, 246, 0.15)');
+                drawLabel('CRISIS: HIGH RISK + NO CAPACITY', chartArea.right - 15, chartArea.bottom - 20, 'right', '#ef4444', 'rgba(239, 68, 68, 0.2)');
+            }
+        }] : []
+    });
+}
+
+// Function to expand chart in modal
+function expandCriticalTeamChart() {
+    // Prepare team data
+    const teamData = Object.keys(boardData.teams).map(teamName => {
+        const team = boardData.teams[teamName];
+        const riskPoints = calculateTeamRiskPoints(teamName);
+        const utilization = team.jira?.utilization || 0;
+        const availableCapacity = Math.max(0, 100 - utilization);
+        const initiativeCount = boardData.initiatives.filter(init => 
+            init.teams && init.teams.includes(teamName)
+        ).length;
+        const overallHealth = getTeamOverallHealth(team);
+        
+        return {
+            name: teamName,
+            riskPoints,
+            availableCapacity,
+            initiatives: initiativeCount,
+            health: overallHealth,
+            utilization
+        };
+    });
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'critical-team-modal';
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content" style="width: 100%; max-width: 1400px; height: 90vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.2); display: flex; flex-direction: column; overflow: hidden;">
+            <div style="padding: 24px 32px; border-bottom: 1px solid rgba(148, 163, 184, 0.1); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="color: #fff; font-size: 24px; font-weight: 600; margin: 0 0 8px 0; display: flex; align-items: center; gap: 12px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        Team Risk & Capacity Analysis
+                    </h2>
+                    <p style="color: #94a3b8; font-size: 14px; margin: 0;">Click any team for detailed risk breakdown • Bubble size = initiative count</p>
+                </div>
+                <button onclick="closeCriticalTeamModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 28px; cursor: pointer;">×</button>
+            </div>
+            <div style="flex: 1; padding: 32px; position: relative;">
+                <canvas id="critical-team-chart-expanded"></canvas>
+            </div>
+            <div style="padding: 20px 32px; border-top: 1px solid rgba(148, 163, 184, 0.1); background: rgba(0, 0, 0, 0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px;">
+                    <div style="display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 14px; height: 14px; border-radius: 50%; background: #10b981;"></div>
+                            <span style="color: #94a3b8;">Healthy</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 14px; height: 14px; border-radius: 50%; background: #fbbf24;"></div>
+                            <span style="color: #94a3b8;">Low Risk</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 14px; height: 14px; border-radius: 50%; background: #f59e0b;"></div>
+                            <span style="color: #94a3b8;">High Risk</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 14px; height: 14px; border-radius: 50%; background: #ef4444;"></div>
+                            <span style="color: #94a3b8;">Critical</span>
+                        </div>
+                    </div>
+                    <div style="color: #64748b; font-size: 13px; display: flex; gap: 24px;">
+                        <span>0-10: Low</span>
+                        <span>11-20: Moderate</span>
+                        <span>21-30: High</span>
+                        <span style="color: #ef4444; font-weight: 600;">30+: CRITICAL</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Create expanded chart
+    setTimeout(() => {
+        createCriticalTeamChart('critical-team-chart-expanded', teamData, true);
+    }, 100);
+}
+
+// Function to close modal
+function closeCriticalTeamModal() {
+    const modal = document.getElementById('critical-team-modal');
+    if (modal) {
+        modal.remove();
     }
 }
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    populateCriticalTeamStatus();
+});
+
+// Re-populate when board data changes
+function refreshCriticalTeamStatus() {
+    populateCriticalTeamStatus();
+}
+
 
 function getImpactSeverity(riskType, value) {
     let severity;
