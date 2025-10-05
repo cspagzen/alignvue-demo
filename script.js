@@ -5043,12 +5043,12 @@ function showDeliveryConfidenceModal() {
 
 
 // ============================================================================
-// CRITICAL TEAM STATUS - RISK VS CAPACITY BUBBLE CHART
-// Location: Bento Grid - grid-column: 5/7, grid-row: 4/5
+// CAPACITY RISK MAP - RISK VS CAPACITY BUBBLE CHART
+// Location: Bento Grid - grid-column: 5/7, grid-row: 3/5
 // ============================================================================
 
 // Global variable for chart instance
-let criticalTeamChart = null;
+let capacityRiskChart = null;
 
 // Function to calculate team's total portfolio risk points
 function calculateTeamRiskPoints(teamName) {
@@ -5078,11 +5078,11 @@ function calculateTeamRiskPoints(teamName) {
     return totalRisk;
 }
 
-// Function to populate the Critical Team Status card
-function populateCriticalTeamStatus() {
+// Function to populate the Capacity Risk Map card
+function populateCapacityRiskMap() {
     const content = document.getElementById('critical-team-content');
     if (!content) {
-        console.error('Critical team content element not found');
+        console.error('Capacity Risk Map content element not found');
         return;
     }
     
@@ -5117,7 +5117,7 @@ function populateCriticalTeamStatus() {
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-secondary); padding-top: 4px; border-top: 1px solid rgba(99, 102, 241, 0.1);">
                 <span>Risk: 0-10 Low, 11-20 Med, 21-30 High, 30+ Critical</span>
-                <button onclick="expandCriticalTeamChart()" style="background: transparent; border: 1px solid rgba(99, 102, 241, 0.3); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; gap: 4px;">
+                <button onclick="expandCapacityRiskMap()" style="background: transparent; border: 1px solid rgba(99, 102, 241, 0.3); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; gap: 4px;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="15 3 21 3 21 9"></polyline>
                         <polyline points="9 21 3 21 3 15"></polyline>
@@ -5132,12 +5132,12 @@ function populateCriticalTeamStatus() {
     
     // Create small chart
     setTimeout(() => {
-        createCriticalTeamChart('critical-team-chart', teamData, false);
+        createCapacityRiskChart('critical-team-chart', teamData, false);
     }, 100);
 }
 
 // Function to create the bubble chart
-function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
+function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
         console.error('Canvas not found:', canvasId);
@@ -5164,8 +5164,15 @@ function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
         utilization: team.utilization
     }));
     
+    // Calculate dynamic axis maximums
+    const maxRisk = Math.max(...teamData.map(t => t.riskPoints), 10); // At least 10
+    const maxCapacity = Math.max(...teamData.map(t => t.availableCapacity), 20); // At least 20
+    const riskAxisMax = Math.ceil(maxRisk * 1.1); // Add 10% buffer
+    const capacityAxisMax = Math.ceil(maxCapacity * 1.1); // Add 10% buffer
+    
     console.log('Bubble chart data:', bubbleData);
     console.log('Color mapping:', bubbleData.map(d => ({ team: d.teamName, health: d.health, color: colorMap[d.health] })));
+    console.log('Axis ranges - Risk:', riskAxisMax, 'Capacity:', capacityAxisMax);
     
     const datasets = [{
         data: bubbleData,
@@ -5178,11 +5185,11 @@ function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
     }];
     
     // Destroy existing chart if it exists
-    if (criticalTeamChart) {
-        criticalTeamChart.destroy();
+    if (capacityRiskChart) {
+        capacityRiskChart.destroy();
     }
     
-    criticalTeamChart = new Chart(ctx, {
+    capacityRiskChart = new Chart(ctx, {
         type: 'bubble',
         data: { datasets },
         options: {
@@ -5234,7 +5241,7 @@ function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
                         font: { size: isExpanded ? 15 : 11, weight: '600' }
                     },
                     min: 0,
-                    max: 50,
+                    max: riskAxisMax,
                     grid: {
                         color: 'rgba(148, 163, 184, 0.1)',
                         drawTicks: false
@@ -5255,7 +5262,7 @@ function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
                         font: { size: isExpanded ? 15 : 11, weight: '600' }
                     },
                     min: 0,
-                    max: 60,
+                    max: capacityAxisMax,
                     grid: {
                         color: 'rgba(148, 163, 184, 0.1)',
                         drawTicks: false
@@ -5300,7 +5307,7 @@ function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
 }
 
 // Function to expand chart in modal
-function expandCriticalTeamChart() {
+function expandCapacityRiskMap() {
     // Prepare team data
     const teamData = Object.keys(boardData.teams).map(teamName => {
         const team = boardData.teams[teamName];
@@ -5324,7 +5331,7 @@ function expandCriticalTeamChart() {
     
     // Create modal
     const modal = document.createElement('div');
-    modal.id = 'critical-team-modal';
+    modal.id = 'capacity-risk-modal';
     modal.className = 'modal active';
     modal.innerHTML = `
         <div class="modal-content" style="width: 100%; max-width: 1400px; height: 90vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.2); display: flex; flex-direction: column; overflow: hidden;">
@@ -5334,14 +5341,14 @@ function expandCriticalTeamChart() {
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
                         </svg>
-                        Team Risk & Capacity Analysis
+                        Capacity Risk Map
                     </h2>
                     <p style="color: #94a3b8; font-size: 14px; margin: 0;">Click any team for detailed risk breakdown • Bubble size = initiative count</p>
                 </div>
-                <button onclick="closeCriticalTeamModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 28px; cursor: pointer;">×</button>
+                <button onclick="closeCapacityRiskModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 28px; cursor: pointer;">×</button>
             </div>
             <div style="flex: 1; padding: 32px; position: relative;">
-                <canvas id="critical-team-chart-expanded"></canvas>
+                <canvas id="capacity-risk-chart-expanded"></canvas>
             </div>
             <div style="padding: 20px 32px; border-top: 1px solid rgba(148, 163, 184, 0.1); background: rgba(0, 0, 0, 0.2);">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px;">
@@ -5378,13 +5385,13 @@ function expandCriticalTeamChart() {
     
     // Create expanded chart
     setTimeout(() => {
-        createCriticalTeamChart('critical-team-chart-expanded', teamData, true);
+        createCapacityRiskChart('capacity-risk-chart-expanded', teamData, true);
     }, 100);
 }
 
 // Function to close modal
-function closeCriticalTeamModal() {
-    const modal = document.getElementById('critical-team-modal');
+function closeCapacityRiskModal() {
+    const modal = document.getElementById('capacity-risk-modal');
     if (modal) {
         modal.remove();
     }
@@ -5392,17 +5399,17 @@ function closeCriticalTeamModal() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
-    populateCriticalTeamStatus();
+    populateCapacityRiskMap();
 });
 
 // Re-populate when board data changes
-function refreshCriticalTeamStatus() {
-    populateCriticalTeamStatus();
+function refreshCapacityRiskMap() {
+    populateCapacityRiskMap();
 }
 
 // Wrapper function called by updateBoardWithLiveData
-function updateCriticalTeamStatusCard() {
-    populateCriticalTeamStatus();
+function updateCapacityRiskMapCard() {
+    populateCapacityRiskMap();
 }
 
 
