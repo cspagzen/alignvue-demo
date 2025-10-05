@@ -5054,6 +5054,7 @@ let criticalTeamChart = null;
 function calculateTeamRiskPoints(teamName) {
     let totalRisk = 0;
     const team = boardData.teams[teamName];
+    if (!team) return 0;
     
     // Find all initiatives this team is working on
     const teamInitiatives = boardData.initiatives.filter(init => 
@@ -5122,7 +5123,7 @@ function calculateTeamRiskPoints(teamName) {
 }
 
 // Function to populate Critical Team Status card
-function  updateCriticalTeamStatusCard() {
+function updateCriticalTeamStatusCard() {
     const container = document.getElementById('critical-team-content');
     if (!container) return;
     
@@ -5154,7 +5155,7 @@ function  updateCriticalTeamStatusCard() {
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-secondary); padding-top: 4px; border-top: 1px solid rgba(99, 102, 241, 0.1);">
                 <span>Risk: 0-10 Low, 11-20 Med, 21-30 High, 30+ Critical</span>
-                <button onclick="expandCriticalTeamChart()" class="expand-btn" style="background: transparent; border: 1px solid rgba(99, 102, 241, 0.3); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem;">
+                <button onclick="expandCriticalTeamChart()" style="background: transparent; border: 1px solid rgba(99, 102, 241, 0.3); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; gap: 4px;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="15 3 21 3 21 9"></polyline>
                         <polyline points="9 21 3 21 3 15"></polyline>
@@ -5168,7 +5169,9 @@ function  updateCriticalTeamStatusCard() {
     `;
     
     // Create small chart
-    createCriticalTeamChart('critical-team-chart', teamData, false);
+    setTimeout(() => {
+        createCriticalTeamChart('critical-team-chart', teamData, false);
+    }, 100);
 }
 
 // Function to create the bubble chart
