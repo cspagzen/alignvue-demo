@@ -5080,8 +5080,11 @@ function calculateTeamRiskPoints(teamName) {
 
 // Function to populate the Critical Team Status card
 function populateCriticalTeamStatus() {
-    const content = document.getElementById('critical-team-status-content');
-    if (!content) return;
+    const content = document.getElementById('critical-team-content');
+    if (!content) {
+        console.error('Critical team content element not found');
+        return;
+    }
     
     // Calculate team data
     const teamData = Object.keys(boardData.teams).map(teamName => {
@@ -5385,6 +5388,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Re-populate when board data changes
 function refreshCriticalTeamStatus() {
+    populateCriticalTeamStatus();
+}
+
+// Wrapper function called by updateBoardWithLiveData
+function updateCriticalTeamStatusCard() {
     populateCriticalTeamStatus();
 }
 
