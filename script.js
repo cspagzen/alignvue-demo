@@ -5177,6 +5177,194 @@ function updateCriticalTeamStatusCard() {
 // Function to create the bubble chart
 function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
     const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error('Canvas not found:', canvasId);
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Color mapping
+    const colorMap = {
+        'healthy': '#10b981',
+        'low-risk': '#fbbf24',
+        'high-risk': '#f59e0b',
+        'critical': '#ef4444'
+    };
+    
+    const bubbleData = teamData.map(team => ({
+        x: team.riskPoints,
+        y: team.availableCapacity,
+        r: isExpanded ? team.initiatives * 10 : team.initiatives * 6,
+        teamName: team.name,
+        initiatives: team.initiatives,
+        health: team.health,
+        utilization: team.utilization
+    }));
+    
+    const datasets = [{
+        data: bubbleData,
+        backgroundColor: bubbleData.map(d => colorMap[d.health] + '40'),
+        borderColor: bubbleData.map(d => colorMap[d.health]),
+        borderWidth: 2
+    }];
+    
+    // Destroy existing chart if it exists
+    if (criticalTeamChart) {
+        criticalTeamChart.destroy();
+    }
+    
+    criticalTeamChart = new Chart(ctx, {
+        type: 'bubble',
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const team = teamData[index];
+                    console.log('Team clicked:', team.name);
+                    alert(`Team Risk Breakdown\n\nTeam: ${team.name}\nRisk Points: ${team.riskPoints}\nCapacity: ${team.availableCapacity}%\n\n(Detailed modal coming next)`);
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#cbd5e1',
+                    borderColor: '#475569',
+                    borderWidth: 1,
+                    padding: isExpanded ? 16 : 12,
+                    displayColors: false,
+                    titleFont: { size: isExpanded ? 15 : 13, weight: 'bold' },
+                    bodyFont: { size: isExpanded ? 13 : 11 },
+                    callbacks: {
+                        title: (context) => context[0].raw.teamName,
+                        label: (context) => {
+                            const data = context.raw;
+                            const labels = [
+                                `Risk: ${data.x} pts`,
+                                `Capacity: ${data.y}%`,
+                                `Initiatives: ${data.initiatives}`,
+                                `Health: ${data.health.replace('-', ' ')}`
+                            ];
+                            if (isExpanded) labels.push('', 'Click for breakdown →');
+                            return labels;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: isExpanded,
+                        text: 'Risk Points',
+                        color: '#94a3b8',
+                        font: { size: isExpanded ? 15 : 11, weight: '600' }
+                    },
+                    min: 0,
+                    max: 50,
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawTicks: false
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        padding: isExpanded ? 10 : 4,
+                        font: { size: isExpanded ? 12 : 9 },
+                        callback: (value) => isExpanded ? value + ' pts' : value
+                    },
+                    border: { display: false }
+                },
+                y: {
+                    title: {
+                        display: isExpanded,
+                        text: 'Available Capacity %',
+                        color: '#94a3b8',
+                        font: { size: isExpanded ? 15 : 11, weight: '600' }
+                    },
+                    min: 0,
+                    max: 60,
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawTicks: false
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        padding: isExpanded ? 10 : 4,
+                        font: { size: isExpanded ? 12 : 9 },
+                        callback: (value) => value + '%'
+                    },
+                    border: { display: false }
+                }
+            }
+        },
+        plugins: isExpanded ? [{
+            id: 'quadrantOverlay',
+            beforeDraw: (chart) => {
+                const ctx = chart.ctx;
+                const chartArea = chart.chartArea;
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+
+                // Danger line at 30
+                const dangerLine = xScale.getPixelForValue(30);
+                ctx.save();
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([10, 5]);
+                ctx.beginPath();
+                ctx.moveTo(dangerLine, chartArea.top);
+                ctx.lineTo(dangerLine, chartArea.bottom);
+                ctx.stroke();
+                ctx.restore();
+
+                // Danger label
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('CRITICAL THRESHOLD', dangerLine, chartArea.top - 10);
+
+                // Quadrant lines
+                const xLine = xScale.getPixelForValue(15);
+                const yLine = yScale.getPixelForValue(25);
+                
+                ctx.save();
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(xLine, chartArea.top);
+                ctx.lineTo(xLine, chartArea.bottom);
+                ctx.moveTo(chartArea.left, yLine);
+                ctx.lineTo(chartArea.right, yLine);
+                ctx.stroke();
+                ctx.restore();
+
+                // Quadrant labels
+                const drawLabel = (text, x, y, align, color, bgColor) => {
+                    ctx.textAlign = align;
+                    ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    const metrics = ctx.measureText(text);
+                    const padding = 10;
+                    const bgX = align === 'left' ? x : x - metrics.width - padding * 2;
+                    ctx.fillStyle = bgColor;
+                    ctx.fillRect(bgX, y - 14 - padding, metrics.width + padding * 2, 14 + padding * 2);
+                    ctx.fillStyle = color;
+                    ctx.fillText(text, align === 'left' ? x + padding : x - padding, y);
+                };
+                
+                drawLabel('READY FOR MORE WORK', chartArea.left + 15, chartArea.top + 30, 'left', '#10b981', 'rgba(16, 185, 129, 0.15)');
+                drawLabel('HIGH RISK BUT HAVE CAPACITY', chartArea.right - 15, chartArea.top + 30, 'right', '#f59e0b', 'rgba(245, 158, 11, 0.15)');
+                drawLabel('FULLY LOADED', chartArea.left + 15, chartArea.bottom - 20, 'left', '#3b82f6', 'rgba(59, 130, 246, 0.15)');
+                drawLabel('CRISIS: HIGH RISK + NO CAPACITY', chartArea.right - 15, chartArea.bottom - 20, 'right', '#ef4444', 'rgba(239, 68, 68, 0.2)');
+            }
+        }] : []
+    });
+}
+    const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
