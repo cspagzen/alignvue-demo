@@ -5061,73 +5061,29 @@ function calculateTeamRiskPoints(teamName) {
         init.teams && init.teams.includes(teamName)
     );
     
-    teamInitiatives.forEach(initiative => {
-        let initiativeRisk = 0;
+    teamInitiatives.forEach(init => {
+        // Validation risk (0-10 points)
+        if (init.validation === 'not-validated') totalRisk += 10;
+        else if (init.validation === 'in-validation') totalRisk += 5;
         
-        // Team Health Contribution (from THIS team only)
-        if (team.capacity === 'At Risk' || team.capacity === 'at-risk') initiativeRisk += 3;
-        if (team.capacity === 'Critical' || team.capacity === 'critical') initiativeRisk += 6;
+        // Capacity risk from team health (0-10 points)
+        if (team.capacity === 'critical') totalRisk += 10;
+        else if (team.capacity === 'at-risk') totalRisk += 5;
         
-        if (team.skillset === 'At Risk' || team.skillset === 'at-risk') initiativeRisk += 3;
-        if (team.skillset === 'Critical' || team.skillset === 'critical') initiativeRisk += 6;
-        
-        if (team.support === 'At Risk' || team.support === 'at-risk') initiativeRisk += 2;
-        if (team.support === 'Critical' || team.support === 'critical') initiativeRisk += 4;
-        
-        if (team.vision === 'At Risk' || team.vision === 'at-risk') initiativeRisk += 1;
-        if (team.vision === 'Critical' || team.vision === 'critical') initiativeRisk += 2;
-        
-        if (team.teamwork === 'At Risk' || team.teamwork === 'at-risk') initiativeRisk += 1;
-        if (team.teamwork === 'Critical' || team.teamwork === 'critical') initiativeRisk += 2;
-        
-        if (team.autonomy === 'At Risk' || team.autonomy === 'at-risk') initiativeRisk += 1;
-        if (team.autonomy === 'Critical' || team.autonomy === 'critical') initiativeRisk += 2;
-        
-        if (team.jira?.utilization > 95) initiativeRisk += 2;
-        
-        // Flagged Work (shared across teams)
-        if (initiative.jira?.flagged > 0 && initiative.jira?.stories > 0) {
-            const flaggedPct = (initiative.jira.flagged / initiative.jira.stories) * 100;
-            let flaggedPoints = 0;
-            if (flaggedPct >= 50) flaggedPoints = 8;
-            else if (flaggedPct >= 25) flaggedPoints = 5;
-            else if (flaggedPct >= 15) flaggedPoints = 3;
-            else if (flaggedPct >= 5) flaggedPoints = 2;
-            else if (flaggedPct > 0) flaggedPoints = 1;
-            
-            const teamCount = initiative.teams?.length || 1;
-            initiativeRisk += flaggedPoints / teamCount;
-        }
-        
-        // Validation Risk (shared across teams)
-        if (initiative.priority <= 15 && initiative.validation === 'not-validated') {
-            let validationPoints = 0;
-            if (initiative.type === 'strategic') validationPoints = 2;
-            else if (initiative.type === 'ktlo' || initiative.type === 'emergent') validationPoints = 1;
-            
-            const teamCount = initiative.teams?.length || 1;
-            initiativeRisk += validationPoints / teamCount;
-        }
-        
-        // Priority Amplification (shared)
-        const row = getRowColFromSlot(initiative.priority).row;
-        if (row <= 2 && initiativeRisk > 4) {
-            const teamCount = initiative.teams?.length || 1;
-            initiativeRisk += 1 / teamCount;
-        }
-        
-        totalRisk += initiativeRisk;
+        // Blocker risk (based on blocked stories - 0-10 points)
+        const blockerRisk = Math.min(10, Math.floor((init.blockedStories || 0) / 5));
+        totalRisk += blockerRisk;
     });
     
-    return Math.round(totalRisk);
+    return totalRisk;
 }
 
-// Function to populate Critical Team Status card
-function updateCriticalTeamStatusCard() {
-    const container = document.getElementById('critical-team-content');
-    if (!container) return;
+// Function to populate the Critical Team Status card
+function populateCriticalTeamStatus() {
+    const content = document.getElementById('critical-team-status-content');
+    if (!content) return;
     
-    // Prepare team data
+    // Calculate team data
     const teamData = Object.keys(boardData.teams).map(teamName => {
         const team = boardData.teams[teamName];
         const riskPoints = calculateTeamRiskPoints(teamName);
@@ -5148,8 +5104,9 @@ function updateCriticalTeamStatusCard() {
         };
     });
     
-    container.innerHTML = `
-        <div style="display: flex; flex-direction: column; height: 100%; gap: 8px;">
+    // Render the card
+    content.innerHTML = `
+        <div style="display: flex; flex-direction: column; height: 100%;">
             <div style="flex: 1; position: relative; min-height: 0;">
                 <canvas id="critical-team-chart"></canvas>
             </div>
@@ -5302,53 +5259,16 @@ function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
             }
         },
         plugins: isExpanded ? [{
-            id: 'quadrantOverlay',
-            beforeDraw: (chart) => {
+            afterDraw: (chart) => {
                 const ctx = chart.ctx;
                 const chartArea = chart.chartArea;
-                const xScale = chart.scales.x;
-                const yScale = chart.scales.y;
-
-                // Danger line at 30
-                const dangerLine = xScale.getPixelForValue(30);
-                ctx.save();
-                ctx.strokeStyle = '#ef4444';
-                ctx.lineWidth = 3;
-                ctx.setLineDash([10, 5]);
-                ctx.beginPath();
-                ctx.moveTo(dangerLine, chartArea.top);
-                ctx.lineTo(dangerLine, chartArea.bottom);
-                ctx.stroke();
-                ctx.restore();
-
-                // Danger label
-                ctx.fillStyle = '#ef4444';
-                ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('CRITICAL THRESHOLD', dangerLine, chartArea.top - 10);
-
-                // Quadrant lines
-                const xLine = xScale.getPixelForValue(15);
-                const yLine = yScale.getPixelForValue(25);
                 
                 ctx.save();
-                ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(xLine, chartArea.top);
-                ctx.lineTo(xLine, chartArea.bottom);
-                ctx.moveTo(chartArea.left, yLine);
-                ctx.lineTo(chartArea.right, yLine);
-                ctx.stroke();
-                ctx.restore();
-
-                // Quadrant labels
+                ctx.font = 'bold 11px Inter, sans-serif';
+                
                 const drawLabel = (text, x, y, align, color, bgColor) => {
-                    ctx.textAlign = align;
-                    ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    const padding = 6;
                     const metrics = ctx.measureText(text);
-                    const padding = 10;
                     const bgX = align === 'left' ? x : x - metrics.width - padding * 2;
                     ctx.fillStyle = bgColor;
                     ctx.fillRect(bgX, y - 14 - padding, metrics.width + padding * 2, 14 + padding * 2);
@@ -5360,192 +5280,8 @@ function createCriticalTeamChart(canvasId, teamData, isExpanded = false) {
                 drawLabel('HIGH RISK BUT HAVE CAPACITY', chartArea.right - 15, chartArea.top + 30, 'right', '#f59e0b', 'rgba(245, 158, 11, 0.15)');
                 drawLabel('FULLY LOADED', chartArea.left + 15, chartArea.bottom - 20, 'left', '#3b82f6', 'rgba(59, 130, 246, 0.15)');
                 drawLabel('CRISIS: HIGH RISK + NO CAPACITY', chartArea.right - 15, chartArea.bottom - 20, 'right', '#ef4444', 'rgba(239, 68, 68, 0.2)');
-            }
-        }] : []
-    });
-}
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Color mapping
-    const colorMap = {
-        'healthy': '#10b981',
-        'low-risk': '#fbbf24',
-        'high-risk': '#f59e0b',
-        'critical': '#ef4444'
-    };
-    
-    const bubbleData = teamData.map(team => ({
-        x: team.riskPoints,
-        y: team.availableCapacity,
-        r: isExpanded ? team.initiatives * 10 : team.initiatives * 6,
-        teamName: team.name,
-        initiatives: team.initiatives,
-        health: team.health,
-        utilization: team.utilization
-    }));
-    
-    const datasets = [{
-        data: bubbleData,
-        backgroundColor: bubbleData.map(d => colorMap[d.health] + '40'),
-        borderColor: bubbleData.map(d => colorMap[d.health]),
-        borderWidth: 2
-    }];
-    
-    // Destroy existing chart if it exists
-    if (criticalTeamChart) {
-        criticalTeamChart.destroy();
-    }
-    
-    criticalTeamChart = new Chart(ctx, {
-        type: 'bubble',
-        data: { datasets },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            onClick: (event, elements) => {
-                if (elements.length > 0) {
-                    const index = elements[0].index;
-                    const team = teamData[index];
-                    console.log('Team clicked:', team.name);
-                    // TODO: Open team risk breakdown modal
-                    alert(`Team Risk Breakdown Modal\n\nTeam: ${team.name}\nRisk Points: ${team.riskPoints}\nCapacity: ${team.availableCapacity}%\n\n(Modal implementation coming next)`);
-                }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                    titleColor: '#fff',
-                    bodyColor: '#cbd5e1',
-                    borderColor: '#475569',
-                    borderWidth: 1,
-                    padding: isExpanded ? 16 : 12,
-                    displayColors: false,
-                    titleFont: { size: isExpanded ? 15 : 13, weight: 'bold' },
-                    bodyFont: { size: isExpanded ? 13 : 11 },
-                    callbacks: {
-                        title: (context) => context[0].raw.teamName,
-                        label: (context) => {
-                            const data = context.raw;
-                            const labels = [
-                                `Risk: ${data.x} pts`,
-                                `Capacity: ${data.y}%`,
-                                `Initiatives: ${data.initiatives}`,
-                                `Health: ${data.health.replace('-', ' ')}`
-                            ];
-                            if (isExpanded) labels.push('', 'Click for breakdown →');
-                            return labels;
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    title: {
-                        display: isExpanded,
-                        text: 'Risk Points',
-                        color: '#94a3b8',
-                        font: { size: isExpanded ? 15 : 11, weight: '600' }
-                    },
-                    min: 0,
-                    max: 50,
-                    grid: {
-                        color: 'rgba(148, 163, 184, 0.1)',
-                        drawTicks: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        padding: isExpanded ? 10 : 4,
-                        font: { size: isExpanded ? 12 : 9 },
-                        callback: (value) => isExpanded ? value + ' pts' : value
-                    },
-                    border: { display: false }
-                },
-                y: {
-                    title: {
-                        display: isExpanded,
-                        text: 'Available Capacity %',
-                        color: '#94a3b8',
-                        font: { size: isExpanded ? 15 : 11, weight: '600' }
-                    },
-                    min: 0,
-                    max: 60,
-                    grid: {
-                        color: 'rgba(148, 163, 184, 0.1)',
-                        drawTicks: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        padding: isExpanded ? 10 : 4,
-                        font: { size: isExpanded ? 12 : 9 },
-                        callback: (value) => value + '%'
-                    },
-                    border: { display: false }
-                }
-            }
-        },
-        plugins: isExpanded ? [{
-            id: 'quadrantOverlay',
-            beforeDraw: (chart) => {
-                const ctx = chart.ctx;
-                const chartArea = chart.chartArea;
-                const xScale = chart.scales.x;
-                const yScale = chart.scales.y;
-
-                // Danger line at 30
-                const dangerLine = xScale.getPixelForValue(30);
-                ctx.save();
-                ctx.strokeStyle = '#ef4444';
-                ctx.lineWidth = 3;
-                ctx.setLineDash([10, 5]);
-                ctx.beginPath();
-                ctx.moveTo(dangerLine, chartArea.top);
-                ctx.lineTo(dangerLine, chartArea.bottom);
-                ctx.stroke();
-                ctx.restore();
-
-                // Danger label
-                ctx.fillStyle = '#ef4444';
-                ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('CRITICAL THRESHOLD', dangerLine, chartArea.top - 10);
-
-                // Quadrant lines
-                const xLine = xScale.getPixelForValue(15);
-                const yLine = yScale.getPixelForValue(25);
                 
-                ctx.save();
-                ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(xLine, chartArea.top);
-                ctx.lineTo(xLine, chartArea.bottom);
-                ctx.moveTo(chartArea.left, yLine);
-                ctx.lineTo(chartArea.right, yLine);
-                ctx.stroke();
                 ctx.restore();
-
-                // Quadrant labels
-                const drawLabel = (text, x, y, align, color, bgColor) => {
-                    ctx.textAlign = align;
-                    ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                    const metrics = ctx.measureText(text);
-                    const padding = 10;
-                    const bgX = align === 'left' ? x : x - metrics.width - padding * 2;
-                    ctx.fillStyle = bgColor;
-                    ctx.fillRect(bgX, y - 14 - padding, metrics.width + padding * 2, 14 + padding * 2);
-                    ctx.fillStyle = color;
-                    ctx.fillText(text, align === 'left' ? x + padding : x - padding, y);
-                };
-                
-                drawLabel('READY FOR MORE WORK', chartArea.left + 15, chartArea.top + 30, 'left', '#10b981', 'rgba(16, 185, 129, 0.15)');
-                drawLabel('HIGH RISK BUT HAVE CAPACITY', chartArea.right - 15, chartArea.top + 30, 'right', '#f59e0b', 'rgba(245, 158, 11, 0.15)');
-                drawLabel('FULLY LOADED', chartArea.left + 15, chartArea.bottom - 20, 'left', '#3b82f6', 'rgba(59, 130, 246, 0.15)');
-                drawLabel('CRISIS: HIGH RISK + NO CAPACITY', chartArea.right - 15, chartArea.bottom - 20, 'right', '#ef4444', 'rgba(239, 68, 68, 0.2)');
             }
         }] : []
     });
