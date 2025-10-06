@@ -5091,7 +5091,6 @@ function populateCapacityRiskMap() {
     content.innerHTML = `
         <div style="display: flex; flex-direction: column; height: 100%; padding: 0; margin: 0;">
     <div style="flex: 1; position: relative; min-height: 300px; padding: 0;">
-        <canvas id="critical-team-chart" style="width: 100%; height: 100%;"></canvas>
             </div>
         </div>
     `;
@@ -5211,13 +5210,13 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
             scales: {
     x: {
         title: {
-            display: true,  // Changed from isExpanded - always show in bento box
-            text: 'Available Capacity (%)',  // SWAPPED - was 'Risk Points'
+            display: true,
+            text: 'Risk Points',
             color: '#94a3b8',
             font: { size: isExpanded ? 15 : 11, weight: '600' }
         },
         min: 0,
-        max: capacityAxisMax,  // SWAPPED - was riskAxisMax
+        max: riskAxisMax,
         grid: {
             color: 'rgba(148, 163, 184, 0.1)',
             drawTicks: false
@@ -5226,19 +5225,19 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
             color: '#94a3b8',
             padding: isExpanded ? 10 : 4,
             font: { size: isExpanded ? 12 : 9 },
-            callback: (value) => value + '%'  // SWAPPED - was pts
+            callback: (value) => isExpanded ? value + ' pts' : value
         },
         border: { display: false }
     },
     y: {
         title: {
-            display: true,  // Changed from isExpanded - always show in bento box
-            text: 'Risk Points',  // SWAPPED - was 'Available Capacity %'
+            display: true,
+            text: 'Available Capacity (%)',
             color: '#94a3b8',
             font: { size: isExpanded ? 15 : 11, weight: '600' }
         },
         min: 0,
-        max: riskAxisMax,  // SWAPPED - was capacityAxisMax
+        max: capacityAxisMax,
         grid: {
             color: 'rgba(148, 163, 184, 0.1)',
             drawTicks: false
@@ -5247,7 +5246,7 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
             color: '#94a3b8',
             padding: isExpanded ? 10 : 4,
             font: { size: isExpanded ? 12 : 9 },
-            callback: (value) => isExpanded ? value + ' pts' : value  // SWAPPED - was %
+            callback: (value) => value + '%'
         },
         border: { display: false }
     }
