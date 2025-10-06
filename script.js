@@ -5142,62 +5142,39 @@ function populateCapacityRiskMap() {
     console.log('Team data for bubble chart:', teamData.map(t => ({ name: t.name, health: t.health })));
     
     // Render the card
-content.innerHTML =
+content.innerHTML = 
     '<div style="display: flex; flex-direction: column; height: 100%; padding: 0; margin: 0;">' +
-        // Legend Section
-'<div style="display: flex; gap: 32px; padding: 12px 16px; margin-bottom: 8px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid var(--border-primary);">' +
-    // Bubble Color Legend
-    '<div style="flex: 1;">' +
-        '<div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Bubble Color = Team Health Status</div>' +
-        '<div style="display: flex; gap: 16px; flex-wrap: wrap;">' +
-            '<div style="display: flex; align-items: center; gap: 6px;">' +
-                '<div style="width: 16px; height: 16px; border-radius: 50%; background: #10b981;"></div>' +
-                '<span style="font-size: 12px; color: var(--text-primary);">Stable</span>' +
+        // Compact Legend - Single Row
+        '<div style="display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 8px 12px; margin-bottom: 8px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary); font-size: 10px;">' +
+            // Team Health
+            '<div style="display: flex; align-items: center; gap: 8px;">' +
+                '<span style="font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Color:</span>' +
+                '<div style="display: flex; gap: 6px;">' +
+                    '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #10b981;"></div><span style="color: var(--text-primary);">Stable</span></div>' +
+                    '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #facc15;"></div><span style="color: var(--text-primary);">Monitored</span></div>' +
+                    '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #f97316;"></div><span style="color: var(--text-primary);">Urgent</span></div>' +
+                    '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #dc2626;"></div><span style="color: var(--text-primary);">Critical</span></div>' +
+                '</div>' +
             '</div>' +
-            '<div style="display: flex; align-items: center; gap: 6px;">' +
-                '<div style="width: 16px; height: 16px; border-radius: 50%; background: #facc15;"></div>' +
-                '<span style="font-size: 12px; color: var(--text-primary);">Monitored</span>' +
+            // Risk Points
+            '<div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--border-primary); padding-left: 12px;">' +
+                '<span style="font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">X-Axis:</span>' +
+                '<span style="color: var(--text-tertiary);">Health + Validation + Blockers + Focus + Utilization</span>' +
             '</div>' +
-            '<div style="display: flex; align-items: center; gap: 6px;">' +
-                '<div style="width: 16px; height: 16px; border-radius: 50%; background: #f97316;"></div>' +
-                '<span style="font-size: 12px; color: var(--text-primary);">Urgent</span>' +
-            '</div>' +
-            '<div style="display: flex; align-items: center; gap: 6px;">' +
-                '<div style="width: 16px; height: 16px; border-radius: 50%; background: #dc2626;"></div>' +
-                '<span style="font-size: 12px; color: var(--text-primary);">Critical</span>' +
-            '</div>' +
-        '</div>' +
-        '<div style="font-size: 10px; color: var(--text-tertiary); margin-top: 6px; font-style: italic;">Based on # of at-risk/critical health dimensions</div>' +
-    '</div>' +
-    
-    // Risk Points Definition
-    '<div style="flex: 1; border-left: 1px solid var(--border-primary); padding-left: 16px;">' +
-        '<div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Risk Points (X-Axis)</div>' +
-        '<div style="font-size: 11px; color: var(--text-primary); line-height: 1.6;">' +
-            'Aggregate score combining:<br>' +
-            '<span style="color: var(--text-secondary);">• Team health dimensions</span><br>' +
-            '<span style="color: var(--text-secondary);">• Unvalidated initiatives</span><br>' +
-            '<span style="color: var(--text-secondary);">• Blocked work</span><br>' +
-            '<span style="color: var(--text-secondary);">• Initiative overload</span><br>' +
-            '<span style="color: var(--text-secondary);">• Over-utilization</span>' +
-        '</div>' +
-    '</div>' +
-    
-    // Bubble Size Legend
-    '<div style="flex: 0.7; border-left: 1px solid var(--border-primary); padding-left: 16px;">' +
-        '<div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Bubble Size</div>' +
-        '<div style="display: flex; gap: 16px; align-items: center;">' +
-            '<div style="display: flex; align-items: center; gap: 6px;">' +
-                '<div style="width: 12px; height: 12px; border-radius: 50%; background: var(--text-tertiary);"></div>' +
-                '<span style="font-size: 11px; color: var(--text-primary);">Few Initiatives</span>' +
-            '</div>' +
-            '<div style="display: flex; align-items: center; gap: 6px;">' +
-                '<div style="width: 20px; height: 20px; border-radius: 50%; background: var(--text-tertiary);"></div>' +
-                '<span style="font-size: 11px; color: var(--text-primary);">Many Initiatives</span>' +
+            // Size
+            '<div style="display: flex; align-items: center; gap: 6px; border-left: 1px solid var(--border-primary); padding-left: 12px;">' +
+                '<span style="font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Size:</span>' +
+                '<div style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-tertiary);"></div>' +
+                '<span style="color: var(--text-primary);">→</span>' +
+                '<div style="width: 14px; height: 14px; border-radius: 50%; background: var(--text-tertiary);"></div>' +
+                '<span style="color: var(--text-tertiary);">Initiatives</span>' +
             '</div>' +
         '</div>' +
-    '</div>' +
-'</div>' +
+        // Chart Area
+        '<div style="flex: 1; position: relative; min-height: 400px;">' +
+            '<canvas id="critical-team-chart" style="width: 100%; height: 400px;"></canvas>' +
+        '</div>' +
+    '</div>';
     
     // Create small chart
     setTimeout(() => {
