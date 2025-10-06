@@ -5059,6 +5059,7 @@ function calculateTeamRiskPoints(teamName) {
 // Function to populate the Capacity Risk Map card
 function populateCapacityRiskMap() {
     const content = document.getElementById('critical-team-content');
+    content.style.padding = '0.5rem'; // Add this line
     if (!content) {
         console.error('Capacity Risk Map content element not found');
         return;
@@ -5089,12 +5090,9 @@ function populateCapacityRiskMap() {
     
     // Render the card
     content.innerHTML = `
-        <div style="display: flex; flex-direction: column; height: 100%;">
+        <div style="display: flex; flex-direction: column; height: 100%; padding: 0;">
             <div style="flex: 1; position: relative; min-height: 300px;">
     <canvas id="critical-team-chart" style="width: 100%; height: 300px;"></canvas>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-secondary); padding-top: 4px; border-top: 1px solid rgba(99, 102, 241, 0.1);">
-                <span>Risk: 0-10 Low, 11-20 Med, 21-30 High, 30+ Critical</span>
             </div>
         </div>
     `;
@@ -5202,49 +5200,49 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
                 }
             },
             scales: {
-                x: {
-                    title: {
-                        display: isExpanded,
-                        text: 'Risk Points',
-                        color: '#94a3b8',
-                        font: { size: isExpanded ? 15 : 11, weight: '600' }
-                    },
-                    min: 0,
-                    max: riskAxisMax,
-                    grid: {
-                        color: 'rgba(148, 163, 184, 0.1)',
-                        drawTicks: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        padding: isExpanded ? 10 : 4,
-                        font: { size: isExpanded ? 12 : 9 },
-                        callback: (value) => isExpanded ? value + ' pts' : value
-                    },
-                    border: { display: false }
-                },
-                y: {
-                    title: {
-                        display: isExpanded,
-                        text: 'Available Capacity %',
-                        color: '#94a3b8',
-                        font: { size: isExpanded ? 15 : 11, weight: '600' }
-                    },
-                    min: 0,
-                    max: capacityAxisMax,
-                    grid: {
-                        color: 'rgba(148, 163, 184, 0.1)',
-                        drawTicks: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        padding: isExpanded ? 10 : 4,
-                        font: { size: isExpanded ? 12 : 9 },
-                        callback: (value) => value + '%'
-                    },
-                    border: { display: false }
-                }
-            }
+    x: {
+        title: {
+            display: true,  // Changed from isExpanded - always show in bento box
+            text: 'Available Capacity (%)',  // SWAPPED - was 'Risk Points'
+            color: '#94a3b8',
+            font: { size: isExpanded ? 15 : 11, weight: '600' }
+        },
+        min: 0,
+        max: capacityAxisMax,  // SWAPPED - was riskAxisMax
+        grid: {
+            color: 'rgba(148, 163, 184, 0.1)',
+            drawTicks: false
+        },
+        ticks: {
+            color: '#94a3b8',
+            padding: isExpanded ? 10 : 4,
+            font: { size: isExpanded ? 12 : 9 },
+            callback: (value) => value + '%'  // SWAPPED - was pts
+        },
+        border: { display: false }
+    },
+    y: {
+        title: {
+            display: true,  // Changed from isExpanded - always show in bento box
+            text: 'Risk Points',  // SWAPPED - was 'Available Capacity %'
+            color: '#94a3b8',
+            font: { size: isExpanded ? 15 : 11, weight: '600' }
+        },
+        min: 0,
+        max: riskAxisMax,  // SWAPPED - was capacityAxisMax
+        grid: {
+            color: 'rgba(148, 163, 184, 0.1)',
+            drawTicks: false
+        },
+        ticks: {
+            color: '#94a3b8',
+            padding: isExpanded ? 10 : 4,
+            font: { size: isExpanded ? 12 : 9 },
+            callback: (value) => isExpanded ? value + ' pts' : value  // SWAPPED - was %
+        },
+        border: { display: false }
+    }
+}
         },
         plugins: isExpanded ? [{
             afterDraw: (chart) => {
