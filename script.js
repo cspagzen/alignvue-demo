@@ -5207,11 +5207,11 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     
     // Color mapping - Triage Theme
     const colorMap = {
-        'healthy': '#10b981',      // 🟢 Stable
-        'low-risk': '#fbbf24',     // 🟡 Monitored
-        'high-risk': '#fb923c',    // 🟠 Urgent
-        'critical': '#ef4444'      // 🔴 Critical
-    };
+    'healthy': '#10b981',      // 🟢 Green
+    'low-risk': '#facc15',     // 🟡 Pure Yellow
+    'high-risk': '#f97316',    // 🟠 Pure Orange
+    'critical': '#dc2626'      // 🔴 Pure Red
+};
     
     // Triage status labels
     const triageLabels = {
