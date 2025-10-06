@@ -5153,9 +5153,7 @@ content.innerHTML =
                     '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #10b981;"></div><span style="color: var(--text-primary);">Stable</span></div>' +
                     '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #facc15;"></div><span style="color: var(--text-primary);">Monitored</span></div>' +
                     '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #f97316;"></div><span style="color: var(--text-primary);">Urgent</span></div>' +
-                    '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #dc2626;"></div><span style="color: var(--text-primary);">Critical</span></div>' +
-                    '<div style="display: flex; align-items: center; gap: 3px;"></div><span style="color: var(--text-primary);">Based on Team Health Risk Factors</span></div>' +
-                '</div>' +
+                    '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #dc2626;"></div><span style="color: var(--text-primary);">Critical     Based on Team Health Dimensions</span></div>' +
             '</div>' +
             // Risk Points
             '<div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--border-primary); padding-left: 12px;">' +
