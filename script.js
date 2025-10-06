@@ -12446,6 +12446,74 @@ function initializeUtilizationChart(utilization, containerId = 'utilization-char
 }
 
 // ============================================================================
+// PORTFOLIO RISK SCORE CALCULATION FOR TEAM MODAL
+// ============================================================================
+
+function getRiskScoreColor(score) {
+    if (score >= 60) return '#dc2626';      // Critical - Red
+    if (score >= 40) return '#f97316';      // Urgent - Orange
+    if (score >= 20) return '#facc15';      // Monitored - Yellow
+    return '#10b981';                       // Stable - Green
+}
+
+function calculateRiskBreakdown(teamName) {
+    const team = boardData.teams[teamName];
+    if (!team) return { total: 0, health: 0, validation: 0, blockers: 0, focus: 0 };
+    
+    // 1. Team Health Risk
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    let healthRisk = 0;
+    
+    dimensions.forEach(dim => {
+        const value = team[dim];
+        if (value === 'critical' || value === 'Critical') healthRisk += 15;
+        else if (value === 'at-risk' || value === 'At Risk') healthRisk += 7;
+    });
+    
+    // 2. Get team's initiatives
+    const teamInitiatives = boardData.initiatives.filter(init => 
+        init.teams && init.teams.includes(teamName)
+    );
+    
+    // 3. Validation Risk
+    let validationRisk = 0;
+    teamInitiatives.forEach(init => {
+        if (init.validation === 'not-validated') validationRisk += 8;
+        else if (init.validation === 'in-validation') validationRisk += 4;
+    });
+    
+    // 4. Blocker Risk
+    let blockerRisk = 0;
+    teamInitiatives.forEach(init => {
+        const blockers = init.blockedStories || 0;
+        blockerRisk += Math.min(8, Math.floor(blockers / 3));
+    });
+    
+    // 5. Focus & Utilization Risk
+    let focusRisk = 0;
+    const initiativeCount = teamInitiatives.length;
+    if (initiativeCount > 5) {
+        focusRisk += (initiativeCount - 5) * 5;
+    } else if (initiativeCount > 3) {
+        focusRisk += (initiativeCount - 3) * 3;
+    }
+    
+    const utilization = team.jira?.utilization || 0;
+    if (utilization > 95) focusRisk += 20;
+    else if (utilization > 85) focusRisk += 10;
+    
+    const total = healthRisk + validationRisk + blockerRisk + focusRisk;
+    
+    return {
+        total: Math.round(total),
+        health: healthRisk,
+        validation: validationRisk,
+        blockers: blockerRisk,
+        focus: focusRisk
+    };
+}
+
+// ============================================================================
 // ENHANCED TEAM MODAL WITH EDIT-IN-PLACE
 // ============================================================================
 
