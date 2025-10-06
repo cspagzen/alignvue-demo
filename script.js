@@ -12587,7 +12587,7 @@ function showTeamModal(teamName, teamData) {
         <div class="grid grid-cols-4 gap-3">
             <!-- Critical Status Card -->
             <div class="p-4 rounded-lg text-center" style="background: ${criticalCount > 0 ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%)' : 'var(--bg-tertiary)'}; border: 2px solid ${criticalCount > 0 ? 'var(--accent-red)' : 'var(--border-primary)'};">
-                <div class="text-3xl font-bold mb-1" style="color: ${criticalCount > 0 ? 'var(--accent-red)' : 'var(--text-primary)'};">${criticalCount > 0 ? 'CRITICAL' : 'OK'}</div>
+                <div class="text-2xl font-bold mb-1" style="color: ${criticalCount > 0 ? 'var(--accent-red)' : 'var(--text-primary)'};">${criticalCount > 0 ? 'CRITICAL' : 'OK'}</div>
                 <div class="text-xs" style="color: var(--text-secondary);">${criticalCount} dimension${criticalCount !== 1 ? 's' : ''} critical${atRiskCount > 0 ? `, ${atRiskCount} at risk` : ''}</div>
             </div>
             
