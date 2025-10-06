@@ -5155,7 +5155,7 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     const colorMap = {
         'healthy': '#10b981',
         'low-risk': '#fbbf24',
-        'high-risk': '#ea580c',
+        'high-risk': '#fb923c',  // Updated to brighter orange
         'critical': '#ef4444'
     };
     
@@ -5170,10 +5170,10 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     }));
     
     // Calculate dynamic axis maximums
-    const maxRisk = Math.max(...teamData.map(t => t.riskPoints), 10); // At least 10
+    const maxRisk = Math.max(...teamData.map(t => t.riskPoints), 10);
     const maxCapacity = Math.max(...teamData.map(t => t.availableCapacity));
-    const riskAxisMax = Math.ceil(maxRisk * 1.15); // Add 15% buffer
-    const capacityAxisMax = Math.ceil(maxCapacity * 1.15); // Add 15% buffer
+    const riskAxisMax = Math.ceil(maxRisk * 1.15);
+    const capacityAxisMax = Math.ceil(maxCapacity * 1.15);
     
     console.log('Bubble chart data:', bubbleData);
     console.log('Color mapping:', bubbleData.map(d => ({ team: d.teamName, health: d.health, color: colorMap[d.health] })));
@@ -5182,12 +5182,70 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     const datasets = [{
         data: bubbleData,
         backgroundColor: bubbleData.map(d => {
-            const color = colorMap[d.health] || colorMap['low-risk']; // fallback to yellow
+            const color = colorMap[d.health] || colorMap['low-risk'];
             return color + '40';
         }),
         borderColor: bubbleData.map(d => colorMap[d.health] || colorMap['low-risk']),
         borderWidth: 2
     }];
+    
+    // Custom plugin to draw quadrant labels
+    const quadrantLabelsPlugin = {
+        id: 'quadrantLabels',
+        afterDatasetsDraw(chart) {
+            const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
+            
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Calculate quadrant centers
+            const quadrants = [
+                { 
+                    x: left + width * 0.25, 
+                    y: top + height * 0.25, 
+                    text: 'Underutilized', 
+                    subtext: 'Low Risk + High Capacity', 
+                    color: 'rgba(16, 185, 129, 0.7)' 
+                },
+                { 
+                    x: left + width * 0.75, 
+                    y: top + height * 0.25, 
+                    text: 'Available but Loaded', 
+                    subtext: 'High Risk + High Capacity', 
+                    color: 'rgba(251, 191, 36, 0.7)' 
+                },
+                { 
+                    x: left + width * 0.25, 
+                    y: top + height * 0.75, 
+                    text: 'Healthy & Busy', 
+                    subtext: 'Low Risk + Low Capacity', 
+                    color: 'rgba(16, 185, 129, 0.7)' 
+                },
+                { 
+                    x: left + width * 0.75, 
+                    y: top + height * 0.75, 
+                    text: 'DANGER ZONE', 
+                    subtext: 'High Risk + Low Capacity', 
+                    color: 'rgba(239, 68, 68, 0.8)' 
+                }
+            ];
+            
+            quadrants.forEach(quad => {
+                // Draw headline
+                ctx.fillStyle = quad.color;
+                ctx.font = 'bold 16px Inter, sans-serif';
+                ctx.fillText(quad.text, quad.x, quad.y - 10);
+                
+                // Draw subtext
+                ctx.font = '11px Inter, sans-serif';
+                ctx.fillStyle = 'rgba(156, 163, 175, 0.6)';
+                ctx.fillText(quad.subtext, quad.x, quad.y + 10);
+            });
+            
+            ctx.restore();
+        }
+    };
     
     // Destroy existing chart if it exists
     if (capacityRiskChart) {
@@ -5224,100 +5282,64 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
                         title: (context) => context[0].raw.teamName,
                         label: (context) => {
                             const data = context.raw;
-                            const healthText = data.health ? String(data.health).replace('-', ' ') : 'unknown';
-                            const labels = [
-                                `Risk: ${data.x} pts`,
-                                `Capacity: ${data.y}%`,
+                            const healthText = data.health ? 
+                                data.health.replace('-', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') 
+                                : 'Unknown';
+                            return [
+                                `Risk Points: ${data.x}`,
+                                `Available Capacity: ${data.y.toFixed(1)}%`,
                                 `Initiatives: ${data.initiatives}`,
-                                `Health: ${healthText}`
+                                `Status: ${healthText}`
                             ];
-                            if (isExpanded) labels.push('', 'Click for breakdown →');
-                            return labels;
                         }
                     }
                 }
             },
-            
-            layout: {
-    padding: {
-        top: 10,
-        bottom: 10,
-        left: 10,
-        right: 10
-    }
-},
-            
             scales: {
-    x: {
-        title: {
-            display: true,
-            text: 'Risk Points',
-            color: '#94a3b8',
-            font: { size: isExpanded ? 15 : 11, weight: '600' }
-        },
-        min: 0,
-        max: riskAxisMax,
-        grid: {
-            color: 'rgba(148, 163, 184, 0.1)',
-            drawTicks: false
-        },
-        ticks: {
-            color: '#94a3b8',
-            padding: isExpanded ? 10 : 4,
-            font: { size: isExpanded ? 12 : 9 },
-            callback: (value) => isExpanded ? value + ' pts' : value
-        },
-        border: { display: false }
-    },
-    y: {
-        title: {
-            display: true,
-            text: 'Available Capacity (%)',
-            color: '#94a3b8',
-            font: { size: isExpanded ? 15 : 11, weight: '600' }
-        },
-        min: 0,
-        max: capacityAxisMax,
-        grid: {
-            color: 'rgba(148, 163, 184, 0.1)',
-            drawTicks: false
-        },
-        ticks: {
-            color: '#94a3b8',
-            padding: isExpanded ? 10 : 4,
-            font: { size: isExpanded ? 12 : 9 },
-            callback: (value) => value + '%'
-        },
-        border: { display: false }
-    }
-}
-        },
-        plugins: isExpanded ? [{
-            afterDraw: (chart) => {
-                const ctx = chart.ctx;
-                const chartArea = chart.chartArea;
-                
-                ctx.save();
-                ctx.font = 'bold 11px Inter, sans-serif';
-                
-                const drawLabel = (text, x, y, align, color, bgColor) => {
-                    const padding = 6;
-                    const metrics = ctx.measureText(text);
-                    const bgX = align === 'left' ? x : x - metrics.width - padding * 2;
-                    ctx.fillStyle = bgColor;
-                    ctx.fillRect(bgX, y - 14 - padding, metrics.width + padding * 2, 14 + padding * 2);
-                    ctx.fillStyle = color;
-                    ctx.fillText(text, align === 'left' ? x + padding : x - padding, y);
-                };
-                
-                drawLabel('READY FOR MORE WORK', chartArea.left + 15, chartArea.top + 30, 'left', '#10b981', 'rgba(16, 185, 129, 0.15)');
-                drawLabel('HIGH RISK BUT HAVE CAPACITY', chartArea.right - 15, chartArea.top + 30, 'right', '#f59e0b', 'rgba(245, 158, 11, 0.15)');
-                drawLabel('FULLY LOADED', chartArea.left + 15, chartArea.bottom - 20, 'left', '#3b82f6', 'rgba(59, 130, 246, 0.15)');
-                drawLabel('CRISIS: HIGH RISK + NO CAPACITY', chartArea.right - 15, chartArea.bottom - 20, 'right', '#ef4444', 'rgba(239, 68, 68, 0.2)');
-                
-                ctx.restore();
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    min: 0,
+                    max: riskAxisMax,
+                    ticks: {
+                        stepSize: 10,
+                        color: '#94a3b8',
+                        font: { size: isExpanded ? 12 : 10 }
+                    },
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawBorder: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Risk Points',
+                        color: '#cbd5e1',
+                        font: { size: isExpanded ? 14 : 12, weight: 'bold' }
+                    }
+                },
+                y: {
+                    min: 0,
+                    max: capacityAxisMax,
+                    ticks: {
+                        stepSize: 5,
+                        callback: (value) => value + '%',
+                        color: '#94a3b8',
+                        font: { size: isExpanded ? 12 : 10 }
+                    },
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawBorder: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Available Capacity (%)',
+                        color: '#cbd5e1',
+                        font: { size: isExpanded ? 14 : 12, weight: 'bold' }
+                    }
+                }
             }
-        }] : []
+        },
+        plugins: [quadrantLabelsPlugin]
     });
 }
 
