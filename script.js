@@ -2334,7 +2334,6 @@ teamCard.innerHTML =
     updateProgressCard();
     updateHealthCard();
     updateAtRiskCard();
-    updateResourceCard();
     updateDeliveryConfidenceCard();
     updateCapacityRiskMapCard();
     updateRecentlyCompletedCard();
@@ -4677,23 +4676,6 @@ function getPriorityNumberColor(type) {
         case 'emergent': return '#ec4899';     // Pink for emergent
         default: return '#6b7280';             // Gray fallback
     }
-}
-      
-function updateResourceCard() {
-    const content = document.getElementById('resource-alerts-content');
-    const resourceAnalysis = calculateResourceAlerts();
-    
-    content.innerHTML = `
-        <div class="text-center space-y-2">
-            <div class="bento-medium-metric">${resourceAnalysis.overloadedTeams}</div>
-            <div class="text-xs" style="color: var(--text-secondary);">Overloaded Teams</div>
-            <div class="text-xs" style="color: var(--text-tertiary);">Avg ${resourceAnalysis.avgTeamsPerInit} teams/init</div>
-        </div>
-    `;
-    content.classList.add('under-construction-content');
-    const card = content.closest('.bento-card');
-    card.style.position = 'relative';
-    card.insertAdjacentHTML('beforeend', '<div class="under-construction-overlay"><div class="under-construction-text">Under Construction</div></div>');
 }
 
 function updateDeliveryConfidenceCard() {
