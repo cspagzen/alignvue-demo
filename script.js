@@ -5088,12 +5088,12 @@ function populateCapacityRiskMap() {
     console.log('Team data for bubble chart:', teamData.map(t => ({ name: t.name, health: t.health })));
     
     // Render the card
-    content.innerHTML = `
-        <div style="display: flex; flex-direction: column; height: 100%; padding: 0; margin: 0;">
-    <div style="flex: 1; position: relative; min-height: 300px; padding: 0;">
-            </div>
-        </div>
-    `;
+content.innerHTML = 
+    '<div style="display: flex; flex-direction: column; height: 100%; padding: 0; margin: 0;">' +
+        '<div style="flex: 1; position: relative; min-height: 300px; padding: 0;">' +
+            '<canvas id="critical-team-chart" style="width: 100%; height: 300px;"></canvas>' +
+        '</div>' +
+    '</div>';
     
     // Create small chart
     setTimeout(() => {
