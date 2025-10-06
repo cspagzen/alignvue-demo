@@ -152,41 +152,85 @@ class VueSenseModal {
   }
   
   renderWelcome() {
-    const welcomeHTML = `
-      <div class="vuesense-welcome">
-        <div class="vuesense-welcome-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
-          </svg>
-        </div>
-        <h3>Welcome to VueSense AI</h3>
-        <p>Ask me anything about your portfolio, teams, or initiatives. I'm here to help you make data-driven decisions.</p>
-        
-        <div class="vuesense-suggestions">
-          <div class="vuesense-suggestions-title">Try asking:</div>
+  const welcomeHTML = `
+    <div class="vuesense-welcome">
+      <div class="vuesense-welcome-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+        </svg>
+      </div>
+      <h3>Welcome to VueSense AI</h3>
+      <p>Strategic portfolio insights powered by your data</p>
+      
+      <div class="vuesense-suggestions">
+        <div class="vuesense-suggestions-title">Try asking:</div>
+        <div class="ai-prompt-grid">
           ${this.getSuggestedQuestions().map(q => `
-            <button class="vuesense-suggestion-btn" onclick="window.vuesenseModal.askSuggestion('${q.text}')">
-              <svg class="vuesense-suggestion-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
-              </svg>
-              <span>${q.text}</span>
+            <button class="ai-prompt-card" onclick="window.vuesenseModal.askSuggestion('${q.text.replace(/'/g, "\\'")}')" data-category="${q.category}">
+              <div class="ai-prompt-icon">${q.icon}</div>
+              <div class="ai-prompt-content">
+                <div class="ai-prompt-text">${q.text}</div>
+                <div class="ai-prompt-description">${q.description}</div>
+              </div>
             </button>
           `).join('')}
         </div>
+        
+        <div class="ai-welcome-tips">
+          <div class="ai-tip">
+            <span class="ai-tip-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+            </span>
+            <span class="ai-tip-text">Ask about specific initiatives or teams by name</span>
+          </div>
+          <div class="ai-tip">
+            <span class="ai-tip-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="12" height="12" x="2" y="10" rx="2" ry="2"/><path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6"/><path d="M6 18h.01"/><path d="M10 14h.01"/><path d="M15 6h.01"/><path d="M18 9h.01"/></svg>
+            </span>
+            <span class="ai-tip-text">Try "what if" scenarios to explore portfolio changes</span>
+          </div>
+          <div class="ai-tip">
+            <span class="ai-tip-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16v5"/><path d="M16 14v7"/><path d="M20 10v11"/><path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15"/><path d="M4 18v3"/><path d="M8 14v7"/></svg>
+            </span>
+            <span class="ai-tip-text">Request analysis on capacity, risk, or validation</span>
+          </div>
+        </div>
       </div>
-    `;
-    
-    this.messagesContainer.innerHTML = welcomeHTML;
-  }
+    </div>
+  `;
+  
+  this.messagesContainer.innerHTML = welcomeHTML;
+}
   
   getSuggestedQuestions() {
-    return [
-      { text: "What should I focus on this week?" },
-      { text: "Which teams need the most support?" },
-      { text: "Are any initiatives at risk?" },
-      { text: "Show me capacity bottlenecks" }
-    ];
-  }
+  return [
+    { 
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>`,
+      text: "How balanced is my portfolio right now?",
+      description: "Analyzes Strategic/KTLO/Emergent distribution and resource allocation",
+      category: "strategic"
+    },
+    { 
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/></svg>`,
+      text: "Which teams are overloaded and need help?",
+      description: "Identifies capacity bottlenecks and health risks across teams",
+      category: "tactical"
+    },
+    { 
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></svg>`,
+      text: "What if we shelve Integration Hub to free up capacity?",
+      description: "Simulates removing an initiative and shows capacity/impact",
+      category: "scenario"
+    },
+    { 
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="8" rx="1"/><path d="M17 14v7"/><path d="M7 14v7"/><path d="M17 3v3"/><path d="M7 3v3"/><path d="M10 14 2.3 6.3"/><path d="m14 6 7.7 7.7"/><path d="m8 6 8 8"/></svg>`,
+      text: "What's blocking our delivery confidence?",
+      description: "Pinpoints risk factors, validation gaps, and capacity issues",
+      category: "analysis"
+    }
+  ];
+}
   
   askSuggestion(question) {
   this.inputField.value = question;
