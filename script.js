@@ -5148,22 +5148,23 @@ content.innerHTML =
         '<div style="display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 8px 12px; margin-bottom: 8px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary); font-size: 10px;">' +
             // Team Health
             '<div style="display: flex; align-items: center; gap: 8px;">' +
-                '<span style="font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Color:</span>' +
+                '<span style="font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Bubble Color: Team Health</span>' +
                 '<div style="display: flex; gap: 6px;">' +
                     '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #10b981;"></div><span style="color: var(--text-primary);">Stable</span></div>' +
                     '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #facc15;"></div><span style="color: var(--text-primary);">Monitored</span></div>' +
                     '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #f97316;"></div><span style="color: var(--text-primary);">Urgent</span></div>' +
                     '<div style="display: flex; align-items: center; gap: 3px;"><div style="width: 10px; height: 10px; border-radius: 50%; background: #dc2626;"></div><span style="color: var(--text-primary);">Critical</span></div>' +
+                    '<div style="display: flex; align-items: center; gap: 3px;"></div><span style="color: var(--text-primary);">Based on Team Health Risk Factors</span></div>' +
                 '</div>' +
             '</div>' +
             // Risk Points
             '<div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--border-primary); padding-left: 12px;">' +
-                '<span style="font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">X-Axis:</span>' +
+                '<span style="font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Risk Points =</span>' +
                 '<span style="color: var(--text-tertiary);">Health + Validation + Blockers + Focus + Utilization</span>' +
             '</div>' +
             // Size
             '<div style="display: flex; align-items: center; gap: 6px; border-left: 1px solid var(--border-primary); padding-left: 12px;">' +
-                '<span style="font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Size:</span>' +
+                '<span style="font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Bubble Size:</span>' +
                 '<div style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-tertiary);"></div>' +
                 '<span style="color: var(--text-primary);">→</span>' +
                 '<div style="width: 14px; height: 14px; border-radius: 50%; background: var(--text-tertiary);"></div>' +
