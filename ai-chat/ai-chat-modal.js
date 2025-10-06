@@ -280,30 +280,33 @@ class VueSenseModal {
   }
   
   addMessage(text, type) {
-    const processedText = type === 'ai' ? makeEntitiesClickable(text) : text;
-    
-    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    
-    const avatarIcon = type === 'user' 
-      ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
-      : '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg>';
-    
-    const formattedText = type === 'ai' ? this.formatMarkdown(text) : this.escapeHtml(text);
-    
-    const messageHTML = `
-      <div class="vuesense-message ${type}">
-        <div class="vuesense-message-avatar">${avatarIcon}</div>
-        <div class="vuesense-message-content">
-          <div class="vuesense-message-bubble">${processedText}</div>
-          <div class="vuesense-message-time">${time}</div>
-        </div>
+  const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  
+  const avatarIcon = type === 'user' 
+    ? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
+    : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg>`;
+  
+  // ADD THIS LINE:
+  const processedText = type === 'ai' ? processAIResponse(text) : text;
+  
+  const messageHTML = `
+    <div class="vuesense-message ${type}">
+      <div class="vuesense-message-avatar">
+        ${avatarIcon}
       </div>
-    `;
-    
-    this.messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
-    this.messages.push({ type, text, time });
-    this.scrollToBottom();
-  }
+      <div class="vuesense-message-content">
+        <div class="vuesense-message-bubble">
+          ${processedText}   <!-- CHANGE THIS: was ${text}, now ${processedText} -->
+        </div>
+        <div class="vuesense-message-time">${time}</div>
+      </div>
+    </div>
+  `;
+  
+  this.messages.push({ text, type, time });
+  this.messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+  this.scrollToBottom();
+}
   
   formatMarkdown(text) {
   // Escape HTML first
