@@ -5323,6 +5323,38 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
         }
     };
     
+    // Custom plugin to draw center dots on bubbles
+const centerDotsPlugin = {
+    id: 'centerDots',
+    afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        const meta = chart.getDatasetMeta(0);
+        const dataset = chart.data.datasets[0];
+        
+        ctx.save();
+        
+        meta.data.forEach((bubble, index) => {
+            const { x, y } = bubble;
+            
+            // Get the bubble's border color
+            const bubbleColor = dataset.borderColor[index];
+            
+            // Draw center dot with same color as bubble border
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.fillStyle = bubbleColor;
+            ctx.fill();
+            
+            // Optional: Add thin white border for contrast
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
+        
+        ctx.restore();
+    }
+};
+    
     // Destroy existing chart if it exists
     if (capacityRiskChart) {
         capacityRiskChart.destroy();
@@ -5413,8 +5445,8 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
                 }
             }
         },
-        plugins: [quadrantLabelsPlugin]
-    });
+       plugins: [quadrantLabelsPlugin, centerDotsPlugin]
+});
 }
 
 
