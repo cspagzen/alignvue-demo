@@ -4358,3 +4358,47 @@ input[type="number"] {
     margin-bottom: 0.5rem;
     padding-bottom: 0.5rem;
 }
+
+/* Modal scrolling improvements */
+.modal-content {
+    max-height: 85vh;
+    max-width: 900px;
+    width: 90vw;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for modal */
+.modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive adjustments for target resolutions */
+@media (max-width: 1366px) {
+    .modal-content {
+        width: 95vw;
+        max-width: 800px;
+    }
+}
+
+@media (max-width: 900px) {
+    .modal-content {
+        width: 98vw;
+        max-height: 90vh;
+    }
+}
