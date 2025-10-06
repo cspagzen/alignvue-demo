@@ -2875,7 +2875,7 @@ mendoza-line:hover {
   gap: 1rem;
   padding: 2rem 2rem 0 1.5rem;
   grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: repeat(3, minmax(120px, auto)) minmax(200px, auto); /* Increased from 80px to 200px */
+  grid-template-rows: repeat(3, minmax(120px, auto)) minmax(300px, auto); /* Increased from 80px to 200px */
 }
   
   /* Mobile 2-column layout */

@@ -5090,20 +5090,11 @@ function populateCapacityRiskMap() {
     // Render the card
     content.innerHTML = `
         <div style="display: flex; flex-direction: column; height: 100%;">
-            <div style="flex: 1; position: relative; min-height: 180px;">
-    <canvas id="critical-team-chart" style="width: 100%; height: 180px;"></canvas>
+            <div style="flex: 1; position: relative; min-height: 300px;">
+    <canvas id="critical-team-chart" style="width: 100%; height: 300px;"></canvas>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-secondary); padding-top: 4px; border-top: 1px solid rgba(99, 102, 241, 0.1);">
                 <span>Risk: 0-10 Low, 11-20 Med, 21-30 High, 30+ Critical</span>
-                <button onclick="expandCapacityRiskMap()" style="background: transparent; border: 1px solid rgba(99, 102, 241, 0.3); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; gap: 4px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 3 21 3 21 9"></polyline>
-                        <polyline points="9 21 3 21 3 15"></polyline>
-                        <line x1="21" y1="3" x2="14" y2="10"></line>
-                        <line x1="3" y1="21" x2="10" y2="14"></line>
-                    </svg>
-                    Expand
-                </button>
             </div>
         </div>
     `;
