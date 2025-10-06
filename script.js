@@ -1711,6 +1711,27 @@ teamForm.addEventListener('submit', handleTeamSubmit);
             modal.classList.add('show');
         }
 
+// Accessibility helper function
+function announceToScreenReader(message) {
+    const announcement = document.createElement('div');
+    announcement.setAttribute('role', 'status');
+    announcement.setAttribute('aria-live', 'polite');
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.style.position = 'absolute';
+    announcement.style.left = '-10000px';
+    announcement.style.width = '1px';
+    announcement.style.height = '1px';
+    announcement.style.overflow = 'hidden';
+    announcement.textContent = message;
+    
+    document.body.appendChild(announcement);
+    
+    // Remove after announcement
+    setTimeout(() => {
+        document.body.removeChild(announcement);
+    }, 1000);
+}
+
         function closeModal() {
     const modal = document.getElementById('detail-modal');
     modal.classList.remove('show');
