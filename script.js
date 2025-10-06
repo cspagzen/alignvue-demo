@@ -12536,146 +12536,133 @@ function showTeamModal(teamName, teamData) {
     const healthStatus = getTeamOverallHealth(teamData);
     
     content.innerHTML = `
-        <div class="space-y-6">
-        <div class="space-y-6">
-            <!-- Top Row: Risk Status + Performance Metrics -->
-            <div class="grid grid-cols-4 gap-6">
-                
-                <!-- Left: Overall Health Status -->
-                <div class="p-4 rounded-lg text-white" style="background: ${getHealthStatusColor(healthStatus.level)};">
-                    <div class="text-2xl font-bold">${healthStatus.text}</div>
-                    <div class="text-sm opacity-90">${getHealthStatusDescription(healthStatus.level, teamData)}</div>
-                </div>
-                
-                <!-- Right: Performance Metrics Grid -->
-                <div class="grid grid-cols-1 gap-3">
-                    <!-- Utilization Chart -->
-                    <div id="utilization-container" class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                        <div style="width: 120px; height: 120px; margin: 0 auto;">
-                            <canvas id="utilization-chart" width="120" height="120"></canvas>
-                        </div>
-                        <div class="text-base mt-2" style="color: var(--text-secondary);">Utilization</div>
-                    </div>
-                </div>
-                
-                <!-- Active Stories -->
-                <div class="p-4 rounded-lg text-center flex flex-col items-center justify-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="text-3xl font-bold" style="color: var(--text-primary);">${teamData.jira?.stories || 'null'}</div>
-                   <div class="text-base" style="color: var(--text-secondary);">Active Stories</div>
-                </div>
-                
-                <!-- Blockers -->
-                <div class="p-4 rounded-lg text-center flex flex-col items-center justify-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    <div class="text-3xl font-bold" style="color: var(--text-primary);">${teamData.jira?.blockers || 'null'}</div>
-                    <div class="text-base" style="color: var(--text-secondary);">Blockers</div>
-                </div>
+    <div class="space-y-6">
+        <!-- Top Section: Status Cards -->
+        <div class="grid grid-cols-4 gap-3">
+            <!-- Critical Status Card -->
+            <div class="p-4 rounded-lg text-center" style="background: ${criticalCount > 0 ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%)' : 'var(--bg-tertiary)'}; border: 2px solid ${criticalCount > 0 ? 'var(--accent-red)' : 'var(--border-primary)'};">
+                <div class="text-3xl font-bold mb-1" style="color: ${criticalCount > 0 ? 'var(--accent-red)' : 'var(--text-primary)'};">${criticalCount > 0 ? 'CRITICAL' : 'OK'}</div>
+                <div class="text-xs" style="color: var(--text-secondary);">${criticalCount} dimension${criticalCount !== 1 ? 's' : ''} critical${atRiskCount > 0 ? `, ${atRiskCount} at risk` : ''}</div>
             </div>
             
-            <!-- Health Dimensions Section -->
-            <div>
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold flex items-center gap-3" style="color: var(--text-primary);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l11 11z"/>
-                        </svg>
-                        Health Dimensions
-                    </h3>
-                    <button 
-                        id="edit-health-btn" 
-                        onclick="toggleHealthEditMode('${teamName}')"
-                        class="flex items-center gap-2 px-3 py-1 text-sm rounded border hover:bg-gray-50 transition-colors"
-                        style="border-color: var(--border-primary); color: var(--text-secondary);"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
-                        </svg>
-                        Edit
-                    </button>
+            <!-- Utilization Chart Card -->
+            <div id="utilization-container" class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                <div style="width: 80px; height: 80px; margin: 0 auto;">
+                    <canvas id="utilization-chart" width="80" height="80"></canvas>
                 </div>
-                
-                <!-- Health Dimensions Grid (2x3) -->
-                <div id="health-dimensions-container" class="grid grid-cols-2 gap-3">
-                    ${renderHealthDimensionsGrid(teamData, false)}
-                </div>
+                <div class="text-white text-sm mt-2">Utilization</div>
             </div>
             
-            
+            <!-- Active Stories Card -->
+            <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                <div class="text-3xl font-bold mb-1" style="color: var(--text-primary);">${teamData.jira?.stories || 0}</div>
+                <div class="text-xs" style="color: var(--text-secondary);">Active Stories</div>
             </div>
             
-            
-            // Portfolio Risk Score Section - INSERT HERE (between Health Dimensions and Team Comments)
-'<div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid var(--border-primary);">' +
-    '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">' +
-        '<div style="display: flex; align-items: center; gap: 12px;">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
-                '<circle cx="12" cy="12" r="10"/>' +
-                '<path d="M12 8v4"/>' +
-                '<path d="m12 16 .01 0"/>' +
-            '</svg>' +
-            '<span style="font-size: 18px; font-weight: 600; color: var(--text-primary);">Portfolio Risk Score</span>' +
-        '</div>' +
-        '<span style="font-size: 32px; font-weight: 700; color: ' + getRiskScoreColor(riskBreakdown.total) + ';">' + riskBreakdown.total + '</span>' +
-    '</div>' +
-    '<div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">Aggregate risk across all initiatives this team is working on</div>' +
-    '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">' +
-        '<div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">' +
-            '<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
-                '<span style="font-size: 12px; color: var(--text-secondary);">Team Health</span>' +
-                '<span style="font-size: 18px; font-weight: 600; color: ' + (riskBreakdown.health > 30 ? '#dc2626' : riskBreakdown.health > 15 ? '#f97316' : '#10b981') + ';">' + riskBreakdown.health + '</span>' +
-            '</div>' +
-        '</div>' +
-        '<div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">' +
-            '<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
-                '<span style="font-size: 12px; color: var(--text-secondary);">Validation</span>' +
-                '<span style="font-size: 18px; font-weight: 600; color: ' + (riskBreakdown.validation > 20 ? '#dc2626' : riskBreakdown.validation > 10 ? '#f97316' : '#10b981') + ';">' + riskBreakdown.validation + '</span>' +
-            '</div>' +
-        '</div>' +
-        '<div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">' +
-            '<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
-                '<span style="font-size: 12px; color: var(--text-secondary);">Blockers</span>' +
-                '<span style="font-size: 18px; font-weight: 600; color: ' + (riskBreakdown.blockers > 15 ? '#dc2626' : riskBreakdown.blockers > 8 ? '#f97316' : '#10b981') + ';">' + riskBreakdown.blockers + '</span>' +
-            '</div>' +
-        '</div>' +
-        '<div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">' +
-            '<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
-                '<span style="font-size: 12px; color: var(--text-secondary);">Focus & Load</span>' +
-                '<span style="font-size: 18px; font-weight: 600; color: ' + (riskBreakdown.focus > 15 ? '#dc2626' : riskBreakdown.focus > 8 ? '#f97316' : '#10b981') + ';">' + riskBreakdown.focus + '</span>' +
-            '</div>' +
-        '</div>' +
-    '</div>' +
-'</div>' +
-            
-            
-            
-            <!-- NEW: Team Comments Section -->
-            <div id="team-comments-section">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
+            <!-- Blockers Card -->
+            <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                <div class="text-3xl font-bold mb-1" style="color: ${(teamData.jira?.flagged || 0) > 0 ? 'var(--accent-orange)' : 'var(--text-primary)'};">${teamData.jira?.flagged || 0}</div>
+                <div class="text-xs" style="color: var(--text-secondary);">Blockers</div>
+            </div>
+        </div>
+        
+        <!-- Health Dimensions Section -->
+        <div>
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                     </svg>
-                    Team Comments
-                </h3>
-                <div id="team-comments-display" class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                    ${renderTeamComments(teamData)}
+                    <h3 class="text-lg font-semibold" style="color: var(--text-primary);">Health Dimensions</h3>
                 </div>
+                <button id="edit-health-btn" 
+                    class="flex items-center gap-2 px-3 py-1 text-sm rounded border hover:bg-gray-50 transition-colors"
+                    style="border-color: var(--border-primary); color: var(--text-secondary);"
+                    onclick="toggleHealthEditMode('${teamName}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
+                    </svg>
+                    Edit
+                </button>
             </div>
             
-            <!-- Health Insights Section -->
-            <div>
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
+            <!-- Health Dimensions Grid (2x3) -->
+            <div id="health-dimensions-container" class="grid grid-cols-2 gap-3">
+                ${renderHealthDimensionsGrid(teamData, false)}
+            </div>
+        </div>
+        
+        <!-- Portfolio Risk Score Section -->
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid var(--border-primary);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 6v6l4 2"/>
+                        <path d="M12 8v4"/>
+                        <path d="m12 16 .01 0"/>
                     </svg>
-                    Health Insights
-                </h3>
-                <div class="space-y-3" style="color: var(--text-secondary);">
-                    ${generateHealthInsights(teamData)}
+                    <span style="font-size: 18px; font-weight: 600; color: var(--text-primary);">Portfolio Risk Score</span>
+                </div>
+                <span style="font-size: 32px; font-weight: 700; color: ${getRiskScoreColor(riskBreakdown.total)};">${riskBreakdown.total}</span>
+            </div>
+            <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">Aggregate risk across all initiatives this team is working on</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-size: 12px; color: var(--text-secondary);">Team Health</span>
+                        <span style="font-size: 18px; font-weight: 600; color: ${riskBreakdown.health > 30 ? '#dc2626' : riskBreakdown.health > 15 ? '#f97316' : '#10b981'};">${riskBreakdown.health}</span>
+                    </div>
+                </div>
+                <div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-size: 12px; color: var(--text-secondary);">Validation</span>
+                        <span style="font-size: 18px; font-weight: 600; color: ${riskBreakdown.validation > 20 ? '#dc2626' : riskBreakdown.validation > 10 ? '#f97316' : '#10b981'};">${riskBreakdown.validation}</span>
+                    </div>
+                </div>
+                <div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-size: 12px; color: var(--text-secondary);">Blockers</span>
+                        <span style="font-size: 18px; font-weight: 600; color: ${riskBreakdown.blockers > 15 ? '#dc2626' : riskBreakdown.blockers > 8 ? '#f97316' : '#10b981'};">${riskBreakdown.blockers}</span>
+                    </div>
+                </div>
+                <div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-size: 12px; color: var(--text-secondary);">Focus & Load</span>
+                        <span style="font-size: 18px; font-weight: 600; color: ${riskBreakdown.focus > 15 ? '#dc2626' : riskBreakdown.focus > 8 ? '#f97316' : '#10b981'};">${riskBreakdown.focus}</span>
+                    </div>
                 </div>
             </div>
         </div>
-    `;
+        
+        <!-- Team Comments Section -->
+        <div id="team-comments-section">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+                </svg>
+                Team Comments
+            </h3>
+            <div id="team-comments-display" class="p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                ${renderTeamComments(teamData)}
+            </div>
+        </div>
+        
+        <!-- Health Insights Section -->
+        <div>
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-3" style="color: var(--text-primary);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+                Health Insights
+            </h3>
+            <div class="space-y-3" style="color: var(--text-secondary);">
+                ${generateHealthInsights(teamData)}
+            </div>
+        </div>
+    </div>
+`;
     
     // Initialize the utilization chart
     setTimeout(() => {
