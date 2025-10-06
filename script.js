@@ -5088,10 +5088,50 @@ function populateCapacityRiskMap() {
     console.log('Team data for bubble chart:', teamData.map(t => ({ name: t.name, health: t.health })));
     
     // Render the card
-content.innerHTML = 
+content.innerHTML =
     '<div style="display: flex; flex-direction: column; height: 100%; padding: 0; margin: 0;">' +
-        '<div style="flex: 1; position: relative; min-height: 400px; padding: 0;">' +
-            '<canvas id="critical-team-chart" style="width: 100%; height: 500px;"></canvas>' +
+        // Legend Section
+        '<div style="display: flex; gap: 32px; padding: 12px 16px; margin-bottom: 8px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid var(--border-primary);">' +
+            // Bubble Color Legend
+            '<div style="flex: 1;">' +
+                '<div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Bubble Color = Risk Level</div>' +
+                '<div style="display: flex; gap: 16px; flex-wrap: wrap;">' +
+                    '<div style="display: flex; align-items: center; gap: 6px;">' +
+                        '<div style="width: 16px; height: 16px; border-radius: 50%; background: #10b981;"></div>' +
+                        '<span style="font-size: 12px; color: var(--text-primary);">Low (0-4 pts)</span>' +
+                    '</div>' +
+                    '<div style="display: flex; align-items: center; gap: 6px;">' +
+                        '<div style="width: 16px; height: 16px; border-radius: 50%; background: #fbbf24;"></div>' +
+                        '<span style="font-size: 12px; color: var(--text-primary);">Medium (5-9 pts)</span>' +
+                    '</div>' +
+                    '<div style="display: flex; align-items: center; gap: 6px;">' +
+                        '<div style="width: 16px; height: 16px; border-radius: 50%; background: #fb923c;"></div>' +
+                        '<span style="font-size: 12px; color: var(--text-primary);">High (10-19 pts)</span>' +
+                    '</div>' +
+                    '<div style="display: flex; align-items: center; gap: 6px;">' +
+                        '<div style="width: 16px; height: 16px; border-radius: 50%; background: #ef4444;"></div>' +
+                        '<span style="font-size: 12px; color: var(--text-primary);">Critical (20+ pts)</span>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            // Bubble Size Legend
+            '<div style="flex: 1;">' +
+                '<div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Bubble Size = Initiative Count</div>' +
+                '<div style="display: flex; gap: 16px; align-items: center;">' +
+                    '<div style="display: flex; align-items: center; gap: 6px;">' +
+                        '<div style="width: 12px; height: 12px; border-radius: 50%; background: var(--text-tertiary);"></div>' +
+                        '<span style="font-size: 12px; color: var(--text-primary);">Small = Few</span>' +
+                    '</div>' +
+                    '<div style="display: flex; align-items: center; gap: 6px;">' +
+                        '<div style="width: 20px; height: 20px; border-radius: 50%; background: var(--text-tertiary);"></div>' +
+                        '<span style="font-size: 12px; color: var(--text-primary);">Large = Many</span>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+        // Chart Area
+        '<div style="flex: 1; position: relative; min-height: 400px;">' +
+            '<canvas id="critical-team-chart" style="width: 100%; height: 400px;"></canvas>' +
         '</div>' +
     '</div>';
     
