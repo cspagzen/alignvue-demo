@@ -280,6 +280,8 @@ class VueSenseModal {
   }
   
   addMessage(text, type) {
+    const processedText = type === 'ai' ? makeEntitiesClickable(text) : text;
+    
     const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     
     const avatarIcon = type === 'user' 
@@ -292,7 +294,7 @@ class VueSenseModal {
       <div class="vuesense-message ${type}">
         <div class="vuesense-message-avatar">${avatarIcon}</div>
         <div class="vuesense-message-content">
-          <div class="vuesense-message-bubble">${formattedText}</div>
+          <div class="vuesense-message-bubble">${processedText}</div>
           <div class="vuesense-message-time">${time}</div>
         </div>
       </div>

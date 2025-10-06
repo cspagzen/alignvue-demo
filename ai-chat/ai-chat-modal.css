@@ -1001,3 +1001,56 @@
     font-size: 0.75rem;
   }
 }
+
+/* Clickable Entity Links in AI Responses */
+
+.ai-entity-link {
+  position: relative;
+  transition: all 0.2s ease;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.ai-entity-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  text-decoration-style: solid !important;
+}
+
+.ai-entity-link:active {
+  transform: translateY(1px);
+}
+
+/* Initiative Links */
+.ai-entity-initiative:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Team Links */
+.ai-entity-team:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Tooltip on hover */
+.ai-entity-link::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  border: 1px solid var(--border-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+
+.ai-entity-link:hover::after {
+  opacity: 1;
+}
