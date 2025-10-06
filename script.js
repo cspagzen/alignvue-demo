@@ -12717,9 +12717,15 @@ function showTeamModal(teamName, teamData) {
     
     modal.classList.add('show');
     
-    // Make modal scrollable for smaller resolutions
-    modal.style.maxHeight = '85vh';
-    modal.style.overflow = 'auto';
+    // Make modal fit target resolutions and scrollable
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.maxHeight = '85vh';
+        modalContent.style.maxWidth = '900px';
+        modalContent.style.width = '90vw';
+        modalContent.style.overflowY = 'auto';
+        modalContent.style.overflowX = 'hidden';
+    }
 }
 
 // ============================================================================
