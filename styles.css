@@ -2022,8 +2022,8 @@ mendoza-line:hover {
 /* REMOVED: .resource-card */
 .validation-card { grid-column: 1 / 2; grid-row: 4 / 5; }
 .completed-card { grid-column: 2 / 3; grid-row: 4 / 5; }
-.delivery-confidence-card { grid-column: 3 / 5; grid-row: 4 / 5; }
-.critical-team-card { grid-column: 5 / 7; grid-row: 3 / 5; } /* EXPANDED: now spans rows 3-5 */
+.delivery-confidence-card { grid-column: 5 / 7; grid-row: 3 / 4; } /* MOVED UP TO ROW 3 */
+.critical-team-card { grid-column: 3 / 7; grid-row: 4 / 5; } /* NOW WIDE BANNER IN ROW 4 */
 
 
 /* Base Bento Card Styling */
