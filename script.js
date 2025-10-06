@@ -5059,7 +5059,6 @@ function calculateTeamRiskPoints(teamName) {
 // Function to populate the Capacity Risk Map card
 function populateCapacityRiskMap() {
     const content = document.getElementById('critical-team-content');
-    content.style.padding = '0.5rem'; // Add this line
     if (!content) {
         console.error('Capacity Risk Map content element not found');
         return;
@@ -5090,9 +5089,9 @@ function populateCapacityRiskMap() {
     
     // Render the card
     content.innerHTML = `
-        <div style="display: flex; flex-direction: column; height: 100%; padding: 0;">
-            <div style="flex: 1; position: relative; min-height: 300px;">
-    <canvas id="critical-team-chart" style="width: 100%; height: 300px;"></canvas>
+        <div style="display: flex; flex-direction: column; height: 100%; padding: 0; margin: 0;">
+    <div style="flex: 1; position: relative; min-height: 300px; padding: 0;">
+        <canvas id="critical-team-chart" style="width: 100%; height: 100%;"></canvas>
             </div>
         </div>
     `;
@@ -5133,9 +5132,9 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     
     // Calculate dynamic axis maximums
     const maxRisk = Math.max(...teamData.map(t => t.riskPoints), 10); // At least 10
-    const maxCapacity = Math.max(...teamData.map(t => t.availableCapacity), 20); // At least 20
-    const riskAxisMax = Math.ceil(maxRisk * 1.1); // Add 10% buffer
-    const capacityAxisMax = Math.ceil(maxCapacity * 1.1); // Add 10% buffer
+    const maxCapacity = Math.max(...teamData.map(t => t.availableCapacity));
+    const riskAxisMax = Math.ceil(maxRisk * 1.15); // Add 15% buffer
+    const capacityAxisMax = Math.ceil(maxCapacity * 1.15); // Add 15% buffer
     
     console.log('Bubble chart data:', bubbleData);
     console.log('Color mapping:', bubbleData.map(d => ({ team: d.teamName, health: d.health, color: colorMap[d.health] })));
@@ -5199,16 +5198,26 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
                     }
                 }
             },
+            
+            layout: {
+    padding: {
+        top: 10,
+        bottom: 10,
+        left: 10,
+        right: 10
+    }
+},
+            
             scales: {
     x: {
         title: {
-            display: true,
-            text: 'Risk Points',
+            display: true,  // Changed from isExpanded - always show in bento box
+            text: 'Available Capacity (%)',  // SWAPPED - was 'Risk Points'
             color: '#94a3b8',
             font: { size: isExpanded ? 15 : 11, weight: '600' }
         },
         min: 0,
-        max: Math.ceil(Math.max(...teamData.map(t => t.riskPoints)) / 10) * 10 + 10, // Dynamic with padding
+        max: capacityAxisMax,  // SWAPPED - was riskAxisMax
         grid: {
             color: 'rgba(148, 163, 184, 0.1)',
             drawTicks: false
@@ -5217,19 +5226,19 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
             color: '#94a3b8',
             padding: isExpanded ? 10 : 4,
             font: { size: isExpanded ? 12 : 9 },
-            callback: (value) => isExpanded ? value + ' pts' : value
+            callback: (value) => value + '%'  // SWAPPED - was pts
         },
         border: { display: false }
     },
     y: {
         title: {
-            display: true,
-            text: 'Available Capacity (%)',
+            display: true,  // Changed from isExpanded - always show in bento box
+            text: 'Risk Points',  // SWAPPED - was 'Available Capacity %'
             color: '#94a3b8',
             font: { size: isExpanded ? 15 : 11, weight: '600' }
         },
         min: 0,
-        max: Math.max(100, Math.ceil(Math.max(...teamData.map(t => t.availableCapacity)) / 10) * 10), // Dynamic, minimum 100
+        max: riskAxisMax,  // SWAPPED - was capacityAxisMax
         grid: {
             color: 'rgba(148, 163, 184, 0.1)',
             drawTicks: false
@@ -5238,7 +5247,7 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
             color: '#94a3b8',
             padding: isExpanded ? 10 : 4,
             font: { size: isExpanded ? 12 : 9 },
-            callback: (value) => value + '%'
+            callback: (value) => isExpanded ? value + ' pts' : value  // SWAPPED - was %
         },
         border: { display: false }
     }
