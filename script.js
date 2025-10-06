@@ -12453,6 +12453,8 @@ function showTeamModal(teamName, teamData) {
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
+     // Calculate risk breakdown
+    const riskBreakdown = calculateRiskBreakdown(teamName);
     
     if (!teamData) {
         console.error('Team not found:', teamName);
@@ -12532,6 +12534,51 @@ function showTeamModal(teamName, teamData) {
             
             
             </div>
+            
+            
+            // Portfolio Risk Score Section - INSERT HERE (between Health Dimensions and Team Comments)
+'<div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid var(--border-primary);">' +
+    '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">' +
+        '<div style="display: flex; align-items: center; gap: 12px;">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                '<circle cx="12" cy="12" r="10"/>' +
+                '<path d="M12 8v4"/>' +
+                '<path d="m12 16 .01 0"/>' +
+            '</svg>' +
+            '<span style="font-size: 18px; font-weight: 600; color: var(--text-primary);">Portfolio Risk Score</span>' +
+        '</div>' +
+        '<span style="font-size: 32px; font-weight: 700; color: ' + getRiskScoreColor(riskBreakdown.total) + ';">' + riskBreakdown.total + '</span>' +
+    '</div>' +
+    '<div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">Aggregate risk across all initiatives this team is working on</div>' +
+    '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">' +
+        '<div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">' +
+            '<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
+                '<span style="font-size: 12px; color: var(--text-secondary);">Team Health</span>' +
+                '<span style="font-size: 18px; font-weight: 600; color: ' + (riskBreakdown.health > 30 ? '#dc2626' : riskBreakdown.health > 15 ? '#f97316' : '#10b981') + ';">' + riskBreakdown.health + '</span>' +
+            '</div>' +
+        '</div>' +
+        '<div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">' +
+            '<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
+                '<span style="font-size: 12px; color: var(--text-secondary);">Validation</span>' +
+                '<span style="font-size: 18px; font-weight: 600; color: ' + (riskBreakdown.validation > 20 ? '#dc2626' : riskBreakdown.validation > 10 ? '#f97316' : '#10b981') + ';">' + riskBreakdown.validation + '</span>' +
+            '</div>' +
+        '</div>' +
+        '<div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">' +
+            '<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
+                '<span style="font-size: 12px; color: var(--text-secondary);">Blockers</span>' +
+                '<span style="font-size: 18px; font-weight: 600; color: ' + (riskBreakdown.blockers > 15 ? '#dc2626' : riskBreakdown.blockers > 8 ? '#f97316' : '#10b981') + ';">' + riskBreakdown.blockers + '</span>' +
+            '</div>' +
+        '</div>' +
+        '<div style="padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid var(--border-primary);">' +
+            '<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
+                '<span style="font-size: 12px; color: var(--text-secondary);">Focus & Load</span>' +
+                '<span style="font-size: 18px; font-weight: 600; color: ' + (riskBreakdown.focus > 15 ? '#dc2626' : riskBreakdown.focus > 8 ? '#f97316' : '#10b981') + ';">' + riskBreakdown.focus + '</span>' +
+            '</div>' +
+        '</div>' +
+    '</div>' +
+'</div>' +
+            
+            
             
             <!-- NEW: Team Comments Section -->
             <div id="team-comments-section">
