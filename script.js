@@ -5361,20 +5361,31 @@ const centerDotsPlugin = {
     }
     
     capacityRiskChart = new Chart(ctx, {
-        type: 'bubble',
-        data: { datasets },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            onClick: (event, elements) => {
-                if (elements.length > 0) {
-                    const index = elements[0].index;
-                    const team = teamData[index];
-                    console.log('Team clicked:', team.name);
-                    alert(`Team Risk Breakdown\n\nTeam: ${team.name}\nRisk Points: ${team.riskPoints}\nCapacity: ${team.availableCapacity}%\n\n(Detailed modal coming next)`);
+    type: 'bubble',
+    data: { datasets },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        onClick: (event, elements) => {
+            if (elements.length > 0) {
+                const index = elements[0].index;
+                const teamName = teamData[index].name;
+                const team = boardData.teams[teamName];
+                
+                if (team) {
+                    // Close any existing modals first
+                    closeModal();
+                    
+                    // Small delay to ensure clean transition
+                    setTimeout(() => {
+                        showTeamModal(teamName, team);
+                    }, 100);
+                } else {
+                    console.error('Team not found:', teamName);
                 }
-            },
-            plugins: {
+            }
+        },
+        plugins: {
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: 'rgba(30, 41, 59, 0.95)',
