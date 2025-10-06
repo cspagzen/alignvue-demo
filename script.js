@@ -5115,7 +5115,7 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     const colorMap = {
         'healthy': '#10b981',
         'low-risk': '#fbbf24',
-        'high-risk': '#f59e0b',
+        'high-risk': '#ea580c',
         'critical': '#ef4444'
     };
     
