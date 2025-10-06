@@ -5094,26 +5094,26 @@ content.innerHTML =
         '<div style="display: flex; gap: 32px; padding: 12px 16px; margin-bottom: 8px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid var(--border-primary);">' +
             // Bubble Color Legend
             '<div style="flex: 1;">' +
-                '<div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Bubble Color = Risk Level</div>' +
-                '<div style="display: flex; gap: 16px; flex-wrap: wrap;">' +
-                    '<div style="display: flex; align-items: center; gap: 6px;">' +
-                        '<div style="width: 16px; height: 16px; border-radius: 50%; background: #10b981;"></div>' +
-                        '<span style="font-size: 12px; color: var(--text-primary);">Low (0-4 pts)</span>' +
-                    '</div>' +
-                    '<div style="display: flex; align-items: center; gap: 6px;">' +
-                        '<div style="width: 16px; height: 16px; border-radius: 50%; background: #fbbf24;"></div>' +
-                        '<span style="font-size: 12px; color: var(--text-primary);">Medium (5-9 pts)</span>' +
-                    '</div>' +
-                    '<div style="display: flex; align-items: center; gap: 6px;">' +
-                        '<div style="width: 16px; height: 16px; border-radius: 50%; background: #fb923c;"></div>' +
-                        '<span style="font-size: 12px; color: var(--text-primary);">High (10-19 pts)</span>' +
-                    '</div>' +
-                    '<div style="display: flex; align-items: center; gap: 6px;">' +
-                        '<div style="width: 16px; height: 16px; border-radius: 50%; background: #ef4444;"></div>' +
-                        '<span style="font-size: 12px; color: var(--text-primary);">Critical (20+ pts)</span>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
+    '<div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Bubble Color = Team Health Status</div>' +
+    '<div style="display: flex; gap: 16px; flex-wrap: wrap;">' +
+        '<div style="display: flex; align-items: center; gap: 6px;">' +
+            '<div style="width: 16px; height: 16px; border-radius: 50%; background: #10b981;"></div>' +
+            '<span style="font-size: 12px; color: var(--text-primary);">Stable</span>' +
+        '</div>' +
+        '<div style="display: flex; align-items: center; gap: 6px;">' +
+            '<div style="width: 16px; height: 16px; border-radius: 50%; background: #fbbf24;"></div>' +
+            '<span style="font-size: 12px; color: var(--text-primary);">Monitored</span>' +
+        '</div>' +
+        '<div style="display: flex; align-items: center; gap: 6px;">' +
+            '<div style="width: 16px; height: 16px; border-radius: 50%; background: #fb923c;"></div>' +
+            '<span style="font-size: 12px; color: var(--text-primary);">Urgent</span>' +
+        '</div>' +
+        '<div style="display: flex; align-items: center; gap: 6px;">' +
+            '<div style="width: 16px; height: 16px; border-radius: 50%; background: #ef4444;"></div>' +
+            '<span style="font-size: 12px; color: var(--text-primary);">Critical</span>' +
+        '</div>' +
+    '</div>' +
+'</div>'+
             // Bubble Size Legend
             '<div style="flex: 1;">' +
                 '<div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Bubble Size = Initiative Count</div>' +
@@ -5151,12 +5151,20 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     
     const ctx = canvas.getContext('2d');
     
-    // Color mapping
+    // Color mapping - Updated to Triage Theme
     const colorMap = {
-        'healthy': '#10b981',
-        'low-risk': '#fbbf24',
-        'high-risk': '#fb923c',  // Updated to brighter orange
-        'critical': '#ef4444'
+        'healthy': '#10b981',      // 🟢 Stable
+        'low-risk': '#fbbf24',     // 🟡 Monitored
+        'high-risk': '#fb923c',    // 🟠 Urgent
+        'critical': '#ef4444'      // 🔴 Critical
+    };
+    
+    // Triage status labels
+    const triageLabels = {
+        'healthy': 'Stable',
+        'low-risk': 'Monitored',
+        'high-risk': 'Urgent',
+        'critical': 'Critical'
     };
     
     const bubbleData = teamData.map(team => ({
@@ -5176,7 +5184,7 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     const capacityAxisMax = Math.ceil(maxCapacity * 1.15);
     
     console.log('Bubble chart data:', bubbleData);
-    console.log('Color mapping:', bubbleData.map(d => ({ team: d.teamName, health: d.health, color: colorMap[d.health] })));
+    console.log('Triage status mapping:', bubbleData.map(d => ({ team: d.teamName, health: triageLabels[d.health] })));
     console.log('Axis ranges - Risk:', riskAxisMax, 'Capacity:', capacityAxisMax);
     
     const datasets = [{
@@ -5190,89 +5198,89 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     }];
     
     // Custom plugin to draw quadrant labels and dividing lines
-const quadrantLabelsPlugin = {
-    id: 'quadrantLabels',
-    beforeDatasetsDraw(chart) {
-        const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
-        const centerX = left + width / 2;
-        const centerY = top + height / 2;
-        
-        ctx.save();
-        
-        // Draw bold dividing lines
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([10, 5]);
-        
-        // Vertical line (divides left/right)
-        ctx.beginPath();
-        ctx.moveTo(centerX, top);
-        ctx.lineTo(centerX, bottom);
-        ctx.stroke();
-        
-        // Horizontal line (divides top/bottom)
-        ctx.beginPath();
-        ctx.moveTo(left, centerY);
-        ctx.lineTo(right, centerY);
-        ctx.stroke();
-        
-        ctx.setLineDash([]); // Reset line dash
-        ctx.restore();
-    },
-    afterDatasetsDraw(chart) {
-        const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
-        
-        ctx.save();
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        // Calculate quadrant centers
-        const quadrants = [
-            { 
-                x: left + width * 0.25, 
-                y: top + height * 0.25, 
-                text: 'Underutilized', 
-                subtext: 'Low Risk + High Capacity', 
-                color: 'rgba(16, 185, 129, 0.7)' 
-            },
-            { 
-                x: left + width * 0.75, 
-                y: top + height * 0.25, 
-                text: 'Available but Loaded', 
-                subtext: 'High Risk + High Capacity', 
-                color: 'rgba(251, 191, 36, 0.7)' 
-            },
-            { 
-                x: left + width * 0.25, 
-                y: top + height * 0.75, 
-                text: 'Healthy & Busy', 
-                subtext: 'Low Risk + Low Capacity', 
-                color: 'rgba(16, 185, 129, 0.7)' 
-            },
-            { 
-                x: left + width * 0.75, 
-                y: top + height * 0.75, 
-                text: 'DANGER ZONE', 
-                subtext: 'High Risk + Low Capacity', 
-                color: 'rgba(239, 68, 68, 0.8)' 
-            }
-        ];
-        
-        quadrants.forEach(quad => {
-            // Draw headline
-            ctx.fillStyle = quad.color;
-            ctx.font = 'bold 16px Inter, sans-serif';
-            ctx.fillText(quad.text, quad.x, quad.y - 10);
+    const quadrantLabelsPlugin = {
+        id: 'quadrantLabels',
+        beforeDatasetsDraw(chart) {
+            const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
+            const centerX = left + width / 2;
+            const centerY = top + height / 2;
             
-            // Draw subtext
-            ctx.font = '11px Inter, sans-serif';
-            ctx.fillStyle = 'rgba(156, 163, 175, 0.6)';
-            ctx.fillText(quad.subtext, quad.x, quad.y + 10);
-        });
-        
-        ctx.restore();
-    }
-};
+            ctx.save();
+            
+            // Draw bold dividing lines
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 5]);
+            
+            // Vertical line (divides left/right)
+            ctx.beginPath();
+            ctx.moveTo(centerX, top);
+            ctx.lineTo(centerX, bottom);
+            ctx.stroke();
+            
+            // Horizontal line (divides top/bottom)
+            ctx.beginPath();
+            ctx.moveTo(left, centerY);
+            ctx.lineTo(right, centerY);
+            ctx.stroke();
+            
+            ctx.setLineDash([]); // Reset line dash
+            ctx.restore();
+        },
+        afterDatasetsDraw(chart) {
+            const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
+            
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Calculate quadrant centers
+            const quadrants = [
+                { 
+                    x: left + width * 0.25, 
+                    y: top + height * 0.25, 
+                    text: 'Underutilized', 
+                    subtext: 'Low Risk + High Capacity', 
+                    color: 'rgba(16, 185, 129, 0.7)' 
+                },
+                { 
+                    x: left + width * 0.75, 
+                    y: top + height * 0.25, 
+                    text: 'Available but Loaded', 
+                    subtext: 'High Risk + High Capacity', 
+                    color: 'rgba(251, 191, 36, 0.7)' 
+                },
+                { 
+                    x: left + width * 0.25, 
+                    y: top + height * 0.75, 
+                    text: 'Healthy & Busy', 
+                    subtext: 'Low Risk + Low Capacity', 
+                    color: 'rgba(16, 185, 129, 0.7)' 
+                },
+                { 
+                    x: left + width * 0.75, 
+                    y: top + height * 0.75, 
+                    text: 'DANGER ZONE', 
+                    subtext: 'High Risk + Low Capacity', 
+                    color: 'rgba(239, 68, 68, 0.8)' 
+                }
+            ];
+            
+            quadrants.forEach(quad => {
+                // Draw headline
+                ctx.fillStyle = quad.color;
+                ctx.font = 'bold 16px Inter, sans-serif';
+                ctx.fillText(quad.text, quad.x, quad.y - 10);
+                
+                // Draw subtext
+                ctx.font = '11px Inter, sans-serif';
+                ctx.fillStyle = 'rgba(156, 163, 175, 0.6)';
+                ctx.fillText(quad.subtext, quad.x, quad.y + 10);
+            });
+            
+            ctx.restore();
+        }
+    };
     
     // Destroy existing chart if it exists
     if (capacityRiskChart) {
@@ -5309,14 +5317,12 @@ const quadrantLabelsPlugin = {
                         title: (context) => context[0].raw.teamName,
                         label: (context) => {
                             const data = context.raw;
-                            const healthText = data.health ? 
-                                data.health.replace('-', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') 
-                                : 'Unknown';
+                            const triageStatus = triageLabels[data.health] || 'Unknown';
                             return [
                                 `Risk Points: ${data.x}`,
                                 `Available Capacity: ${data.y.toFixed(1)}%`,
                                 `Initiatives: ${data.initiatives}`,
-                                `Status: ${healthText}`
+                                `Team Health: ${triageStatus}`
                             ];
                         }
                     }
