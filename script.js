@@ -12524,6 +12524,20 @@ function showTeamModal(teamName, teamData) {
      // Calculate risk breakdown
     const riskBreakdown = calculateRiskBreakdown(teamName);
     
+    // Count critical and at-risk dimensions
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    let criticalCount = 0;
+    let atRiskCount = 0;
+    
+    dimensions.forEach(dim => {
+        const value = teamData[dim];
+        if (value === 'critical' || value === 'Critical') {
+            criticalCount++;
+        } else if (value === 'at-risk' || value === 'At Risk') {
+            atRiskCount++;
+        }
+    });
+    
     if (!teamData) {
         console.error('Team not found:', teamName);
         return;
