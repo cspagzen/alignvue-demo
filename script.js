@@ -5189,63 +5189,90 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
         borderWidth: 2
     }];
     
-    // Custom plugin to draw quadrant labels
-    const quadrantLabelsPlugin = {
-        id: 'quadrantLabels',
-        afterDatasetsDraw(chart) {
-            const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
+    // Custom plugin to draw quadrant labels and dividing lines
+const quadrantLabelsPlugin = {
+    id: 'quadrantLabels',
+    beforeDatasetsDraw(chart) {
+        const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
+        const centerX = left + width / 2;
+        const centerY = top + height / 2;
+        
+        ctx.save();
+        
+        // Draw bold dividing lines
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 5]);
+        
+        // Vertical line (divides left/right)
+        ctx.beginPath();
+        ctx.moveTo(centerX, top);
+        ctx.lineTo(centerX, bottom);
+        ctx.stroke();
+        
+        // Horizontal line (divides top/bottom)
+        ctx.beginPath();
+        ctx.moveTo(left, centerY);
+        ctx.lineTo(right, centerY);
+        ctx.stroke();
+        
+        ctx.setLineDash([]); // Reset line dash
+        ctx.restore();
+    },
+    afterDatasetsDraw(chart) {
+        const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
+        
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Calculate quadrant centers
+        const quadrants = [
+            { 
+                x: left + width * 0.25, 
+                y: top + height * 0.25, 
+                text: 'Underutilized', 
+                subtext: 'Low Risk + High Capacity', 
+                color: 'rgba(16, 185, 129, 0.7)' 
+            },
+            { 
+                x: left + width * 0.75, 
+                y: top + height * 0.25, 
+                text: 'Available but Loaded', 
+                subtext: 'High Risk + High Capacity', 
+                color: 'rgba(251, 191, 36, 0.7)' 
+            },
+            { 
+                x: left + width * 0.25, 
+                y: top + height * 0.75, 
+                text: 'Healthy & Busy', 
+                subtext: 'Low Risk + Low Capacity', 
+                color: 'rgba(16, 185, 129, 0.7)' 
+            },
+            { 
+                x: left + width * 0.75, 
+                y: top + height * 0.75, 
+                text: 'DANGER ZONE', 
+                subtext: 'High Risk + Low Capacity', 
+                color: 'rgba(239, 68, 68, 0.8)' 
+            }
+        ];
+        
+        quadrants.forEach(quad => {
+            // Draw headline
+            ctx.fillStyle = quad.color;
+            ctx.font = 'bold 16px Inter, sans-serif';
+            ctx.fillText(quad.text, quad.x, quad.y - 10);
             
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            // Calculate quadrant centers
-            const quadrants = [
-                { 
-                    x: left + width * 0.25, 
-                    y: top + height * 0.25, 
-                    text: 'Underutilized', 
-                    subtext: 'Low Risk + High Capacity', 
-                    color: 'rgba(16, 185, 129, 0.7)' 
-                },
-                { 
-                    x: left + width * 0.75, 
-                    y: top + height * 0.25, 
-                    text: 'Available but Loaded', 
-                    subtext: 'High Risk + High Capacity', 
-                    color: 'rgba(251, 191, 36, 0.7)' 
-                },
-                { 
-                    x: left + width * 0.25, 
-                    y: top + height * 0.75, 
-                    text: 'Healthy & Busy', 
-                    subtext: 'Low Risk + Low Capacity', 
-                    color: 'rgba(16, 185, 129, 0.7)' 
-                },
-                { 
-                    x: left + width * 0.75, 
-                    y: top + height * 0.75, 
-                    text: 'DANGER ZONE', 
-                    subtext: 'High Risk + Low Capacity', 
-                    color: 'rgba(239, 68, 68, 0.8)' 
-                }
-            ];
-            
-            quadrants.forEach(quad => {
-                // Draw headline
-                ctx.fillStyle = quad.color;
-                ctx.font = 'bold 16px Inter, sans-serif';
-                ctx.fillText(quad.text, quad.x, quad.y - 10);
-                
-                // Draw subtext
-                ctx.font = '11px Inter, sans-serif';
-                ctx.fillStyle = 'rgba(156, 163, 175, 0.6)';
-                ctx.fillText(quad.subtext, quad.x, quad.y + 10);
-            });
-            
-            ctx.restore();
-        }
-    };
+            // Draw subtext
+            ctx.font = '11px Inter, sans-serif';
+            ctx.fillStyle = 'rgba(156, 163, 175, 0.6)';
+            ctx.fillText(quad.subtext, quad.x, quad.y + 10);
+        });
+        
+        ctx.restore();
+    }
+};
     
     // Destroy existing chart if it exists
     if (capacityRiskChart) {
