@@ -5028,32 +5028,86 @@ function showDeliveryConfidenceModal() {
 // Global variable for chart instance
 let capacityRiskChart = null;
 
-// Function to calculate team's total portfolio risk points
+// Function to calculate team's total portfolio risk points - ENHANCED MODEL
 function calculateTeamRiskPoints(teamName) {
     let totalRisk = 0;
     const team = boardData.teams[teamName];
     if (!team) return 0;
     
-    // Find all initiatives this team is working on
+    // ========================================
+    // 1. TEAM HEALTH RISK (Base + Multiplier)
+    // ========================================
+    let teamHealthMultiplier = 1.0;
+    let baseTeamHealth = 0;
+    
+    // Count critical and at-risk dimensions
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    let criticalCount = 0;
+    let atRiskCount = 0;
+    
+    dimensions.forEach(dim => {
+        const value = team[dim];
+        if (value === 'critical' || value === 'Critical') {
+            criticalCount++;
+            baseTeamHealth += 15; // 15 points per critical dimension
+        } else if (value === 'at-risk' || value === 'At Risk') {
+            atRiskCount++;
+            baseTeamHealth += 7; // 7 points per at-risk dimension
+        }
+    });
+    
+    // Team health multiplier affects ALL other risk
+    if (criticalCount >= 3) {
+        teamHealthMultiplier = 2.0; // Double all risk if severely unhealthy
+    } else if (criticalCount >= 1 || atRiskCount >= 3) {
+        teamHealthMultiplier = 1.5; // 50% more risk if struggling
+    }
+    
+    totalRisk += baseTeamHealth;
+    
+    // ========================================
+    // 2. INITIATIVE-BASED RISK
+    // ========================================
     const teamInitiatives = boardData.initiatives.filter(init => 
         init.teams && init.teams.includes(teamName)
     );
     
+    let initiativeRisk = 0;
+    
     teamInitiatives.forEach(init => {
-        // Validation risk (0-10 points)
-        if (init.validation === 'not-validated') totalRisk += 10;
-        else if (init.validation === 'in-validation') totalRisk += 5;
+        // Validation risk
+        if (init.validation === 'not-validated') initiativeRisk += 8;
+        else if (init.validation === 'in-validation') initiativeRisk += 4;
         
-        // Capacity risk from team health (0-10 points)
-        if (team.capacity === 'critical') totalRisk += 10;
-        else if (team.capacity === 'at-risk') totalRisk += 5;
-        
-        // Blocker risk (based on blocked stories - 0-10 points)
-        const blockerRisk = Math.min(10, Math.floor((init.blockedStories || 0) / 5));
-        totalRisk += blockerRisk;
+        // Blocker risk
+        const blockerRisk = Math.min(8, Math.floor((init.blockedStories || 0) / 3));
+        initiativeRisk += blockerRisk;
     });
     
-    return totalRisk;
+    // Apply team health multiplier to initiative risk
+    totalRisk += (initiativeRisk * teamHealthMultiplier);
+    
+    // ========================================
+    // 3. FOCUS PENALTY (Too Many Initiatives)
+    // ========================================
+    const initiativeCount = teamInitiatives.length;
+    if (initiativeCount > 5) {
+        totalRisk += (initiativeCount - 5) * 5; // +5 points per initiative over 5
+    } else if (initiativeCount > 3) {
+        totalRisk += (initiativeCount - 3) * 3; // +3 points per initiative over 3
+    }
+    
+    // ========================================
+    // 4. OVER-UTILIZATION PENALTY
+    // ========================================
+    const utilization = team.jira?.utilization || 0;
+    if (utilization > 95) {
+        totalRisk += 20; // Major penalty for overload
+    } else if (utilization > 85) {
+        totalRisk += 10;
+    }
+    
+    return Math.round(totalRisk);
 }
 
 // Function to populate the Capacity Risk Map card
@@ -5151,7 +5205,7 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     
     const ctx = canvas.getContext('2d');
     
-    // Color mapping - Updated to Triage Theme
+    // Color mapping - Triage Theme
     const colorMap = {
         'healthy': '#10b981',      // 🟢 Stable
         'low-risk': '#fbbf24',     // 🟡 Monitored
@@ -5184,7 +5238,7 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     const capacityAxisMax = Math.ceil(maxCapacity * 1.15);
     
     console.log('Bubble chart data:', bubbleData);
-    console.log('Triage status mapping:', bubbleData.map(d => ({ team: d.teamName, health: triageLabels[d.health] })));
+    console.log('Triage status mapping:', bubbleData.map(d => ({ team: d.teamName, health: triageLabels[d.health], riskPoints: d.x })));
     console.log('Axis ranges - Risk:', riskAxisMax, 'Capacity:', capacityAxisMax);
     
     const datasets = [{
@@ -5224,7 +5278,7 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
             ctx.lineTo(right, centerY);
             ctx.stroke();
             
-            ctx.setLineDash([]); // Reset line dash
+            ctx.setLineDash([]);
             ctx.restore();
         },
         afterDatasetsDraw(chart) {
@@ -5234,33 +5288,33 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            // Calculate quadrant centers
+            // Calculate quadrant centers - UPDATED LABELS
             const quadrants = [
                 { 
                     x: left + width * 0.25, 
                     y: top + height * 0.25, 
-                    text: 'Underutilized', 
+                    text: 'Available for Deployment', 
                     subtext: 'Low Risk + High Capacity', 
                     color: 'rgba(16, 185, 129, 0.7)' 
                 },
                 { 
                     x: left + width * 0.75, 
                     y: top + height * 0.25, 
-                    text: 'Available but Loaded', 
+                    text: 'Available but At-Risk', 
                     subtext: 'High Risk + High Capacity', 
                     color: 'rgba(251, 191, 36, 0.7)' 
                 },
                 { 
                     x: left + width * 0.25, 
                     y: top + height * 0.75, 
-                    text: 'Healthy & Busy', 
+                    text: 'Fully Optimized', 
                     subtext: 'Low Risk + Low Capacity', 
                     color: 'rgba(16, 185, 129, 0.7)' 
                 },
                 { 
                     x: left + width * 0.75, 
                     y: top + height * 0.75, 
-                    text: 'DANGER ZONE', 
+                    text: 'Overloaded & At-Risk', 
                     subtext: 'High Risk + Low Capacity', 
                     color: 'rgba(239, 68, 68, 0.8)' 
                 }
@@ -5376,88 +5430,7 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     });
 }
 
-// Function to expand chart in modal
-function expandCapacityRiskMap() {
-    // Prepare team data
-    const teamData = Object.keys(boardData.teams).map(teamName => {
-        const team = boardData.teams[teamName];
-        const riskPoints = calculateTeamRiskPoints(teamName);
-        const utilization = team.jira?.utilization || 0;
-        const availableCapacity = Math.max(0, 100 - utilization);
-        const initiativeCount = boardData.initiatives.filter(init => 
-            init.teams && init.teams.includes(teamName)
-        ).length;
-        const overallHealth = getTeamOverallHealth(team);
-        
-        return {
-            name: teamName,
-            riskPoints,
-            availableCapacity,
-            initiatives: initiativeCount,
-            health: overallHealth,
-            utilization
-        };
-    });
-    
-    // Create modal
-    const modal = document.createElement('div');
-    modal.id = 'capacity-risk-modal';
-    modal.className = 'modal active';
-    modal.innerHTML = `
-        <div class="modal-content" style="width: 100%; max-width: 1400px; height: 90vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.2); display: flex; flex-direction: column; overflow: hidden;">
-            <div style="padding: 24px 32px; border-bottom: 1px solid rgba(148, 163, 184, 0.1); display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h2 style="color: #fff; font-size: 24px; font-weight: 600; margin: 0 0 8px 0; display: flex; align-items: center; gap: 12px;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-                        </svg>
-                        Capacity Risk Map
-                    </h2>
-                    <p style="color: #94a3b8; font-size: 14px; margin: 0;">Click any team for detailed risk breakdown • Bubble size = initiative count</p>
-                </div>
-                <button onclick="closeCapacityRiskModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 28px; cursor: pointer;">×</button>
-            </div>
-            <div style="flex: 1; padding: 32px; position: relative;">
-                <canvas id="capacity-risk-chart-expanded"></canvas>
-            </div>
-            <div style="padding: 20px 32px; border-top: 1px solid rgba(148, 163, 184, 0.1); background: rgba(0, 0, 0, 0.2);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px;">
-                    <div style="display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 14px; height: 14px; border-radius: 50%; background: #10b981;"></div>
-                            <span style="color: #94a3b8;">Healthy</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 14px; height: 14px; border-radius: 50%; background: #fbbf24;"></div>
-                            <span style="color: #94a3b8;">Low Risk</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 14px; height: 14px; border-radius: 50%; background: #f59e0b;"></div>
-                            <span style="color: #94a3b8;">High Risk</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 14px; height: 14px; border-radius: 50%; background: #ef4444;"></div>
-                            <span style="color: #94a3b8;">Critical</span>
-                        </div>
-                    </div>
-                    <div style="color: #64748b; font-size: 13px; display: flex; gap: 24px;">
-                        <span>0-10: Low</span>
-                        <span>11-20: Moderate</span>
-                        <span>21-30: High</span>
-                        <span style="color: #ef4444; font-weight: 600;">30+: CRITICAL</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Create expanded chart
-    setTimeout(() => {
-        createCapacityRiskChart('capacity-risk-chart-expanded', teamData, true);
-    }, 100);
-}
+
 
 // Function to close modal
 function closeCapacityRiskModal() {
