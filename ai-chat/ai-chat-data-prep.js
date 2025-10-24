@@ -333,9 +333,9 @@ function calculateTeamRiskScore(teamName, allInitiatives, allTeams) {
   
   totalRisk += baseTeamHealth;
   
-  // 2. Get team's initiatives
+  // 2. Get team's initiatives (exclude bullpen/pipeline)
   const teamInitiatives = allInitiatives.filter(init => 
-    init.teams && init.teams.includes(teamName)
+    init.teams && init.teams.includes(teamName) && init.priority !== 'bullpen'
   );
   
   // 3. INITIATIVE-BASED RISK (with multiplier)
@@ -502,9 +502,9 @@ function extractTeamData(boardData) {
   console.log('ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â  Extracting data for', Object.keys(teams).length, 'teams...');
   
   return Object.entries(teams).map(([name, data]) => {
-    // Find initiatives this team is working on
+    // Find initiatives this team is working on (exclude bullpen/pipeline)
     const teamInitiatives = initiatives.filter(init => 
-      init.teams && init.teams.includes(name)
+      init.teams && init.teams.includes(name) && init.priority !== 'bullpen'
     );
     
     // Extract comment text from Jira doc format
@@ -541,6 +541,13 @@ function extractTeamData(boardData) {
     else if (atRiskCount <= 4) overallHealth = 'HIGH RISK';
     else overallHealth = 'CRITICAL';
     
+    // Calculate blockers by summing flagged stories from team's initiatives
+    // Matches UI logic from script.js lines 14313-14326
+    const blockerCount = teamInitiatives.reduce((sum, init) => {
+      if (init.priority === 'bullpen') return sum; // Skip pipeline
+      return sum + (init.jira?.flagged || 0);
+    }, 0);
+    
     return {
       name,
       capacity: data.capacity || 'unknown',
@@ -552,9 +559,9 @@ function extractTeamData(boardData) {
       overallHealth,  // ADDED: Simple count-based health assessment
       initiativeCount: teamInitiatives.length,
       utilization: data.jira?.utilization || 0,
-      activeStories: data.jira?.stories || 0,  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ ADDED
-      blockers: data.jira?.blockers || 0,  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ FIXED: Read from .blockers not .flagged
-      portfolioRiskScore: riskScore.total,  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ ADDED
+      activeStories: data.jira?.stories || 0,  // ✓ ADDED
+      blockers: blockerCount,  // ✓ FIXED: Calculate from initiatives, not read from team
+      portfolioRiskScore: riskScore.total,  // ✓ ADDED
       riskBreakdown: riskScore,  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ ADDED (health, validation, blockers, focus)
       comments: commentText, // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ NOW PROPERLY EXTRACTED!
       currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5)
