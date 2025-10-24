@@ -1,6 +1,6 @@
 /**
  * VueSense AI - Message Processing with Formatting and Clickable Entities
- * Handles markdown formatting AND clickable entity links
+ * FIXED: Removed inline color styles, let CSS handle colors
  */
 
 // ====================================================================
@@ -12,37 +12,37 @@ function formatMarkdown(text) {
   
   let formatted = text;
   
-  // Headers - must come before bold/italic
-  formatted = formatted.replace(/^### (.*$)/gim, '<h4 style="font-size: 1.1em; font-weight: 700; margin: 12px 0 8px 0; color: var(--text-primary);">$1</h4>');
-  formatted = formatted.replace(/^## (.*$)/gim, '<h3 style="font-size: 1.2em; font-weight: 700; margin: 14px 0 10px 0; color: var(--text-primary);">$1</h3>');
-  formatted = formatted.replace(/^# (.*$)/gim, '<h2 style="font-size: 1.3em; font-weight: 700; margin: 16px 0 12px 0; color: var(--text-primary);">$1</h2>');
+  // Headers - NO INLINE COLORS, just structure
+  formatted = formatted.replace(/^### (.*$)/gim, '<h4>$1</h4>');
+  formatted = formatted.replace(/^## (.*$)/gim, '<h3>$1</h3>');
+  formatted = formatted.replace(/^# (.*$)/gim, '<h2>$1</h2>');
   
-  // Bold text
-  formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong style="font-weight: 600; color: var(--accent-blue);">$1</strong>');
+  // Bold text - NO COLOR FORCING
+  formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   
   // Italic text
   formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   
   // Inline code
-  formatted = formatted.replace(/`([^`]+)`/g, '<code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">$1</code>');
+  formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
   
   // Bullet lists
   const bulletPattern = /^[\-\*] (.+)$/gim;
-  formatted = formatted.replace(bulletPattern, '<li style="margin-left: 20px;">$1</li>');
+  formatted = formatted.replace(bulletPattern, '<li>$1</li>');
   
   // Wrap list items in ul
   const ulPattern = /(<li[^>]*>.*?<\/li>\s*)+/g;
-  formatted = formatted.replace(ulPattern, '<ul style="margin: 8px 0; padding-left: 20px; list-style-type: disc;">$&</ul>');
+  formatted = formatted.replace(ulPattern, '<ul>$&</ul>');
   
   // Numbered lists
   const numberedPattern = /^(\d+)\. (.+)$/gim;
-  formatted = formatted.replace(numberedPattern, '<li style="margin-left: 20px;">$2</li>');
+  formatted = formatted.replace(numberedPattern, '<li>$2</li>');
   
   // Wrap numbered items in ol
   const olPattern = /(<li[^>]*>.*?<\/li>\s*)+/g;
   formatted = formatted.replace(olPattern, (match) => {
     if (!match.includes('value=')) {
-      return '<ol style="margin: 8px 0; padding-left: 20px;">' + match + '</ol>';
+      return '<ol>' + match + '</ol>';
     }
     return match;
   });
@@ -51,7 +51,7 @@ function formatMarkdown(text) {
   formatted = formatted.split('\n\n').map(para => {
     para = para.trim();
     if (para && !para.startsWith('<h') && !para.startsWith('<ul') && !para.startsWith('<ol')) {
-      return '<p style="margin: 8px 0; line-height: 1.6;">' + para + '</p>';
+      return '<p>' + para + '</p>';
     }
     return para;
   }).join('\n');
