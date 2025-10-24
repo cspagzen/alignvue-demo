@@ -72,12 +72,18 @@ class AIEngine {
   
   async sendMessage(userMessage) {
     try {
-      // Build the system message with complete portfolio data
+      // ALWAYS build fresh system message with latest portfolio data
       const systemMessage = this.buildSystemMessage();
       
-      // Initialize conversation with system message if needed
-      if (this.conversationHistory.length === 0) {
-        this.conversationHistory.push({
+      // Clear old system message and add fresh one
+      if (this.conversationHistory.length > 0 && this.conversationHistory[0].role === 'system') {
+        this.conversationHistory[0] = {
+          role: 'system',
+          content: systemMessage
+        };
+      } else {
+        // First message - add system message at the start
+        this.conversationHistory.unshift({
           role: 'system',
           content: systemMessage
         });
