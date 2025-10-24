@@ -1,6 +1,6 @@
 /**
  * VueSense AI - Message Processing with Formatting and Clickable Entities
- * FIXED: Removed inline color styles, let CSS handle colors
+ * OPTION 2: CONSISTENT BLUE LINKS (all links same color)
  */
 
 // ====================================================================
@@ -63,7 +63,7 @@ function formatMarkdown(text) {
 }
 
 // ====================================================================
-// STEP 2: MAKE ENTITIES CLICKABLE
+// STEP 2: MAKE ENTITIES CLICKABLE (ALL BLUE - CONSISTENT)
 // ====================================================================
 
 function makeEntitiesClickableInHTML(html) {
@@ -123,38 +123,24 @@ function makeEntitiesClickableInHTML(html) {
 }
 
 function createInitiativeLink(displayText, initiative) {
-  const typeColors = {
-    'strategic': '#3b82f6',
-    'ktlo': '#f59e0b',
-    'emergent': '#8b5cf6'
-  };
-  
-  const color = typeColors[initiative.type] || '#3b82f6';
   const escapedTitle = escapeHtml(initiative.title);
   
+  // CONSISTENT BLUE LINK for all initiatives
   return '<span class="ai-entity-link ai-entity-initiative" ' +
          'data-initiative-id="' + initiative.id + '" ' +
          'onclick="openInitiativeFromAI(\'' + initiative.id + '\'); event.stopPropagation();" ' +
-         'style="color: ' + color + '; cursor: pointer; text-decoration: underline; text-decoration-style: dotted; font-weight: 500;" ' +
+         'style="color: #60a5fa; cursor: pointer; text-decoration: underline; text-decoration-style: dotted;" ' +
          'title="Click to view ' + escapedTitle + ' details">' + displayText + '</span>';
 }
 
 function createTeamLink(displayText, teamName, teamData) {
-  const healthLevel = getTeamHealthLevelForLink(teamData);
-  const healthColors = {
-    'healthy': '#10b981',
-    'low-risk': '#3b82f6',
-    'high-risk': '#f59e0b',
-    'critical': '#ef4444'
-  };
-  
-  const color = healthColors[healthLevel] || '#6b7280';
   const escapedName = escapeHtml(teamName);
   
+  // CONSISTENT BLUE LINK for all teams (no health color coding)
   return '<span class="ai-entity-link ai-entity-team" ' +
          'data-team-name="' + escapedName + '" ' +
          'onclick="openTeamFromAI(\'' + escapedName + '\'); event.stopPropagation();" ' +
-         'style="color: ' + color + '; cursor: pointer; text-decoration: underline; text-decoration-style: dotted; font-weight: 500;" ' +
+         'style="color: #60a5fa; cursor: pointer; text-decoration: underline; text-decoration-style: dotted;" ' +
          'title="Click to view ' + escapedName + ' health details">' + displayText + '</span>';
 }
 
@@ -255,4 +241,4 @@ window.makeEntitiesClickableInHTML = makeEntitiesClickableInHTML;
 window.openInitiativeFromAI = openInitiativeFromAI;
 window.openTeamFromAI = openTeamFromAI;
 
-console.log('✅ VueSense AI Entity Links loaded');
+console.log('✅ VueSense AI Entity Links loaded (CONSISTENT BLUE links)');
