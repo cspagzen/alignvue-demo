@@ -219,7 +219,7 @@ class AIEngine {
         autonomy: data.autonomy,
         utilization: (data.jira && data.jira.utilization) || 0,
         activeStories: (data.jira && data.jira.stories) || 0,
-        blockers: (data.jira && data.jira.flagged) || 0,
+        blockers: (data.jira && data.jira.blockers) || 0,  // ✅ FIXED: Read from .blockers not .flagged
         comments: commentText,
         riskScore: riskScore,
         issues: issues

@@ -208,7 +208,7 @@ function extractTeamData(boardData) {
       initiativeCount: teamInitiatives.length,
       utilization: data.jira?.utilization || 0,
       activeStories: data.jira?.stories || 0,  // ✅ ADDED
-      blockers: data.jira?.flagged || 0,  // ✅ ADDED
+      blockers: data.jira?.blockers || 0,  // ✅ FIXED: Read from .blockers not .flagged
       portfolioRiskScore: riskScore.total,  // ✅ ADDED
       riskBreakdown: riskScore,  // ✅ ADDED (health, validation, blockers, focus)
       comments: commentText, // âœ… NOW PROPERLY EXTRACTED!
