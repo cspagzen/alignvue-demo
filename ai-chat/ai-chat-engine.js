@@ -202,6 +202,12 @@ class AIEngine {
       
       const riskScore = this.calculateTeamRisk(name, data);
       
+      // Ensure comments is a string or null
+      let comments = data.comments || (data.jira && data.jira.comments) || null;
+      if (comments && typeof comments !== 'string') {
+        comments = String(comments); // Convert to string if it's not
+      }
+      
       return {
         name: name,
         capacity: data.capacity,
@@ -211,7 +217,7 @@ class AIEngine {
         teamwork: data.teamwork,
         autonomy: data.autonomy,
         utilization: (data.jira && typeof data.jira.utilization === 'number') ? data.jira.utilization : 0,
-        comments: (data.jira && data.jira.comments) || data.comments || null,
+        comments: comments,
         riskScore: riskScore,
         issues: issues
       };
@@ -246,8 +252,11 @@ class AIEngine {
     
     // Build a separate COMMENTS section for visibility
     const commentsSection = teamData
-      .filter(function(t) { return t.comments && t.comments.trim().length > 0; })
-      .map(function(t) { return t.name + ': "' + t.comments + '"'; })
+      .filter(t => {
+        const comment = t.comments;
+        return comment && typeof comment === 'string' && comment.trim().length > 0;
+      })
+      .map(t => `${t.name}: "${t.comments}"`)
       .join('\n');
     
     return 'You are VueSense AI, a portfolio management assistant.\n\n' +
