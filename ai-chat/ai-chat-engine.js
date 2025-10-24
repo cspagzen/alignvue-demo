@@ -1,6 +1,5 @@
 /**
- * AI Chat Engine - FIXED TO USE ACTUAL COMMENT TEXT
- * NO MORE HALLUCINATED QUOTES!
+ * AI Chat Engine - Uses Complete Data Prep
  */
 
 // Cost Tracker
@@ -73,7 +72,7 @@ class AIEngine {
   
   async sendMessage(userMessage) {
     try {
-      // Build the system message with ACTUAL PORTFOLIO DATA
+      // Build the system message with complete portfolio data
       const systemMessage = this.buildSystemMessage();
       
       // Initialize conversation with system message if needed
@@ -176,28 +175,19 @@ class AIEngine {
     }
   }
   
-  // CRITICAL FIX: Read comments from data.comments NOT data.jira.comments
   buildSystemMessage() {
     // Use the comprehensive data prep functions that extract ALL fields
     const context = preparePortfolioContext(window.boardData);
     
     if (!context) {
       console.error('Failed to prepare portfolio context');
-      return window.AI_SYSTEM_PROMPT + '
-
-ERROR: Could not load portfolio data';
+      return window.AI_SYSTEM_PROMPT + '\n\nERROR: Could not load portfolio data';
     }
     
     const formattedContext = formatContextForAI(context);
     
     // Combine system prompt with complete portfolio data
-    const systemMessage = window.AI_SYSTEM_PROMPT + '
-
----
-
-## CURRENT PORTFOLIO DATA
-
-' + formattedContext;
+    const systemMessage = window.AI_SYSTEM_PROMPT + '\n\n---\n\n## CURRENT PORTFOLIO DATA\n\n' + formattedContext;
     
     console.log('✅ System message built with COMPLETE data:');
     console.log('  Teams:', context.teams.length);
@@ -302,4 +292,4 @@ ERROR: Could not load portfolio data';
 // Create and export the engine
 window.aiEngine = new AIEngine();
 
-console.log('âœ… VueSense AI Engine loaded - FIXED to use actual comment text!');
+console.log('✅ VueSense AI Engine loaded with complete data prep');
