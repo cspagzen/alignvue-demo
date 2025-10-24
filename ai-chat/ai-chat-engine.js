@@ -178,98 +178,33 @@ class AIEngine {
   
   // CRITICAL FIX: Read comments from data.comments NOT data.jira.comments
   buildSystemMessage() {
-    var self = this;
-    const teams = window.boardData?.teams || {};
-    const initiatives = window.boardData?.initiatives || [];
+    // Use the comprehensive data prep functions that extract ALL fields
+    const context = preparePortfolioContext(window.boardData);
     
-    console.log('🔍 Building system message with', Object.keys(teams).length, 'teams');
+    if (!context) {
+      console.error('Failed to prepare portfolio context');
+      return window.AI_SYSTEM_PROMPT + '
+
+ERROR: Could not load portfolio data';
+    }
     
-    const teamData = Object.entries(teams).map(function(entry) {
-      const name = entry[0];
-      const data = entry[1];
-      const issues = [];
-      
-      if (data.capacity === 'critical' || data.capacity === 'Critical') issues.push('Critical capacity');
-      if (data.capacity === 'at-risk' || data.capacity === 'At Risk') issues.push('At-risk capacity');
-      if (data.skillset === 'critical' || data.skillset === 'Critical') issues.push('Critical skillset');
-      if (data.skillset === 'at-risk' || data.skillset === 'At Risk') issues.push('At-risk skillset');
-      if (data.vision === 'critical' || data.vision === 'Critical') issues.push('Critical vision');
-      if (data.vision === 'at-risk' || data.vision === 'At Risk') issues.push('At-risk vision');
-      if (data.jira && data.jira.utilization > 95) issues.push('Overloaded at ' + data.jira.utilization + '% utilization');
-      
-      const riskScore = self.calculateTeamRisk(name, data);
-      
-      // ✅ CRITICAL FIX: Read from data.comments (NOT data.jira.comments)
-      const comments = data.comments || null;
-      
-      // Debug log to see what we're sending
-      if (comments) {
-        console.log(`📝 Team ${name} has comments:`, comments.substring(0, 100));
-      }
-      
-      const commentText = data.jira?.comments || null;
-if (commentText) {
-  console.log(`📝 AI will see ${name} comment:`, commentText.substring(0, 50));
-}
-return {
-  name,
-  capacity: data.capacity,
-  skillset: data.skillset,
-  vision: data.vision,
-  support: data.support,
-  teamwork: data.teamwork,
-  autonomy: data.autonomy,
-  utilization: (data.jira && data.jira.utilization) || 0,
-  comments: commentText,
-  riskScore: riskScore,
-  issues: issues
-};
-    });
+    const formattedContext = formatContextForAI(context);
     
-    const initiativeData = initiatives.map(function(init) {
-      const riskScore = self.calculateInitiativeRisk(init);
-      
-      return {
-        title: init.title || init.name,
-        type: init.type,
-        priority: init.priority,
-        validationStatus: init.validationStatus || init.validation,
-        teams: init.teams || [],
-        progress: init.progress || 0,
-        riskScore: riskScore
-      };
-    });
+    // Combine system prompt with complete portfolio data
+    const systemMessage = window.AI_SYSTEM_PROMPT + '
+
+---
+
+## CURRENT PORTFOLIO DATA
+
+' + formattedContext;
     
-    return 'You are VueSense AI, a portfolio management assistant.\n\n' +
-      'CURRENT PORTFOLIO DATA:\n\n' +
-      'TEAMS (' + Object.keys(teams).length + ' total):\n' +
-      JSON.stringify(teamData, null, 2) + '\n\n' +
-      'INITIATIVES (' + initiatives.length + ' total):\n' +
-      JSON.stringify(initiativeData, null, 2) + '\n\n' +
-      'CRITICAL ANTI-HALLUCINATION RULES:\n' +
-      '⚠️ WHEN ASKED FOR TEAM COMMENTS OR QUOTES:\n' +
-      '  1. READ the "comments" field for each team\n' +
-      '  2. USE THE EXACT TEXT from the comments field\n' +
-      '  3. Put quotes around the actual comment text\n' +
-      '  4. NEVER make up or paraphrase what teams said\n' +
-      '  5. If a team has no comments, say "no comments provided"\n' +
-      '  6. NEVER synthesize comments from health dimensions\n\n' +
-      'EXAMPLE - CORRECT:\n' +
-      'User: "Give me quotes from teams with capacity issues"\n' +
-      'You: "Core Platform Team: \\"Our workload is very high, and autonomy is at risk. We often have to wait on architectural decisions from leadership, which slows our delivery.\\""\n\n' +
-      'EXAMPLE - WRONG (DO NOT DO THIS):\n' +
-      'You: "Core Platform Team: \\"We are experiencing critical capacity constraints\\"" ← THIS IS MADE UP!\n\n' +
-      'INSTRUCTIONS:\n' +
-      '- When asked "Which teams need support?", list the SPECIFIC team names that have issues\n' +
-      '- When asked about team comments or patterns, read the "comments" field for each team\n' +
-      '- When asked about risk scores, use the "riskScore" field that is already calculated\n' +
-      '- Always use the actual data provided above\n' +
-      '- Never give generic advice - always reference specific teams and initiatives by name\n' +
-      '- IMPORTANT: Read team comments to understand WHY teams have issues - comments contain critical context\n' +
-      '- IMPORTANT: Risk scores are already calculated - use them directly, do not recalculate\n\n' +
-      'RISK SCORE INTERPRETATION:\n' +
-      'Team Risk Scores: 0-20 Low, 21-40 Moderate, 41-60 High, 61+ Critical\n' +
-      'Initiative Risk Scores: 0-7 Low, 8-11 Medium, 12-22 High, 23+ Critical';
+    console.log('✅ System message built with COMPLETE data:');
+    console.log('  Teams:', context.teams.length);
+    console.log('  Initiatives:', context.initiatives.length);
+    console.log('  Total context length:', systemMessage.length, 'characters');
+    
+    return systemMessage;
   }
 
   buildMinimalSystemMessage() {
@@ -367,4 +302,4 @@ return {
 // Create and export the engine
 window.aiEngine = new AIEngine();
 
-console.log('✅ VueSense AI Engine loaded - FIXED to use actual comment text!');
+console.log('âœ… VueSense AI Engine loaded - FIXED to use actual comment text!');
