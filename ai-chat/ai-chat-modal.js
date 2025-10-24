@@ -242,11 +242,27 @@ class VueSenseModal {
     
     if (!message || this.isTyping) return;
     
+    if (window.analytics) {
+        window.analytics.trackAIChatQuestion(
+            message.length,
+            this.messages.length > 0
+        );
+    }
+    
     if (this.messages.length === 0) {
       this.messagesContainer.innerHTML = '';
     }
     
     this.addMessage(message, 'user');
+    
+    if (this.messages.length >= 3 && window.analytics) {
+    window.analytics.trackEvent('ai_followup_question', {
+        conversation_length: this.messages.length,
+        question_length: message.length,
+        event_category: 'AI_Assistant'
+    });
+}
+    
     this.inputField.value = '';
     this.inputField.style.height = 'auto';
     this.updateCharCounter();
@@ -461,6 +477,7 @@ class VueSenseModal {
   }
   
   open() {
+    if (window.analytics) window.analytics.trackAIChatOpen();
     this.isOpen = true;
     this.overlay?.classList.add('active');
     this.trigger?.classList.add('hidden');
