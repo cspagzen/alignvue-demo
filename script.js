@@ -12227,7 +12227,7 @@ async function fetchTeamHealthData() {
                 jira: {
                     key: issue.key,
                     utilization: fields.customfield_10264 || 0,
-                    comments: fields.customfield_10263 || null,
+                    comments: extractTextFromDoc(fields.customfield_10263),
                     sprint: null,
                     velocity: null,
                     stories: null,
