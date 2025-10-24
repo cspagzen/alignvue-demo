@@ -244,7 +244,24 @@ class AIEngine {
         'No teams have utilization data loaded. Inform the user that Jira team health data needs to be synced.\n';
     }
     
+    // Build a separate COMMENTS section for visibility
+    const commentsSection = teamData
+      .filter(function(t) { return t.comments && t.comments.trim().length > 0; })
+      .map(function(t) { return t.name + ': "' + t.comments + '"'; })
+      .join('\n');
+    
     return 'You are VueSense AI, a portfolio management assistant.\n\n' +
+      '🔴 CRITICAL: TEAM COMMENTS ARE THE MOST IMPORTANT DATA SOURCE\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+      'When users ask to "synthesize comments", "analyze comments", "what are teams saying", or similar:\n' +
+      '1. READ ALL TEAM COMMENTS BELOW - They contain the real story\n' +
+      '2. Look for patterns, common themes, and concerns across teams\n' +
+      '3. Group similar issues together (e.g., all teams mentioning hiring, dependencies, etc.)\n' +
+      '4. Quote specific teams when referencing their comments\n' +
+      '5. Health dimensions (capacity, skillset) are secondary - COMMENTS are primary\n\n' +
+      'TEAM COMMENTS (READ THESE FIRST):\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+      (commentsSection || 'No team comments available.') + '\n\n' +
       'CURRENT PORTFOLIO DATA:\n\n' +
       'DATA QUALITY: ' + dataQuality.utilizationDataPercent + '% of teams have utilization data' + dataQualityWarning + '\n' +
       'TEAMS (' + Object.keys(teams).length + ' total):\n' +
@@ -252,12 +269,21 @@ class AIEngine {
       'INITIATIVES (' + initiatives.length + ' total):\n' +
       JSON.stringify(initiativeData, null, 2) + '\n\n' +
       'INSTRUCTIONS:\n' +
-      '- When asked about teams, list the SPECIFIC team names with their actual data\n' +
+      '- **PRIORITY #1**: When asked about comments, READ THE "TEAM COMMENTS" SECTION ABOVE\n' +
+      '- Synthesize comments by finding themes: hiring needs, blocking dependencies, skill gaps, process issues, etc.\n' +
+      '- Always quote which teams said what: "Platform Team mentioned...", "3 teams are struggling with..."\n' +
+      '- When asked about teams, list SPECIFIC team names with their actual data\n' +
       '- When asked about utilization, use the actual utilization percentages from the data\n' +
       '- When asked about risk scores, use the pre-calculated riskScore field\n' +
       '- Always reference specific teams and initiatives by name\n' +
-      '- Read team comments to understand WHY teams have issues\n' +
       '- Risk scores are already calculated - use them directly\n\n' +
+      'COMMENT SYNTHESIS EXAMPLES:\n' +
+      'User: "Synthesize team comments"\n' +
+      'Good Response: "Looking across all team comments, I see 3 main themes:\n' +
+      '  1. HIRING PRESSURE (4 teams): Platform Team, Data Team, Backend Team, and Mobile Team all mention needing additional headcount\n' +
+      '  2. EXTERNAL DEPENDENCIES (2 teams): Integration Team is blocked waiting on vendor APIs, Platform Team waiting on security approvals\n' +
+      '  3. TECHNICAL DEBT (3 teams): Frontend, Backend, and Platform teams all cite legacy code slowing them down"\n\n' +
+      'Bad Response: "The teams have capacity issues and skillset concerns." [TOO GENERIC - MUST USE ACTUAL COMMENTS]\n\n' +
       'RISK SCORE INTERPRETATION:\n' +
       'Team Risk Scores: 0-20 Low, 21-40 Moderate, 41-60 High, 61+ Critical\n' +
       'Initiative Risk Scores: 0-7 Low, 8-11 Medium, 12-22 High, 23+ Critical';
