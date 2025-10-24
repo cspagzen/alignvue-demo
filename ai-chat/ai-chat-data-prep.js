@@ -36,7 +36,7 @@ function extractTextFromJiraDoc(comment) {
   }
   
   // Last resort: stringify and log warning
-  console.warn('âš ï¸ Unexpected comment format:', typeof comment, comment);
+  console.warn('Ã¢Å¡Â Ã¯Â¸Â Unexpected comment format:', typeof comment, comment);
   return JSON.stringify(comment);
 }
 
@@ -69,7 +69,7 @@ function extractTextFromContent(contentArray) {
     
     // Handle list items
     if (node.type === 'listItem' && Array.isArray(node.content)) {
-      text += 'â€¢ ' + extractTextFromContent(node.content) + ' ';
+      text += 'Ã¢â‚¬Â¢ ' + extractTextFromContent(node.content) + ' ';
     }
   }
   
@@ -85,13 +85,14 @@ function preparePortfolioContext(boardData) {
   try {
     const context = {
       summary: generateSummary(boardData),
+      deliveryConfidence: calculateDeliveryConfidence(boardData),
       teams: extractTeamData(boardData),
       initiatives: extractInitiativeData(boardData),
       patterns: detectPatterns(boardData),
       timestamp: new Date().toISOString()
     };
     
-    console.log('âœ… Portfolio context prepared:', context);
+    console.log('Ã¢Å“â€¦ Portfolio context prepared:', context);
     return context;
   } catch (error) {
     console.error('Error preparing portfolio context:', error);
@@ -108,6 +109,175 @@ function generateSummary(boardData) {
     totalTeams: teamCount,
     totalInitiatives: initiatives.length,
     pipelineInitiatives: (boardData.bullpen || []).filter(x => x).length
+  };
+}
+
+/**
+ * Calculate Portfolio Delivery Confidence
+ * EXACT COPY from script.js - must stay in sync!
+ */
+function calculateDeliveryConfidence(boardData) {
+  let confidence = 90; // Start at 90%
+  
+  // Get row/col helper function
+  function getRowColFromSlot(slotNumber) {
+    const row = Math.ceil(slotNumber / 5);
+    const col = ((slotNumber - 1) % 5) + 1;
+    return { row, col };
+  }
+  
+  // Define "above the line" and "below the line" 
+  // Rows 1-5 are above the line (NOW and NEXT timeframes)
+  // Rows 6-8 are below the line (LATER timeframe)
+  const aboveTheLine = boardData.initiatives.filter(init => {
+    if (init.priority === 'bullpen') return false;
+    const row = getRowColFromSlot(init.priority).row;
+    return row <= 5;
+  });
+  
+  const belowTheLine = boardData.initiatives.filter(init => {
+    if (init.priority === 'bullpen') return false;
+    const row = getRowColFromSlot(init.priority).row;
+    return row > 5;
+  });
+  
+  // =========================================================================
+  // SECTION 1: ABOVE THE LINE RISKS (High Priority Work) - FULL WEIGHT
+  // =========================================================================
+  
+  const aboveLineTeams = new Set();
+  aboveTheLine.forEach(init => {
+    init.teams.forEach(team => aboveLineTeams.add(team));
+  });
+  
+  // 1A. CAPACITY RISKS - Above the line (-4% each)
+  const capacityRisksAbove = Array.from(aboveLineTeams).filter(teamName => {
+    const team = boardData.teams[teamName];
+    return team && (team.capacity === 'Critical' || team.capacity === 'At Risk' || 
+           team.capacity === 'critical' || team.capacity === 'at-risk');
+  }).length;
+  confidence -= capacityRisksAbove * 4;
+  
+  // 1B. SKILLSET RISKS - Above the line (-3% each)
+  const skillsetRisksAbove = Array.from(aboveLineTeams).filter(teamName => {
+    const team = boardData.teams[teamName];
+    return team && (team.skillset === 'Critical' || team.skillset === 'At Risk' || 
+           team.skillset === 'critical' || team.skillset === 'at-risk');
+  }).length;
+  confidence -= skillsetRisksAbove * 3;
+  
+  // 1C. BLOCKED WORK - Above the line only (-0.5% per item, max -15%)
+  const blockedItemsAbove = aboveTheLine.reduce((total, init) => {
+    return total + (init.jira?.flagged || 0);
+  }, 0);
+  const blockerPenalty = Math.min(blockedItemsAbove * 0.5, 15);
+  confidence -= blockerPenalty;
+  
+  // 1D. STAGNANT INITIATIVES - Above the line only (-3% each)
+  const stagnantAbove = aboveTheLine.filter(init => {
+    return init.progress < 25;
+  }).length;
+  confidence -= stagnantAbove * 3;
+  
+  // 1E. OVER-UTILIZATION - All teams (-2% each)
+  const overUtilizedTeams = Object.values(boardData.teams).filter(team => {
+    return (team.jira?.utilization || 0) > 95;
+  }).length;
+  confidence -= overUtilizedTeams * 2;
+  
+  // 1F. SUPPORT RISKS - Above the line teams only (-2% each)
+  const supportRisksAbove = Array.from(aboveLineTeams).filter(teamName => {
+    const team = boardData.teams[teamName];
+    return team && (team.support === 'Critical' || team.support === 'At Risk' || 
+           team.support === 'critical' || team.support === 'at-risk');
+  }).length;
+  confidence -= supportRisksAbove * 2;
+  
+  // =========================================================================
+  // SECTION 2: BELOW THE LINE RISKS - REDUCED WEIGHT (50%)
+  // =========================================================================
+  
+  const belowLineTeams = new Set();
+  belowTheLine.forEach(init => {
+    init.teams.forEach(team => belowLineTeams.add(team));
+  });
+  
+  // 2A. CAPACITY RISKS - Below the line (-2% each, 50% weight)
+  const capacityRisksBelow = Array.from(belowLineTeams).filter(teamName => {
+    const team = boardData.teams[teamName];
+    return team && (team.capacity === 'Critical' || team.capacity === 'At Risk' || 
+           team.capacity === 'critical' || team.capacity === 'at-risk');
+  }).length;
+  confidence -= capacityRisksBelow * 2;
+  
+  // 2B. SKILLSET RISKS - Below the line (-1.5% each, 50% weight)
+  const skillsetRisksBelow = Array.from(belowLineTeams).filter(teamName => {
+    const team = boardData.teams[teamName];
+    return team && (team.skillset === 'Critical' || team.skillset === 'At Risk' || 
+           team.skillset === 'critical' || team.skillset === 'at-risk');
+  }).length;
+  confidence -= skillsetRisksBelow * 1.5;
+  
+  // =========================================================================
+  // SECTION 3: DISTRACTION PENALTY
+  // =========================================================================
+  
+  const activeWorkBelowLine = belowTheLine.filter(init => {
+    return init.progress > 10; // More than just started
+  }).length;
+  
+  const distractionPenalty = Math.floor(activeWorkBelowLine / 3) * 2;
+  confidence -= distractionPenalty;
+  
+  // =========================================================================
+  // SECTION 4: FOCUS BONUS
+  // =========================================================================
+  
+  let focusBonus = 0;
+  if (activeWorkBelowLine === 0) {
+    focusBonus = 3; // Perfect focus!
+  } else if (activeWorkBelowLine <= 2) {
+    focusBonus = 2;
+  } else if (activeWorkBelowLine <= 4) {
+    focusBonus = 1;
+  }
+  confidence += focusBonus;
+  
+  // Ensure confidence stays within reasonable bounds
+  confidence = Math.max(confidence, 45);
+  confidence = Math.min(confidence, 95);
+  
+  // Determine rating based on confidence level
+  let rating;
+  if (confidence >= 85) {
+    rating = 'Excellent';
+  } else if (confidence >= 70) {
+    rating = 'Good';
+  } else if (confidence >= 55) {
+    rating = 'Fair';
+  } else {
+    rating = 'At Risk';
+  }
+  
+  return {
+    score: Math.round(confidence),
+    rating: rating,
+    breakdown: {
+      capacityAbove: capacityRisksAbove,
+      skillsetAbove: skillsetRisksAbove,
+      blockersAbove: blockedItemsAbove,
+      blockerPenalty: Math.round(blockerPenalty),
+      stagnantAbove: stagnantAbove,
+      supportAbove: supportRisksAbove,
+      capacityBelow: capacityRisksBelow,
+      skillsetBelow: skillsetRisksBelow,
+      overUtilization: overUtilizedTeams,
+      activeWorkBelowLine: activeWorkBelowLine,
+      distractionPenalty: distractionPenalty,
+      focusBonus: focusBonus,
+      totalAboveLineInitiatives: aboveTheLine.length,
+      totalBelowLineInitiatives: belowTheLine.length
+    }
   };
 }
 
@@ -171,7 +341,7 @@ function extractTeamData(boardData) {
   const teams = boardData.teams || {};
   const initiatives = boardData.initiatives || [];
   
-  console.log('ðŸ“Š Extracting data for', Object.keys(teams).length, 'teams...');
+  console.log('Ã°Å¸â€œÅ  Extracting data for', Object.keys(teams).length, 'teams...');
   
   return Object.entries(teams).map(([name, data]) => {
     // Find initiatives this team is working on
@@ -185,13 +355,13 @@ function extractTeamData(boardData) {
     
     // Debug logging to see what we're extracting
     if (rawComment) {
-      console.log(`\nðŸ” Team: ${name}`);
+      console.log(`\nÃ°Å¸â€Â Team: ${name}`);
       console.log('  Raw comment type:', typeof rawComment);
       if (typeof rawComment === 'object') {
         console.log('  Raw comment structure:', rawComment.type || 'no type', 
                     Array.isArray(rawComment.content) ? `${rawComment.content.length} content items` : 'no content');
       }
-      console.log('  âœ… Extracted text:', commentText.substring(0, 100) + (commentText.length > 100 ? '...' : ''));
+      console.log('  Ã¢Å“â€¦ Extracted text:', commentText.substring(0, 100) + (commentText.length > 100 ? '...' : ''));
     }
     
     // Calculate portfolio risk score for this team
@@ -207,11 +377,11 @@ function extractTeamData(boardData) {
       autonomy: data.autonomy || 'unknown',
       initiativeCount: teamInitiatives.length,
       utilization: data.jira?.utilization || 0,
-      activeStories: data.jira?.stories || 0,  // ✅ ADDED
-      blockers: data.jira?.blockers || 0,  // ✅ FIXED: Read from .blockers not .flagged
-      portfolioRiskScore: riskScore.total,  // ✅ ADDED
-      riskBreakdown: riskScore,  // ✅ ADDED (health, validation, blockers, focus)
-      comments: commentText, // âœ… NOW PROPERLY EXTRACTED!
+      activeStories: data.jira?.stories || 0,  // âœ… ADDED
+      blockers: data.jira?.blockers || 0,  // âœ… FIXED: Read from .blockers not .flagged
+      portfolioRiskScore: riskScore.total,  // âœ… ADDED
+      riskBreakdown: riskScore,  // âœ… ADDED (health, validation, blockers, focus)
+      comments: commentText, // Ã¢Å“â€¦ NOW PROPERLY EXTRACTED!
       currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5)
     };
   });
@@ -229,7 +399,7 @@ function extractInitiativeData(boardData) {
     progress: init.progress || 0,
     stories: init.jira?.stories || 0,
     flagged: init.jira?.flagged || 0,
-    // ✅ OPPORTUNITY CANVAS FIELDS
+    // âœ… OPPORTUNITY CANVAS FIELDS
     customer: init.canvas?.customer || 'N/A',
     problem: init.canvas?.problem || 'N/A',
     solution: init.canvas?.solution || 'N/A',
@@ -270,6 +440,18 @@ function formatContextForAI(context) {
 - Total Teams: ${context.summary.totalTeams}
 - Total Initiatives: ${context.summary.totalInitiatives}
 - Pipeline Initiatives: ${context.summary.pipelineInitiatives || 0}
+
+PORTFOLIO DELIVERY CONFIDENCE:
+- Score: ${context.deliveryConfidence.score}% (${context.deliveryConfidence.rating})
+- Above the Line Initiatives: ${context.deliveryConfidence.breakdown.totalAboveLineInitiatives}
+- Below the Line Initiatives: ${context.deliveryConfidence.breakdown.totalBelowLineInitiatives}
+- Capacity Risks (Above): ${context.deliveryConfidence.breakdown.capacityAbove} teams (-${context.deliveryConfidence.breakdown.capacityAbove * 4}%)
+- Skillset Risks (Above): ${context.deliveryConfidence.breakdown.skillsetAbove} teams (-${context.deliveryConfidence.breakdown.skillsetAbove * 3}%)
+- Blocked Work Items: ${context.deliveryConfidence.breakdown.blockersAbove} items (-${context.deliveryConfidence.breakdown.blockerPenalty}%)
+- Stagnant Initiatives: ${context.deliveryConfidence.breakdown.stagnantAbove} (<25% progress, -${context.deliveryConfidence.breakdown.stagnantAbove * 3}%)
+- Over-Utilized Teams: ${context.deliveryConfidence.breakdown.overUtilization} teams (-${context.deliveryConfidence.breakdown.overUtilization * 2}%)
+- Active Work Below Line: ${context.deliveryConfidence.breakdown.activeWorkBelowLine} initiatives (-${context.deliveryConfidence.breakdown.distractionPenalty}%)
+- Focus Bonus: +${context.deliveryConfidence.breakdown.focusBonus}%
 
 `;
 
@@ -351,9 +533,9 @@ function formatContextForAI(context) {
     }
   });
   
-  console.log('ðŸ“„ Formatted context length:', formatted.length, 'characters');
+  console.log('Ã°Å¸â€œâ€ž Formatted context length:', formatted.length, 'characters');
   
   return formatted;
 }
 
-console.log('âœ… VueSense AI Data Prep with Jira Comment Extraction loaded');
+console.log('Ã¢Å“â€¦ VueSense AI Data Prep with Jira Comment Extraction loaded');
