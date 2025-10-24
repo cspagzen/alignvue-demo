@@ -196,6 +196,104 @@ window.addEventListener('load', () => {
     setInterval(trackSessionDuration, 60000); // Check every minute
 });
 
+// === User Journey Tracking ===
+const userJourney = [];
+let journeyStartTime = Date.now();
+
+function trackUserJourney(action, metadata = {}) {
+    userJourney.push({
+        action: action,
+        timestamp: Date.now(),
+        metadata: metadata
+    });
+    
+    // After 5 actions, send journey to GA
+    if (userJourney.length >= 5) {
+        const journey = userJourney.map(j => j.action).join(' → ');
+        const totalTime = Date.now() - journeyStartTime;
+        
+        trackEvent('user_journey', {
+            event_category: 'Engagement',
+            journey_path: journey.substring(0, 100),
+            journey_length: userJourney.length,
+            journey_duration_seconds: Math.floor(totalTime / 1000)
+        });
+        
+        // Reset for next journey
+        userJourney.length = 0;
+        journeyStartTime = Date.now();
+    }
+}
+
+// === Global Error Tracking ===
+// Track all JavaScript errors
+window.addEventListener('error', function(event) {
+    if (window.analytics) {
+        window.analytics.trackError(
+            'javascript_error',
+            event.message || 'Unknown error'
+        );
+        
+        // Also log the file and line number
+        if (event.filename) {
+            console.error('Error tracked:', {
+                message: event.message,
+                file: event.filename,
+                line: event.lineno,
+                column: event.colno
+            });
+        }
+    }
+});
+
+// Track all unhandled promise rejections
+window.addEventListener('unhandledrejection', function(event) {
+    if (window.analytics) {
+        window.analytics.trackError(
+            'promise_rejection',
+            String(event.reason).substring(0, 100)
+        );
+        
+        console.error('Promise rejection tracked:', event.reason);
+    }
+});
+
+console.log('✅ Error tracking initialized');
+
+// === Performance Tracking Helper ===
+function trackAsyncOperation(operationName, asyncFunction) {
+    return async function(...args) {
+        const startTime = performance.now();
+        
+        try {
+            const result = await asyncFunction(...args);
+            const duration = performance.now() - startTime;
+            
+            if (window.analytics) {
+                window.analytics.trackPerformance(operationName, Math.floor(duration));
+                
+                // Track if slow (> 2 seconds)
+                if (duration > 2000) {
+                    window.analytics.trackEvent('slow_operation', {
+                        event_category: 'Performance',
+                        operation: operationName,
+                        duration_ms: Math.floor(duration)
+                    });
+                }
+            }
+            
+            return result;
+        } catch (error) {
+            if (window.analytics) {
+                window.analytics.trackError(operationName + '_error', error.message);
+            }
+            throw error;
+        }
+    };
+}
+
+console.log('✅ Performance tracking initialized');
+
 // Export functions for global use
 window.analytics = {
     trackEvent,
@@ -215,5 +313,7 @@ window.analytics = {
     trackModalClose,
     trackScreenResolution,
     trackError,
-    trackPerformance
+    trackPerformance,
+    trackUserJourney,
+    trackAsyncOperation
 };
