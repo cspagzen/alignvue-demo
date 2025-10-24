@@ -11131,21 +11131,46 @@ let syncState = {
 
 // Helper function for extracting text from Jira doc format
 function extractTextFromDoc(docField) {
-    if (!docField || !docField.content) return null;
+    // Handle null/undefined
+    if (!docField) return null;
     
-    let text = '';
-    function extractText(content) {
-        content.forEach(item => {
-            if (item.type === 'text') {
-                text += item.text;
-            } else if (item.content) {
-                extractText(item.content);
-            }
-        });
+    // If it's already a plain string, return it
+    if (typeof docField === 'string') {
+        return docField.trim() || null;
     }
     
-    extractText(docField.content);
-    return text.trim() || null;
+    // If it's a number or boolean, convert to string
+    if (typeof docField === 'number' || typeof docField === 'boolean') {
+        return String(docField);
+    }
+    
+    // Handle Jira Document Format (ADF)
+    if (typeof docField === 'object' && docField.content) {
+        let text = '';
+        
+        const extractText = function(content) {  // ✅ CHANGED: function expression
+            if (!Array.isArray(content)) return;
+            
+            content.forEach(item => {
+                if (item.type === 'text' && item.text) {
+                    text += item.text;
+                } else if (item.content) {
+                    extractText(item.content);
+                    // Add space after block elements
+                    if (['paragraph', 'heading'].includes(item.type)) {
+                        text += ' ';
+                    }
+                }
+            });
+        };
+        
+        extractText(docField.content);
+        return text.trim() || null;
+    }
+    
+    // Last resort: stringify and warn
+    console.warn('Unexpected comment format:', typeof docField, docField);
+    return JSON.stringify(docField);
 }
 
 // Make sure getFieldValue handles the object format properly
