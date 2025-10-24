@@ -11058,7 +11058,8 @@ function updateBoardWithLiveData(newData) {
         boardData.teams = { ...boardData.teams, ...newData.teams };
     }
     
-    aggregateTeamMetrics();
+    // NOTE: aggregateTeamMetrics() is called AFTER team health integration completes
+    // (see installPermanentTeamHealthIntegration function)
     
     console.log(`Updated with ${boardData.initiatives.length} initiatives, ${boardData.bullpen.length} bullpen items, and ${boardData.okrs.issues.length} OKR items`);
     
@@ -12360,6 +12361,9 @@ function installPermanentTeamHealthIntegration() {
             console.log('ðŸ¥ Auto-integrating team health data...');
             await integrateTeamHealthData();
             
+            // CRITICAL: Calculate portfolio risk scores AFTER team health data loads
+            aggregateTeamMetrics();
+            
             return result;
         } catch (error) {
             console.error('âŒ Enhanced sync error (falling back to original):', error);
@@ -12676,7 +12680,7 @@ function showTeamModal(teamName, teamData) {
             
             <!-- Blockers Card -->
             <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                <div class="text-3xl font-bold mb-1" style="color: ${(teamData.jira?.blockers || 0) > 0 ? 'var(--accent-orange)' : 'var(--text-primary)'};">${teamData.jira?.blockers || 0}</div>
+                <div class="text-3xl font-bold mb-1" style="color: ${(teamData.jira?.flagged || 0) > 0 ? 'var(--accent-orange)' : 'var(--text-primary)'};">${teamData.jira?.flagged || 0}</div>
                 <div class="text-xs" style="color: var(--text-secondary);">Blockers</div>
             </div>
         </div>
@@ -14321,7 +14325,65 @@ function aggregateTeamMetrics() {
         });
     });
     
-    console.log('âœ… Team metrics aggregated');
+    // Calculate and store portfolioRiskScore for each team
+    Object.keys(boardData.teams).forEach(teamName => {
+        const riskPoints = calculateTeamRiskPoints(teamName);
+        boardData.teams[teamName].portfolioRiskScore = riskPoints;
+        
+        // Calculate breakdown for AI
+        const team = boardData.teams[teamName];
+        const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+        let baseHealth = 0;
+        let criticalCount = 0;
+        let atRiskCount = 0;
+        
+        dimensions.forEach(dim => {
+            const value = team[dim];
+            if (value === 'critical' || value === 'Critical') {
+                criticalCount++;
+                baseHealth += 15;
+            } else if (value === 'at-risk' || value === 'At Risk') {
+                atRiskCount++;
+                baseHealth += 7;
+            }
+        });
+        
+        let multiplier = 1.0;
+        if (criticalCount >= 3) multiplier = 2.0;
+        else if (criticalCount >= 1 || atRiskCount >= 3) multiplier = 1.5;
+        
+        const teamInitiatives = boardData.initiatives.filter(init => 
+            init.teams && init.teams.includes(teamName) && init.priority !== 'bullpen'
+        );
+        
+        let validationRisk = 0;
+        teamInitiatives.forEach(init => {
+            if (init.validation === 'not-validated') validationRisk += 8;
+            else if (init.validation === 'in-validation') validationRisk += 4;
+            const blockerRisk = Math.min(8, Math.floor((init.jira?.flagged || 0) / 3));
+            validationRisk += blockerRisk;
+        });
+        
+        const initiativeCount = teamInitiatives.length;
+        let focusRisk = 0;
+        if (initiativeCount > 5) focusRisk = (initiativeCount - 5) * 5;
+        else if (initiativeCount > 3) focusRisk = (initiativeCount - 3) * 3;
+        
+        const utilization = team.jira?.utilization || 0;
+        let utilizationRisk = 0;
+        if (utilization > 95) utilizationRisk = 20;
+        else if (utilization > 85) utilizationRisk = 10;
+        
+        boardData.teams[teamName].riskBreakdown = {
+            health: baseHealth,
+            validation: Math.round(validationRisk * multiplier),
+            blockers: 0,
+            focus: focusRisk,
+            utilization: utilizationRisk
+        };
+    });
+    
+    console.log('Team metrics aggregated with portfolio risk scores');
 }
 
         init();

@@ -117,6 +117,37 @@ else if (utilization > 85): totalRisk += 10
 
 ---
 
+**When User Asks**: "How is portfolio risk score calculated?" or "What's the formula?"
+
+**CRITICAL**: You MUST provide the EXACT formula below. DO NOT improvise or give generic explanations.
+
+**EXACT FORMULA TO PROVIDE**:
+
+```
+Team Portfolio Risk Score = Base Health Risk + (Amplified Initiative Risk) + Focus Penalty + Utilization Penalty
+
+WHERE:
+  Base Health Risk = Sum of all team health dimension risks (capacity, skillset, vision, support, teamwork, autonomy)
+    - Capacity: At Risk = 3 pts, Critical = 6 pts
+    - Skillset: At Risk = 3 pts, Critical = 6 pts  
+    - Support: At Risk = 2 pts, Critical = 4 pts
+    - Vision: At Risk = 1 pt, Critical = 2 pts
+    - Teamwork: At Risk = 1 pt, Critical = 2 pts
+    - Autonomy: At Risk = 1 pt, Critical = 2 pts
+    
+  Amplified Initiative Risk = Sum of (Initiative Risk Score × Team Health Multiplier) for all initiatives
+    - Team Health Multiplier = 1.0× for Healthy teams, 1.5× for At Risk teams, 2.0× for Critical teams
+    - Multiplier is based on team's WORST health dimension (capacity or skillset)
+    
+  Focus Penalty = Number of concurrent initiatives × 2 pts (if team has 4+ initiatives)
+  
+  Utilization Penalty = 20 pts if utilization > 95%, 10 pts if 85-95%
+```
+
+**Example Response**: "The formula is: Base Health Risk + (Initiative Risk × 1.5× multiplier for At Risk teams) + Focus Penalty + Utilization Penalty. For Core Platform: 29 pts base health + 94 pts amplified initiative risk + 6 pts focus penalty + 20 pts utilization = 164 points total."
+
+---
+
 ### 3. INITIATIVE RISK SCORE (0-50 Points)
 
 **What It Measures**: Risk for a specific initiative
