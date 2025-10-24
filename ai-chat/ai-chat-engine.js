@@ -185,13 +185,32 @@ buildSystemMessage() {
   const teams = window.boardData?.teams || {};
   const initiatives = window.boardData?.initiatives || [];
   
-  // Get data quality information
-  const context = preparePortfolioContext(window.boardData);
-  const dataQuality = context?.dataQuality || {
+  // Get data quality information (safely)
+  let dataQuality = {
     totalTeams: 0,
     teamsWithUtilization: 0,
     utilizationDataPercent: 0
   };
+  
+  try {
+    // Calculate data quality inline to avoid dependency issues
+    const teamCount = Object.keys(teams).length;
+    let teamsWithUtilization = 0;
+    
+    Object.values(teams).forEach(function(team) {
+      if (team.jira && typeof team.jira.utilization === 'number') {
+        teamsWithUtilization++;
+      }
+    });
+    
+    dataQuality = {
+      totalTeams: teamCount,
+      teamsWithUtilization: teamsWithUtilization,
+      utilizationDataPercent: teamCount > 0 ? Math.round((teamsWithUtilization / teamCount) * 100) : 0
+    };
+  } catch (error) {
+    console.warn('Could not calculate data quality:', error);
+  }
   
   const teamData = Object.entries(teams).map(function(entry) {
     const name = entry[0];
