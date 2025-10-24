@@ -207,19 +207,23 @@ class AIEngine {
         console.log(`📝 Team ${name} has comments:`, comments.substring(0, 100));
       }
       
-      return {
-        name: name,
-        capacity: data.capacity,
-        skillset: data.skillset,
-        vision: data.vision,
-        support: data.support,
-        teamwork: data.teamwork,
-        autonomy: data.autonomy,
-        utilization: (data.jira && data.jira.utilization) || 0,
-        comments: comments, // ✅ NOW READING FROM THE RIGHT PLACE!
-        riskScore: riskScore,
-        issues: issues
-      };
+      const commentText = data.jira?.comments || null;
+if (commentText) {
+  console.log(`📝 AI will see ${name} comment:`, commentText.substring(0, 50));
+}
+return {
+  name,
+  capacity: data.capacity,
+  skillset: data.skillset,
+  vision: data.vision,
+  support: data.support,
+  teamwork: data.teamwork,
+  autonomy: data.autonomy,
+  utilization: (data.jira && data.jira.utilization) || 0,
+  comments: commentText,
+  riskScore: riskScore,
+  issues: issues
+};
     });
     
     const initiativeData = initiatives.map(function(init) {
