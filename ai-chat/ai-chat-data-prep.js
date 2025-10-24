@@ -36,7 +36,7 @@ function extractTextFromJiraDoc(comment) {
   }
   
   // Last resort: stringify and log warning
-  console.warn('ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Unexpected comment format:', typeof comment, comment);
+  console.warn('ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Unexpected comment format:', typeof comment, comment);
   return JSON.stringify(comment);
 }
 
@@ -69,7 +69,7 @@ function extractTextFromContent(contentArray) {
     
     // Handle list items
     if (node.type === 'listItem' && Array.isArray(node.content)) {
-      text += 'ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ' + extractTextFromContent(node.content) + ' ';
+      text += 'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ ' + extractTextFromContent(node.content) + ' ';
     }
   }
   
@@ -92,7 +92,7 @@ function preparePortfolioContext(boardData) {
       timestamp: new Date().toISOString()
     };
     
-    console.log('ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Portfolio context prepared:', context);
+    console.log('ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Portfolio context prepared:', context);
     return context;
   } catch (error) {
     console.error('Error preparing portfolio context:', error);
@@ -113,18 +113,32 @@ function generateSummary(boardData) {
 }
 
 /**
+ * Helper function to calculate row and column from priority slot
+ * Uses triangular layout: Row 1 has 1 slot, Row 2 has 2 slots, Row 3 has 3 slots, etc.
+ * Matches the UI's getRowColFromSlot function in script.js
+ */
+function getRowColFromSlot(slot) {
+  let row = 1;
+  let slotsUsed = 0;
+  
+  // Find which row this slot is in
+  while (slotsUsed + row < slot) {
+    slotsUsed += row;
+    row++;
+  }
+  
+  // Calculate column position within the row (right-to-left: 1 = rightmost)
+  const positionInRow = slot - slotsUsed;
+  const col = row - positionInRow + 1;
+  return { row, col };
+}
+
+/**
  * Calculate Portfolio Delivery Confidence
  * EXACT COPY from script.js - must stay in sync!
  */
 function calculateDeliveryConfidence(boardData) {
   let confidence = 90; // Start at 90%
-  
-  // Get row/col helper function
-  function getRowColFromSlot(slotNumber) {
-    const row = Math.ceil(slotNumber / 5);
-    const col = ((slotNumber - 1) % 5) + 1;
-    return { row, col };
-  }
   
   // Define "above the line" and "below the line" 
   // Rows 1-5 are above the line (NOW and NEXT timeframes)
@@ -458,9 +472,10 @@ function calculateInitiativeRiskScore(initiative, allTeams) {
   }
   
   // 4. PRIORITY AMPLIFICATION
-  // Check if initiative is in top 2 rows (priority 1-10 based on 5 columns)
-  const isTopPriority = initiative.priority <= 10;
-  if (isTopPriority && riskScore > 4) {
+  // Check if initiative is in top 2 rows (priorities 1-3: row 1 has 1 slot, row 2 has 2 slots)
+  // Must match UI logic from script.js analyzeInitiativeRisk
+  const row = getRowColFromSlot(initiative.priority).row;
+  if (row <= 2 && riskScore > 4) {
     riskScore += 1;
   }
   
@@ -484,7 +499,7 @@ function extractTeamData(boardData) {
   const teams = boardData.teams || {};
   const initiatives = boardData.initiatives || [];
   
-  console.log('ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â  Extracting data for', Object.keys(teams).length, 'teams...');
+  console.log('ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â  Extracting data for', Object.keys(teams).length, 'teams...');
   
   return Object.entries(teams).map(([name, data]) => {
     // Find initiatives this team is working on
@@ -498,17 +513,33 @@ function extractTeamData(boardData) {
     
     // Debug logging to see what we're extracting
     if (rawComment) {
-      console.log(`\nÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â Team: ${name}`);
+      console.log(`\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â Team: ${name}`);
       console.log('  Raw comment type:', typeof rawComment);
       if (typeof rawComment === 'object') {
         console.log('  Raw comment structure:', rawComment.type || 'no type', 
                     Array.isArray(rawComment.content) ? `${rawComment.content.length} content items` : 'no content');
       }
-      console.log('  ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Extracted text:', commentText.substring(0, 100) + (commentText.length > 100 ? '...' : ''));
+      console.log('  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Extracted text:', commentText.substring(0, 100) + (commentText.length > 100 ? '...' : ''));
     }
     
     // Calculate portfolio risk score for this team
     const riskScore = calculateTeamRiskScore(name, initiatives, teams);
+    
+    // Calculate overall health (simple count-based)
+    let atRiskCount = 0;
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    dimensions.forEach(dim => {
+      const value = data[dim];
+      if (value === 'At Risk' || value === 'at-risk' || value === 'Critical' || value === 'critical') {
+        atRiskCount++;
+      }
+    });
+    
+    let overallHealth;
+    if (atRiskCount === 0) overallHealth = 'HEALTHY';
+    else if (atRiskCount <= 2) overallHealth = 'LOW RISK';
+    else if (atRiskCount <= 4) overallHealth = 'HIGH RISK';
+    else overallHealth = 'CRITICAL';
     
     return {
       name,
@@ -518,13 +549,14 @@ function extractTeamData(boardData) {
       support: data.support || 'unknown',
       teamwork: data.teamwork || 'unknown',
       autonomy: data.autonomy || 'unknown',
+      overallHealth,  // ADDED: Simple count-based health assessment
       initiativeCount: teamInitiatives.length,
       utilization: data.jira?.utilization || 0,
-      activeStories: data.jira?.stories || 0,  // Ã¢Å“â€¦ ADDED
-      blockers: data.jira?.blockers || 0,  // Ã¢Å“â€¦ FIXED: Read from .blockers not .flagged
-      portfolioRiskScore: riskScore.total,  // Ã¢Å“â€¦ ADDED
-      riskBreakdown: riskScore,  // Ã¢Å“â€¦ ADDED (health, validation, blockers, focus)
-      comments: commentText, // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ NOW PROPERLY EXTRACTED!
+      activeStories: data.jira?.stories || 0,  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ ADDED
+      blockers: data.jira?.blockers || 0,  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ FIXED: Read from .blockers not .flagged
+      portfolioRiskScore: riskScore.total,  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ ADDED
+      riskBreakdown: riskScore,  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ ADDED (health, validation, blockers, focus)
+      comments: commentText, // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ NOW PROPERLY EXTRACTED!
       currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5)
     };
   });
@@ -546,9 +578,9 @@ function extractInitiativeData(boardData) {
       progress: init.progress || 0,
       stories: init.jira?.stories || 0,
       flagged: init.jira?.flagged || 0,
-      riskScore: riskScore.score,  // âœ… ADDED
-      riskLevel: riskScore.level,  // âœ… ADDED
-      // âœ… OPPORTUNITY CANVAS FIELDS
+      riskScore: riskScore.score,  // Ã¢Å“â€¦ ADDED
+      riskLevel: riskScore.level,  // Ã¢Å“â€¦ ADDED
+      // Ã¢Å“â€¦ OPPORTUNITY CANVAS FIELDS
       customer: init.canvas?.customer || 'N/A',
       problem: init.canvas?.problem || 'N/A',
       solution: init.canvas?.solution || 'N/A',
@@ -556,7 +588,7 @@ function extractInitiativeData(boardData) {
       keyResult: init.canvas?.keyResult || 'N/A',
       successMetrics: init.canvas?.measures || 'N/A',
       alternatives: init.canvas?.alternatives || 'N/A',
-      jira: init.jira  // âœ… ADDED: Include full jira object for risk calculation
+      jira: init.jira  // Ã¢Å“â€¦ ADDED: Include full jira object for risk calculation
     };
   });
 }
@@ -659,7 +691,7 @@ PORTFOLIO DELIVERY CONFIDENCE:
     formatted += `  Validation: ${init.validation}\n`;
     formatted += `  Progress: ${init.progress}%\n`;
     formatted += `  Stories: ${init.stories}, Flagged: ${init.flagged}\n`;
-    formatted += `  Risk Score: ${init.riskScore}/50 (${init.riskLevel})\n`;  // âœ… ADDED
+    formatted += `  Risk Score: ${init.riskScore}/50 (${init.riskLevel})\n`;  // Ã¢Å“â€¦ ADDED
     
     // OPPORTUNITY CANVAS FIELDS
     if (init.customer && init.customer !== 'N/A') {
@@ -685,9 +717,9 @@ PORTFOLIO DELIVERY CONFIDENCE:
     }
   });
   
-  console.log('ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Å¾ Formatted context length:', formatted.length, 'characters');
+  console.log('ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ Formatted context length:', formatted.length, 'characters');
   
   return formatted;
 }
 
-console.log('ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ VueSense AI Data Prep with Jira Comment Extraction loaded');
+console.log('ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ VueSense AI Data Prep with Jira Comment Extraction loaded');
