@@ -15,10 +15,17 @@ function preparePortfolioContext(boardData) {
       teams: extractTeamData(boardData),
       initiatives: extractInitiativeData(boardData),
       patterns: detectPatterns(boardData),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      dataQuality: validateDataQuality(boardData)
     };
     
-    console.log('✅ Portfolio context prepared:', context);
+    console.log('âœ… Portfolio context prepared:', context);
+    
+    // Warn if utilization data is missing
+    if (context.dataQuality.missingUtilizationData) {
+      console.warn('âš ï¸ Utilization data is missing for teams. Make sure Jira team health data has been loaded.');
+    }
+    
     return context;
   } catch (error) {
     console.error('Error preparing portfolio context:', error);
@@ -48,6 +55,16 @@ function extractTeamData(boardData) {
       init.teams && init.teams.includes(name)
     );
     
+    // Get utilization - it can be at data.jira.utilization
+    // Handle both undefined and 0 as valid values
+    let utilization = 0;
+    if (data.jira && typeof data.jira.utilization === 'number') {
+      utilization = data.jira.utilization;
+    }
+    
+    // Get comments from the correct location
+    const comments = data.comments || (data.jira && data.jira.comments) || '';
+    
     return {
       name,
       capacity: data.capacity || 'unknown',
@@ -57,9 +74,17 @@ function extractTeamData(boardData) {
       teamwork: data.teamwork || 'unknown',
       autonomy: data.autonomy || 'unknown',
       initiativeCount: teamInitiatives.length,
-      utilization: data.jira?.utilization || 0,
-      comments: data.comments || '',
-      currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5)
+      utilization: utilization,
+      velocity: data.jira?.velocity || 0,
+      stories: data.jira?.stories || 0,
+      blockers: data.jira?.blockers || 0,
+      comments: comments,
+      currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5),
+      // Add raw jira data for debugging
+      _rawJiraData: data.jira ? {
+        hasUtilization: typeof data.jira.utilization !== 'undefined',
+        utilizationValue: data.jira.utilization
+      } : null
     };
   });
 }
@@ -145,4 +170,30 @@ function formatContextForAI(context) {
   });
   
   return formatted;
+}
+
+function validateDataQuality(boardData) {
+  const teams = boardData.teams || {};
+  const teamCount = Object.keys(teams).length;
+  
+  let teamsWithUtilization = 0;
+  let teamsWithJiraData = 0;
+  
+  Object.values(teams).forEach(team => {
+    if (team.jira) {
+      teamsWithJiraData++;
+      if (typeof team.jira.utilization === 'number') {
+        teamsWithUtilization++;
+      }
+    }
+  });
+  
+  return {
+    totalTeams: teamCount,
+    teamsWithJiraData: teamsWithJiraData,
+    teamsWithUtilization: teamsWithUtilization,
+    missingUtilizationData: teamsWithUtilization === 0 && teamCount > 0,
+    jiraDataPercent: teamCount > 0 ? Math.round((teamsWithJiraData / teamCount) * 100) : 0,
+    utilizationDataPercent: teamCount > 0 ? Math.round((teamsWithUtilization / teamCount) * 100) : 0
+  };
 }
