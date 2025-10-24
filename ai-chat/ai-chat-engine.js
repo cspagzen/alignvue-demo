@@ -202,7 +202,6 @@ class AIEngine {
       if (data.vision === 'at-risk' || data.vision === 'At Risk') issues.push('At-risk vision');
       if (data.jira && data.jira.utilization > 95) issues.push('Overloaded at ' + data.jira.utilization + '% utilization');
       
-      const riskScore = self.calculateTeamRisk(name, data);
       const commentText = data.jira?.comments || null;
       
       if (commentText) {
@@ -221,7 +220,8 @@ class AIEngine {
         activeStories: (data.jira && data.jira.stories) || 0,
         blockers: (data.jira && data.jira.blockers) || 0,  // âœ… FIXED: Read from .blockers not .flagged
         comments: commentText,
-        riskScore: riskScore,
+        portfolioRiskScore: data.portfolioRiskScore || 0,
+        riskBreakdown: data.riskBreakdown || { health: 0, validation: 0, blockers: 0, focus: 0, utilization: 0 },
         issues: issues
       };
     });
@@ -308,113 +308,101 @@ class AIEngine {
   }
 
   calculateInitiativeRisk(initiative) {
-    // Use EXACT same logic as UI (script.js lines 1055-1156)
-    let actualValues = {
-      teamHealth: { capacity: 0, skillset: 0, support: 0, utilization: 0, vision: 0, teamwork: 0, autonomy: 0 },
-      flaggedWork: { percentage: 0, count: 0, points: 0 },
-      validation: { points: 0, reason: '' },
-      priority: { points: 0, applied: false },
-      totalScore: 0
-    };
+    let riskScore = 0;
     
-    // Team health points calculation
+    // 1. TEAM HEALTH RISK SCORING
     if (initiative.teams && Array.isArray(initiative.teams)) {
       initiative.teams.forEach(teamName => {
         const team = window.boardData && window.boardData.teams && window.boardData.teams[teamName];
         if (!team) return;
         
-        // CAPACITY (3 pts At Risk, 6 pts Critical)
+        // Capacity: At Risk = +3, Critical = +6
         if (team.capacity === 'At Risk' || team.capacity === 'at-risk') {
-          actualValues.teamHealth.capacity += 3;
+          riskScore += 3;
         } else if (team.capacity === 'Critical' || team.capacity === 'critical') {
-          actualValues.teamHealth.capacity += 6;
+          riskScore += 6;
         }
         
-        // SKILLSET (3 pts At Risk, 6 pts Critical)
+        // Skillset: At Risk = +3, Critical = +6
         if (team.skillset === 'At Risk' || team.skillset === 'at-risk') {
-          actualValues.teamHealth.skillset += 3;
+          riskScore += 3;
         } else if (team.skillset === 'Critical' || team.skillset === 'critical') {
-          actualValues.teamHealth.skillset += 6;
+          riskScore += 6;
         }
         
-        // SUPPORT (2 pts At Risk, 4 pts Critical)
+        // Support: At Risk = +2, Critical = +4
         if (team.support === 'At Risk' || team.support === 'at-risk') {
-          actualValues.teamHealth.support += 2;
+          riskScore += 2;
         } else if (team.support === 'Critical' || team.support === 'critical') {
-          actualValues.teamHealth.support += 4;
+          riskScore += 4;
         }
         
-        // UTILIZATION
-        if (team.jira && team.jira.utilization > 95) {
-          actualValues.teamHealth.utilization += 2;
-        }
-        
-        // VISION (1 pt At Risk, 2 pts Critical)
+        // Vision: At Risk = +1, Critical = +2
         if (team.vision === 'At Risk' || team.vision === 'at-risk') {
-          actualValues.teamHealth.vision += 1;
+          riskScore += 1;
         } else if (team.vision === 'Critical' || team.vision === 'critical') {
-          actualValues.teamHealth.vision += 2;
+          riskScore += 2;
         }
         
-        // TEAM COHESION (1 pt At Risk, 2 pts Critical)
+        // Team Cohesion (teamwork): At Risk = +1, Critical = +2
         if (team.teamwork === 'At Risk' || team.teamwork === 'at-risk') {
-          actualValues.teamHealth.teamwork += 1;
+          riskScore += 1;
         } else if (team.teamwork === 'Critical' || team.teamwork === 'critical') {
-          actualValues.teamHealth.teamwork += 2;
+          riskScore += 2;
         }
         
-        // AUTONOMY (1 pt At Risk, 2 pts Critical)
+        // Autonomy: At Risk = +1, Critical = +2
         if (team.autonomy === 'At Risk' || team.autonomy === 'at-risk') {
-          actualValues.teamHealth.autonomy += 1;
+          riskScore += 1;
         } else if (team.autonomy === 'Critical' || team.autonomy === 'critical') {
-          actualValues.teamHealth.autonomy += 2;
+          riskScore += 2;
+        }
+        
+        // Utilization: >95% = +2
+        if (team.jira && team.jira.utilization > 95) {
+          riskScore += 2;
         }
       });
     }
     
-    // Flagged work points
+    // 2. FLAGGED WORK RISK SCORING
     if (initiative.jira && initiative.jira.flagged > 0) {
       const totalStories = initiative.jira.stories || 0;
       const flaggedStories = initiative.jira.flagged || 0;
-      const flaggedPercentage = totalStories > 0 ? (flaggedStories / totalStories) * 100 : 0;
+      const flaggedPercentage = totalStories > 0 ? 
+        (flaggedStories / totalStories) * 100 : 0;
       
-      actualValues.flaggedWork.percentage = flaggedPercentage;
-      actualValues.flaggedWork.count = flaggedStories;
+      let flaggedPoints = 0;
+      if (flaggedPercentage >= 50) flaggedPoints = 8;
+      else if (flaggedPercentage >= 25) flaggedPoints = 5;
+      else if (flaggedPercentage >= 15) flaggedPoints = 3;
+      else if (flaggedPercentage >= 5) flaggedPoints = 2;
+      else flaggedPoints = 1;
       
-      if (flaggedPercentage >= 50) actualValues.flaggedWork.points = 8;
-      else if (flaggedPercentage >= 25) actualValues.flaggedWork.points = 5;
-      else if (flaggedPercentage >= 15) actualValues.flaggedWork.points = 3;
-      else if (flaggedPercentage >= 5) actualValues.flaggedWork.points = 2;
-      else actualValues.flaggedWork.points = 1;
+      riskScore += flaggedPoints;
     }
     
-    // Validation points
-    if (initiative.priority >= 1 && initiative.priority <= 15) {
-      const validation = initiative.validationStatus || initiative.validation;
-      if (validation === 'not-validated') {
-        if (initiative.type === 'strategic') {
-          actualValues.validation.points = 2;
-        } else if (initiative.type === 'ktlo' || initiative.type === 'emergent') {
-          actualValues.validation.points = 1;
-        }
+    // 3. VALIDATION RISK SCORING
+    if (initiative.priority >= 1 && initiative.priority <= 15 && 
+        (initiative.validation === 'not-validated' || initiative.validationStatus === 'not-validated')) {
+      if (initiative.type === 'strategic') {
+        riskScore += 2;
+      } else if (initiative.type === 'ktlo' || initiative.type === 'emergent') {
+        riskScore += 1;
       }
     }
     
-    // Priority amplification
-    const baseScore = Object.values(actualValues.teamHealth).reduce((a, b) => a + b, 0) + 
-                     actualValues.flaggedWork.points + 
-                     actualValues.validation.points;
-    
-    // Check if priority 1-10 (rows 1-2 in 5-column grid)
-    if (initiative.priority <= 10 && baseScore > 4) {
-      actualValues.priority.points = 1;
-      actualValues.priority.applied = true;
+    // 4. PRIORITY AMPLIFICATION
+    // Check if initiative is in top 2 rows (priority 1-10 based on 5 columns)
+    const isTopPriority = initiative.priority <= 10;
+    if (isTopPriority && riskScore > 4) {
+      riskScore += 1;
     }
     
-    actualValues.totalScore = baseScore + actualValues.priority.points;
-    actualValues.totalScore = Math.min(actualValues.totalScore, 50);
+    // Cap at 50 points
+    riskScore = Math.min(riskScore, 50);
     
-    return actualValues.totalScore;
+    return riskScore;
   }
 }
 

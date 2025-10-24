@@ -111,6 +111,8 @@ else if (utilization > 85): totalRisk += 10
 
 **When User Asks**: "What's the team's risk score?" or "How risky is this team?"
 
+**CRITICAL**: The team's portfolio risk score is in the \`portfolioRiskScore\` field in the data!
+
 **Example Response**: "Core Platform has a portfolio risk score of **136 points (CRITICAL)** from 29 pts base health, 47 pts initiative risk (amplified 1.5×), 6 pts focus penalty, and 20 pts utilization."
 
 ---
@@ -279,12 +281,13 @@ window.boardData = {
         flagged: number,        // Blockers - flagged/blocked work items
         blockers: number
       },
-      portfolioRiskScore: number,  // Aggregate risk across all initiatives (0-100+)
+      portfolioRiskScore: number,  // ⚠️ THIS IS THE TEAM PORTFOLIO RISK SCORE (0-100+ points)
       riskBreakdown: {             // Risk score components
         health: number,            // Risk from team health dimensions
         validation: number,        // Risk from unvalidated initiatives
         blockers: number,          // Risk from flagged/blocked work
-        focus: number              // Risk from too many concurrent initiatives
+        focus: number,             // Risk from too many concurrent initiatives
+        utilization: number        // Risk from over-utilization
       },
       comments: "text notes about team status"
     }
