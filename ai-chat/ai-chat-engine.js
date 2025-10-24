@@ -1,5 +1,6 @@
 /**
- * AI Chat Engine - Uses Complete Data Prep
+ * AI Chat Engine - COMPLETE FIX
+ * Includes ALL fields and updates system message on every request
  */
 
 // Cost Tracker
@@ -72,21 +73,21 @@ class AIEngine {
   
   async sendMessage(userMessage) {
     try {
-      // ALWAYS build fresh system message with latest portfolio data
+      // Build the system message with ACTUAL PORTFOLIO DATA
       const systemMessage = this.buildSystemMessage();
       
-      // Clear old system message and add fresh one
-      if (this.conversationHistory.length > 0 && this.conversationHistory[0].role === 'system') {
+      // ✅ FIXED: ALWAYS update system message with fresh data
+      if (this.conversationHistory.length === 0) {
+        this.conversationHistory.push({
+          role: 'system',
+          content: systemMessage
+        });
+      } else {
+        // Update the system message with fresh data on every request
         this.conversationHistory[0] = {
           role: 'system',
           content: systemMessage
         };
-      } else {
-        // First message - add system message at the start
-        this.conversationHistory.unshift({
-          role: 'system',
-          content: systemMessage
-        });
       }
       
       // Add user message
@@ -182,40 +183,99 @@ class AIEngine {
   }
   
   buildSystemMessage() {
-    // Check if boardData exists and has data
-    if (!window.boardData || !window.boardData.initiatives || window.boardData.initiatives.length === 0) {
-      console.warn('⚠️ boardData not fully loaded yet');
-      return window.AI_SYSTEM_PROMPT + '\n\nWaiting for portfolio data to load...';
-    }
+    var self = this;
+    const teams = window.boardData?.teams || {};
+    const initiatives = window.boardData?.initiatives || [];
     
-    // Use the comprehensive data prep functions that extract ALL fields
-    const context = preparePortfolioContext(window.boardData);
+    console.log('🔍 Building system message with', Object.keys(teams).length, 'teams and', initiatives.length, 'initiatives');
     
-    if (!context) {
-      console.error('Failed to prepare portfolio context');
-      return window.AI_SYSTEM_PROMPT + '\n\nERROR: Could not load portfolio data';
-    }
+    const teamData = Object.entries(teams).map(function(entry) {
+      const name = entry[0];
+      const data = entry[1];
+      const issues = [];
+      
+      if (data.capacity === 'critical' || data.capacity === 'Critical') issues.push('Critical capacity');
+      if (data.capacity === 'at-risk' || data.capacity === 'At Risk') issues.push('At-risk capacity');
+      if (data.skillset === 'critical' || data.skillset === 'Critical') issues.push('Critical skillset');
+      if (data.skillset === 'at-risk' || data.skillset === 'At Risk') issues.push('At-risk skillset');
+      if (data.vision === 'critical' || data.vision === 'Critical') issues.push('Critical vision');
+      if (data.vision === 'at-risk' || data.vision === 'At Risk') issues.push('At-risk vision');
+      if (data.jira && data.jira.utilization > 95) issues.push('Overloaded at ' + data.jira.utilization + '% utilization');
+      
+      const riskScore = self.calculateTeamRisk(name, data);
+      const commentText = data.jira?.comments || null;
+      
+      if (commentText) {
+        console.log(`📝 Team ${name} has ${commentText.length} chars of comments`);
+      }
+      
+      return {
+        name,
+        capacity: data.capacity,
+        skillset: data.skillset,
+        vision: data.vision,
+        support: data.support,
+        teamwork: data.teamwork,
+        autonomy: data.autonomy,
+        utilization: (data.jira && data.jira.utilization) || 0,
+        activeStories: (data.jira && data.jira.stories) || 0,
+        blockers: (data.jira && data.jira.flagged) || 0,
+        comments: commentText,
+        riskScore: riskScore,
+        issues: issues
+      };
+    });
     
-    const formattedContext = formatContextForAI(context);
+    const initiativeData = initiatives.map(function(init) {
+      const riskScore = self.calculateInitiativeRisk(init);
+      
+      return {
+        title: init.title || init.name,
+        type: init.type,
+        priority: init.priority,
+        validationStatus: init.validationStatus || init.validation,
+        teams: init.teams || [],
+        progress: init.progress || 0,
+        stories: (init.jira && init.jira.stories) || 0,
+        flagged: (init.jira && init.jira.flagged) || 0,
+        customer: (init.canvas && init.canvas.customer) || null,
+        problem: (init.canvas && init.canvas.problem) || null,
+        solution: (init.canvas && init.canvas.solution) || null,
+        marketSize: (init.canvas && init.canvas.marketSize) || null,
+        keyResult: (init.canvas && init.canvas.keyResult) || null,
+        successMetrics: (init.canvas && init.canvas.measures) || null,
+        alternatives: (init.canvas && init.canvas.alternatives) || null,
+        riskScore: riskScore
+      };
+    });
     
-    // Combine system prompt with complete portfolio data
-    const systemMessage = window.AI_SYSTEM_PROMPT + '\n\n---\n\n## CURRENT PORTFOLIO DATA\n\n' + formattedContext;
+    console.log('✅ System message built - Sample team:', teamData[0]?.name, 'has', teamData[0]?.activeStories, 'active stories');
+    console.log('✅ System message built - Sample init:', initiativeData[0]?.title, 'market size:', initiativeData[0]?.marketSize);
     
-    console.log('✅ System message built with COMPLETE data:');
-    console.log('  Teams:', context.teams.length);
-    console.log('  Initiatives:', context.initiatives.length);
-    console.log('  Sample initiative canvas check:', context.initiatives[0]?.customer !== 'N/A' ? 'HAS DATA' : 'NO CANVAS DATA');
-    console.log('  📊 SAMPLE MARKET SIZE:', context.initiatives[0]?.marketSize);
-    console.log('  Total context length:', systemMessage.length, 'characters');
-    
-    // Log a snippet to verify canvas data is in the message
-    if (systemMessage.includes('Market Size:')) {
-      console.log('✅ CONFIRMED: Market Size data IS in the system message');
-    } else {
-      console.error('❌ ERROR: Market Size data NOT FOUND in system message!');
-    }
-    
-    return systemMessage;
+    return 'You are VueSense AI, a portfolio management assistant.\n\n' +
+      'CURRENT PORTFOLIO DATA:\n\n' +
+      'TEAMS (' + Object.keys(teams).length + ' total):\n' +
+      JSON.stringify(teamData, null, 2) + '\n\n' +
+      'INITIATIVES (' + initiatives.length + ' total):\n' +
+      JSON.stringify(initiativeData, null, 2) + '\n\n' +
+      'CRITICAL INSTRUCTIONS:\n' +
+      '- You MUST answer questions using the ACTUAL DATA provided above\n' +
+      '- When asked about teams, reference the team data by name\n' +
+      '- When asked about initiatives, reference the initiative data by title\n' +
+      '- When asked about market size, read the "marketSize" field\n' +
+      '- When asked about active stories, read the "activeStories" field\n' +
+      '- When asked about blockers, read the "blockers" field\n' +
+      '- When asked about team comments, read the "comments" field and quote exactly\n' +
+      '- When asked "how many teams", count the teams in the data above\n' +
+      '- NEVER say "I don\'t have access to" or "I don\'t have specific data" - you DO have the data above!\n' +
+      '- Always use specific team names and initiative titles from the data\n\n' +
+      'ANTI-HALLUCINATION RULES:\n' +
+      '- For team comments: USE THE EXACT TEXT from the "comments" field, in quotes\n' +
+      '- NEVER make up or paraphrase comments\n' +
+      '- If no comment exists, say "no comments provided"\n\n' +
+      'RISK SCORE INTERPRETATION:\n' +
+      'Team Risk Scores: 0-20 Low, 21-40 Moderate, 41-60 High, 61+ Critical\n' +
+      'Initiative Risk Scores: 0-7 Low, 8-11 Medium, 12-22 High, 23+ Critical';
   }
 
   buildMinimalSystemMessage() {
@@ -313,4 +373,4 @@ class AIEngine {
 // Create and export the engine
 window.aiEngine = new AIEngine();
 
-console.log('✅ VueSense AI Engine loaded with complete data prep');
+console.log('✅ VueSense AI Engine loaded - WITH ALL FIELDS AND SYSTEM MESSAGE UPDATES!');
