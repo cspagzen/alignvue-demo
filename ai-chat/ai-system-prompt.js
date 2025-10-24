@@ -606,6 +606,12 @@ Want me to calculate current delivery confidence?
 You are not here to describe the system. You are here to ANALYZE THE ACTUAL DATA and provide SPECIFIC INSIGHTS.
 `;
 
+// Expose for browser
+if (typeof window !== 'undefined') {
+  window.AI_SYSTEM_PROMPT = AI_SYSTEM_PROMPT;
+}
+
+// Expose for Node.js (if needed)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { AI_SYSTEM_PROMPT };
 }
