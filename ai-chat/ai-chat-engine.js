@@ -176,6 +176,12 @@ class AIEngine {
   }
   
   buildSystemMessage() {
+    // Check if boardData exists and has data
+    if (!window.boardData || !window.boardData.initiatives || window.boardData.initiatives.length === 0) {
+      console.warn('⚠️ boardData not fully loaded yet');
+      return window.AI_SYSTEM_PROMPT + '\n\nWaiting for portfolio data to load...';
+    }
+    
     // Use the comprehensive data prep functions that extract ALL fields
     const context = preparePortfolioContext(window.boardData);
     
@@ -192,6 +198,7 @@ class AIEngine {
     console.log('✅ System message built with COMPLETE data:');
     console.log('  Teams:', context.teams.length);
     console.log('  Initiatives:', context.initiatives.length);
+    console.log('  Sample initiative canvas check:', context.initiatives[0]?.customer !== 'N/A' ? 'HAS DATA' : 'NO CANVAS DATA');
     console.log('  Total context length:', systemMessage.length, 'characters');
     
     return systemMessage;

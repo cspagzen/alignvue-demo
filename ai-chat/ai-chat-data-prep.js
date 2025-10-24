@@ -252,8 +252,21 @@ function extractTeamData(boardData) {
 function extractInitiativeData(boardData) {
   const initiatives = boardData.initiatives || [];
   
+  console.log('🔍 Extracting data for', initiatives.length, 'initiatives...');
+  
   return initiatives.map(init => {
     const riskAnalysis = calculateInitiativeRiskScore(init, boardData);
+    
+    // DEBUG: Check if canvas exists
+    if (init.canvas) {
+      console.log(`✅ Initiative "${init.title}" HAS canvas data:`, {
+        customer: init.canvas.customer ? 'YES' : 'NO',
+        marketSize: init.canvas.marketSize ? 'YES' : 'NO',
+        problem: init.canvas.problem ? 'YES' : 'NO'
+      });
+    } else {
+      console.warn(`❌ Initiative "${init.title}" has NO canvas data`);
+    }
     
     return {
       // Basic info
