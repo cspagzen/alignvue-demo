@@ -1,6 +1,7 @@
 /**
- * VueSense AI Data Preparation - FIXED WITH JIRA COMMENT EXTRACTION
+ * VueSense AI Data Preparation - COMPLETE FIX
  * Extracts and formats portfolio data for AI context
+ * NOW WITH JIRA COMMENT EXTRACTION!
  */
 
 /**
@@ -35,7 +36,7 @@ function extractTextFromJiraDoc(comment) {
   }
   
   // Last resort: stringify and log warning
-  console.warn('Unexpected comment format:', typeof comment, comment);
+  console.warn('⚠️ Unexpected comment format:', typeof comment, comment);
   return JSON.stringify(comment);
 }
 
@@ -114,6 +115,8 @@ function extractTeamData(boardData) {
   const teams = boardData.teams || {};
   const initiatives = boardData.initiatives || [];
   
+  console.log('📊 Extracting data for', Object.keys(teams).length, 'teams...');
+  
   return Object.entries(teams).map(([name, data]) => {
     // Find initiatives this team is working on
     const teamInitiatives = initiatives.filter(init => 
@@ -124,9 +127,16 @@ function extractTeamData(boardData) {
     const rawComment = data.comments || '';
     const commentText = extractTextFromJiraDoc(rawComment);
     
-    console.log(`Team: ${name}`);
-    console.log('  Raw comment:', typeof rawComment, rawComment);
-    console.log('  Extracted text:', commentText);
+    // Debug logging to see what we're extracting
+    if (rawComment) {
+      console.log(`\n🔍 Team: ${name}`);
+      console.log('  Raw comment type:', typeof rawComment);
+      if (typeof rawComment === 'object') {
+        console.log('  Raw comment structure:', rawComment.type || 'no type', 
+                    Array.isArray(rawComment.content) ? `${rawComment.content.length} content items` : 'no content');
+      }
+      console.log('  ✅ Extracted text:', commentText.substring(0, 100) + (commentText.length > 100 ? '...' : ''));
+    }
     
     return {
       name,
@@ -138,7 +148,7 @@ function extractTeamData(boardData) {
       autonomy: data.autonomy || 'unknown',
       initiativeCount: teamInitiatives.length,
       utilization: data.jira?.utilization || 0,
-      comments: commentText, // NOW PROPERLY EXTRACTED!
+      comments: commentText, // ✅ NOW PROPERLY EXTRACTED!
       currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5)
     };
   });
@@ -185,34 +195,57 @@ function detectPatterns(boardData) {
 function formatContextForAI(context) {
   if (!context) return 'No portfolio data available.';
   
-  let formatted = `PORTFOLIO OVERVIEW:\n- Total Teams: ${context.summary.totalTeams}\n- Total Initiatives: ${context.summary.totalInitiatives}\n- Pipeline Initiatives: ${context.summary.pipelineInitiatives || 0}\n\n`;
+  let formatted = `PORTFOLIO OVERVIEW:
+- Total Teams: ${context.summary.totalTeams}
+- Total Initiatives: ${context.summary.totalInitiatives}
+- Pipeline Initiatives: ${context.summary.pipelineInitiatives || 0}
+
+`;
 
   // Teams with issues
   if (context.patterns.capacityIssues.length > 0) {
-    formatted += `CAPACITY CONCERNS:\n- Teams with capacity issues: ${context.patterns.capacityIssues.join(', ')}\n\n`;
+    formatted += `CAPACITY CONCERNS:
+- Teams with capacity issues: ${context.patterns.capacityIssues.join(', ')}
+
+`;
   }
   
   if (context.patterns.overloadedTeams.length > 0) {
-    formatted += `OVERLOADED TEAMS (>90% utilization):\n- ${context.patterns.overloadedTeams.join(', ')}\n\n`;
+    formatted += `OVERLOADED TEAMS (>90% utilization):
+- ${context.patterns.overloadedTeams.join(', ')}
+
+`;
   }
   
   if (context.patterns.flaggedInitiatives.length > 0) {
-    formatted += `FLAGGED INITIATIVES:\n- ${context.patterns.flaggedInitiatives.join(', ')}\n\n`;
+    formatted += `FLAGGED INITIATIVES:
+- ${context.patterns.flaggedInitiatives.join(', ')}
+
+`;
   }
   
-  // Top teams summary with COMMENTS
-  const topTeams = context.teams.slice(0, 8);
+  // Top teams summary WITH FULL COMMENTS
+  const topTeams = context.teams.slice(0, 15); // Include more teams
   formatted += `KEY TEAMS:\n`;
   topTeams.forEach(t => {
-    formatted += `- ${t.name}: ${t.initiativeCount} initiatives, Capacity: ${t.capacity}, Utilization: ${t.utilization}%\n`;
+    formatted += `\n- ${t.name}:\n`;
+    formatted += `  Initiatives: ${t.initiativeCount}\n`;
+    formatted += `  Capacity: ${t.capacity}\n`;
+    formatted += `  Utilization: ${t.utilization}%\n`;
+    
+    // Include FULL comment text now that we're extracting it properly
     if (t.comments && t.comments.length > 0) {
-      // Include full comment text now that we're extracting it properly
-      const shortComment = t.comments.length > 150 
-        ? t.comments.substring(0, 150) + '...' 
-        : t.comments;
-      formatted += `  Team Comments: ${shortComment}\n`;
+      formatted += `  Team Comments: "${t.comments}"\n`;
+    }
+    
+    if (t.currentWork && t.currentWork.length > 0) {
+      formatted += `  Current Work: ${t.currentWork.join(', ')}\n`;
     }
   });
   
+  console.log('📄 Formatted context length:', formatted.length, 'characters');
+  
   return formatted;
 }
+
+console.log('✅ VueSense AI Data Prep with Jira Comment Extraction loaded');
