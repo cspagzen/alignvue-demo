@@ -117,7 +117,23 @@ else if (utilization > 85): totalRisk += 10
 
 ---
 
-**When User Asks**: "How is portfolio risk score calculated?" or "What's the formula?"
+**When User Asks**: "How is portfolio risk score calculated?" or "What's the formula?" or "Show me the breakdown"
+
+**CRITICAL**: 
+1. The team's riskBreakdown object contains the ACTUAL calculated values - USE THESE, don't recalculate!
+2. riskBreakdown has: health, validation, blockers, focus, utilization
+3. Only explain the FORMULA if asked - otherwise just show the actual breakdown numbers
+
+**Example Response for Breakdown Request**: 
+"Core Platform's portfolio risk score of 136 points breaks down as:
+- Team Health: 30 pts (from capacity=Critical, support=Critical)
+- Validation Risk: 56 pts (unvalidated strategic initiatives)  
+- Blockers: 0 pts (no flagged work items)
+- Focus & Load: 50 pts (too many concurrent initiatives + high utilization)
+
+The 'Focus & Load' combines focus penalty (30 pts for 15 initiatives) and utilization penalty (20 pts for 92% utilization)."
+
+**Example Response for Formula Request**:
 
 **CRITICAL**: You MUST provide the EXACT formula below. DO NOT improvise or give generic explanations.
 
