@@ -36,7 +36,7 @@ function extractTextFromJiraDoc(comment) {
   }
   
   // Last resort: stringify and log warning
-  console.warn('Ã¢Å¡Â Ã¯Â¸Â Unexpected comment format:', typeof comment, comment);
+  console.warn('ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Unexpected comment format:', typeof comment, comment);
   return JSON.stringify(comment);
 }
 
@@ -69,7 +69,7 @@ function extractTextFromContent(contentArray) {
     
     // Handle list items
     if (node.type === 'listItem' && Array.isArray(node.content)) {
-      text += 'Ã¢â‚¬Â¢ ' + extractTextFromContent(node.content) + ' ';
+      text += 'ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ' + extractTextFromContent(node.content) + ' ';
     }
   }
   
@@ -92,7 +92,7 @@ function preparePortfolioContext(boardData) {
       timestamp: new Date().toISOString()
     };
     
-    console.log('Ã¢Å“â€¦ Portfolio context prepared:', context);
+    console.log('ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Portfolio context prepared:', context);
     return context;
   } catch (error) {
     console.error('Error preparing portfolio context:', error);
@@ -287,40 +287,60 @@ function calculateDeliveryConfidence(boardData) {
  */
 function calculateTeamRiskScore(teamName, allInitiatives, allTeams) {
   const team = allTeams[teamName];
-  if (!team) return { total: 0, health: 0, validation: 0, blockers: 0, focus: 0 };
+  if (!team) return { total: 0, health: 0, validation: 0, blockers: 0, focus: 0, utilization: 0 };
   
-  // 1. Team Health Risk
+  let totalRisk = 0;
+  
+  // 1. TEAM HEALTH RISK (Base + Multiplier)
+  let teamHealthMultiplier = 1.0;
+  let baseTeamHealth = 0;
+  
   const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
-  let healthRisk = 0;
+  let criticalCount = 0;
+  let atRiskCount = 0;
   
   dimensions.forEach(dim => {
     const value = team[dim];
-    if (value === 'critical' || value === 'Critical') healthRisk += 15;
-    else if (value === 'at-risk' || value === 'At Risk') healthRisk += 7;
+    if (value === 'critical' || value === 'Critical') {
+      criticalCount++;
+      baseTeamHealth += 15; // 15 points per critical dimension
+    } else if (value === 'at-risk' || value === 'At Risk') {
+      atRiskCount++;
+      baseTeamHealth += 7; // 7 points per at-risk dimension
+    }
   });
+  
+  // Team health multiplier affects ALL other risk
+  if (criticalCount >= 3) {
+    teamHealthMultiplier = 2.0; // Double all risk if severely unhealthy
+  } else if (criticalCount >= 1 || atRiskCount >= 3) {
+    teamHealthMultiplier = 1.5; // 50% more risk if struggling
+  }
+  
+  totalRisk += baseTeamHealth;
   
   // 2. Get team's initiatives
   const teamInitiatives = allInitiatives.filter(init => 
     init.teams && init.teams.includes(teamName)
   );
   
-  // 3. Validation Risk
-  let validationRisk = 0;
+  // 3. INITIATIVE-BASED RISK (with multiplier)
+  let initiativeRisk = 0;
+  
   teamInitiatives.forEach(init => {
-    if (init.validation === 'not-validated') validationRisk += 8;
-    else if (init.validation === 'in-validation') validationRisk += 4;
+    // Validation risk
+    if (init.validation === 'not-validated') initiativeRisk += 8;
+    else if (init.validation === 'in-validation') initiativeRisk += 4;
+    
+    // Blocker risk
+    const blockerRisk = Math.min(8, Math.floor((init.jira?.flagged || 0) / 3));
+    initiativeRisk += blockerRisk;
   });
   
-  // 4. Blocker Risk
-  let blockerRisk = 0;
-  teamInitiatives.forEach(init => {
-    // Use jira.flagged as that's the actual field in the data
-    // (init.blockedStories doesn't exist in the data structure)
-    const blockers = init.jira?.flagged || 0;
-    blockerRisk += Math.min(8, Math.floor(blockers / 3));
-  });
+  // Apply team health multiplier to initiative risk
+  totalRisk += (initiativeRisk * teamHealthMultiplier);
   
-  // 5. Focus & Utilization Risk
+  // 4. FOCUS PENALTY (Too Many Initiatives)
   let focusRisk = 0;
   const initiativeCount = teamInitiatives.length;
   if (initiativeCount > 5) {
@@ -328,19 +348,25 @@ function calculateTeamRiskScore(teamName, allInitiatives, allTeams) {
   } else if (initiativeCount > 3) {
     focusRisk += (initiativeCount - 3) * 3;
   }
+  totalRisk += focusRisk;
   
+  // 5. OVER-UTILIZATION PENALTY
+  let utilizationRisk = 0;
   const utilization = team.jira?.utilization || 0;
-  if (utilization > 95) focusRisk += 20;
-  else if (utilization > 85) focusRisk += 10;
-  
-  const total = healthRisk + validationRisk + blockerRisk + focusRisk;
+  if (utilization > 95) {
+    utilizationRisk += 20;
+  } else if (utilization > 85) {
+    utilizationRisk += 10;
+  }
+  totalRisk += utilizationRisk;
   
   return {
-    total: Math.round(total),
-    health: healthRisk,
-    validation: validationRisk,
-    blockers: blockerRisk,
-    focus: focusRisk
+    total: Math.round(totalRisk),
+    health: baseTeamHealth,
+    validation: Math.round(initiativeRisk * teamHealthMultiplier),
+    blockers: 0, // Included in validation now
+    focus: focusRisk,
+    utilization: utilizationRisk
   };
 }
 
@@ -458,7 +484,7 @@ function extractTeamData(boardData) {
   const teams = boardData.teams || {};
   const initiatives = boardData.initiatives || [];
   
-  console.log('Ã°Å¸â€œÅ  Extracting data for', Object.keys(teams).length, 'teams...');
+  console.log('ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â  Extracting data for', Object.keys(teams).length, 'teams...');
   
   return Object.entries(teams).map(([name, data]) => {
     // Find initiatives this team is working on
@@ -472,13 +498,13 @@ function extractTeamData(boardData) {
     
     // Debug logging to see what we're extracting
     if (rawComment) {
-      console.log(`\nÃ°Å¸â€Â Team: ${name}`);
+      console.log(`\nÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â Team: ${name}`);
       console.log('  Raw comment type:', typeof rawComment);
       if (typeof rawComment === 'object') {
         console.log('  Raw comment structure:', rawComment.type || 'no type', 
                     Array.isArray(rawComment.content) ? `${rawComment.content.length} content items` : 'no content');
       }
-      console.log('  Ã¢Å“â€¦ Extracted text:', commentText.substring(0, 100) + (commentText.length > 100 ? '...' : ''));
+      console.log('  ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Extracted text:', commentText.substring(0, 100) + (commentText.length > 100 ? '...' : ''));
     }
     
     // Calculate portfolio risk score for this team
@@ -494,11 +520,11 @@ function extractTeamData(boardData) {
       autonomy: data.autonomy || 'unknown',
       initiativeCount: teamInitiatives.length,
       utilization: data.jira?.utilization || 0,
-      activeStories: data.jira?.stories || 0,  // âœ… ADDED
-      blockers: data.jira?.blockers || 0,  // âœ… FIXED: Read from .blockers not .flagged
-      portfolioRiskScore: riskScore.total,  // âœ… ADDED
-      riskBreakdown: riskScore,  // âœ… ADDED (health, validation, blockers, focus)
-      comments: commentText, // Ã¢Å“â€¦ NOW PROPERLY EXTRACTED!
+      activeStories: data.jira?.stories || 0,  // Ã¢Å“â€¦ ADDED
+      blockers: data.jira?.blockers || 0,  // Ã¢Å“â€¦ FIXED: Read from .blockers not .flagged
+      portfolioRiskScore: riskScore.total,  // Ã¢Å“â€¦ ADDED
+      riskBreakdown: riskScore,  // Ã¢Å“â€¦ ADDED (health, validation, blockers, focus)
+      comments: commentText, // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ NOW PROPERLY EXTRACTED!
       currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5)
     };
   });
@@ -520,9 +546,9 @@ function extractInitiativeData(boardData) {
       progress: init.progress || 0,
       stories: init.jira?.stories || 0,
       flagged: init.jira?.flagged || 0,
-      riskScore: riskScore.score,  // ✅ ADDED
-      riskLevel: riskScore.level,  // ✅ ADDED
-      // ✅ OPPORTUNITY CANVAS FIELDS
+      riskScore: riskScore.score,  // âœ… ADDED
+      riskLevel: riskScore.level,  // âœ… ADDED
+      // âœ… OPPORTUNITY CANVAS FIELDS
       customer: init.canvas?.customer || 'N/A',
       problem: init.canvas?.problem || 'N/A',
       solution: init.canvas?.solution || 'N/A',
@@ -530,7 +556,7 @@ function extractInitiativeData(boardData) {
       keyResult: init.canvas?.keyResult || 'N/A',
       successMetrics: init.canvas?.measures || 'N/A',
       alternatives: init.canvas?.alternatives || 'N/A',
-      jira: init.jira  // ✅ ADDED: Include full jira object for risk calculation
+      jira: init.jira  // âœ… ADDED: Include full jira object for risk calculation
     };
   });
 }
@@ -633,7 +659,7 @@ PORTFOLIO DELIVERY CONFIDENCE:
     formatted += `  Validation: ${init.validation}\n`;
     formatted += `  Progress: ${init.progress}%\n`;
     formatted += `  Stories: ${init.stories}, Flagged: ${init.flagged}\n`;
-    formatted += `  Risk Score: ${init.riskScore}/50 (${init.riskLevel})\n`;  // ✅ ADDED
+    formatted += `  Risk Score: ${init.riskScore}/50 (${init.riskLevel})\n`;  // âœ… ADDED
     
     // OPPORTUNITY CANVAS FIELDS
     if (init.customer && init.customer !== 'N/A') {
@@ -659,9 +685,9 @@ PORTFOLIO DELIVERY CONFIDENCE:
     }
   });
   
-  console.log('Ã°Å¸â€œâ€ž Formatted context length:', formatted.length, 'characters');
+  console.log('ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Å¾ Formatted context length:', formatted.length, 'characters');
   
   return formatted;
 }
 
-console.log('Ã¢Å“â€¦ VueSense AI Data Prep with Jira Comment Extraction loaded');
+console.log('ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ VueSense AI Data Prep with Jira Comment Extraction loaded');
