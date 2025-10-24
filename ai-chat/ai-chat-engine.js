@@ -199,7 +199,15 @@ class AIEngine {
     console.log('  Teams:', context.teams.length);
     console.log('  Initiatives:', context.initiatives.length);
     console.log('  Sample initiative canvas check:', context.initiatives[0]?.customer !== 'N/A' ? 'HAS DATA' : 'NO CANVAS DATA');
+    console.log('  📊 SAMPLE MARKET SIZE:', context.initiatives[0]?.marketSize);
     console.log('  Total context length:', systemMessage.length, 'characters');
+    
+    // Log a snippet to verify canvas data is in the message
+    if (systemMessage.includes('Market Size:')) {
+      console.log('✅ CONFIRMED: Market Size data IS in the system message');
+    } else {
+      console.error('❌ ERROR: Market Size data NOT FOUND in system message!');
+    }
     
     return systemMessage;
   }

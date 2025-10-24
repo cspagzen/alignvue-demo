@@ -257,15 +257,19 @@ function extractInitiativeData(boardData) {
   return initiatives.map(init => {
     const riskAnalysis = calculateInitiativeRiskScore(init, boardData);
     
-    // DEBUG: Check if canvas exists
-    if (init.canvas) {
-      console.log(`✅ Initiative "${init.title}" HAS canvas data:`, {
-        customer: init.canvas.customer ? 'YES' : 'NO',
-        marketSize: init.canvas.marketSize ? 'YES' : 'NO',
-        problem: init.canvas.problem ? 'YES' : 'NO'
-      });
-    } else {
-      console.warn(`❌ Initiative "${init.title}" has NO canvas data`);
+    // Extract text from canvas fields (they're in Jira Document Format like comments!)
+    const customer = extractTextFromJiraDoc(init.canvas?.customer) || 'N/A';
+    const problem = extractTextFromJiraDoc(init.canvas?.problem) || 'N/A';
+    const solution = extractTextFromJiraDoc(init.canvas?.solution) || 'N/A';
+    const marketSize = extractTextFromJiraDoc(init.canvas?.marketSize) || 'N/A';
+    const keyResult = extractTextFromJiraDoc(init.canvas?.keyResult) || 'N/A';
+    const successMeasures = extractTextFromJiraDoc(init.canvas?.measures) || 'N/A';
+    const alternatives = extractTextFromJiraDoc(init.canvas?.alternatives) || 'N/A';
+    const outcome = extractTextFromJiraDoc(init.canvas?.outcome) || 'N/A';
+    
+    // DEBUG: Check if we got actual text
+    if (init.canvas && customer !== 'N/A') {
+      console.log(`✅ Initiative "${init.title}" - Market Size extracted: "${marketSize.substring(0, 50)}..."`);
     }
     
     return {
@@ -290,15 +294,15 @@ function extractInitiativeData(boardData) {
       riskScore: riskAnalysis.riskScore,
       riskFactors: riskAnalysis.factors,
       
-      // Opportunity Canvas fields (ALL displayed in modal)
-      customer: init.canvas?.customer || 'N/A',
-      problem: init.canvas?.problem || 'N/A',
-      solution: init.canvas?.solution || 'N/A',
-      marketSize: init.canvas?.marketSize || 'N/A',
-      keyResult: init.canvas?.keyResult || 'N/A',
-      successMeasures: init.canvas?.measures || 'N/A',
-      alternatives: init.canvas?.alternatives || 'N/A',
-      outcome: init.canvas?.outcome || 'N/A'
+      // Opportunity Canvas fields - TEXT EXTRACTED!
+      customer: customer,
+      problem: problem,
+      solution: solution,
+      marketSize: marketSize,
+      keyResult: keyResult,
+      successMeasures: successMeasures,
+      alternatives: alternatives,
+      outcome: outcome
     };
   });
 }
@@ -421,31 +425,22 @@ function formatContextForAI(context) {
   formatted += `\n\n=== DETAILED INITIATIVE DATA ===\n`;
   context.initiatives.forEach(i => {
     formatted += `\n## ${i.title}\n`;
-    formatted += `Type: ${i.type}\n`;
-    formatted += `Priority: ${i.priority}\n`;
-    formatted += `Teams: ${i.teams.join(', ')}\n`;
-    formatted += `Validation: ${i.validation}\n`;
-    formatted += `Progress: ${i.progress}%\n`;
-    formatted += `Risk Score: ${i.riskScore}/50`;
-    if (i.riskFactors.length > 0) {
-      formatted += ` (${i.riskFactors.join(', ')})`;
-    }
-    formatted += '\n';
-    formatted += `Jira Epic: ${i.epicKey} (${i.epicStatus})\n`;
-    formatted += `Stories: ${i.stories}, Blockers: ${i.flagged}\n`;
-    formatted += `Last Updated: ${i.lastUpdated}\n`;
-    formatted += `\nOpportunity Canvas:\n`;
-    formatted += `  Customer: ${i.customer}\n`;
-    formatted += `  Problem: ${i.problem}\n`;
-    formatted += `  Solution: ${i.solution}\n`;
-    formatted += `  Market Size: ${i.marketSize}\n`;
-    formatted += `  Key Result: ${i.keyResult}\n`;
-    formatted += `  Success Measures: ${i.successMeasures}\n`;
-    formatted += `  Alternatives: ${i.alternatives}\n`;
-    formatted += `  Outcome: ${i.outcome}\n`;
+    formatted += `Type: ${i.type} | Priority: ${i.priority} | Teams: ${i.teams.join(', ')}\n`;
+    formatted += `Status: ${i.validation} | Progress: ${i.progress}% | Risk: ${i.riskScore}/50\n`;
+    formatted += `Epic: ${i.epicKey} | Stories: ${i.stories} | Blockers: ${i.flagged}\n`;
+    formatted += `\n📋 OPPORTUNITY CANVAS:\n`;
+    formatted += `  💰 Market Size: ${i.marketSize}\n`;
+    formatted += `  👥 Customer: ${i.customer}\n`;
+    formatted += `  ⚠️ Problem: ${i.problem}\n`;
+    formatted += `  ✅ Solution: ${i.solution}\n`;
+    formatted += `  🎯 Key Result: ${i.keyResult}\n`;
+    formatted += `  📊 Success Measures: ${i.successMeasures}\n`;
+    formatted += `  🔄 Alternatives: ${i.alternatives}\n`;
+    formatted += `  🎯 Outcome: ${i.outcome}\n`;
   });
   
-  console.log('Formatted context length:', formatted.length, 'characters');
+  console.log('📄 Formatted context length:', formatted.length, 'characters');
+  console.log('📊 First initiative market size sample:', context.initiatives[0]?.marketSize || 'N/A');
   
   return formatted;
 }
