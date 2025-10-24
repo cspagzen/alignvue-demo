@@ -1,7 +1,79 @@
 /**
- * VueSense AI Data Preparation - FIXED
+ * VueSense AI Data Preparation - FIXED WITH JIRA COMMENT EXTRACTION
  * Extracts and formats portfolio data for AI context
  */
+
+/**
+ * Extract text from Jira's Atlassian Document Format
+ * Handles the nested JSON structure used for rich text comments
+ */
+function extractTextFromJiraDoc(comment) {
+  // Handle null/undefined
+  if (!comment) return '';
+  
+  // If it's already a plain string, return it
+  if (typeof comment === 'string') return comment;
+  
+  // If it's a simple object with a .text property
+  if (comment.text && typeof comment.text === 'string') {
+    return comment.text;
+  }
+  
+  // Handle Jira Document Format (ADF)
+  if (comment.type === 'doc' && Array.isArray(comment.content)) {
+    return extractTextFromContent(comment.content);
+  }
+  
+  // If it's an object with content array
+  if (Array.isArray(comment.content)) {
+    return extractTextFromContent(comment.content);
+  }
+  
+  // Handle numbers or other types
+  if (typeof comment === 'number' || typeof comment === 'boolean') {
+    return String(comment);
+  }
+  
+  // Last resort: stringify and log warning
+  console.warn('Unexpected comment format:', typeof comment, comment);
+  return JSON.stringify(comment);
+}
+
+/**
+ * Recursively extract text from Jira document content array
+ */
+function extractTextFromContent(contentArray) {
+  if (!Array.isArray(contentArray)) return '';
+  
+  let text = '';
+  
+  for (const node of contentArray) {
+    if (!node || typeof node !== 'object') continue;
+    
+    // Text nodes have a .text property
+    if (node.text && typeof node.text === 'string') {
+      text += node.text;
+    }
+    
+    // Paragraphs, headings, etc have nested content
+    if (Array.isArray(node.content)) {
+      const nestedText = extractTextFromContent(node.content);
+      text += nestedText;
+      
+      // Add space/newline after block elements
+      if (['paragraph', 'heading'].includes(node.type)) {
+        text += ' ';
+      }
+    }
+    
+    // Handle list items
+    if (node.type === 'listItem' && Array.isArray(node.content)) {
+      text += '• ' + extractTextFromContent(node.content) + ' ';
+    }
+  }
+  
+  return text.trim();
+}
 
 function preparePortfolioContext(boardData) {
   if (!boardData || typeof boardData !== 'object') {
@@ -15,17 +87,10 @@ function preparePortfolioContext(boardData) {
       teams: extractTeamData(boardData),
       initiatives: extractInitiativeData(boardData),
       patterns: detectPatterns(boardData),
-      timestamp: new Date().toISOString(),
-      dataQuality: validateDataQuality(boardData)
+      timestamp: new Date().toISOString()
     };
     
-    console.log('âœ… Portfolio context prepared:', context);
-    
-    // Warn if utilization data is missing
-    if (context.dataQuality.missingUtilizationData) {
-      console.warn('âš ï¸ Utilization data is missing for teams. Make sure Jira team health data has been loaded.');
-    }
-    
+    console.log('✅ Portfolio context prepared:', context);
     return context;
   } catch (error) {
     console.error('Error preparing portfolio context:', error);
@@ -55,15 +120,13 @@ function extractTeamData(boardData) {
       init.teams && init.teams.includes(name)
     );
     
-    // Get utilization - it can be at data.jira.utilization
-    // Handle both undefined and 0 as valid values
-    let utilization = 0;
-    if (data.jira && typeof data.jira.utilization === 'number') {
-      utilization = data.jira.utilization;
-    }
+    // Extract comment text from Jira doc format
+    const rawComment = data.comments || '';
+    const commentText = extractTextFromJiraDoc(rawComment);
     
-    // Get comments from the correct location
-    const comments = data.comments || (data.jira && data.jira.comments) || '';
+    console.log(`Team: ${name}`);
+    console.log('  Raw comment:', typeof rawComment, rawComment);
+    console.log('  Extracted text:', commentText);
     
     return {
       name,
@@ -74,17 +137,9 @@ function extractTeamData(boardData) {
       teamwork: data.teamwork || 'unknown',
       autonomy: data.autonomy || 'unknown',
       initiativeCount: teamInitiatives.length,
-      utilization: utilization,
-      velocity: data.jira?.velocity || 0,
-      stories: data.jira?.stories || 0,
-      blockers: data.jira?.blockers || 0,
-      comments: comments,
-      currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5),
-      // Add raw jira data for debugging
-      _rawJiraData: data.jira ? {
-        hasUtilization: typeof data.jira.utilization !== 'undefined',
-        utilizationValue: data.jira.utilization
-      } : null
+      utilization: data.jira?.utilization || 0,
+      comments: commentText, // NOW PROPERLY EXTRACTED!
+      currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5)
     };
   });
 }
@@ -130,70 +185,34 @@ function detectPatterns(boardData) {
 function formatContextForAI(context) {
   if (!context) return 'No portfolio data available.';
   
-  let formatted = `PORTFOLIO OVERVIEW:
-- Total Teams: ${context.summary.totalTeams}
-- Total Initiatives: ${context.summary.totalInitiatives}
-- Pipeline Initiatives: ${context.summary.pipelineInitiatives || 0}
-
-`;
+  let formatted = `PORTFOLIO OVERVIEW:\n- Total Teams: ${context.summary.totalTeams}\n- Total Initiatives: ${context.summary.totalInitiatives}\n- Pipeline Initiatives: ${context.summary.pipelineInitiatives || 0}\n\n`;
 
   // Teams with issues
   if (context.patterns.capacityIssues.length > 0) {
-    formatted += `CAPACITY CONCERNS:
-- Teams with capacity issues: ${context.patterns.capacityIssues.join(', ')}
-
-`;
+    formatted += `CAPACITY CONCERNS:\n- Teams with capacity issues: ${context.patterns.capacityIssues.join(', ')}\n\n`;
   }
   
   if (context.patterns.overloadedTeams.length > 0) {
-    formatted += `OVERLOADED TEAMS (>90% utilization):
-- ${context.patterns.overloadedTeams.join(', ')}
-
-`;
+    formatted += `OVERLOADED TEAMS (>90% utilization):\n- ${context.patterns.overloadedTeams.join(', ')}\n\n`;
   }
   
   if (context.patterns.flaggedInitiatives.length > 0) {
-    formatted += `FLAGGED INITIATIVES:
-- ${context.patterns.flaggedInitiatives.join(', ')}
-
-`;
+    formatted += `FLAGGED INITIATIVES:\n- ${context.patterns.flaggedInitiatives.join(', ')}\n\n`;
   }
   
-  // Top teams summary
+  // Top teams summary with COMMENTS
   const topTeams = context.teams.slice(0, 8);
   formatted += `KEY TEAMS:\n`;
   topTeams.forEach(t => {
     formatted += `- ${t.name}: ${t.initiativeCount} initiatives, Capacity: ${t.capacity}, Utilization: ${t.utilization}%\n`;
-    if (t.comments) {
-      formatted += `  Comments: ${t.comments.substring(0, 100)}...\n`;
+    if (t.comments && t.comments.length > 0) {
+      // Include full comment text now that we're extracting it properly
+      const shortComment = t.comments.length > 150 
+        ? t.comments.substring(0, 150) + '...' 
+        : t.comments;
+      formatted += `  Team Comments: ${shortComment}\n`;
     }
   });
   
   return formatted;
-}
-
-function validateDataQuality(boardData) {
-  const teams = boardData.teams || {};
-  const teamCount = Object.keys(teams).length;
-  
-  let teamsWithUtilization = 0;
-  let teamsWithJiraData = 0;
-  
-  Object.values(teams).forEach(team => {
-    if (team.jira) {
-      teamsWithJiraData++;
-      if (typeof team.jira.utilization === 'number') {
-        teamsWithUtilization++;
-      }
-    }
-  });
-  
-  return {
-    totalTeams: teamCount,
-    teamsWithJiraData: teamsWithJiraData,
-    teamsWithUtilization: teamsWithUtilization,
-    missingUtilizationData: teamsWithUtilization === 0 && teamCount > 0,
-    jiraDataPercent: teamCount > 0 ? Math.round((teamsWithJiraData / teamCount) * 100) : 0,
-    utilizationDataPercent: teamCount > 0 ? Math.round((teamsWithUtilization / teamCount) * 100) : 0
-  };
 }
