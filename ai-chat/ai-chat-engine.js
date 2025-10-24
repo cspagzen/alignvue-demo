@@ -1,6 +1,6 @@
 /**
- * VueSense AI Chat Engine - DEMO READY VERSION
- * Simplified, bulletproof, guaranteed to work
+ * AI Chat Engine - FIXED TO USE ACTUAL COMMENT TEXT
+ * NO MORE HALLUCINATED QUOTES!
  */
 
 // Cost Tracker
@@ -14,36 +14,28 @@ class CostTracker {
   }
   
   load() {
-    try {
-      const saved = localStorage.getItem('ai_cost_tracker');
-      if (saved) {
-        const data = JSON.parse(saved);
-        Object.assign(this, data);
-      }
-    } catch (e) {
-      console.warn('Could not load cost tracker:', e);
+    const saved = localStorage.getItem('ai_cost_tracker');
+    if (saved) {
+      const data = JSON.parse(saved);
+      Object.assign(this, data);
     }
   }
   
   save() {
-    try {
-      localStorage.setItem('ai_cost_tracker', JSON.stringify({
-        totalInputTokens: this.totalInputTokens,
-        totalOutputTokens: this.totalOutputTokens,
-        totalCost: this.totalCost,
-        questionCount: this.questionCount
-      }));
-    } catch (e) {
-      console.warn('Could not save cost tracker:', e);
-    }
+    localStorage.setItem('ai_cost_tracker', JSON.stringify({
+      totalInputTokens: this.totalInputTokens,
+      totalOutputTokens: this.totalOutputTokens,
+      totalCost: this.totalCost,
+      questionCount: this.questionCount
+    }));
   }
   
   trackUsage(inputTokens, outputTokens) {
     this.totalInputTokens += inputTokens;
     this.totalOutputTokens += outputTokens;
     
-    const inputCost = (inputTokens / 1000000) * 0.15;
-    const outputCost = (outputTokens / 1000000) * 0.60;
+    const inputCost = (inputTokens / 1000000) * (AI_CHAT_CONFIG.inputCostPer1M || 0.15);
+    const outputCost = (outputTokens / 1000000) * (AI_CHAT_CONFIG.outputCostPer1M || 0.60);
     const cost = inputCost + outputCost;
     
     this.totalCost += cost;
@@ -76,15 +68,12 @@ class AIEngine {
   constructor() {
     this.conversationHistory = [];
     this.costTracker = new CostTracker();
-    this.backendUrl = 'https://vuesense-backend.onrender.com';
-    console.log('✅ AIEngine initialized');
+    this.backendUrl = AI_CHAT_CONFIG.backendUrl || 'https://vuesense-backend.onrender.com';
   }
   
   async sendMessage(userMessage) {
     try {
-      console.log('📤 Sending message to AI:', userMessage.substring(0, 50) + '...');
-      
-      // Build system message with portfolio data
+      // Build the system message with ACTUAL PORTFOLIO DATA
       const systemMessage = this.buildSystemMessage();
       
       // Initialize conversation with system message if needed
@@ -102,7 +91,6 @@ class AIEngine {
       });
       
       // Call the backend
-      console.log('🌐 Calling backend API...');
       const response = await fetch(`${this.backendUrl}/api/chat`, {
         method: 'POST',
         headers: {
@@ -114,19 +102,51 @@ class AIEngine {
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Backend error:', response.status, errorText);
-        throw new Error(`Backend returned ${response.status}: ${errorText}`);
+        const errorData = await response.json().catch(() => ({}));
+        
+        // Check for payload too large error
+        if (response.status === 413) {
+          // Reset conversation and try again with smaller payload
+          this.conversationHistory = [
+            {
+              role: 'system',
+              content: this.buildMinimalSystemMessage()
+            },
+            {
+              role: 'user',
+              content: userMessage
+            }
+          ];
+          
+          // Retry with smaller payload
+          const retryResponse = await fetch(`${this.backendUrl}/api/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              messages: this.conversationHistory
+            })
+          });
+          
+          if (!retryResponse.ok) {
+            throw new Error('Failed to get AI response. Please try again.');
+          }
+          
+          const retryData = await retryResponse.json();
+          this.handleResponse(retryData);
+          return retryData;
+        }
+        
+        throw new Error(errorData.error || 'Failed to get AI response');
       }
       
       const data = await response.json();
-      console.log('✅ Got response from AI');
-      
       this.handleResponse(data);
       return data;
       
     } catch (error) {
-      console.error('❌ AI Engine Error:', error);
+      console.error('AI Engine Error:', error);
       throw error;
     }
   }
@@ -156,56 +176,35 @@ class AIEngine {
     }
   }
   
+  // CRITICAL FIX: Read comments from data.comments NOT data.jira.comments
   buildSystemMessage() {
+    var self = this;
     const teams = window.boardData?.teams || {};
     const initiatives = window.boardData?.initiatives || [];
     
-    // Calculate data quality inline
-    let dataQuality = {
-      totalTeams: 0,
-      teamsWithUtilization: 0,
-      utilizationDataPercent: 0
-    };
+    console.log('🔍 Building system message with', Object.keys(teams).length, 'teams');
     
-    try {
-      const teamCount = Object.keys(teams).length;
-      let teamsWithUtilization = 0;
-      
-      Object.values(teams).forEach(function(team) {
-        if (team.jira && typeof team.jira.utilization === 'number') {
-          teamsWithUtilization++;
-        }
-      });
-      
-      dataQuality = {
-        totalTeams: teamCount,
-        teamsWithUtilization: teamsWithUtilization,
-        utilizationDataPercent: teamCount > 0 ? Math.round((teamsWithUtilization / teamCount) * 100) : 0
-      };
-    } catch (error) {
-      console.warn('Could not calculate data quality:', error);
-    }
-    
-    // Build team data
-    const teamData = Object.entries(teams).map((entry) => {
+    const teamData = Object.entries(teams).map(function(entry) {
       const name = entry[0];
       const data = entry[1];
       const issues = [];
       
-      if (data.capacity === 'Critical' || data.capacity === 'critical') issues.push('Critical capacity');
-      if (data.capacity === 'At Risk' || data.capacity === 'at-risk') issues.push('At-risk capacity');
-      if (data.skillset === 'Critical' || data.skillset === 'critical') issues.push('Critical skillset');
-      if (data.skillset === 'At Risk' || data.skillset === 'at-risk') issues.push('At-risk skillset');
-      if (data.vision === 'Critical' || data.vision === 'critical') issues.push('Critical vision');
-      if (data.vision === 'At Risk' || data.vision === 'at-risk') issues.push('At-risk vision');
+      if (data.capacity === 'critical' || data.capacity === 'Critical') issues.push('Critical capacity');
+      if (data.capacity === 'at-risk' || data.capacity === 'At Risk') issues.push('At-risk capacity');
+      if (data.skillset === 'critical' || data.skillset === 'Critical') issues.push('Critical skillset');
+      if (data.skillset === 'at-risk' || data.skillset === 'At Risk') issues.push('At-risk skillset');
+      if (data.vision === 'critical' || data.vision === 'Critical') issues.push('Critical vision');
+      if (data.vision === 'at-risk' || data.vision === 'At Risk') issues.push('At-risk vision');
       if (data.jira && data.jira.utilization > 95) issues.push('Overloaded at ' + data.jira.utilization + '% utilization');
       
-      const riskScore = this.calculateTeamRisk(name, data);
+      const riskScore = self.calculateTeamRisk(name, data);
       
-      // Ensure comments is a string or null
-      let comments = data.comments || (data.jira && data.jira.comments) || null;
-      if (comments && typeof comments !== 'string') {
-        comments = String(comments); // Convert to string if it's not
+      // ✅ CRITICAL FIX: Read from data.comments (NOT data.jira.comments)
+      const comments = data.comments || null;
+      
+      // Debug log to see what we're sending
+      if (comments) {
+        console.log(`📝 Team ${name} has comments:`, comments.substring(0, 100));
       }
       
       return {
@@ -216,16 +215,15 @@ class AIEngine {
         support: data.support,
         teamwork: data.teamwork,
         autonomy: data.autonomy,
-        utilization: (data.jira && typeof data.jira.utilization === 'number') ? data.jira.utilization : 0,
-        comments: comments,
+        utilization: (data.jira && data.jira.utilization) || 0,
+        comments: comments, // ✅ NOW READING FROM THE RIGHT PLACE!
         riskScore: riskScore,
         issues: issues
       };
     });
     
-    // Build initiative data
-    const initiativeData = initiatives.map((init) => {
-      const riskScore = this.calculateInitiativeRisk(init);
+    const initiativeData = initiatives.map(function(init) {
+      const riskScore = self.calculateInitiativeRisk(init);
       
       return {
         title: init.title || init.name,
@@ -238,84 +236,60 @@ class AIEngine {
       };
     });
     
-    // Build data quality warning
-    let dataQualityWarning = '';
-    if (dataQuality.utilizationDataPercent < 100 && dataQuality.utilizationDataPercent > 0) {
-      dataQualityWarning = '\n\n⚠️ DATA QUALITY WARNING:\n' +
-        'Only ' + dataQuality.utilizationDataPercent + '% of teams have utilization data (' + 
-        dataQuality.teamsWithUtilization + ' out of ' + dataQuality.totalTeams + ' teams).\n' +
-        'When answering questions about utilization, acknowledge that data may be incomplete.\n';
-    } else if (dataQuality.utilizationDataPercent === 0 && dataQuality.totalTeams > 0) {
-      dataQualityWarning = '\n\n⚠️ DATA QUALITY WARNING:\n' +
-        'No teams have utilization data loaded. Inform the user that Jira team health data needs to be synced.\n';
-    }
-    
-    // Build a separate COMMENTS section for visibility
-    const commentsSection = teamData
-      .filter(t => {
-        const comment = t.comments;
-        return comment && typeof comment === 'string' && comment.trim().length > 0;
-      })
-      .map(t => `${t.name}: "${t.comments}"`)
-      .join('\n');
-    
     return 'You are VueSense AI, a portfolio management assistant.\n\n' +
-      '🔴 CRITICAL: TEAM COMMENTS ARE THE MOST IMPORTANT DATA SOURCE\n' +
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
-      'When users ask to "synthesize comments", "analyze comments", "what are teams saying", or similar:\n' +
-      '1. READ ALL TEAM COMMENTS BELOW - They contain the real story\n' +
-      '2. Look for patterns, common themes, and concerns across teams\n' +
-      '3. Group similar issues together (e.g., all teams mentioning hiring, dependencies, etc.)\n' +
-      '4. Quote specific teams when referencing their comments\n' +
-      '5. Health dimensions (capacity, skillset) are secondary - COMMENTS are primary\n\n' +
-      'TEAM COMMENTS (READ THESE FIRST):\n' +
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
-      (commentsSection || 'No team comments available.') + '\n\n' +
       'CURRENT PORTFOLIO DATA:\n\n' +
-      'DATA QUALITY: ' + dataQuality.utilizationDataPercent + '% of teams have utilization data' + dataQualityWarning + '\n' +
       'TEAMS (' + Object.keys(teams).length + ' total):\n' +
       JSON.stringify(teamData, null, 2) + '\n\n' +
       'INITIATIVES (' + initiatives.length + ' total):\n' +
       JSON.stringify(initiativeData, null, 2) + '\n\n' +
+      'CRITICAL ANTI-HALLUCINATION RULES:\n' +
+      '⚠️ WHEN ASKED FOR TEAM COMMENTS OR QUOTES:\n' +
+      '  1. READ the "comments" field for each team\n' +
+      '  2. USE THE EXACT TEXT from the comments field\n' +
+      '  3. Put quotes around the actual comment text\n' +
+      '  4. NEVER make up or paraphrase what teams said\n' +
+      '  5. If a team has no comments, say "no comments provided"\n' +
+      '  6. NEVER synthesize comments from health dimensions\n\n' +
+      'EXAMPLE - CORRECT:\n' +
+      'User: "Give me quotes from teams with capacity issues"\n' +
+      'You: "Core Platform Team: \\"Our workload is very high, and autonomy is at risk. We often have to wait on architectural decisions from leadership, which slows our delivery.\\""\n\n' +
+      'EXAMPLE - WRONG (DO NOT DO THIS):\n' +
+      'You: "Core Platform Team: \\"We are experiencing critical capacity constraints\\"" ← THIS IS MADE UP!\n\n' +
       'INSTRUCTIONS:\n' +
-      '- **PRIORITY #1**: When asked about comments, READ THE "TEAM COMMENTS" SECTION ABOVE\n' +
-      '- Synthesize comments by finding themes: hiring needs, blocking dependencies, skill gaps, process issues, etc.\n' +
-      '- Always quote which teams said what: "Platform Team mentioned...", "3 teams are struggling with..."\n' +
-      '- When asked about teams, list SPECIFIC team names with their actual data\n' +
-      '- When asked about utilization, use the actual utilization percentages from the data\n' +
-      '- When asked about risk scores, use the pre-calculated riskScore field\n' +
-      '- Always reference specific teams and initiatives by name\n' +
-      '- Risk scores are already calculated - use them directly\n\n' +
-      'COMMENT SYNTHESIS EXAMPLES:\n' +
-      'User: "Synthesize team comments"\n' +
-      'Good Response: "Looking across all team comments, I see 3 main themes:\n' +
-      '  1. HIRING PRESSURE (4 teams): Platform Team, Data Team, Backend Team, and Mobile Team all mention needing additional headcount\n' +
-      '  2. EXTERNAL DEPENDENCIES (2 teams): Integration Team is blocked waiting on vendor APIs, Platform Team waiting on security approvals\n' +
-      '  3. TECHNICAL DEBT (3 teams): Frontend, Backend, and Platform teams all cite legacy code slowing them down"\n\n' +
-      'Bad Response: "The teams have capacity issues and skillset concerns." [TOO GENERIC - MUST USE ACTUAL COMMENTS]\n\n' +
+      '- When asked "Which teams need support?", list the SPECIFIC team names that have issues\n' +
+      '- When asked about team comments or patterns, read the "comments" field for each team\n' +
+      '- When asked about risk scores, use the "riskScore" field that is already calculated\n' +
+      '- Always use the actual data provided above\n' +
+      '- Never give generic advice - always reference specific teams and initiatives by name\n' +
+      '- IMPORTANT: Read team comments to understand WHY teams have issues - comments contain critical context\n' +
+      '- IMPORTANT: Risk scores are already calculated - use them directly, do not recalculate\n\n' +
       'RISK SCORE INTERPRETATION:\n' +
       'Team Risk Scores: 0-20 Low, 21-40 Moderate, 41-60 High, 61+ Critical\n' +
       'Initiative Risk Scores: 0-7 Low, 8-11 Medium, 12-22 High, 23+ Critical';
   }
-  
+
+  buildMinimalSystemMessage() {
+    return 'You are VueSense AI, a portfolio management assistant. Answer questions about teams and initiatives based on the user\'s data. Be concise and specific.';
+  }
+
   calculateTeamRisk(teamName, teamData) {
-    let totalRisk = 0;
-    let criticalCount = 0;
-    let atRiskCount = 0;
+    var totalRisk = 0;
+    var criticalCount = 0;
+    var atRiskCount = 0;
     
     const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
     dimensions.forEach(function(dim) {
       const value = teamData[dim];
-      if (value === 'Critical' || value === 'critical') {
+      if (value === 'critical' || value === 'Critical') {
         criticalCount++;
         totalRisk += 15;
-      } else if (value === 'At Risk' || value === 'at-risk') {
+      } else if (value === 'at-risk' || value === 'At Risk') {
         atRiskCount++;
         totalRisk += 7;
       }
     });
     
-    let multiplier = 1.0;
+    var multiplier = 1.0;
     if (criticalCount >= 3) multiplier = 2.0;
     else if (criticalCount >= 1 || atRiskCount >= 3) multiplier = 1.5;
     
@@ -339,9 +313,9 @@ class AIEngine {
     
     return Math.round(totalRisk);
   }
-  
+
   calculateInitiativeRisk(initiative) {
-    let riskScore = 0;
+    var riskScore = 0;
     
     if (initiative.teams && Array.isArray(initiative.teams)) {
       initiative.teams.forEach(function(teamName) {
@@ -384,18 +358,9 @@ class AIEngine {
     
     return Math.min(riskScore, 50);
   }
-  
-  resetConversation() {
-    this.conversationHistory = [];
-    console.log('🔄 Conversation history reset');
-  }
 }
 
-// Create and export the engine globally
-console.log('🚀 Creating AI Engine...');
-try {
-  window.aiEngine = new AIEngine();
-  console.log('✅ window.aiEngine created successfully');
-} catch (error) {
-  console.error('❌ Failed to create aiEngine:', error);
-}
+// Create and export the engine
+window.aiEngine = new AIEngine();
+
+console.log('✅ VueSense AI Engine loaded - FIXED to use actual comment text!');
