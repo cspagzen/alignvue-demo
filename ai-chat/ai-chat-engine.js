@@ -1,6 +1,6 @@
 /**
- * AI Chat Engine - Clean, Simple, Working Version
- * This version actually answers questions about your portfolio
+ * VueSense AI Chat Engine - DEMO READY VERSION
+ * Simplified, bulletproof, guaranteed to work
  */
 
 // Cost Tracker
@@ -14,28 +14,36 @@ class CostTracker {
   }
   
   load() {
-    const saved = localStorage.getItem('ai_cost_tracker');
-    if (saved) {
-      const data = JSON.parse(saved);
-      Object.assign(this, data);
+    try {
+      const saved = localStorage.getItem('ai_cost_tracker');
+      if (saved) {
+        const data = JSON.parse(saved);
+        Object.assign(this, data);
+      }
+    } catch (e) {
+      console.warn('Could not load cost tracker:', e);
     }
   }
   
   save() {
-    localStorage.setItem('ai_cost_tracker', JSON.stringify({
-      totalInputTokens: this.totalInputTokens,
-      totalOutputTokens: this.totalOutputTokens,
-      totalCost: this.totalCost,
-      questionCount: this.questionCount
-    }));
+    try {
+      localStorage.setItem('ai_cost_tracker', JSON.stringify({
+        totalInputTokens: this.totalInputTokens,
+        totalOutputTokens: this.totalOutputTokens,
+        totalCost: this.totalCost,
+        questionCount: this.questionCount
+      }));
+    } catch (e) {
+      console.warn('Could not save cost tracker:', e);
+    }
   }
   
   trackUsage(inputTokens, outputTokens) {
     this.totalInputTokens += inputTokens;
     this.totalOutputTokens += outputTokens;
     
-    const inputCost = (inputTokens / 1000000) * (AI_CHAT_CONFIG.inputCostPer1M || 0.15);
-    const outputCost = (outputTokens / 1000000) * (AI_CHAT_CONFIG.outputCostPer1M || 0.60);
+    const inputCost = (inputTokens / 1000000) * 0.15;
+    const outputCost = (outputTokens / 1000000) * 0.60;
     const cost = inputCost + outputCost;
     
     this.totalCost += cost;
@@ -68,12 +76,15 @@ class AIEngine {
   constructor() {
     this.conversationHistory = [];
     this.costTracker = new CostTracker();
-    this.backendUrl = AI_CHAT_CONFIG.backendUrl || 'https://vuesense-backend.onrender.com';
+    this.backendUrl = 'https://vuesense-backend.onrender.com';
+    console.log('✅ AIEngine initialized');
   }
   
   async sendMessage(userMessage) {
     try {
-      // Build the system message with ACTUAL PORTFOLIO DATA
+      console.log('📤 Sending message to AI:', userMessage.substring(0, 50) + '...');
+      
+      // Build system message with portfolio data
       const systemMessage = this.buildSystemMessage();
       
       // Initialize conversation with system message if needed
@@ -91,6 +102,7 @@ class AIEngine {
       });
       
       // Call the backend
+      console.log('🌐 Calling backend API...');
       const response = await fetch(`${this.backendUrl}/api/chat`, {
         method: 'POST',
         headers: {
@@ -102,51 +114,19 @@ class AIEngine {
       });
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        
-        // Check for payload too large error
-        if (response.status === 413) {
-          // Reset conversation and try again with smaller payload
-          this.conversationHistory = [
-            {
-              role: 'system',
-              content: this.buildMinimalSystemMessage()
-            },
-            {
-              role: 'user',
-              content: userMessage
-            }
-          ];
-          
-          // Retry with smaller payload
-          const retryResponse = await fetch(`${this.backendUrl}/api/chat`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              messages: this.conversationHistory
-            })
-          });
-          
-          if (!retryResponse.ok) {
-            throw new Error('Failed to get AI response. Please try again.');
-          }
-          
-          const retryData = await retryResponse.json();
-          this.handleResponse(retryData);
-          return retryData;
-        }
-        
-        throw new Error(errorData.error || 'Failed to get AI response');
+        const errorText = await response.text();
+        console.error('❌ Backend error:', response.status, errorText);
+        throw new Error(`Backend returned ${response.status}: ${errorText}`);
       }
       
       const data = await response.json();
+      console.log('✅ Got response from AI');
+      
       this.handleResponse(data);
       return data;
       
     } catch (error) {
-      console.error('AI Engine Error:', error);
+      console.error('❌ AI Engine Error:', error);
       throw error;
     }
   }
@@ -176,204 +156,211 @@ class AIEngine {
     }
   }
   
-  // COMPLETE UPDATED SECTION for ai-chat/ai-chat-engine.js
-// Find the AIEngine class and update these three methods
-
-// METHOD 1: Update buildSystemMessage()
-buildSystemMessage() {
-  var self = this;
-  const teams = window.boardData?.teams || {};
-  const initiatives = window.boardData?.initiatives || [];
-  
-  // Get data quality information (safely)
-  let dataQuality = {
-    totalTeams: 0,
-    teamsWithUtilization: 0,
-    utilizationDataPercent: 0
-  };
-  
-  try {
-    // Calculate data quality inline to avoid dependency issues
-    const teamCount = Object.keys(teams).length;
-    let teamsWithUtilization = 0;
+  buildSystemMessage() {
+    const teams = window.boardData?.teams || {};
+    const initiatives = window.boardData?.initiatives || [];
     
-    Object.values(teams).forEach(function(team) {
-      if (team.jira && typeof team.jira.utilization === 'number') {
-        teamsWithUtilization++;
+    // Calculate data quality inline
+    let dataQuality = {
+      totalTeams: 0,
+      teamsWithUtilization: 0,
+      utilizationDataPercent: 0
+    };
+    
+    try {
+      const teamCount = Object.keys(teams).length;
+      let teamsWithUtilization = 0;
+      
+      Object.values(teams).forEach(function(team) {
+        if (team.jira && typeof team.jira.utilization === 'number') {
+          teamsWithUtilization++;
+        }
+      });
+      
+      dataQuality = {
+        totalTeams: teamCount,
+        teamsWithUtilization: teamsWithUtilization,
+        utilizationDataPercent: teamCount > 0 ? Math.round((teamsWithUtilization / teamCount) * 100) : 0
+      };
+    } catch (error) {
+      console.warn('Could not calculate data quality:', error);
+    }
+    
+    // Build team data
+    const teamData = Object.entries(teams).map((entry) => {
+      const name = entry[0];
+      const data = entry[1];
+      const issues = [];
+      
+      if (data.capacity === 'Critical' || data.capacity === 'critical') issues.push('Critical capacity');
+      if (data.capacity === 'At Risk' || data.capacity === 'at-risk') issues.push('At-risk capacity');
+      if (data.skillset === 'Critical' || data.skillset === 'critical') issues.push('Critical skillset');
+      if (data.skillset === 'At Risk' || data.skillset === 'at-risk') issues.push('At-risk skillset');
+      if (data.vision === 'Critical' || data.vision === 'critical') issues.push('Critical vision');
+      if (data.vision === 'At Risk' || data.vision === 'at-risk') issues.push('At-risk vision');
+      if (data.jira && data.jira.utilization > 95) issues.push('Overloaded at ' + data.jira.utilization + '% utilization');
+      
+      const riskScore = this.calculateTeamRisk(name, data);
+      
+      return {
+        name: name,
+        capacity: data.capacity,
+        skillset: data.skillset,
+        vision: data.vision,
+        support: data.support,
+        teamwork: data.teamwork,
+        autonomy: data.autonomy,
+        utilization: (data.jira && typeof data.jira.utilization === 'number') ? data.jira.utilization : 0,
+        comments: (data.jira && data.jira.comments) || data.comments || null,
+        riskScore: riskScore,
+        issues: issues
+      };
+    });
+    
+    // Build initiative data
+    const initiativeData = initiatives.map((init) => {
+      const riskScore = this.calculateInitiativeRisk(init);
+      
+      return {
+        title: init.title || init.name,
+        type: init.type,
+        priority: init.priority,
+        validationStatus: init.validationStatus || init.validation,
+        teams: init.teams || [],
+        progress: init.progress || 0,
+        riskScore: riskScore
+      };
+    });
+    
+    // Build data quality warning
+    let dataQualityWarning = '';
+    if (dataQuality.utilizationDataPercent < 100 && dataQuality.utilizationDataPercent > 0) {
+      dataQualityWarning = '\n\n⚠️ DATA QUALITY WARNING:\n' +
+        'Only ' + dataQuality.utilizationDataPercent + '% of teams have utilization data (' + 
+        dataQuality.teamsWithUtilization + ' out of ' + dataQuality.totalTeams + ' teams).\n' +
+        'When answering questions about utilization, acknowledge that data may be incomplete.\n';
+    } else if (dataQuality.utilizationDataPercent === 0 && dataQuality.totalTeams > 0) {
+      dataQualityWarning = '\n\n⚠️ DATA QUALITY WARNING:\n' +
+        'No teams have utilization data loaded. Inform the user that Jira team health data needs to be synced.\n';
+    }
+    
+    return 'You are VueSense AI, a portfolio management assistant.\n\n' +
+      'CURRENT PORTFOLIO DATA:\n\n' +
+      'DATA QUALITY: ' + dataQuality.utilizationDataPercent + '% of teams have utilization data' + dataQualityWarning + '\n' +
+      'TEAMS (' + Object.keys(teams).length + ' total):\n' +
+      JSON.stringify(teamData, null, 2) + '\n\n' +
+      'INITIATIVES (' + initiatives.length + ' total):\n' +
+      JSON.stringify(initiativeData, null, 2) + '\n\n' +
+      'INSTRUCTIONS:\n' +
+      '- When asked about teams, list the SPECIFIC team names with their actual data\n' +
+      '- When asked about utilization, use the actual utilization percentages from the data\n' +
+      '- When asked about risk scores, use the pre-calculated riskScore field\n' +
+      '- Always reference specific teams and initiatives by name\n' +
+      '- Read team comments to understand WHY teams have issues\n' +
+      '- Risk scores are already calculated - use them directly\n\n' +
+      'RISK SCORE INTERPRETATION:\n' +
+      'Team Risk Scores: 0-20 Low, 21-40 Moderate, 41-60 High, 61+ Critical\n' +
+      'Initiative Risk Scores: 0-7 Low, 8-11 Medium, 12-22 High, 23+ Critical';
+  }
+  
+  calculateTeamRisk(teamName, teamData) {
+    let totalRisk = 0;
+    let criticalCount = 0;
+    let atRiskCount = 0;
+    
+    const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+    dimensions.forEach(function(dim) {
+      const value = teamData[dim];
+      if (value === 'Critical' || value === 'critical') {
+        criticalCount++;
+        totalRisk += 15;
+      } else if (value === 'At Risk' || value === 'at-risk') {
+        atRiskCount++;
+        totalRisk += 7;
       }
     });
     
-    dataQuality = {
-      totalTeams: teamCount,
-      teamsWithUtilization: teamsWithUtilization,
-      utilizationDataPercent: teamCount > 0 ? Math.round((teamsWithUtilization / teamCount) * 100) : 0
-    };
-  } catch (error) {
-    console.warn('Could not calculate data quality:', error);
-  }
-  
-  const teamData = Object.entries(teams).map(function(entry) {
-    const name = entry[0];
-    const data = entry[1];
-    const issues = [];
+    let multiplier = 1.0;
+    if (criticalCount >= 3) multiplier = 2.0;
+    else if (criticalCount >= 1 || atRiskCount >= 3) multiplier = 1.5;
     
-    if (data.capacity === 'critical') issues.push('Critical capacity');
-    if (data.capacity === 'at-risk') issues.push('At-risk capacity');
-    if (data.skillset === 'critical') issues.push('Critical skillset');
-    if (data.skillset === 'at-risk') issues.push('At-risk skillset');
-    if (data.vision === 'critical') issues.push('Critical vision');
-    if (data.vision === 'at-risk') issues.push('At-risk vision');
-    if (data.jira && data.jira.utilization > 95) issues.push('Overloaded at ' + data.jira.utilization + '% utilization');
+    totalRisk = totalRisk * multiplier;
     
-    const riskScore = self.calculateTeamRisk(name, data);
-    
-    return {
-      name: name,
-      capacity: data.capacity,
-      skillset: data.skillset,
-      vision: data.vision,
-      support: data.support,
-      teamwork: data.teamwork,
-      autonomy: data.autonomy,
-      utilization: (data.jira && data.jira.utilization) || 0,
-      comments: (data.jira && data.jira.comments) || null,
-      riskScore: riskScore,
-      issues: issues
-    };
-  });
-  
-  const initiativeData = initiatives.map(function(init) {
-    const riskScore = self.calculateInitiativeRisk(init);
-    
-    return {
-      title: init.title || init.name,
-      type: init.type,
-      priority: init.priority,
-      validationStatus: init.validationStatus || init.validation,
-      teams: init.teams || [],
-      progress: init.progress || 0,
-      riskScore: riskScore
-    };
-  });
-  
-  let dataQualityWarning = '';
-  if (dataQuality.utilizationDataPercent < 100) {
-    dataQualityWarning = '\n\n⚠️ DATA QUALITY WARNING:\n' +
-      'Only ' + dataQuality.utilizationDataPercent + '% of teams have utilization data (' + 
-      dataQuality.teamsWithUtilization + ' out of ' + dataQuality.totalTeams + ' teams).\n' +
-      'When answering questions about utilization, acknowledge that data may be incomplete.\n' +
-      'If all teams show 0% utilization, inform the user that Jira team health data needs to be loaded.\n';
-  }
-  
-  return 'You are VueSense AI, a portfolio management assistant.\n\n' +
-    'CURRENT PORTFOLIO DATA:\n\n' +
-    'DATA QUALITY: ' + dataQuality.utilizationDataPercent + '% of teams have utilization data' + dataQualityWarning + '\n' +
-    'TEAMS (' + Object.keys(teams).length + ' total):\n' +
-    JSON.stringify(teamData, null, 2) + '\n\n' +
-    'INITIATIVES (' + initiatives.length + ' total):\n' +
-    JSON.stringify(initiativeData, null, 2) + '\n\n' +
-    'INSTRUCTIONS:\n' +
-    '- When asked "Which teams need support?", list the SPECIFIC team names that have issues\n' +
-    '- When asked about team comments or patterns, read the "comments" field for each team\n' +
-    '- When asked about risk scores, use the "riskScore" field that is already calculated\n' +
-    '- Always use the actual data provided above\n' +
-    '- Never give generic advice - always reference specific teams and initiatives by name\n' +
-    '- IMPORTANT: Read team comments to understand WHY teams have issues - comments contain critical context\n' +
-    '- IMPORTANT: Risk scores are already calculated - use them directly, do not recalculate\n' +
-    '- IMPORTANT: When answering utilization questions, check if data is available - if all teams show 0%, inform the user\n\n' +
-    'RISK SCORE INTERPRETATION:\n' +
-    'Team Risk Scores: 0-20 Low, 21-40 Moderate, 41-60 High, 61+ Critical\n' +
-    'Initiative Risk Scores: 0-7 Low, 8-11 Medium, 12-22 High, 23+ Critical';
-}
-
-// METHOD 2: Add calculateTeamRisk() as a class method
-calculateTeamRisk(teamName, teamData) {
-  var totalRisk = 0;
-  var criticalCount = 0;
-  var atRiskCount = 0;
-  
-  const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
-  dimensions.forEach(function(dim) {
-    const value = teamData[dim];
-    if (value === 'critical' || value === 'Critical') {
-      criticalCount++;
-      totalRisk += 15;
-    } else if (value === 'at-risk' || value === 'At Risk') {
-      atRiskCount++;
-      totalRisk += 7;
+    if (teamData.jira && teamData.jira.utilization > 95) {
+      totalRisk += 2;
     }
-  });
-  
-  var multiplier = 1.0;
-  if (criticalCount >= 3) multiplier = 2.0;
-  else if (criticalCount >= 1 || atRiskCount >= 3) multiplier = 1.5;
-  
-  totalRisk = totalRisk * multiplier;
-  
-  if (teamData.jira && teamData.jira.utilization > 95) {
-    totalRisk += 2;
-  }
-  
-  const teamInitiatives = (window.boardData && window.boardData.initiatives) ? 
-    window.boardData.initiatives.filter(function(init) {
-      return init.teams && init.teams.includes(teamName);
-    }) : [];
-  
-  const initiativeCount = teamInitiatives.length;
-  if (initiativeCount > 5) {
-    totalRisk += (initiativeCount - 5) * 5;
-  } else if (initiativeCount > 3) {
-    totalRisk += (initiativeCount - 3) * 3;
-  }
-  
-  return Math.round(totalRisk);
-}
-
-// METHOD 3: Add calculateInitiativeRisk() as a class method
-calculateInitiativeRisk(initiative) {
-  var riskScore = 0;
-  
-  if (initiative.teams && Array.isArray(initiative.teams)) {
-    initiative.teams.forEach(function(teamName) {
-      const team = window.boardData && window.boardData.teams && window.boardData.teams[teamName];
-      if (!team) return;
-      
-      if (team.capacity === 'At Risk' || team.capacity === 'at-risk') riskScore += 3;
-      if (team.capacity === 'Critical' || team.capacity === 'critical') riskScore += 6;
-      
-      if (team.skillset === 'At Risk' || team.skillset === 'at-risk') riskScore += 3;
-      if (team.skillset === 'Critical' || team.skillset === 'critical') riskScore += 6;
-      
-      if (team.support === 'At Risk' || team.support === 'at-risk') riskScore += 2;
-      if (team.support === 'Critical' || team.support === 'critical') riskScore += 4;
-      
-      if (team.jira && team.jira.utilization > 95) riskScore += 2;
-    });
-  }
-  
-  if (initiative.jira && initiative.jira.stories > 0) {
-    const flaggedPct = ((initiative.jira.flagged || 0) / initiative.jira.stories) * 100;
-    if (flaggedPct >= 50) riskScore += 8;
-    else if (flaggedPct >= 25) riskScore += 5;
-    else if (flaggedPct >= 15) riskScore += 3;
-    else if (flaggedPct >= 5) riskScore += 2;
-    else if (flaggedPct >= 1) riskScore += 1;
-  }
-  
-  if (initiative.priority <= 15) {
-    const validation = initiative.validationStatus || initiative.validation;
-    if (validation === 'not-validated') {
-      if (initiative.type === 'strategic') riskScore += 2;
-      else riskScore += 1;
+    
+    const teamInitiatives = (window.boardData && window.boardData.initiatives) ? 
+      window.boardData.initiatives.filter(function(init) {
+        return init.teams && init.teams.includes(teamName);
+      }) : [];
+    
+    const initiativeCount = teamInitiatives.length;
+    if (initiativeCount > 5) {
+      totalRisk += (initiativeCount - 5) * 5;
+    } else if (initiativeCount > 3) {
+      totalRisk += (initiativeCount - 3) * 3;
     }
+    
+    return Math.round(totalRisk);
   }
   
-  if (initiative.priority <= 2 && riskScore > 4) {
-    riskScore += 1;
+  calculateInitiativeRisk(initiative) {
+    let riskScore = 0;
+    
+    if (initiative.teams && Array.isArray(initiative.teams)) {
+      initiative.teams.forEach(function(teamName) {
+        const team = window.boardData && window.boardData.teams && window.boardData.teams[teamName];
+        if (!team) return;
+        
+        if (team.capacity === 'At Risk' || team.capacity === 'at-risk') riskScore += 3;
+        if (team.capacity === 'Critical' || team.capacity === 'critical') riskScore += 6;
+        
+        if (team.skillset === 'At Risk' || team.skillset === 'at-risk') riskScore += 3;
+        if (team.skillset === 'Critical' || team.skillset === 'critical') riskScore += 6;
+        
+        if (team.support === 'At Risk' || team.support === 'at-risk') riskScore += 2;
+        if (team.support === 'Critical' || team.support === 'critical') riskScore += 4;
+        
+        if (team.jira && team.jira.utilization > 95) riskScore += 2;
+      });
+    }
+    
+    if (initiative.jira && initiative.jira.stories > 0) {
+      const flaggedPct = ((initiative.jira.flagged || 0) / initiative.jira.stories) * 100;
+      if (flaggedPct >= 50) riskScore += 8;
+      else if (flaggedPct >= 25) riskScore += 5;
+      else if (flaggedPct >= 15) riskScore += 3;
+      else if (flaggedPct >= 5) riskScore += 2;
+      else if (flaggedPct >= 1) riskScore += 1;
+    }
+    
+    if (initiative.priority <= 15) {
+      const validation = initiative.validationStatus || initiative.validation;
+      if (validation === 'not-validated') {
+        if (initiative.type === 'strategic') riskScore += 2;
+        else riskScore += 1;
+      }
+    }
+    
+    if (initiative.priority <= 2 && riskScore > 4) {
+      riskScore += 1;
+    }
+    
+    return Math.min(riskScore, 50);
   }
   
-  return Math.min(riskScore, 50);
+  resetConversation() {
+    this.conversationHistory = [];
+    console.log('🔄 Conversation history reset');
+  }
 }
 
-// Create and export the engine
-window.aiEngine = new AIEngine();
+// Create and export the engine globally
+console.log('🚀 Creating AI Engine...');
+try {
+  window.aiEngine = new AIEngine();
+  console.log('✅ window.aiEngine created successfully');
+} catch (error) {
+  console.error('❌ Failed to create aiEngine:', error);
+}
