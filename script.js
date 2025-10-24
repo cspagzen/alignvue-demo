@@ -237,6 +237,17 @@ function handleBullpenToMatrix(initiative, targetSlot) {
     
     // Place initiative at target slot
     initiative.priority = targetSlot;
+    
+    if (window.analytics) {
+    window.analytics.trackEvent('priority_change', {
+        initiative: initiative.title,
+        from_priority: 'pipeline',
+        to_priority: targetSlot,
+        change_type: 'pipeline_to_board',
+        event_category: 'Initiative'
+    });
+}
+    
     queueJiraUpdate(initiative, { priority: targetSlot });
     boardData.initiatives.push(initiative);
     
@@ -282,6 +293,27 @@ function handleMatrixToMatrix(initiative, targetSlot) {
     
     // Place dragged initiative at target slot
     initiative.priority = targetSlot;
+    
+    if (window.analytics) {
+    const priorityDiff = Math.abs(targetSlot - sourceSlot);
+    
+    window.analytics.trackInitiativePriorityChange(
+        initiative.title,
+        sourceSlot,
+        targetSlot
+    );
+    
+    // Track major priority changes
+    if (priorityDiff >= 10) {
+        window.analytics.trackEvent('major_priority_change', {
+            initiative: initiative.title,
+            priority_change: priorityDiff,
+            direction: targetSlot < sourceSlot ? 'increased' : 'decreased',
+            event_category: 'Initiative'
+        });
+    }
+}
+    
     queueJiraUpdate(initiative, { priority: targetSlot });
 }
       
@@ -1372,6 +1404,14 @@ function showRiskScoreInfoModal() {
 
 
         function showInitiativeModal(initiative) {
+            
+            if (window.analytics) {
+        window.analytics.trackInitiativeView(
+            initiative.title,
+            initiative.team || 'Unknown'
+        );
+    }
+    
     const modal = document.getElementById('detail-modal');
     const title = document.getElementById('modal-title');
     const content = document.getElementById('modal-content');
@@ -8247,6 +8287,10 @@ function applyQuickFilter(filterType) {
             matches = getBlockedInitiatives();
             break;
     }
+    
+    if (window.analytics) {
+    window.analytics.trackQuickFilter(filterType, matches.length);
+}
     
     displayQuickFilterResults(matches, filterType);
 updateQuickFilterUI(filterType);
