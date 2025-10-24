@@ -283,57 +283,174 @@ function calculateDeliveryConfidence(boardData) {
 
 /**
  * Calculate Portfolio Risk Score for a team
- * Mirrors calculateRiskBreakdown from script.js
+ * EXACT COPY from script.js calculateRiskBreakdown - must stay in sync!
  */
-function calculateTeamRiskScore(teamName, allInitiatives) {
-  // Find initiatives this team is working on
+function calculateTeamRiskScore(teamName, allInitiatives, allTeams) {
+  const team = allTeams[teamName];
+  if (!team) return { total: 0, health: 0, validation: 0, blockers: 0, focus: 0 };
+  
+  // 1. Team Health Risk
+  const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
+  let healthRisk = 0;
+  
+  dimensions.forEach(dim => {
+    const value = team[dim];
+    if (value === 'critical' || value === 'Critical') healthRisk += 15;
+    else if (value === 'at-risk' || value === 'At Risk') healthRisk += 7;
+  });
+  
+  // 2. Get team's initiatives
   const teamInitiatives = allInitiatives.filter(init => 
     init.teams && init.teams.includes(teamName)
   );
   
-  if (teamInitiatives.length === 0) {
-    return { total: 0, health: 0, validation: 0, blockers: 0, focus: 0 };
-  }
-  
-  let healthScore = 0;
-  let validationScore = 0;
-  let blockersScore = 0;
-  let focusScore = 0;
-  
-  // For each initiative, calculate risk components
+  // 3. Validation Risk
+  let validationRisk = 0;
   teamInitiatives.forEach(init => {
-    // Health risk - base score per initiative
-    healthScore += 5;
-    
-    // Validation risk
-    const validation = (init.validation || '').toLowerCase();
-    if (validation === 'not validated' || validation === 'notvalidated') {
-      validationScore += 10;
-    } else if (validation === 'validating') {
-      validationScore += 5;
-    }
-    
-    // Blockers risk
-    const flagged = init.jira?.flagged || 0;
-    blockersScore += flagged * 5;
-    
-    // Focus & Load risk - base per initiative
-    focusScore += 3;
+    if (init.validation === 'not-validated') validationRisk += 8;
+    else if (init.validation === 'in-validation') validationRisk += 4;
   });
   
-  // Add risk for having too many initiatives (more than 3)
-  if (teamInitiatives.length > 3) {
-    focusScore += (teamInitiatives.length - 3) * 5;
+  // 4. Blocker Risk
+  let blockerRisk = 0;
+  teamInitiatives.forEach(init => {
+    // Use jira.flagged as that's the actual field in the data
+    // (init.blockedStories doesn't exist in the data structure)
+    const blockers = init.jira?.flagged || 0;
+    blockerRisk += Math.min(8, Math.floor(blockers / 3));
+  });
+  
+  // 5. Focus & Utilization Risk
+  let focusRisk = 0;
+  const initiativeCount = teamInitiatives.length;
+  if (initiativeCount > 5) {
+    focusRisk += (initiativeCount - 5) * 5;
+  } else if (initiativeCount > 3) {
+    focusRisk += (initiativeCount - 3) * 3;
   }
   
-  const total = healthScore + validationScore + blockersScore + focusScore;
+  const utilization = team.jira?.utilization || 0;
+  if (utilization > 95) focusRisk += 20;
+  else if (utilization > 85) focusRisk += 10;
+  
+  const total = healthRisk + validationRisk + blockerRisk + focusRisk;
   
   return {
     total: Math.round(total),
-    health: Math.round(healthScore),
-    validation: Math.round(validationScore),
-    blockers: Math.round(blockersScore),
-    focus: Math.round(focusScore)
+    health: healthRisk,
+    validation: validationRisk,
+    blockers: blockerRisk,
+    focus: focusRisk
+  };
+}
+
+/**
+ * Calculate Initiative Risk Score
+ * EXACT COPY from script.js analyzeInitiativeRisk - must stay in sync!
+ */
+function calculateInitiativeRiskScore(initiative, allTeams) {
+  let riskScore = 0;
+  
+  // 1. TEAM HEALTH RISK SCORING
+  initiative.teams.forEach(teamName => {
+    const team = allTeams[teamName];
+    if (!team) return;
+    
+    // Capacity: At Risk = +3, Critical = +6
+    if (team.capacity === 'At Risk' || team.capacity === 'at-risk') {
+      riskScore += 3;
+    } else if (team.capacity === 'Critical' || team.capacity === 'critical') {
+      riskScore += 6;
+    }
+    
+    // Skillset: At Risk = +3, Critical = +6
+    if (team.skillset === 'At Risk' || team.skillset === 'at-risk') {
+      riskScore += 3;
+    } else if (team.skillset === 'Critical' || team.skillset === 'critical') {
+      riskScore += 6;
+    }
+    
+    // Support: At Risk = +2, Critical = +4
+    if (team.support === 'At Risk' || team.support === 'at-risk') {
+      riskScore += 2;
+    } else if (team.support === 'Critical' || team.support === 'critical') {
+      riskScore += 4;
+    }
+    
+    // Vision: At Risk = +1, Critical = +2
+    if (team.vision === 'At Risk' || team.vision === 'at-risk') {
+      riskScore += 1;
+    } else if (team.vision === 'Critical' || team.vision === 'critical') {
+      riskScore += 2;
+    }
+    
+    // Team Cohesion (teamwork): At Risk = +1, Critical = +2
+    if (team.teamwork === 'At Risk' || team.teamwork === 'at-risk') {
+      riskScore += 1;
+    } else if (team.teamwork === 'Critical' || team.teamwork === 'critical') {
+      riskScore += 2;
+    }
+    
+    // Autonomy: At Risk = +1, Critical = +2
+    if (team.autonomy === 'At Risk' || team.autonomy === 'at-risk') {
+      riskScore += 1;
+    } else if (team.autonomy === 'Critical' || team.autonomy === 'critical') {
+      riskScore += 2;
+    }
+    
+    // Utilization: >95% = +2
+    if (team.jira && team.jira.utilization > 95) {
+      riskScore += 2;
+    }
+  });
+  
+  // 2. FLAGGED WORK RISK SCORING
+  if (initiative.jira && initiative.jira.flagged > 0) {
+    const totalStories = initiative.jira.stories || 0;
+    const flaggedStories = initiative.jira.flagged || 0;
+    const flaggedPercentage = totalStories > 0 ? 
+      (flaggedStories / totalStories) * 100 : 0;
+    
+    let flaggedPoints = 0;
+    if (flaggedPercentage >= 50) flaggedPoints = 8;
+    else if (flaggedPercentage >= 25) flaggedPoints = 5;
+    else if (flaggedPercentage >= 15) flaggedPoints = 3;
+    else if (flaggedPercentage >= 5) flaggedPoints = 2;
+    else flaggedPoints = 1;
+    
+    riskScore += flaggedPoints;
+  }
+  
+  // 3. VALIDATION RISK SCORING
+  if (initiative.priority >= 1 && initiative.priority <= 15 && 
+      initiative.validation === 'not-validated') {
+    if (initiative.type === 'strategic') {
+      riskScore += 2;
+    } else if (initiative.type === 'ktlo' || initiative.type === 'emergent') {
+      riskScore += 1;
+    }
+  }
+  
+  // 4. PRIORITY AMPLIFICATION
+  // Check if initiative is in top 2 rows (priority 1-10 based on 5 columns)
+  const isTopPriority = initiative.priority <= 10;
+  if (isTopPriority && riskScore > 4) {
+    riskScore += 1;
+  }
+  
+  // Cap at 50 points
+  riskScore = Math.min(riskScore, 50);
+  
+  // Determine level
+  let level;
+  if (riskScore <= 12) level = 'LOW';
+  else if (riskScore <= 22) level = 'MODERATE';
+  else if (riskScore <= 35) level = 'HIGH';
+  else level = 'CRITICAL';
+  
+  return {
+    score: riskScore,
+    level: level
   };
 }
 
@@ -365,7 +482,7 @@ function extractTeamData(boardData) {
     }
     
     // Calculate portfolio risk score for this team
-    const riskScore = calculateTeamRiskScore(name, initiatives);
+    const riskScore = calculateTeamRiskScore(name, initiatives, teams);
     
     return {
       name,
@@ -389,25 +506,33 @@ function extractTeamData(boardData) {
 
 function extractInitiativeData(boardData) {
   const initiatives = boardData.initiatives || [];
+  const teams = boardData.teams || {};
   
-  return initiatives.map(init => ({
-    title: init.title || init.name || 'Untitled',
-    teams: init.teams || [],
-    priority: init.priority,
-    type: init.type || 'unknown',
-    validation: init.validation || 'unknown',
-    progress: init.progress || 0,
-    stories: init.jira?.stories || 0,
-    flagged: init.jira?.flagged || 0,
-    // âœ… OPPORTUNITY CANVAS FIELDS
-    customer: init.canvas?.customer || 'N/A',
-    problem: init.canvas?.problem || 'N/A',
-    solution: init.canvas?.solution || 'N/A',
-    marketSize: init.canvas?.marketSize || 'N/A',
-    keyResult: init.canvas?.keyResult || 'N/A',
-    successMetrics: init.canvas?.measures || 'N/A',
-    alternatives: init.canvas?.alternatives || 'N/A'
-  }));
+  return initiatives.map(init => {
+    const riskScore = calculateInitiativeRiskScore(init, teams);
+    
+    return {
+      title: init.title || init.name || 'Untitled',
+      teams: init.teams || [],
+      priority: init.priority,
+      type: init.type || 'unknown',
+      validation: init.validation || 'unknown',
+      progress: init.progress || 0,
+      stories: init.jira?.stories || 0,
+      flagged: init.jira?.flagged || 0,
+      riskScore: riskScore.score,  // ✅ ADDED
+      riskLevel: riskScore.level,  // ✅ ADDED
+      // ✅ OPPORTUNITY CANVAS FIELDS
+      customer: init.canvas?.customer || 'N/A',
+      problem: init.canvas?.problem || 'N/A',
+      solution: init.canvas?.solution || 'N/A',
+      marketSize: init.canvas?.marketSize || 'N/A',
+      keyResult: init.canvas?.keyResult || 'N/A',
+      successMetrics: init.canvas?.measures || 'N/A',
+      alternatives: init.canvas?.alternatives || 'N/A',
+      jira: init.jira  // ✅ ADDED: Include full jira object for risk calculation
+    };
+  });
 }
 
 function detectPatterns(boardData) {
@@ -508,6 +633,7 @@ PORTFOLIO DELIVERY CONFIDENCE:
     formatted += `  Validation: ${init.validation}\n`;
     formatted += `  Progress: ${init.progress}%\n`;
     formatted += `  Stories: ${init.stories}, Flagged: ${init.flagged}\n`;
+    formatted += `  Risk Score: ${init.riskScore}/50 (${init.riskLevel})\n`;  // ✅ ADDED
     
     // OPPORTUNITY CANVAS FIELDS
     if (init.customer && init.customer !== 'N/A') {
