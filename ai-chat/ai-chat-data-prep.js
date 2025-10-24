@@ -339,20 +339,24 @@ function calculateTeamRiskScore(teamName, allInitiatives, allTeams) {
   );
   
   // 3. INITIATIVE-BASED RISK (with multiplier)
-  let initiativeRisk = 0;
+  let validationRisk = 0;
+  let blockerRisk = 0;
   
   teamInitiatives.forEach(init => {
     // Validation risk
-    if (init.validation === 'not-validated') initiativeRisk += 8;
-    else if (init.validation === 'in-validation') initiativeRisk += 4;
+    if (init.validation === 'not-validated') validationRisk += 8;
+    else if (init.validation === 'in-validation') validationRisk += 4;
     
-    // Blocker risk
-    const blockerRisk = Math.min(8, Math.floor((init.jira?.flagged || 0) / 3));
-    initiativeRisk += blockerRisk;
+    // Blocker risk (separate from validation)
+    const initBlockerRisk = Math.min(8, Math.floor((init.jira?.flagged || 0) / 3));
+    blockerRisk += initBlockerRisk;
   });
   
-  // Apply team health multiplier to initiative risk
-  totalRisk += (initiativeRisk * teamHealthMultiplier);
+  // Apply team health multiplier to both validation and blocker risk
+  const amplifiedValidationRisk = validationRisk * teamHealthMultiplier;
+  const amplifiedBlockerRisk = blockerRisk * teamHealthMultiplier;
+  
+  totalRisk += amplifiedValidationRisk + amplifiedBlockerRisk;
   
   // 4. FOCUS PENALTY (Too Many Initiatives)
   let focusRisk = 0;
@@ -377,8 +381,8 @@ function calculateTeamRiskScore(teamName, allInitiatives, allTeams) {
   return {
     total: Math.round(totalRisk),
     health: baseTeamHealth,
-    validation: Math.round(initiativeRisk * teamHealthMultiplier),
-    blockers: 0, // Included in validation now
+    validation: Math.round(amplifiedValidationRisk),
+    blockers: Math.round(amplifiedBlockerRisk),
     focus: focusRisk,
     utilization: utilizationRisk
   };
