@@ -1,7 +1,7 @@
 /**
- * AlignVue AI Data Preparation - COMPLETE VERSION
- * Extracts and formats ALL portfolio data for AI context
- * Includes EVERY field displayed in modals and cards
+ * VueSense AI Data Preparation - COMPLETE FIX
+ * Extracts and formats portfolio data for AI context
+ * NOW WITH JIRA COMMENT EXTRACTION!
  */
 
 /**
@@ -36,7 +36,7 @@ function extractTextFromJiraDoc(comment) {
   }
   
   // Last resort: stringify and log warning
-  console.warn('Unexpected comment format:', typeof comment, comment);
+  console.warn('âš ï¸ Unexpected comment format:', typeof comment, comment);
   return JSON.stringify(comment);
 }
 
@@ -69,100 +69,11 @@ function extractTextFromContent(contentArray) {
     
     // Handle list items
     if (node.type === 'listItem' && Array.isArray(node.content)) {
-      text += '• ' + extractTextFromContent(node.content) + ' ';
+      text += 'â€¢ ' + extractTextFromContent(node.content) + ' ';
     }
   }
   
   return text.trim();
-}
-
-/**
- * Calculate team portfolio risk score
- * Matches the calculation in script.js
- */
-function calculateTeamRiskScore(teamData, teamInitiatives) {
-  // Health score (0-20) - based on health dimensions
-  const healthDimensions = [
-    teamData.capacity,
-    teamData.skillset,
-    teamData.vision,
-    teamData.support,
-    teamData.teamwork,
-    teamData.autonomy
-  ];
-  
-  const criticalCount = healthDimensions.filter(d => d === 'Critical').length;
-  const atRiskCount = healthDimensions.filter(d => d === 'At Risk').length;
-  const healthScore = (criticalCount * 5) + (atRiskCount * 2);
-  
-  // Delivery score (0-20) - based on flagged stories and utilization
-  const flagged = teamData.jira?.flagged || 0;
-  const utilization = teamData.jira?.utilization || 0;
-  const deliveryScore = Math.min(20, (flagged * 3) + Math.max(0, (utilization - 80) / 2));
-  
-  // Strategic score (0-10) - based on initiative count
-  const initiativeCount = teamInitiatives.length;
-  const strategicScore = Math.min(10, Math.max(0, (initiativeCount - 2) * 2));
-  
-  return {
-    total: Math.round(healthScore + deliveryScore + strategicScore),
-    health: Math.round(healthScore),
-    delivery: Math.round(deliveryScore),
-    strategic: Math.round(strategicScore)
-  };
-}
-
-/**
- * Calculate initiative risk score
- * Matches the calculation in script.js
- */
-function calculateInitiativeRiskScore(initiative, boardData) {
-  let riskScore = 0;
-  const factors = [];
-  
-  // Health dimensions of involved teams (0-20 points)
-  if (initiative.teams && initiative.teams.length > 0) {
-    let teamHealthRisk = 0;
-    initiative.teams.forEach(teamName => {
-      const team = boardData.teams[teamName];
-      if (team) {
-        const criticalCount = [team.capacity, team.skillset, team.vision, team.support, team.teamwork, team.autonomy]
-          .filter(d => d === 'Critical').length;
-        const atRiskCount = [team.capacity, team.skillset, team.vision, team.support, team.teamwork, team.autonomy]
-          .filter(d => d === 'At Risk').length;
-        teamHealthRisk += (criticalCount * 3) + (atRiskCount * 1);
-      }
-    });
-    teamHealthRisk = Math.min(20, teamHealthRisk);
-    riskScore += teamHealthRisk;
-    if (teamHealthRisk > 0) factors.push(`Team Health: ${teamHealthRisk}`);
-  }
-  
-  // Validation state (0-15 points)
-  const validationRisk = {
-    'Not Started': 15,
-    'Discovery': 10,
-    'Validated': 0,
-    'unknown': 5
-  }[initiative.validation] || 5;
-  riskScore += validationRisk;
-  if (validationRisk > 0) factors.push(`Validation: ${validationRisk}`);
-  
-  // Progress (0-10 points) - inverse relationship
-  const progress = initiative.progress || 0;
-  const progressRisk = Math.max(0, 10 - (progress / 10));
-  riskScore += progressRisk;
-  if (progressRisk > 5) factors.push(`Progress: ${progressRisk.toFixed(1)}`);
-  
-  // Flagged stories (0-5 points)
-  const flaggedRisk = Math.min(5, (initiative.jira?.flagged || 0));
-  riskScore += flaggedRisk;
-  if (flaggedRisk > 0) factors.push(`Blockers: ${flaggedRisk}`);
-  
-  return {
-    riskScore: Math.round(riskScore),
-    factors: factors
-  };
 }
 
 function preparePortfolioContext(boardData) {
@@ -180,7 +91,7 @@ function preparePortfolioContext(boardData) {
       timestamp: new Date().toISOString()
     };
     
-    console.log('Portfolio context prepared:', context);
+    console.log('âœ… Portfolio context prepared:', context);
     return context;
   } catch (error) {
     console.error('Error preparing portfolio context:', error);
@@ -200,11 +111,67 @@ function generateSummary(boardData) {
   };
 }
 
+/**
+ * Calculate Portfolio Risk Score for a team
+ * Mirrors calculateRiskBreakdown from script.js
+ */
+function calculateTeamRiskScore(teamName, allInitiatives) {
+  // Find initiatives this team is working on
+  const teamInitiatives = allInitiatives.filter(init => 
+    init.teams && init.teams.includes(teamName)
+  );
+  
+  if (teamInitiatives.length === 0) {
+    return { total: 0, health: 0, validation: 0, blockers: 0, focus: 0 };
+  }
+  
+  let healthScore = 0;
+  let validationScore = 0;
+  let blockersScore = 0;
+  let focusScore = 0;
+  
+  // For each initiative, calculate risk components
+  teamInitiatives.forEach(init => {
+    // Health risk - base score per initiative
+    healthScore += 5;
+    
+    // Validation risk
+    const validation = (init.validation || '').toLowerCase();
+    if (validation === 'not validated' || validation === 'notvalidated') {
+      validationScore += 10;
+    } else if (validation === 'validating') {
+      validationScore += 5;
+    }
+    
+    // Blockers risk
+    const flagged = init.jira?.flagged || 0;
+    blockersScore += flagged * 5;
+    
+    // Focus & Load risk - base per initiative
+    focusScore += 3;
+  });
+  
+  // Add risk for having too many initiatives (more than 3)
+  if (teamInitiatives.length > 3) {
+    focusScore += (teamInitiatives.length - 3) * 5;
+  }
+  
+  const total = healthScore + validationScore + blockersScore + focusScore;
+  
+  return {
+    total: Math.round(total),
+    health: Math.round(healthScore),
+    validation: Math.round(validationScore),
+    blockers: Math.round(blockersScore),
+    focus: Math.round(focusScore)
+  };
+}
+
 function extractTeamData(boardData) {
   const teams = boardData.teams || {};
   const initiatives = boardData.initiatives || [];
   
-  console.log('Extracting data for', Object.keys(teams).length, 'teams...');
+  console.log('ðŸ“Š Extracting data for', Object.keys(teams).length, 'teams...');
   
   return Object.entries(teams).map(([name, data]) => {
     // Find initiatives this team is working on
@@ -216,35 +183,36 @@ function extractTeamData(boardData) {
     const rawComment = data.comments || '';
     const commentText = extractTextFromJiraDoc(rawComment);
     
+    // Debug logging to see what we're extracting
+    if (rawComment) {
+      console.log(`\nðŸ” Team: ${name}`);
+      console.log('  Raw comment type:', typeof rawComment);
+      if (typeof rawComment === 'object') {
+        console.log('  Raw comment structure:', rawComment.type || 'no type', 
+                    Array.isArray(rawComment.content) ? `${rawComment.content.length} content items` : 'no content');
+      }
+      console.log('  âœ… Extracted text:', commentText.substring(0, 100) + (commentText.length > 100 ? '...' : ''));
+    }
+    
     // Calculate portfolio risk score for this team
-    const riskBreakdown = calculateTeamRiskScore(data, teamInitiatives);
+    const riskScore = calculateTeamRiskScore(name, initiatives);
     
     return {
       name,
-      
-      // Health dimensions (displayed in modal)
       capacity: data.capacity || 'unknown',
       skillset: data.skillset || 'unknown',
       vision: data.vision || 'unknown',
       support: data.support || 'unknown',
       teamwork: data.teamwork || 'unknown',
       autonomy: data.autonomy || 'unknown',
-      
-      // Jira metrics (displayed in cards)
-      activeStories: data.jira?.stories || 0,
-      blockers: data.jira?.flagged || 0,
-      utilization: data.jira?.utilization || 0,
-      
-      // Portfolio risk (displayed in modal)
-      portfolioRiskScore: riskBreakdown.total,
-      riskHealthComponent: riskBreakdown.health,
-      riskDeliveryComponent: riskBreakdown.delivery,
-      riskStrategicComponent: riskBreakdown.strategic,
-      
-      // Context
       initiativeCount: teamInitiatives.length,
-      comments: commentText,
-      currentWork: teamInitiatives.map(i => i.title || i.name)
+      utilization: data.jira?.utilization || 0,
+      activeStories: data.jira?.stories || 0,  // ✅ ADDED
+      blockers: data.jira?.flagged || 0,  // ✅ ADDED
+      portfolioRiskScore: riskScore.total,  // ✅ ADDED
+      riskBreakdown: riskScore,  // ✅ ADDED (health, validation, blockers, focus)
+      comments: commentText, // âœ… NOW PROPERLY EXTRACTED!
+      currentWork: teamInitiatives.map(i => i.title || i.name).slice(0, 5)
     };
   });
 }
@@ -252,59 +220,24 @@ function extractTeamData(boardData) {
 function extractInitiativeData(boardData) {
   const initiatives = boardData.initiatives || [];
   
-  console.log('🔍 Extracting data for', initiatives.length, 'initiatives...');
-  
-  return initiatives.map(init => {
-    const riskAnalysis = calculateInitiativeRiskScore(init, boardData);
-    
-    // Extract text from canvas fields (they're in Jira Document Format like comments!)
-    const customer = extractTextFromJiraDoc(init.canvas?.customer) || 'N/A';
-    const problem = extractTextFromJiraDoc(init.canvas?.problem) || 'N/A';
-    const solution = extractTextFromJiraDoc(init.canvas?.solution) || 'N/A';
-    const marketSize = extractTextFromJiraDoc(init.canvas?.marketSize) || 'N/A';
-    const keyResult = extractTextFromJiraDoc(init.canvas?.keyResult) || 'N/A';
-    const successMeasures = extractTextFromJiraDoc(init.canvas?.measures) || 'N/A';
-    const alternatives = extractTextFromJiraDoc(init.canvas?.alternatives) || 'N/A';
-    const outcome = extractTextFromJiraDoc(init.canvas?.outcome) || 'N/A';
-    
-    // DEBUG: Check if we got actual text
-    if (init.canvas && customer !== 'N/A') {
-      console.log(`✅ Initiative "${init.title}" - Market Size extracted: "${marketSize.substring(0, 50)}..."`);
-    }
-    
-    return {
-      // Basic info
-      title: init.title || init.name || 'Untitled',
-      teams: init.teams || [],
-      priority: init.priority,
-      type: init.type || 'unknown',
-      
-      // Validation & Progress
-      validation: init.validation || 'unknown',
-      progress: init.progress || 0,
-      
-      // Jira data (displayed in modal)
-      epicKey: init.jira?.key || 'N/A',
-      epicStatus: init.jira?.status || 'N/A',
-      stories: init.jira?.stories || 0,
-      flagged: init.jira?.flagged || 0,
-      lastUpdated: init.jira?.updated || 'N/A',
-      
-      // Risk score (displayed in modal)
-      riskScore: riskAnalysis.riskScore,
-      riskFactors: riskAnalysis.factors,
-      
-      // Opportunity Canvas fields - TEXT EXTRACTED!
-      customer: customer,
-      problem: problem,
-      solution: solution,
-      marketSize: marketSize,
-      keyResult: keyResult,
-      successMeasures: successMeasures,
-      alternatives: alternatives,
-      outcome: outcome
-    };
-  });
+  return initiatives.map(init => ({
+    title: init.title || init.name || 'Untitled',
+    teams: init.teams || [],
+    priority: init.priority,
+    type: init.type || 'unknown',
+    validation: init.validation || 'unknown',
+    progress: init.progress || 0,
+    stories: init.jira?.stories || 0,
+    flagged: init.jira?.flagged || 0,
+    // ✅ OPPORTUNITY CANVAS FIELDS
+    customer: init.canvas?.customer || 'N/A',
+    problem: init.canvas?.problem || 'N/A',
+    solution: init.canvas?.solution || 'N/A',
+    marketSize: init.canvas?.marketSize || 'N/A',
+    keyResult: init.canvas?.keyResult || 'N/A',
+    successMetrics: init.canvas?.measures || 'N/A',
+    alternatives: init.canvas?.alternatives || 'N/A'
+  }));
 }
 
 function detectPatterns(boardData) {
@@ -319,25 +252,13 @@ function detectPatterns(boardData) {
   // Teams with high utilization
   const overloaded = teams.filter(t => t.utilization > 90);
   
-  // Teams with high risk scores
-  const highRiskTeams = teams.filter(t => t.portfolioRiskScore > 30);
-  
-  // Teams with blockers
-  const teamsWithBlockers = teams.filter(t => t.blockers > 0);
-  
   // Initiatives with issues
   const flaggedInits = initiatives.filter(i => i.flagged > 0);
-  const highRiskInits = initiatives.filter(i => i.riskScore > 30);
-  const unvalidatedInits = initiatives.filter(i => i.validation === 'Not Started');
   
   return {
     capacityIssues: capacityIssues.map(t => t.name),
     overloadedTeams: overloaded.map(t => t.name),
-    highRiskTeams: highRiskTeams.map(t => ({name: t.name, score: t.portfolioRiskScore})),
-    teamsWithBlockers: teamsWithBlockers.map(t => ({name: t.name, count: t.blockers})),
     flaggedInitiatives: flaggedInits.map(i => i.title),
-    highRiskInitiatives: highRiskInits.map(i => ({title: i.title, score: i.riskScore})),
-    unvalidatedInitiatives: unvalidatedInits.map(i => i.title),
     totalIssues: capacityIssues.length + overloaded.length + flaggedInits.length
   };
 }
@@ -352,97 +273,87 @@ function formatContextForAI(context) {
 
 `;
 
-  // Critical patterns
-  if (context.patterns.highRiskTeams.length > 0) {
-    formatted += `HIGH RISK TEAMS (Score > 30):\n`;
-    context.patterns.highRiskTeams.forEach(t => {
-      formatted += `- ${t.name}: Risk Score ${t.score}\n`;
-    });
-    formatted += '\n';
-  }
-
+  // Teams with issues
   if (context.patterns.capacityIssues.length > 0) {
-    formatted += `CAPACITY CONCERNS:\n`;
-    formatted += `- Teams with capacity issues: ${context.patterns.capacityIssues.join(', ')}\n\n`;
+    formatted += `CAPACITY CONCERNS:
+- Teams with capacity issues: ${context.patterns.capacityIssues.join(', ')}
+
+`;
   }
   
   if (context.patterns.overloadedTeams.length > 0) {
-    formatted += `OVERLOADED TEAMS (>90% utilization):\n`;
-    formatted += `- ${context.patterns.overloadedTeams.join(', ')}\n\n`;
-  }
-  
-  if (context.patterns.teamsWithBlockers.length > 0) {
-    formatted += `TEAMS WITH BLOCKERS:\n`;
-    context.patterns.teamsWithBlockers.forEach(t => {
-      formatted += `- ${t.name}: ${t.count} blocker(s)\n`;
-    });
-    formatted += '\n';
-  }
-  
-  if (context.patterns.highRiskInitiatives.length > 0) {
-    formatted += `HIGH RISK INITIATIVES (Score > 30):\n`;
-    context.patterns.highRiskInitiatives.forEach(i => {
-      formatted += `- ${i.title}: Risk Score ${i.score}\n`;
-    });
-    formatted += '\n';
+    formatted += `OVERLOADED TEAMS (>90% utilization):
+- ${context.patterns.overloadedTeams.join(', ')}
+
+`;
   }
   
   if (context.patterns.flaggedInitiatives.length > 0) {
-    formatted += `FLAGGED INITIATIVES:\n`;
-    formatted += `- ${context.patterns.flaggedInitiatives.join(', ')}\n\n`;
-  }
-  
-  if (context.patterns.unvalidatedInitiatives.length > 0) {
-    formatted += `UNVALIDATED INITIATIVES:\n`;
-    formatted += `- ${context.patterns.unvalidatedInitiatives.join(', ')}\n\n`;
-  }
+    formatted += `FLAGGED INITIATIVES:
+- ${context.patterns.flaggedInitiatives.join(', ')}
 
-  // COMPLETE team data
-  formatted += `\n=== DETAILED TEAM DATA ===\n`;
-  context.teams.forEach(t => {
-    formatted += `\n## ${t.name}\n`;
-    formatted += `Active Stories: ${t.activeStories}\n`;
-    formatted += `Blockers: ${t.blockers}\n`;
-    formatted += `Utilization: ${t.utilization}%\n`;
-    formatted += `Portfolio Risk Score: ${t.portfolioRiskScore} (Health: ${t.riskHealthComponent}, Delivery: ${t.riskDeliveryComponent}, Strategic: ${t.riskStrategicComponent})\n`;
-    formatted += `Health Dimensions:\n`;
-    formatted += `  - Capacity: ${t.capacity}\n`;
-    formatted += `  - Skillset: ${t.skillset}\n`;
-    formatted += `  - Vision: ${t.vision}\n`;
-    formatted += `  - Support: ${t.support}\n`;
-    formatted += `  - Teamwork: ${t.teamwork}\n`;
-    formatted += `  - Autonomy: ${t.autonomy}\n`;
-    if (t.comments) {
-      formatted += `Comments: "${t.comments}"\n`;
+`;
+  }
+  
+  // Top teams summary WITH FULL COMMENTS AND METRICS
+  const topTeams = context.teams.slice(0, 15); // Include more teams
+  formatted += `KEY TEAMS:\n`;
+  topTeams.forEach(t => {
+    formatted += `\n- ${t.name}:\n`;
+    formatted += `  Initiatives: ${t.initiativeCount}\n`;
+    formatted += `  Capacity: ${t.capacity}\n`;
+    formatted += `  Utilization: ${t.utilization}%\n`;
+    formatted += `  Active Stories: ${t.activeStories}\n`;
+    formatted += `  Blockers: ${t.blockers}\n`;
+    formatted += `  Portfolio Risk Score: ${t.portfolioRiskScore} (Health: ${t.riskBreakdown.health}, Validation: ${t.riskBreakdown.validation}, Blockers: ${t.riskBreakdown.blockers}, Focus: ${t.riskBreakdown.focus})\n`;
+    
+    // Include FULL comment text now that we're extracting it properly
+    if (t.comments && t.comments.length > 0) {
+      formatted += `  Team Comments: "${t.comments}"\n`;
     }
+    
     if (t.currentWork && t.currentWork.length > 0) {
-      formatted += `Current Work (${t.initiativeCount} initiatives):\n`;
-      t.currentWork.forEach(w => formatted += `  - ${w}\n`);
+      formatted += `  Current Work: ${t.currentWork.join(', ')}\n`;
     }
   });
   
-  // COMPLETE initiative data
-  formatted += `\n\n=== DETAILED INITIATIVE DATA ===\n`;
-  context.initiatives.forEach(i => {
-    formatted += `\n## ${i.title}\n`;
-    formatted += `Type: ${i.type} | Priority: ${i.priority} | Teams: ${i.teams.join(', ')}\n`;
-    formatted += `Status: ${i.validation} | Progress: ${i.progress}% | Risk: ${i.riskScore}/50\n`;
-    formatted += `Epic: ${i.epicKey} | Stories: ${i.stories} | Blockers: ${i.flagged}\n`;
-    formatted += `\n📋 OPPORTUNITY CANVAS:\n`;
-    formatted += `  💰 Market Size: ${i.marketSize}\n`;
-    formatted += `  👥 Customer: ${i.customer}\n`;
-    formatted += `  ⚠️ Problem: ${i.problem}\n`;
-    formatted += `  ✅ Solution: ${i.solution}\n`;
-    formatted += `  🎯 Key Result: ${i.keyResult}\n`;
-    formatted += `  📊 Success Measures: ${i.successMeasures}\n`;
-    formatted += `  🔄 Alternatives: ${i.alternatives}\n`;
-    formatted += `  🎯 Outcome: ${i.outcome}\n`;
+  // INITIATIVES WITH OPPORTUNITY CANVAS DATA
+  formatted += `\n\nKEY INITIATIVES:\n`;
+  context.initiatives.forEach(init => {
+    formatted += `\n- ${init.title}:\n`;
+    formatted += `  Type: ${init.type}\n`;
+    formatted += `  Teams: ${init.teams.join(', ')}\n`;
+    formatted += `  Validation: ${init.validation}\n`;
+    formatted += `  Progress: ${init.progress}%\n`;
+    formatted += `  Stories: ${init.stories}, Flagged: ${init.flagged}\n`;
+    
+    // OPPORTUNITY CANVAS FIELDS
+    if (init.customer && init.customer !== 'N/A') {
+      formatted += `  Customer: ${init.customer}\n`;
+    }
+    if (init.problem && init.problem !== 'N/A') {
+      formatted += `  Problem: ${init.problem}\n`;
+    }
+    if (init.solution && init.solution !== 'N/A') {
+      formatted += `  Solution: ${init.solution}\n`;
+    }
+    if (init.marketSize && init.marketSize !== 'N/A') {
+      formatted += `  Market Size: ${init.marketSize}\n`;
+    }
+    if (init.keyResult && init.keyResult !== 'N/A') {
+      formatted += `  Key Result: ${init.keyResult}\n`;
+    }
+    if (init.successMetrics && init.successMetrics !== 'N/A') {
+      formatted += `  Success Metrics: ${init.successMetrics}\n`;
+    }
+    if (init.alternatives && init.alternatives !== 'N/A') {
+      formatted += `  Alternatives: ${init.alternatives}\n`;
+    }
   });
   
-  console.log('📄 Formatted context length:', formatted.length, 'characters');
-  console.log('📊 First initiative market size sample:', context.initiatives[0]?.marketSize || 'N/A');
+  console.log('ðŸ“„ Formatted context length:', formatted.length, 'characters');
   
   return formatted;
 }
 
-console.log('AlignVue AI Data Prep - COMPLETE VERSION loaded');
+console.log('âœ… VueSense AI Data Prep with Jira Comment Extraction loaded');
