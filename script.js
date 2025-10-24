@@ -14302,9 +14302,11 @@ function initializeRiskFactorsChart() {
 function aggregateTeamMetrics() {
     console.log('ðŸ“Š Aggregating team metrics from initiatives...');
     
-    // Reset all team metrics
+    // Reset all team metrics and ensure jira object exists
     Object.keys(boardData.teams).forEach(teamName => {
-        if (boardData.teams[teamName].jira) {
+        if (!boardData.teams[teamName].jira) {
+            boardData.teams[teamName].jira = { stories: 0, blockers: 0, utilization: 0 };
+        } else {
             boardData.teams[teamName].jira.stories = 0;
             boardData.teams[teamName].jira.blockers = 0;
         }
@@ -14316,7 +14318,11 @@ function aggregateTeamMetrics() {
         
         init.teams.forEach(teamName => {
             const team = boardData.teams[teamName];
-            if (team && team.jira) {
+            if (team) {
+                // Ensure jira object exists
+                if (!team.jira) {
+                    team.jira = { stories: 0, blockers: 0, utilization: 0 };
+                }
                 // Add this initiative's stories to the team's total
                 team.jira.stories += (init.jira?.stories || 0);
                 // Add this initiative's flagged items as blockers
