@@ -443,7 +443,7 @@ function showAtRiskAnalysisModal(initiative) {
                    </div>
                    <div>
                        <div class="font-bold text-lg" style="color: ${riskLevel.color};">${riskLevel.label}</div>
-                       <div class="text-sm" style="color: var(--text-secondary);">Priority ${initiative.priority} Ã¢â‚¬Â¢ ${initiative.type.toUpperCase()}</div>
+                       <div class="text-sm" style="color: var(--text-secondary);">Priority ${initiative.priority} â€¢ ${initiative.type.toUpperCase()}</div>
                    </div>
                </div>
                <div class="text-right">
@@ -1257,10 +1257,10 @@ function showRiskScoreInfoModal() {
                     
                     <div class="formula-box">
                         <strong>Team Health Scoring:</strong><br>
-                        Ã¢â‚¬Â¢ Capacity/Skillset = 3 pts if At Risk, 6 pts if Critical<br>
-                        Ã¢â‚¬Â¢ Support = 2 pts if At Risk, 4 pts if Critical<br>
-                        Ã¢â‚¬Â¢ Vision/Cohesion/Autonomy = 1 pt if At Risk, 2 pts if Critical<br>
-                        Ã¢â‚¬Â¢ Over Utilization = 1 pt if over utilized<br>
+                        â€¢ Capacity/Skillset = 3 pts if At Risk, 6 pts if Critical<br>
+                        â€¢ Support = 2 pts if At Risk, 4 pts if Critical<br>
+                        â€¢ Vision/Cohesion/Autonomy = 1 pt if At Risk, 2 pts if Critical<br>
+                        â€¢ Over Utilization = 1 pt if over utilized<br>
                     </div>
                 </div>
 
@@ -1286,11 +1286,11 @@ function showRiskScoreInfoModal() {
                     
                     <div class="formula-box">
                         <strong>Flagged Work Scoring:</strong><br>
-                        Ã¢â‚¬Â¢ 50%+ flagged = 8 points<br>
-                        Ã¢â‚¬Â¢ 25-49% flagged = 5 points<br>
-                        Ã¢â‚¬Â¢ 15-24% flagged = 3 points<br>
-                        Ã¢â‚¬Â¢ 5-14% flagged = 2 points<br>
-                        Ã¢â‚¬Â¢ 1-4% flagged = 1 point
+                        â€¢ 50%+ flagged = 8 points<br>
+                        â€¢ 25-49% flagged = 5 points<br>
+                        â€¢ 15-24% flagged = 3 points<br>
+                        â€¢ 5-14% flagged = 2 points<br>
+                        â€¢ 1-4% flagged = 1 point
                     </div>
                 </div>
 
@@ -1316,9 +1316,9 @@ function showRiskScoreInfoModal() {
                     
                     <div class="formula-box">
                         <strong>Validation Scoring:</strong><br>
-                        Ã¢â‚¬Â¢ Strategic initiatives above-the-line without validation = 2 points<br>
-                        Ã¢â‚¬Â¢ KTLO/Emergent initiatives above-the-line without validation = 1 point<br>
-                        Ã¢â‚¬Â¢ Below-the-line or validated initiatives = 0 points
+                        â€¢ Strategic initiatives above-the-line without validation = 2 points<br>
+                        â€¢ KTLO/Emergent initiatives above-the-line without validation = 1 point<br>
+                        â€¢ Below-the-line or validated initiatives = 0 points
                     </div>
                 </div>
                 
@@ -1344,8 +1344,8 @@ function showRiskScoreInfoModal() {
                     
                     <div class="formula-box">
                         <strong>Priority Amplification Logic:</strong><br>
-                        Ã¢â‚¬Â¢ High-priority initiatives (Rows 1-2) with existing risk factors receive +1 point<br>
-                        Ã¢â‚¬Â¢ Ensures critical initiatives with risk factors get extra attention
+                        â€¢ High-priority initiatives (Rows 1-2) with existing risk factors receive +1 point<br>
+                        â€¢ Ensures critical initiatives with risk factors get extra attention
                     </div>
                 </div>
 
@@ -1568,7 +1568,7 @@ function showRiskScoreInfoModal() {
                                                '<span class="flex-shrink-0">' + healthIcon + '</span>' +
                                                '<span>' + teamName + '</span>' +
                                            '</span>' +
-                                           '<span class="text-xs opacity-75">View Details Ã¢â€ â€™</span>' +
+                                           '<span class="text-xs opacity-75">View Details â†’</span>' +
                                            '</button>';
                                 }).join('') +
                             '</div>' +
@@ -2286,10 +2286,10 @@ const getHealthStatusIndicator = (teamData) => {
     if (isDimensionAtRisk(teamData.autonomy)) atRiskCount++;
     
     // Updated status mapping
-    if (atRiskCount === 0) return { text: 'HEALTHY', icon: 'Ã¢Å“â€œ', color: 'text-green-700' };
-    if (atRiskCount <= 2) return { text: 'LOW RISK', icon: 'Ã¢Å¡Â ', color: 'text-amber-700' };
-    if (atRiskCount <= 4) return { text: 'HIGH RISK', icon: 'Ã¢Å¡Â Ã¢Å¡Â ', color: 'text-orange-700' };
-    return { text: 'CRITICAL', icon: 'Ã°Å¸â€Â¥', color: 'text-red-700' };
+    if (atRiskCount === 0) return { text: 'HEALTHY', icon: 'âœ“', color: 'text-green-700' };
+    if (atRiskCount <= 2) return { text: 'LOW RISK', icon: 'âš ', color: 'text-amber-700' };
+    if (atRiskCount <= 4) return { text: 'HIGH RISK', icon: 'âš âš ', color: 'text-orange-700' };
+    return { text: 'CRITICAL', icon: 'ðŸ”¥', color: 'text-red-700' };
 };
 
 const healthStatus = getHealthStatusIndicator(teamData);
@@ -2393,8 +2393,8 @@ teamCard.innerHTML =
     updateAtRiskCard();
     updateDeliveryConfidenceCard();
     updateCapacityRiskMapCard();
-    // updateRecentlyCompletedCard();  // Ã¢â€ Â COMMENTED OUT
-    // updateValidationCard();          // Ã¢â€ Â COMMENTED OUT
+    // updateRecentlyCompletedCard();  // â† COMMENTED OUT
+    // updateValidationCard();          // â† COMMENTED OUT
     updateMendozaCard();
 }
 
@@ -2946,12 +2946,12 @@ document.head.appendChild(style);
     createModalActivityChart(detailedBreakdown);
     populateEnhancedModalDetails(detailedBreakdown, metrics, activityBreakdown);
     modal.classList.add('show');
-        // Make modal scrollable - optimized for 1366Ãƒâ€”768 minimum resolution
-modal.style.maxHeight = '85vh'; // ~610px on 1366Ãƒâ€”768, ~720px on 1600Ãƒâ€”900
+        // Make modal scrollable - optimized for 1366Ã—768 minimum resolution
+modal.style.maxHeight = '85vh'; // ~610px on 1366Ã—768, ~720px on 1600Ã—900
 modal.style.overflow = 'auto';
 const modalContentElement = modal.querySelector('.modal-content');
 if (modalContentElement) {
-    modalContentElement.style.maxHeight = '80vh'; // ~580px on 1366Ãƒâ€”768, ~680px on 1600Ãƒâ€”900  
+    modalContentElement.style.maxHeight = '80vh'; // ~580px on 1366Ã—768, ~680px on 1600Ã—900  
     modalContentElement.style.overflow = 'auto';
     modalContentElement.style.paddingRight = '4px'; // Account for scrollbar
 }
@@ -3046,15 +3046,15 @@ function showEfficiencyCalculationModal() {
                     <h4 style="color: var(--text-primary); margin: 0 0 12px 0; font-size: 1rem;">Activity Weights & Ideal Placement:</h4>
                     <div class="weight-item">
                         <span style="color: var(--text-secondary);">Expensive Work (Development, Integration, Infrastructure)</span>
-                        <span style="color: var(--accent-red); font-weight: 600;">Weight: 3.0 Ã¢â€ â€™ Should be Above Line</span>
+                        <span style="color: var(--accent-red); font-weight: 600;">Weight: 3.0 â†’ Should be Above Line</span>
                     </div>
                     <div class="weight-item">
                         <span style="color: var(--text-secondary);">Discovery Work (Research, Prototyping, Validation)</span>
-                        <span style="color: var(--accent-orange); font-weight: 600;">Weight: 1.5 Ã¢â€ â€™ Should be Below Line</span>
+                        <span style="color: var(--accent-orange); font-weight: 600;">Weight: 1.5 â†’ Should be Below Line</span>
                     </div>
                     <div class="weight-item">
                         <span style="color: var(--text-secondary);">Support Work (Compliance, Documentation)</span>
-                        <span style="color: var(--text-secondary); font-weight: 600;">Weight: 0.5 Ã¢â€ â€™ Either Position OK</span>
+                        <span style="color: var(--text-secondary); font-weight: 600;">Weight: 0.5 â†’ Either Position OK</span>
                     </div>
                 </div>
             </div>
@@ -3063,13 +3063,13 @@ function showEfficiencyCalculationModal() {
             <div class="section">
                 <h3 class="section-title">Calculation Formula</h3>
                 <div class="formula-box">
-Efficiency = (Actual Weighted Score / Maximum Possible Score) Ãƒâ€” 100
+Efficiency = (Actual Weighted Score / Maximum Possible Score) Ã— 100
 
 Where:
-- Expensive work above line = Full points (weight Ãƒâ€” count)
+- Expensive work above line = Full points (weight Ã— count)
 - Expensive work below line = Zero points (pure waste)
-- Discovery work below line = Full points (weight Ãƒâ€” count)  
-- Discovery work above line = Partial points (weight Ãƒâ€” count Ãƒâ€” 0.6)
+- Discovery work below line = Full points (weight Ã— count)  
+- Discovery work above line = Partial points (weight Ã— count Ã— 0.6)
 - Support work = Full points regardless of position
                 </div>
                 
@@ -4003,10 +4003,10 @@ function showEfficiencyInfoModal() {
                         Expensive Work (Above Line)
                     </h4>
                     <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
-                        <li>Ã¢â‚¬Â¢ Full development teams</li>
-                        <li>Ã¢â‚¬Â¢ Go-to-market campaigns</li>
-                        <li>Ã¢â‚¬Â¢ Infrastructure projects</li>
-                        <li>Ã¢â‚¬Â¢ Customer support</li>
+                        <li>â€¢ Full development teams</li>
+                        <li>â€¢ Go-to-market campaigns</li>
+                        <li>â€¢ Infrastructure projects</li>
+                        <li>â€¢ Customer support</li>
                     </ul>
                 </div>
                 
@@ -4015,10 +4015,10 @@ function showEfficiencyInfoModal() {
                         Cheap Discovery (Below Line)
                     </h4>
                     <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
-                        <li>Ã¢â‚¬Â¢ User interviews</li>
-                        <li>Ã¢â‚¬Â¢ Market research</li>
-                        <li>Ã¢â‚¬Â¢ Quick prototypes</li>
-                        <li>Ã¢â‚¬Â¢ Planning and design</li>
+                        <li>â€¢ User interviews</li>
+                        <li>â€¢ Market research</li>
+                        <li>â€¢ Quick prototypes</li>
+                        <li>â€¢ Planning and design</li>
                     </ul>
                 </div>
             </div>
@@ -4099,19 +4099,19 @@ function showTeamAllocationModal(allocationType) {
                             <div>
                                 <div class="font-medium" style="color: var(--text-primary);">${teamName}</div>
                                 <div class="text-sm" style="color: var(--text-secondary);">
-                                    ${boardData.teams[teamName] ? `${boardData.teams[teamName].jira.velocity} velocity Ã¢â‚¬Â¢ ${boardData.teams[teamName].jira.utilization}% utilization` : 'Team details'}
+                                    ${boardData.teams[teamName] ? `${boardData.teams[teamName].jira.velocity} velocity â€¢ ${boardData.teams[teamName].jira.utilization}% utilization` : 'Team details'}
                                 </div>
                             </div>
                         </div>
                         <div class="text-xs px-3 py-1 rounded" style="background: ${headerColor}; color: white;">
-                            View Details Ã¢â€ â€™
+                            View Details â†’
                         </div>
                     </div>
                 `).join('') +
             '</div>' +
             
             '<div class="text-center pt-4 border-t" style="border-color: var(--border-primary);">' +
-                '<button onclick="showMendozaAnalysisModal()" class="px-4 py-2 rounded-md text-sm font-medium" style="background: var(--accent-blue); color: white;">Ã¢â€ Â Back to Impact Analysis</button>' +
+                '<button onclick="showMendozaAnalysisModal()" class="px-4 py-2 rounded-md text-sm font-medium" style="background: var(--accent-blue); color: white;">â† Back to Impact Analysis</button>' +
             '</div>' +
         '</div>';
     
@@ -4227,7 +4227,7 @@ valueHistory.slice(0, 3).forEach((vh, i) => {
         
         console.log(`${shortName}: sortedHistory data:`);
 sortedHistory.forEach((point, i) => {
-    console.log(`  ${i}: ${point.date} Ã¢â€ â€™ ${point.value}`);
+    console.log(`  ${i}: ${point.date} â†’ ${point.value}`);
 });
         
         // Add this debugging:
@@ -5038,9 +5038,9 @@ function showDeliveryConfidenceModal() {
         Focus Bonus System
     </div>
     <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;">
-        <div>Ã¢â‚¬Â¢ <strong>+3%</strong> for zero active work below the line (perfect focus!)</div>
-        <div>Ã¢â‚¬Â¢ <strong>+2%</strong> for Ã¢â€°Â¤2 active below the line</div>
-        <div>Ã¢â‚¬Â¢ <strong>+1%</strong> for Ã¢â€°Â¤4 active below the line</div>
+        <div>â€¢ <strong>+3%</strong> for zero active work below the line (perfect focus!)</div>
+        <div>â€¢ <strong>+2%</strong> for â‰¤2 active below the line</div>
+        <div>â€¢ <strong>+1%</strong> for â‰¤4 active below the line</div>
         <div style="margin-top: 8px; font-style: italic;">Distraction penalty: -2% for every 3 active items below the line</div>
     </div>
 </div>
@@ -5226,7 +5226,7 @@ content.innerHTML =
             '<div style="display: flex; align-items: center; gap: 6px; border-left: 1px solid var(--border-primary); padding-left: 12px;">' +
                 '<span style="font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Size:</span>' +
                 '<div style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-tertiary);"></div>' +
-                '<span style="color: var(--text-primary);">Ã¢â€ â€™</span>' +
+                '<span style="color: var(--text-primary);">â†’</span>' +
                 '<div style="width: 14px; height: 14px; border-radius: 50%; background: var(--text-tertiary);"></div>' +
                 '<span style="color: var(--text-tertiary);">Number of Initiatives</span>' +
             '</div>' +
@@ -5255,10 +5255,10 @@ function createCapacityRiskChart(canvasId, teamData, isExpanded = false) {
     
     // Color mapping - Triage Theme
     const colorMap = {
-    'healthy': '#10b981',      // Ã°Å¸Å¸Â¢ Green
-    'low-risk': '#facc15',     // Ã°Å¸Å¸Â¡ Pure Yellow
-    'high-risk': '#f97316',    // Ã°Å¸Å¸Â  Pure Orange
-    'critical': '#dc2626'      // Ã°Å¸â€Â´ Pure Red
+    'healthy': '#10b981',      // ðŸŸ¢ Green
+    'low-risk': '#facc15',     // ðŸŸ¡ Pure Yellow
+    'high-risk': '#f97316',    // ðŸŸ  Pure Orange
+    'critical': '#dc2626'      // ðŸ”´ Pure Red
 };
     
     // Triage status labels
@@ -6064,7 +6064,7 @@ completedInitiatives.forEach(init => {
         return Object.entries(breakdown)
             .filter(([type, data]) => data.count > 0)
             .map(([type, data]) => `<span style="color: ${data.color};">${data.count} ${type.charAt(0).toUpperCase() + type.slice(1)}</span>`)
-            .join(' Ã¢â‚¬Â¢ ');
+            .join(' â€¢ ');
     };
     
     title.textContent = 'Recently Completed Initiatives';
@@ -6960,9 +6960,9 @@ function calculateVelocityTrend() {
     // Simplified trend calculation - in real implementation, you'd compare with historical data
     const avgVelocity = Object.values(boardData.teams).reduce((sum, team) => sum + team.jira.velocity, 0) / Object.keys(boardData.teams).length;
     
-    if (avgVelocity > 15) return { arrow: 'Ã¢â€ â€”Ã¯Â¸Â', trend: 'up' };
-    if (avgVelocity < 10) return { arrow: 'Ã¢â€ ËœÃ¯Â¸Â', trend: 'down' };
-    return { arrow: 'Ã¢Å¾Â¡Ã¯Â¸Â', trend: 'stable' };
+    if (avgVelocity > 15) return { arrow: 'â†—ï¸', trend: 'up' };
+    if (avgVelocity < 10) return { arrow: 'â†˜ï¸', trend: 'down' };
+    return { arrow: 'âž¡ï¸', trend: 'stable' };
 }
 
 // Updated validation helper function to work with live data
@@ -7647,7 +7647,7 @@ function matchesTeamCriteria(teamData, filters) {
     // Check overall health filter
     if (filters.overallHealth.length > 0) {
         const overallHealth = getTeamOverallHealth(teamData);
-        if (!filters.overallHealth.includes(overallHealth)) {
+        if (!filters.overallHealth.includes(overallHealth.level)) {
             return false;
         }
     }
@@ -8064,7 +8064,7 @@ function createFilterChip(displayName, section, filterType, filterValue) {
     chip.innerHTML = `
         <span>${displayName}</span>
         <div class="filter-chip-remove" onclick="removeFilterChip('${section}', '${filterType}', '${filterValue}')" title="Remove filter">
-            Ãƒâ€”
+            Ã—
         </div>
     `;
     
@@ -8538,7 +8538,7 @@ async function saveKPIValue() {
         
         // Close modal and show success
         closeKPIEditModal();
-        alert(`Ã¢Å“â€¦ ${kpi.title} updated to ${currentValue}${kpi.unit || ''} and synced to Jira`);
+        alert(`âœ… ${kpi.title} updated to ${currentValue}${kpi.unit || ''} and synced to Jira`);
         
         // Refresh displays
         if (typeof updateProgressCard === 'function') {
@@ -8547,7 +8547,7 @@ async function saveKPIValue() {
         
     } catch (error) {
         console.error('Error updating KPI value:', error);
-        alert(`Ã¢ÂÅ’ Failed to update ${kpi.title}: ${error.message}`);
+        alert(`âŒ Failed to update ${kpi.title}: ${error.message}`);
         
         saveButton.textContent = originalText;
         saveButton.disabled = false;
@@ -9665,7 +9665,7 @@ async function openKPIDetailModal(kpi) {
             <line x1="12" x2="12.01" y1="8" y2="8"/>
         </svg>
     </button>
-    <span>Ã¢â‚¬Â¢ Last Updated: ${projectionData.lastUpdated}</span>
+    <span>â€¢ Last Updated: ${projectionData.lastUpdated}</span>
 </div>
                         <button onclick="closeKPIDetailModal(); setTimeout(() => openKPIEditModal(window.currentKPIForEdit), 100);" 
                                 class="px-3 py-1 rounded text-xs hover:bg-opacity-90 mt-3" 
@@ -9690,7 +9690,7 @@ async function openKPIDetailModal(kpi) {
                 
                 <div class="space-y-4">
                     <div class="p-4 rounded-lg" style="background: ${projectionData.onTrack ? 'var(--status-success-bg)' : 'rgba(239, 68, 68, 0.15)'}; border-left: 4px solid ${projectionData.onTrack ? 'var(--status-success)' : 'var(--accent-red)'};">
-                        <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">${projectionData.onTrack ? 'Ã¢Å“â€œ On Track' : 'Ã¢Å¡Â  At Risk'}</div>
+                        <div class="text-sm font-medium mb-1" style="color: var(--text-primary);">${projectionData.onTrack ? 'âœ“ On Track' : 'âš  At Risk'}</div>
                         <div class="text-xs" style="color: var(--text-secondary);">${projectionData.onTrack ? projectionData.paceChange : projectionData.shortfall}</div>
                     </div>
                     
@@ -9734,7 +9734,7 @@ async function openKPIDetailModal(kpi) {
             </div>
             
             <div class="text-xs mt-2 text-center" style="color: var(--text-tertiary);">
-                ${chartData.length} data points ${dataSource === 'live' ? 'from Jira Value History Ã¢â‚¬Â¢ Updated in real-time' : 'Ã¢â‚¬Â¢ Demo data for presentation'}
+                ${chartData.length} data points ${dataSource === 'live' ? 'from Jira Value History â€¢ Updated in real-time' : 'â€¢ Demo data for presentation'}
             </div>
         </div>
     </div>
@@ -9768,7 +9768,7 @@ async function openKPIDetailModal(kpi) {
                                 <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
                             </svg>
                             <div class="text-sm">Chart temporarily unavailable</div>
-                            <div class="text-xs mt-1">Data: ${kpi.currentValue}${kpi.unit || ''} Ã¢â€ â€™ ${kpi.targetValue}${kpi.unit || ''}</div>
+                            <div class="text-xs mt-1">Data: ${kpi.currentValue}${kpi.unit || ''} â†’ ${kpi.targetValue}${kpi.unit || ''}</div>
                         </div>
                     </div>
                 `;
@@ -9890,7 +9890,7 @@ function withAlpha(color, alpha) {
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
     
-    // Already rgb/rgba Ã¢â‚¬â€œ modify alpha
+    // Already rgb/rgba â€“ modify alpha
     if (color.startsWith('rgb(')) {
         return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
     }
@@ -10294,8 +10294,8 @@ function showSearchSuggestions(query) {
                         <span class="text-xs px-2 py-1 rounded font-medium ${typeColor}">${typeLabel}</span>
                         <span class="font-medium">${highlightMatch(match.title, query)}</span>
                     </div>
-                    ${match.type === 'initiative' ? `<div class="text-xs text-gray-500 mt-1">Progress: ${match.data.progress}% Ã¢â‚¬Â¢ ${match.data.validation.replace('-', ' ')}</div>` : ''}
-                    ${match.type === 'team' ? `<div class="text-xs text-gray-500 mt-1">Capacity: ${match.data.capacity} Ã¢â‚¬Â¢ Utilization: ${match.data.jira.utilization}%</div>` : ''}
+                    ${match.type === 'initiative' ? `<div class="text-xs text-gray-500 mt-1">Progress: ${match.data.progress}% â€¢ ${match.data.validation.replace('-', ' ')}</div>` : ''}
+                    ${match.type === 'team' ? `<div class="text-xs text-gray-500 mt-1">Capacity: ${match.data.capacity} â€¢ Utilization: ${match.data.jira.utilization}%</div>` : ''}
                 </div>
             `;
         }).join('')}
@@ -11116,7 +11116,7 @@ function updateBoardWithLiveData(newData) {
     }
     
 window.boardData = boardData;
-    console.log('Ã¢Å“â€¦ boardData exposed globally with', boardData.initiatives.length, 'initiatives and', Object.keys(boardData.teams).length, 'teams');
+    console.log('âœ… boardData exposed globally with', boardData.initiatives.length, 'initiatives and', Object.keys(boardData.teams).length, 'teams');
 }
 
 // Smart Bidirectional Sync State
@@ -11149,7 +11149,7 @@ function extractTextFromDoc(docField) {
     if (typeof docField === 'object' && docField.content) {
         let text = '';
         
-        const extractText = function(content) {  // Ã¢Å“â€¦ CHANGED: function expression
+        const extractText = function(content) {  // âœ… CHANGED: function expression
             if (!Array.isArray(content)) return;
             
             content.forEach(item => {
@@ -11449,7 +11449,7 @@ if (initiatives.issues.length > 0) {
                 
                 // Alert user if we hit the limit
                 if (epic.childIssueCount === 500 && countData.nextPageToken) {
-                    console.warn(`Ã¢Å¡Â Ã¯Â¸Â Epic ${epic.key} has 500+ child issues - only showing first 500`);
+                    console.warn(`âš ï¸ Epic ${epic.key} has 500+ child issues - only showing first 500`);
                 }
             } else {
                 epic.childIssues = [];
@@ -11504,7 +11504,7 @@ if (initiatives.issues.length > 0) {
         // Transform and store Key Results data
         if (keyResultsData.keyResults.length > 0) {
             liveKeyResultsData = transformKeyResultsData(keyResultsData.keyResults, keyResultsData.valueHistory);
-            console.log(`Ã¢Å“â€¦ Loaded ${liveKeyResultsData.length} live Key Results`);
+            console.log(`âœ… Loaded ${liveKeyResultsData.length} live Key Results`);
         }
     } catch (error) {
         console.error('Error fetching Key Results:', error);
@@ -11650,7 +11650,7 @@ class SyncOverlay {
     if (!this.subtitle) this.subtitle = document.getElementById('syncSubtitle');
     
     if (!this.title || !this.subtitle || !this.icon || !this.overlay) {
-        console.error('Ã¢ÂÅ’ Sync overlay elements still not available');
+        console.error('âŒ Sync overlay elements still not available');
         return;
     }
 
@@ -11675,7 +11675,7 @@ class SyncOverlay {
     this.overlay.classList.add('active');
     this.isActive = true;
     
-    console.log('Ã°Å¸â€â€ž Sync overlay shown:', title);
+    console.log('ðŸ”„ Sync overlay shown:', title);
 }
 
     showSuccess(options = {}) {
@@ -11697,7 +11697,7 @@ class SyncOverlay {
         `;
         this.icon.className = 'sync-icon success';
 
-        console.log('Ã¢Å“â€¦ Sync overlay success:', title);
+        console.log('âœ… Sync overlay success:', title);
 
         // Auto-hide after duration
         setTimeout(() => {
@@ -11726,7 +11726,7 @@ class SyncOverlay {
         this.icon.className = 'sync-icon';
         this.icon.style.color = '#ef4444';
 
-        console.log('Ã¢ÂÅ’ Sync overlay error:', title);
+        console.log('âŒ Sync overlay error:', title);
 
         // Auto-hide after duration
         setTimeout(() => {
@@ -11741,7 +11741,7 @@ class SyncOverlay {
         // Reset icon color in case it was changed for error state
         this.icon.style.color = '';
         
-        console.log('Ã°Å¸â€˜ÂÃ¯Â¸Â Sync overlay hidden');
+        console.log('ðŸ‘ï¸ Sync overlay hidden');
     }
 
     // Method to integrate with your existing sync system
@@ -11783,7 +11783,7 @@ async function initializeSyncOverlay() {
     await new Promise(resolve => setTimeout(resolve, 100));
     
     syncOverlay = new SyncOverlay();
-    console.log('Ã°Å¸Å¡â‚¬ Full-screen sync overlay system initialized');
+    console.log('ðŸš€ Full-screen sync overlay system initialized');
 }
 
 // NEW function for manual sync from sidebar
@@ -12076,14 +12076,14 @@ async function writeToJira(initiative, changes) {
         }
         
         if (!response.ok) {
-            console.error('Ã¢ÂÅ’ Jira update failed:', response.status, responseText);
+            console.error('âŒ Jira update failed:', response.status, responseText);
             throw new Error(`HTTP ${response.status}: ${responseText || 'No response body'}`);
         } else {
-            console.log('Ã¢Å“â€¦ Jira update successful');
+            console.log('âœ… Jira update successful');
         }
         
     } catch (error) {
-        console.error('Ã¢ÂÅ’ Error in writeToJira:', error);
+        console.error('âŒ Error in writeToJira:', error);
         throw error;
     }
 }
@@ -12111,22 +12111,22 @@ function showSyncIndicator(type) {
         case 'syncing':
             indicator.style.background = 'rgba(59, 130, 246, 0.9)';
             indicator.style.color = 'white';
-            indicator.textContent = 'Ã¢Å¸Â³ Syncing...';
+            indicator.textContent = 'âŸ³ Syncing...';
             break;
         case 'success':
             indicator.style.background = 'rgba(34, 197, 94, 0.9)';
             indicator.style.color = 'white';
-            indicator.textContent = 'Ã¢Å“â€œ Updated';
+            indicator.textContent = 'âœ“ Updated';
             break;
         case 'no-change':
             indicator.style.background = 'rgba(107, 114, 128, 0.7)';
             indicator.style.color = 'white';
-            indicator.textContent = 'Ã¢â€”â€¹ Current';
+            indicator.textContent = 'â—‹ Current';
             break;
         case 'error':
             indicator.style.background = 'rgba(239, 68, 68, 0.9)';
             indicator.style.color = 'white';
-            indicator.textContent = 'Ã¢Å“â€” Error';
+            indicator.textContent = 'âœ— Error';
             break;
     }
     
@@ -12153,7 +12153,7 @@ function showSyncIndicator(type) {
 // REPLACE your existing team health functions (if any) with this permanent version:
 
 async function fetchTeamHealthData() {
-    console.log('Ã°Å¸ÂÂ¥ Fetching team health data from Jira TH project...');
+    console.log('ðŸ¥ Fetching team health data from Jira TH project...');
     
     try {
         const response = await fetch('/api/jira', {
@@ -12186,10 +12186,10 @@ async function fetchTeamHealthData() {
         }
 
         const data = await response.json();
-        console.log('Ã°Å¸ÂÂ¥ Raw team health response:', data);
+        console.log('ðŸ¥ Raw team health response:', data);
 
         if (!data.issues || data.issues.length === 0) {
-            console.warn('Ã¢Å¡Â Ã¯Â¸Â No teams found in TH project');
+            console.warn('âš ï¸ No teams found in TH project');
             return {
                 success: true,
                 data: {},
@@ -12208,7 +12208,7 @@ async function fetchTeamHealthData() {
                 case 'at risk': return 'At Risk';
                 case 'critical': return 'Critical';
                 default: 
-                    console.warn(`Ã¢Å¡Â Ã¯Â¸Â Unknown health state: "${jiraValue.value}"`);
+                    console.warn(`âš ï¸ Unknown health state: "${jiraValue.value}"`);
                     return jiraValue.value;
             }
         }
@@ -12221,7 +12221,7 @@ async function fetchTeamHealthData() {
             const teamName = issue.fields.summary;
             const fields = issue.fields;
 
-            console.log(`Ã°Å¸â€Â Processing team: ${teamName}`);
+            console.log(`ðŸ” Processing team: ${teamName}`);
 
             // Validate required fields exist
             const requiredFields = [
@@ -12236,7 +12236,7 @@ async function fetchTeamHealthData() {
 
             requiredFields.forEach(field => {
                 if (!fields.hasOwnProperty(field.id)) {
-                    validationErrors.push(`Ã¢ÂÅ’ Team "${teamName}": Missing field ${field.name} (${field.id})`);
+                    validationErrors.push(`âŒ Team "${teamName}": Missing field ${field.name} (${field.id})`);
                 }
             });
 
@@ -12265,14 +12265,14 @@ async function fetchTeamHealthData() {
 
         // Log validation results
         if (validationErrors.length > 0) {
-            console.warn('Ã¢Å¡Â Ã¯Â¸Â Team Health Field Validation Errors:');
+            console.warn('âš ï¸ Team Health Field Validation Errors:');
             validationErrors.forEach(error => console.warn(error));
         } else {
-            console.log('Ã¢Å“â€¦ All team health fields validated successfully');
+            console.log('âœ… All team health fields validated successfully');
         }
 
-        console.log('Ã°Å¸ÂÂ¥ Processed team health data:', teamHealthMap);
-        console.log(`Ã°Å¸â€œÅ  Successfully processed ${Object.keys(teamHealthMap).length} teams from TH project`);
+        console.log('ðŸ¥ Processed team health data:', teamHealthMap);
+        console.log(`ðŸ“Š Successfully processed ${Object.keys(teamHealthMap).length} teams from TH project`);
 
         return {
             success: true,
@@ -12281,7 +12281,7 @@ async function fetchTeamHealthData() {
         };
 
     } catch (error) {
-        console.error('Ã¢ÂÅ’ Error fetching team health data:', error.message);
+        console.error('âŒ Error fetching team health data:', error.message);
         return {
             success: false,
             data: {},
@@ -12291,16 +12291,16 @@ async function fetchTeamHealthData() {
 }
 
 async function integrateTeamHealthData() {
-    console.log('Ã°Å¸â€â€” Starting team health data integration...');
+    console.log('ðŸ”— Starting team health data integration...');
     
     const teamHealthResult = await fetchTeamHealthData();
 
     if (teamHealthResult.success) {
-        console.log('Ã¢Å“â€¦ Team health fetch successful, merging data...');
+        console.log('âœ… Team health fetch successful, merging data...');
         
         // Ensure boardData.teams exists
         if (!boardData.teams) {
-            console.log('Ã°Å¸â€œÂ Initializing boardData.teams object');
+            console.log('ðŸ“ Initializing boardData.teams object');
             boardData.teams = {};
         }
         
@@ -12308,14 +12308,14 @@ async function integrateTeamHealthData() {
         Object.keys(teamHealthResult.data).forEach(teamName => {
             if (boardData.teams[teamName]) {
                 // Update existing team with Jira health data
-                console.log(`Ã°Å¸â€â€ž Updating existing team: ${teamName}`);
+                console.log(`ðŸ”„ Updating existing team: ${teamName}`);
                 boardData.teams[teamName] = {
                     ...boardData.teams[teamName],
                     ...teamHealthResult.data[teamName]
                 };
             } else {
                 // Add new team from Jira
-                console.log(`Ã¢Å¾â€¢ Adding new team from Jira: ${teamName}`);
+                console.log(`âž• Adding new team from Jira: ${teamName}`);
                 boardData.teams[teamName] = teamHealthResult.data[teamName];
             }
         });
@@ -12323,42 +12323,42 @@ async function integrateTeamHealthData() {
         // Log teams that exist in app but not in Jira TH project
         Object.keys(boardData.teams).forEach(teamName => {
             if (!teamHealthResult.data[teamName]) {
-                console.log(`Ã¢Å¡Â Ã¯Â¸Â Team "${teamName}" exists in app but not in Jira TH project - will need to create`);
+                console.log(`âš ï¸ Team "${teamName}" exists in app but not in Jira TH project - will need to create`);
             }
         });
 
-        console.log('Ã°Å¸Å½Â¯ Final merged team data:', boardData.teams);
+        console.log('ðŸŽ¯ Final merged team data:', boardData.teams);
         return true;
     } else {
-        console.error('Ã¢ÂÅ’ Team health integration failed:', teamHealthResult.error);
-        console.log('Ã°Å¸â€â€ž Continuing with existing team data...');
+        console.error('âŒ Team health integration failed:', teamHealthResult.error);
+        console.log('ðŸ”„ Continuing with existing team data...');
         return false;
     }
 }
 
 // PERMANENT INTEGRATION: Auto-enhance fetchJiraData on page load
 function installPermanentTeamHealthIntegration() {
-    console.log('Ã°Å¸â€Â§ Installing permanent team health integration...');
+    console.log('ðŸ”§ Installing permanent team health integration...');
     
     // Store reference to original fetchJiraData
     const originalFetchJiraData = window.fetchJiraData;
     
     if (!originalFetchJiraData) {
-        console.error('Ã¢ÂÅ’ Original fetchJiraData not found - retrying in 1 second...');
+        console.error('âŒ Original fetchJiraData not found - retrying in 1 second...');
         setTimeout(installPermanentTeamHealthIntegration, 1000);
         return;
     }
     
     // Create permanently enhanced version
     window.fetchJiraData = async function(...args) {
-        console.log('Ã°Å¸â€â€ž Enhanced fetchJiraData called (permanent integration)...');
+        console.log('ðŸ”„ Enhanced fetchJiraData called (permanent integration)...');
         
         try {
             // Call original function first
             const result = await originalFetchJiraData.apply(this, args);
             
             // Then automatically add team health integration
-            console.log('Ã°Å¸ÂÂ¥ Auto-integrating team health data...');
+            console.log('ðŸ¥ Auto-integrating team health data...');
             await integrateTeamHealthData();
             
             // CRITICAL: Calculate portfolio risk scores AFTER team health data loads
@@ -12366,19 +12366,19 @@ function installPermanentTeamHealthIntegration() {
             
             return result;
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Enhanced sync error (falling back to original):', error);
+            console.error('âŒ Enhanced sync error (falling back to original):', error);
             // Return original result even if team health fails
             return await originalFetchJiraData.apply(this, args);
         }
     };
     
-    console.log('Ã¢Å“â€¦ Permanent team health integration installed!');
-    console.log('Ã°Å¸â€œâ€¹ Team health data will now be automatically integrated on every data sync');
+    console.log('âœ… Permanent team health integration installed!');
+    console.log('ðŸ“‹ Team health data will now be automatically integrated on every data sync');
 }
 
 // AUTO-INSTALL on page load (this makes it permanent)
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Ã°Å¸Å¡â‚¬ Auto-installing team health integration...');
+    console.log('ðŸš€ Auto-installing team health integration...');
     
     // Wait a bit for other scripts to load, then install
     setTimeout(() => {
@@ -12395,10 +12395,10 @@ function attemptInstall() {
         installPermanentTeamHealthIntegration();
     } else if (installAttempts < maxAttempts) {
         installAttempts++;
-        console.log(`Ã¢ÂÂ³ Waiting for fetchJiraData... (attempt ${installAttempts}/${maxAttempts})`);
+        console.log(`â³ Waiting for fetchJiraData... (attempt ${installAttempts}/${maxAttempts})`);
         setTimeout(attemptInstall, 1000);
     } else {
-        console.error('Ã¢ÂÅ’ Could not find fetchJiraData after 10 attempts');
+        console.error('âŒ Could not find fetchJiraData after 10 attempts');
     }
 }
 
@@ -12407,12 +12407,12 @@ attemptInstall();
 
 // Validation and testing functions (keep these for manual testing)
 function validateTeamHealthFields() {
-    console.log('Ã°Å¸â€Â Validating team health field values...');
+    console.log('ðŸ” Validating team health field values...');
     
     const expectedValues = ['Healthy', 'At Risk', 'Critical'];
     
     if (!boardData.teams) {
-        console.warn('Ã¢Å¡Â Ã¯Â¸Â No team data available to validate');
+        console.warn('âš ï¸ No team data available to validate');
         return;
     }
     
@@ -12420,20 +12420,20 @@ function validateTeamHealthFields() {
         const team = boardData.teams[teamName];
         const dimensions = ['capacity', 'skillset', 'vision', 'support', 'teamwork', 'autonomy'];
         
-        console.log(`\nÃ°Å¸â€œâ€¹ Team: ${teamName}`);
+        console.log(`\nðŸ“‹ Team: ${teamName}`);
         dimensions.forEach(dimension => {
             const value = team[dimension];
             if (value !== null && !expectedValues.includes(value)) {
-                console.warn(`Ã¢Å¡Â Ã¯Â¸Â Unexpected value for ${dimension}: "${value}" (expected: ${expectedValues.join(', ')}, or null)`);
+                console.warn(`âš ï¸ Unexpected value for ${dimension}: "${value}" (expected: ${expectedValues.join(', ')}, or null)`);
             } else {
-                console.log(`Ã¢Å“â€¦ ${dimension}: ${value || 'null'}`);
+                console.log(`âœ… ${dimension}: ${value || 'null'}`);
             }
         });
     });
 }
 
 function verifyTeamHealthInUI() {
-    console.log('Ã°Å¸â€Â Verifying team health data in UI...');
+    console.log('ðŸ” Verifying team health data in UI...');
     
     if (boardData && boardData.teams) {
         let teamsWithJiraHealth = 0;
@@ -12454,25 +12454,25 @@ function verifyTeamHealthInUI() {
             if (hasOldFormat) teamsWithOldHealth++;
         });
         
-        console.log(`Ã¢Å“â€¦ Teams with Jira health data: ${teamsWithJiraHealth}`);
-        console.log(`Ã¢Å¡Â Ã¯Â¸Â Teams with old format data: ${teamsWithOldHealth}`);
+        console.log(`âœ… Teams with Jira health data: ${teamsWithJiraHealth}`);
+        console.log(`âš ï¸ Teams with old format data: ${teamsWithOldHealth}`);
         
         if (teamsWithJiraHealth > 0) {
-            console.log('Ã°Å¸Å½â€° Team health integration is working!');
+            console.log('ðŸŽ‰ Team health integration is working!');
             return true;
         } else {
-            console.log('Ã¢ÂÅ’ Team health integration not detected');
+            console.log('âŒ Team health integration not detected');
             return false;
         }
     } else {
-        console.log('Ã¢ÂÅ’ No team data found');
+        console.log('âŒ No team data found');
         return false;
     }
 }
 
-console.log('Ã°Å¸ÂÂ¥ PERMANENT TEAM HEALTH INTEGRATION LOADED');
-console.log('Ã°Å¸â€œâ€¹ Team health will be automatically integrated on every page load');
-console.log('Ã°Å¸â€Â§ Manual commands still available:');
+console.log('ðŸ¥ PERMANENT TEAM HEALTH INTEGRATION LOADED');
+console.log('ðŸ“‹ Team health will be automatically integrated on every page load');
+console.log('ðŸ”§ Manual commands still available:');
 console.log('   - validateTeamHealthFields()');  
 console.log('   - verifyTeamHealthInUI()');
 
@@ -12680,7 +12680,7 @@ function showTeamModal(teamName, teamData) {
             
             <!-- Blockers Card -->
             <div class="p-4 rounded-lg text-center" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);">
-                <div class="text-3xl font-bold mb-1" style="color: ${(teamData.jira?.blockers || 0) > 0 ? 'var(--accent-orange)' : 'var(--text-primary)'};">${teamData.jira?.blockers || 0}</div>
+                <div class="text-3xl font-bold mb-1" style="color: ${(teamData.jira?.flagged || 0) > 0 ? 'var(--accent-orange)' : 'var(--text-primary)'};">${teamData.jira?.flagged || 0}</div>
                 <div class="text-xs" style="color: var(--text-secondary);">Blockers</div>
             </div>
         </div>
@@ -13085,51 +13085,51 @@ async function handleHealthUpdate(event, teamName) {
     };
     
     try {
-        console.log('Ã°Å¸â€Â Debug: Updating team health for:', teamName);
-        console.log('Ã°Å¸â€Â Debug: Form data:', formData);
-        console.log('Ã°Å¸â€Â Debug: Team data before update:', boardData.teams[teamName]);
+        console.log('ðŸ” Debug: Updating team health for:', teamName);
+        console.log('ðŸ” Debug: Form data:', formData);
+        console.log('ðŸ” Debug: Team data before update:', boardData.teams[teamName]);
         
         // Check if updateTeamHealthInJira function exists
         if (typeof updateTeamHealthInJira === 'function') {
-            console.log('Ã°Å¸â€Â Debug: updateTeamHealthInJira function exists, calling it...');
+            console.log('ðŸ” Debug: updateTeamHealthInJira function exists, calling it...');
             await updateTeamHealthInJira(teamName, formData);
-            console.log('Ã¢Å“â€¦ Debug: Jira update completed');
+            console.log('âœ… Debug: Jira update completed');
         } else {
-            console.warn('Ã¢Å¡Â Ã¯Â¸Â Debug: updateTeamHealthInJira function does not exist');
-            console.log('Ã°Å¸â€™Â¡ Debug: Available functions:', Object.getOwnPropertyNames(window).filter(name => name.includes('update') || name.includes('jira') || name.includes('health')));
+            console.warn('âš ï¸ Debug: updateTeamHealthInJira function does not exist');
+            console.log('ðŸ’¡ Debug: Available functions:', Object.getOwnPropertyNames(window).filter(name => name.includes('update') || name.includes('jira') || name.includes('health')));
         }
         
         // Update local data
         const teamData = boardData.teams[teamName];
         if (teamData) {
-            console.log('Ã°Å¸â€Â Debug: Updating local team data...');
+            console.log('ðŸ” Debug: Updating local team data...');
             Object.assign(teamData, formData);
             if (teamData.jira) {
                 teamData.jira.utilization = formData.utilization;
                 teamData.jira.comments = formData.comments;
             }
-            console.log('Ã°Å¸â€Â Debug: Team data after update:', teamData);
+            console.log('ðŸ” Debug: Team data after update:', teamData);
         } else {
-            console.error('Ã¢ÂÅ’ Debug: Team not found in boardData.teams:', teamName);
+            console.error('âŒ Debug: Team not found in boardData.teams:', teamName);
         }
         
         // Refresh UI
         if (typeof updateUIWithLiveData === 'function') {
-            console.log('Ã°Å¸â€Â Debug: Refreshing UI...');
+            console.log('ðŸ” Debug: Refreshing UI...');
             await updateUIWithLiveData();
         } else {
-            console.warn('Ã¢Å¡Â Ã¯Â¸Â Debug: updateUIWithLiveData function does not exist');
+            console.warn('âš ï¸ Debug: updateUIWithLiveData function does not exist');
         }
         
         // Exit edit mode
-        console.log('Ã°Å¸â€Â Debug: Exiting edit mode...');
+        console.log('ðŸ” Debug: Exiting edit mode...');
         toggleHealthEditMode(teamName);
         
-        console.log('Ã¢Å“â€¦ Team health updated successfully');
+        console.log('âœ… Team health updated successfully');
         
     } catch (error) {
-        console.error('Ã¢ÂÅ’ Error updating team health:', error);
-        console.error('Ã¢ÂÅ’ Error stack:', error.stack);
+        console.error('âŒ Error updating team health:', error);
+        console.error('âŒ Error stack:', error.stack);
         
         // Show a more specific error message
         if (error.message.includes('updateTeamHealthInJira')) {
@@ -13657,7 +13657,7 @@ async function submitHealthChanges() {
             await triggerManualSync();
             
             // Success! Show success message
-            console.log('Ã¢Å“â€¦ Validation sync completed successfully');
+            console.log('âœ… Validation sync completed successfully');
             
             // If there's an active modal, close it
             const modal = document.getElementById('team-modal');
@@ -13951,7 +13951,7 @@ function handleSlotClick(slotNumber) {
     updatePipelineCard(); // This will update the pipeline count
     
     // Show success notification
-    showSuccessNotification(`Ã¢Å“â€¦ "${initiative.title}" moved to Priority ${slotNumber}`);
+    showSuccessNotification(`âœ… "${initiative.title}" moved to Priority ${slotNumber}`);
 }
 
 // 5. SUCCESS NOTIFICATION
@@ -14295,12 +14295,12 @@ function initializeRiskFactorsChart() {
         plugins: [dataLabelsPlugin]
     });
     
-    console.log('Ã¢Å“â€¦ Risk Factors Chart.js chart initialized');
+    console.log('âœ… Risk Factors Chart.js chart initialized');
 }
 
     // Add this function after fetchTeamHealthData()
 function aggregateTeamMetrics() {
-    console.log('Ã°Å¸â€œÅ  Aggregating team metrics from initiatives...');
+    console.log('ðŸ“Š Aggregating team metrics from initiatives...');
     
     // Reset all team metrics
     Object.keys(boardData.teams).forEach(teamName => {
@@ -14357,12 +14357,11 @@ function aggregateTeamMetrics() {
         );
         
         let validationRisk = 0;
-        let blockerRisk = 0;
         teamInitiatives.forEach(init => {
             if (init.validation === 'not-validated') validationRisk += 8;
             else if (init.validation === 'in-validation') validationRisk += 4;
-            const initBlockerRisk = Math.min(8, Math.floor((init.jira?.flagged || 0) / 3));
-            blockerRisk += initBlockerRisk;
+            const blockerRisk = Math.min(8, Math.floor((init.jira?.flagged || 0) / 3));
+            validationRisk += blockerRisk;
         });
         
         const initiativeCount = teamInitiatives.length;
@@ -14378,7 +14377,7 @@ function aggregateTeamMetrics() {
         boardData.teams[teamName].riskBreakdown = {
             health: baseHealth,
             validation: Math.round(validationRisk * multiplier),
-            blockers: Math.round(blockerRisk * multiplier),
+            blockers: 0,
             focus: focusRisk,
             utilization: utilizationRisk
         };
