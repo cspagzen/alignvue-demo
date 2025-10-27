@@ -117,28 +117,13 @@ else if (utilization > 85): totalRisk += 10
 
 ---
 
-**When User Asks**: "How is portfolio risk score calculated?" or "What's the formula?" or "Show me the breakdown"
-
-**CRITICAL**: 
-1. The team's riskBreakdown object contains the ACTUAL calculated values - USE THESE, don't recalculate!
-2. riskBreakdown has: health, validation, blockers, focus, utilization
-3. Only explain the FORMULA if asked - otherwise just show the actual breakdown numbers
-
-**Example Response for Breakdown Request**: 
-"Core Platform's portfolio risk score of 136 points breaks down as:
-- Team Health: 30 pts (from capacity=Critical, support=Critical)
-- Validation Risk: 56 pts (unvalidated strategic initiatives)  
-- Blockers: 0 pts (no flagged work items)
-- Focus & Load: 50 pts (too many concurrent initiatives + high utilization)
-
-The 'Focus & Load' combines focus penalty (30 pts for 15 initiatives) and utilization penalty (20 pts for 92% utilization)."
-
-**Example Response for Formula Request**:
+**When User Asks**: "How is portfolio risk score calculated?" or "What's the formula?"
 
 **CRITICAL**: You MUST provide the EXACT formula below. DO NOT improvise or give generic explanations.
 
 **EXACT FORMULA TO PROVIDE**:
 
+```
 Team Portfolio Risk Score = Base Health Risk + (Amplified Initiative Risk) + Focus Penalty + Utilization Penalty
 
 WHERE:
@@ -157,6 +142,7 @@ WHERE:
   Focus Penalty = Number of concurrent initiatives × 2 pts (if team has 4+ initiatives)
   
   Utilization Penalty = 20 pts if utilization > 95%, 10 pts if 85-95%
+```
 
 **Example Response**: "The formula is: Base Health Risk + (Initiative Risk × 1.5× multiplier for At Risk teams) + Focus Penalty + Utilization Penalty. For Core Platform: 29 pts base health + 94 pts amplified initiative risk + 6 pts focus penalty + 20 pts utilization = 164 points total."
 
@@ -275,7 +261,7 @@ confidence = max(45, min(95, confidence))
 
 ## CRITICAL USAGE RULES
 
-1. **NEVER say**: "The team's health is 96 points" → Health uses levels, not points
+1. **NEVER say**: "The team's health is 96 points" â†’ Health uses levels, not points
 2. **NEVER confuse**: Portfolio Risk Score (96 pts) with Overall Health (High Risk)
 3. **ALWAYS specify**: Which metric you're discussing when answering
 4. **ALWAYS use**: The exact calculation for each metric type
@@ -326,7 +312,7 @@ window.boardData = {
         flagged: number,        // Blockers - flagged/blocked work items
         blockers: number
       },
-      portfolioRiskScore: number,  // ⚠️ THIS IS THE TEAM PORTFOLIO RISK SCORE (0-100+ points)
+      portfolioRiskScore: number,  // âš ï¸ THIS IS THE TEAM PORTFOLIO RISK SCORE (0-100+ points)
       riskBreakdown: {             // Risk score components
         health: number,            // Risk from team health dimensions
         validation: number,        // Risk from unvalidated initiatives
@@ -414,11 +400,11 @@ Initiative risk score is calculated using this exact formula:
 - Over-utilization (>95%): +2pts
 
 **FLAGGED WORK POINTS**:
-- ≥50% flagged: +8pts
-- ≥25% flagged: +5pts
-- ≥15% flagged: +3pts
-- ≥5% flagged: +2pts
-- ≥1% flagged: +1pt
+- â‰¥50% flagged: +8pts
+- â‰¥25% flagged: +5pts
+- â‰¥15% flagged: +3pts
+- â‰¥5% flagged: +2pts
+- â‰¥1% flagged: +1pt
 
 **VALIDATION POINTS** (priorities 1-15 only):
 - Strategic not validated: +2pts
@@ -507,9 +493,9 @@ Count dimensions that are "At Risk" or "Critical":
 
 **EXAMPLE**:
 Core Platform team has:
-- Capacity: Critical ✓
-- Skillset: At Risk ✓
-- Support: Critical ✓
+- Capacity: Critical âœ“
+- Skillset: At Risk âœ“
+- Support: Critical âœ“
 - Vision: Healthy
 - Teamwork: Healthy
 - Autonomy: Healthy
@@ -550,8 +536,8 @@ Portfolio delivery capability uses this exact formula:
 
 **FOCUS BONUS**:
 - 0 active below line: +3%
-- ≤2 active below line: +2%
-- ≤4 active below line: +1%
+- â‰¤2 active below line: +2%
+- â‰¤4 active below line: +1%
 
 **BOUNDS**: Min 45%, Max 95%
 
@@ -576,9 +562,9 @@ Want me to calculate current delivery confidence?
 - **Autonomy**: "approval needed", "decision bottleneck", "can't proceed"
 
 ### Cross-Initiative Patterns:
-- Same blocker mentioned across multiple initiatives → systemic issue
-- Same skill gap across teams → training or hiring need
-- Multiple teams waiting on same dependency → critical path bottleneck
+- Same blocker mentioned across multiple initiatives â†’ systemic issue
+- Same skill gap across teams â†’ training or hiring need
+- Multiple teams waiting on same dependency â†’ critical path bottleneck
 
 ---
 

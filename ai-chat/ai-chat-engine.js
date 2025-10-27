@@ -76,7 +76,7 @@ class AIEngine {
       // Build the system message with ACTUAL PORTFOLIO DATA
       const systemMessage = this.buildSystemMessage();
       
-      // âœ… FIXED: ALWAYS update system message with fresh data
+      // Ã¢Å“"¦ FIXED: ALWAYS update system message with fresh data
       if (this.conversationHistory.length === 0) {
         this.conversationHistory.push({
           role: 'system',
@@ -187,7 +187,7 @@ class AIEngine {
     const teams = window.boardData?.teams || {};
     const initiatives = window.boardData?.initiatives || [];
     
-    console.log('ðŸ” Building system message with', Object.keys(teams).length, 'teams and', initiatives.length, 'initiatives');
+    console.log('Ã°Å¸"Â Building system message with', Object.keys(teams).length, 'teams and', initiatives.length, 'initiatives');
     
     const teamData = Object.entries(teams).map(function(entry) {
       const name = entry[0];
@@ -205,7 +205,7 @@ class AIEngine {
       const commentText = data.jira?.comments || null;
       
       if (commentText) {
-        console.log(`ðŸ“ Team ${name} has ${commentText.length} chars of comments`);
+        console.log(`📍 Team ${name} has ${commentText.length} chars of comments`);
       }
       
       return {
@@ -218,7 +218,7 @@ class AIEngine {
         autonomy: data.autonomy,
         utilization: (data.jira && data.jira.utilization) || 0,
         activeStories: (data.jira && data.jira.stories) || 0,
-        blockers: (data.jira && data.jira.blockers) || 0,  // âœ… FIXED: Read from .blockers not .flagged
+        blockers: (data.jira && data.jira.blockers) || 0,  // Ã¢Å“"¦ FIXED: Read from .blockers not .flagged
         comments: commentText,
         portfolioRiskScore: data.portfolioRiskScore || 0,
         riskBreakdown: data.riskBreakdown || { health: 0, validation: 0, blockers: 0, focus: 0, utilization: 0 },
@@ -249,8 +249,8 @@ class AIEngine {
       };
     });
     
-    console.log('âœ… System message built - Sample team:', teamData[0]?.name, 'has', teamData[0]?.activeStories, 'active stories');
-    console.log('âœ… System message built - Sample init:', initiativeData[0]?.title, 'market size:', initiativeData[0]?.marketSize);
+    console.log('Ã¢Å“"¦ System message built - Sample team:', teamData[0]?.name, 'has', teamData[0]?.activeStories, 'active stories');
+    console.log('Ã¢Å“"¦ System message built - Sample init:', initiativeData[0]?.title, 'market size:', initiativeData[0]?.marketSize);
     
     return AI_SYSTEM_PROMPT + '\n\n' +
       '---\n\n' +
@@ -409,4 +409,4 @@ class AIEngine {
 // Create and export the engine
 window.aiEngine = new AIEngine();
 
-console.log('âœ… VueSense AI Engine loaded - WITH ALL FIELDS AND SYSTEM MESSAGE UPDATES!');
+console.log('Ã¢Å“"¦ VueSense AI Engine loaded - WITH ALL FIELDS AND SYSTEM MESSAGE UPDATES!');
