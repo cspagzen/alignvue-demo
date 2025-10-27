@@ -123,7 +123,7 @@ else if (utilization > 85): totalRisk += 10
 
 **EXACT FORMULA TO PROVIDE**:
 
-```
+\`\`\`
 Team Portfolio Risk Score = Base Health Risk + (Amplified Initiative Risk) + Focus Penalty + Utilization Penalty
 
 WHERE:
@@ -142,7 +142,7 @@ WHERE:
   Focus Penalty = Number of concurrent initiatives × 2 pts (if team has 4+ initiatives)
   
   Utilization Penalty = 20 pts if utilization > 95%, 10 pts if 85-95%
-```
+\`\`\`
 
 **Example Response**: "The formula is: Base Health Risk + (Initiative Risk × 1.5× multiplier for At Risk teams) + Focus Penalty + Utilization Penalty. For Core Platform: 29 pts base health + 94 pts amplified initiative risk + 6 pts focus penalty + 20 pts utilization = 164 points total."
 
