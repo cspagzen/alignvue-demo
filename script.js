@@ -7645,6 +7645,7 @@ function matchesTeamCriteria(teamData, filters) {
     }
     
     // Check overall health filter
+    // Check overall health filter
     if (filters.overallHealth.length > 0) {
         const overallHealth = getTeamOverallHealth(teamData);
         if (!filters.overallHealth.includes(overallHealth.level)) {
@@ -13371,8 +13372,9 @@ function getTeamOverallHealth(teamData) {
     const validDimensions = dimensions.filter(dim => teamData[dim] != null);
     
     validDimensions.forEach(dim => {
-        if (teamData[dim] === 'At Risk') atRiskCount++;
-        if (teamData[dim] === 'Critical') criticalCount++;
+        const value = String(teamData[dim]).toLowerCase().trim();
+        if (value === 'at risk' || value === 'at-risk') atRiskCount++;
+        if (value === 'critical') criticalCount++;
     });
     
     // Priority: Critical takes precedence
