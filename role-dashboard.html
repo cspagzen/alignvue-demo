@@ -4,46 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Role-Based Dashboard - AlignVue</title>
-    
-    <!-- React & ReactDOM from CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel Standalone for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Lucide Icons (we'll use inline SVG instead for simplicity) -->
 </head>
 <body>
     <div id="root"></div>
-    
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
         
-        // Inline SVG icon components
-        const Sparkles = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-                <path d="M5 3v4"/>
-                <path d="M19 17v4"/>
-                <path d="M3 5h4"/>
-                <path d="M17 19h4"/>
+        // Inline SVG Icon Components
+        const Sparkles = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+                <path d="M20 2v4"/>
+                <path d="M22 4h-4"/>
+                <circle cx="4" cy="20" r="2"/>
             </svg>
         );
         
-        const Target = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        const Target = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"/>
                 <circle cx="12" cy="12" r="6"/>
                 <circle cx="12" cy="12" r="2"/>
             </svg>
         );
         
-        const Users = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        const Users = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
                 <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
@@ -51,470 +41,760 @@
             </svg>
         );
         
-        const CheckCircle = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        const CheckCircle = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                 <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
         );
         
-        const Lightbulb = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        const Lightbulb = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
                 <path d="M9 18h6"/>
                 <path d="M10 22h4"/>
             </svg>
         );
         
-        const Settings = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        const Settings = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
                 <circle cx="12" cy="12" r="3"/>
             </svg>
         );
         
-        const ChevronDown = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        const ChevronDown = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9"/>
             </svg>
         );
         
-        const TrendingUp = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        const TrendingUp = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
                 <polyline points="16 7 22 7 22 13"/>
             </svg>
         );
         
-        const BarChart = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="20" x2="12" y2="10"/>
-                <line x1="18" y1="20" x2="18" y2="4"/>
-                <line x1="6" y1="20" x2="6" y2="16"/>
+        const AlertTriangle = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+        );
+        
+        const MessageSquare = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+        );
+        
+        const Loader2 = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
             </svg>
         );
 
-        // Mock data
-        const mockData = {
-            executive: {
-                primaryMetric: { value: "65%", label: "Strategic Work", trend: "up" },
-                secondaryMetrics: [
-                    { value: "75%", label: "OKR Confidence" },
-                    { value: "3", label: "Teams at Risk" }
-                ],
-                alerts: [
-                    { type: "critical", icon: "🔴", text: "Strategic Initiative Thrashing: 3 high-priority items have changed priority 4+ times this quarter" },
-                    { type: "warning", icon: "⚠️", text: "Mendoza Line Alert: 2 teams are below 50% strategic work" },
-                    { type: "success", icon: "✅", text: "OKR Confidence: 75% likely to hit Q4 revenue target" }
-                ],
-                prompts: [
-                    "What's our strategic vs KTLO balance?",
-                    "Which teams need immediate attention?",
-                    "How are we tracking against Q4 OKRs?",
-                    "What if we shelve Analytics v2 to free capacity?"
-                ]
-            },
-            resourceManager: {
-                primaryMetric: { value: "112%", label: "Highest Team Allocation", trend: "up" },
-                secondaryMetrics: [
-                    { value: "6", label: "Teams Managed" },
-                    { value: "42", label: "Total Engineers" }
-                ],
-                alerts: [
-                    { type: "critical", icon: "🔴", text: "Mobile Refresh: 112% allocated, burnout risk HIGH" },
-                    { type: "warning", icon: "🟡", text: "Core Platform: Absorbing overflow from Strategic, health declining" },
-                    { type: "success", icon: "🟢", text: "Data Analytics: 75% allocated, can take on new work" }
-                ],
-                prompts: [
-                    "Which teams are overallocated?",
-                    "Where can I deploy resources more effectively?",
-                    "How can I rebalance workload across teams?",
-                    "Who can take on Customer Portal work?"
-                ]
-            },
-            teamMember: {
-                primaryMetric: { value: "68/100", label: "Team Health Score", trend: "down" },
-                secondaryMetrics: [
-                    { value: "95%", label: "Team Capacity" },
-                    { value: "85%", label: "Delivery Confidence" }
-                ],
-                alerts: [
-                    { type: "success", icon: "✅", text: "Your team's delivery confidence is 85% (above average)" },
-                    { type: "warning", icon: "⚠️", text: "Team workload: 95% capacity, consider pausing new work" },
-                    { type: "info", icon: "🎯", text: "Current sprint contributes to KR #2: Customer Acquisition" }
-                ],
-                prompts: [
-                    "How is our team performing?",
-                    "What should I focus on this sprint?",
-                    "Is our work moving the needle on key results?",
-                    "What's blocking our delivery confidence?"
-                ]
-            },
-            productManager: {
-                primaryMetric: { value: "3", label: "Initiatives Need Validation", trend: "down" },
-                secondaryMetrics: [
-                    { value: "8", label: "Total Initiatives" },
-                    { value: "5/8", label: "OKRs on Track" }
-                ],
-                alerts: [
-                    { type: "critical", icon: "🔴", text: "3 initiatives NOT VALIDATED (Customer Portal, Analytics v2, Partner API)" },
-                    { type: "warning", icon: "🟡", text: "2 initiatives IN VALIDATION (Push Notifications, Settings Redesign)" },
-                    { type: "success", icon: "✅", text: "3 initiatives VALIDATED (ready for delivery)" }
-                ],
-                prompts: [
-                    "Which initiatives need validation?",
-                    "Generate a validation plan for Customer Portal",
-                    "What experiments should I run next?",
-                    "How is my work moving key results?"
-                ]
-            }
-        };
+// Simulated AI responses for each role
+const aiInsights = {
+  executive: {
+    businessImpact: {
+      query: "What's the business impact of our current portfolio and where are we creating the most value?",
+      response: `**Portfolio Value Analysis:**
 
-        const RoleBasedDashboard = () => {
-            const [currentRole, setCurrentRole] = useState('executive');
-            const [showRoleMenu, setShowRoleMenu] = useState(false);
-            const [chatOpen, setChatOpen] = useState(false);
-            const [showPortfolioPulse, setShowPortfolioPulse] = useState(false);
-            const [selectedPrompt, setSelectedPrompt] = useState(null);
+**Current Quarter Financial Impact:**
+- **Revenue Influence:** $8.2M (initiatives directly tied to revenue)
+- **Cost Reduction:** $1.4M (efficiency and automation initiatives)
+- **Risk Mitigation:** $3.1M (prevented losses from compliance/security)
+- **Total Business Value:** $12.7M vs $8.5M investment (1.49x ROI)
 
-            const roleData = mockData[currentRole];
+**Value Creation by Initiative Type:**
+- Strategic Opportunities (65%): $8.2M in customer value
+- KTLO/Efficiency (25%): $1.4M in cost savings
+- Emergent/Risk (10%): $3.1M in risk mitigation
 
-            const roleNames = {
-                executive: "Executive",
-                resourceManager: "Resource Manager",
-                teamMember: "Team Member",
-                productManager: "Product Manager"
-            };
+**Top Value Creators:**
+1. **Customer Portal Redesign** - $2.4M revenue potential (Q4 acquisition goal)
+2. **Payment Redesign** - $1.8M (conversion improvement)
+3. **Analytics v2** - $1.2M (upsell opportunities)
 
-            const roleIcons = {
-                executive: <Target />,
-                resourceManager: <Users />,
-                teamMember: <CheckCircle />,
-                productManager: <Lightbulb />
-            };
+**Top Value Destroyers:**
+1. **Strategic Thrashing** - $180K lost productivity (4 priority changes)
+2. **Validation Gaps** - $400K at risk (building without customer proof)
+3. **Tech Debt** - $95K/month operational drag
 
-            const handlePromptClick = (prompt) => {
-                setSelectedPrompt(prompt);
-                setChatOpen(true);
-                // Simulate showing portfolio pulse for certain questions
-                if (prompt.toLowerCase().includes('okr') || 
-                    prompt.toLowerCase().includes('teams') ||
-                    prompt.toLowerCase().includes('balance')) {
-                    setShowPortfolioPulse(true);
-                }
-            };
+**Bottom Line:** We're investing wisely (1.49x ROI), but validation gaps and priority thrashing threaten $2.8M in Q4 value.`
+    },
+    strategicAlignment: {
+      query: "How well are our initiatives aligned to our strategic business objectives?",
+      response: `**Strategic Alignment Assessment:**
 
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white">
-                    {/* Header */}
-                    <header className="border-b border-purple-800/30 bg-slate-900/50 backdrop-blur relative z-50">
-                        <div className="px-6 py-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <a href="index.html" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                        <Sparkles />
-                                    </div>
-                                    <div>
-                                        <h1 className="text-xl font-bold">AlignVue</h1>
-                                        <p className="text-xs text-purple-300">Intelligent Portfolio Management</p>
-                                    </div>
-                                </a>
-                            </div>
+**Q4 Business Objectives vs Portfolio:**
 
-                            <div className="flex items-center gap-4">
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setShowRoleMenu(!showRoleMenu)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-lg hover:bg-purple-600/30 transition-colors"
-                                    >
-                                        {roleIcons[currentRole]}
-                                        <span className="font-medium">{roleNames[currentRole]}</span>
-                                        <ChevronDown />
-                                    </button>
-                                    
-                                    {showRoleMenu && (
-                                        <div className="absolute top-full right-0 mt-2 w-56 bg-slate-800 border border-purple-500/30 rounded-lg shadow-xl z-[100]">
-                                            {Object.keys(roleNames).map((role) => (
-                                                <button
-                                                    key={role}
-                                                    onClick={() => {
-                                                        setCurrentRole(role);
-                                                        setShowRoleMenu(false);
-                                                        setShowPortfolioPulse(false);
-                                                    }}
-                                                    className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-600/20 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                                                        currentRole === role ? 'bg-purple-600/30' : ''
-                                                    }`}
-                                                >
-                                                    {roleIcons[role]}
-                                                    <span>{roleNames[role]}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <button className="p-2 hover:bg-purple-600/20 rounded-lg transition-colors">
-                                    <Settings />
-                                </button>
-                            </div>
-                        </div>
-                    </header>
+**Objective 1: Grow Revenue 20% YoY** 
+- **Status:** 🟡 At Risk
+- **Supporting Initiatives:** 3 (Customer Portal, Payment Redesign, Upsell Engine)
+- **Current Impact:** $5.4M projected (need $6.8M for 20% growth)
+- **Gap:** $1.4M revenue shortfall
+- **Risk:** Customer Portal not validated ($2.4M value at risk)
 
-                    <div className="px-6 py-6 max-w-7xl mx-auto relative z-10">
-                        {/* Role-Based Insight Panel */}
-                        <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-purple-500/30 rounded-2xl p-6 mb-6 backdrop-blur">
-                            <div className="flex items-center justify-between mb-6">
-                                <div>
-                                    <h2 className="text-2xl font-bold mb-1">Your Portfolio Insights</h2>
-                                    <p className="text-sm text-purple-300">Personalized for {roleNames[currentRole]}</p>
-                                </div>
-                                <button
-                                    onClick={() => setChatOpen(true)}
-                                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors font-medium flex items-center gap-2"
-                                >
-                                    <Sparkles />
-                                    <span>Ask AI</span>
-                                </button>
-                            </div>
+**Objective 2: Expand Market Position**
+- **Status:** ✅ On Track
+- **Supporting Initiatives:** 4 (International, Partner API, Multi-tenant)
+- **Current Impact:** 2 new markets, 5 strategic partnerships
+- **Confidence:** 95%
 
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                                <div className="lg:col-span-1">
-                                    <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl p-6">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="text-sm text-purple-300">{roleData.primaryMetric.label}</div>
-                                            {roleData.primaryMetric.trend === 'up' && <TrendingUp />}
-                                        </div>
-                                        <div className="text-5xl font-bold mb-1">{roleData.primaryMetric.value}</div>
-                                        <div className="text-xs text-purple-200">Primary Focus Metric</div>
-                                    </div>
-                                </div>
+**Objective 3: Operational Excellence**
+- **Status:** 🔴 Behind
+- **Supporting Initiatives:** 2 (Monitoring, Infrastructure)
+- **Current State:** 92% uptime (target: 95%), 8hr response time (target: 4hr)
+- **Impact:** Customer satisfaction risk, potential churn
 
-                                <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-                                    {roleData.secondaryMetrics.map((metric, idx) => (
-                                        <div key={idx} className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-4">
-                                            <div className="text-xs text-purple-300 mb-1">{metric.label}</div>
-                                            <div className="text-3xl font-bold">{metric.value}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+**Objective 4: Customer Retention**
+- **Status:** ✅ Exceeding
+- **Supporting Initiatives:** 5 (Onboarding, Support Portal, Mobile App)
+- **Current Impact:** Churn reduced 12% (target: 10%)
 
-                            <div className="space-y-3">
-                                <h3 className="text-sm font-semibold text-purple-300 uppercase">Key Alerts</h3>
-                                {roleData.alerts.map((alert, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`flex items-start gap-3 p-4 rounded-lg border ${
-                                            alert.type === 'critical' ? 'bg-red-950/30 border-red-500/30' :
-                                            alert.type === 'warning' ? 'bg-yellow-950/30 border-yellow-500/30' :
-                                            'bg-green-950/30 border-green-500/30'
-                                        }`}
-                                    >
-                                        <span className="text-xl">{alert.icon}</span>
-                                        <p className="text-sm leading-relaxed">{alert.text}</p>
-                                    </div>
-                                ))}
-                            </div>
+**Strategic Bets Analysis:**
+- 73% of engineering investment aligned to revenue goals ✅
+- 15% of portfolio unvalidated (high risk to strategic outcomes) ⚠️
+- 12% of investment in technical foundation (may be underfunded) ⚠️
 
-                            <div className="mt-6 pt-6 border-t border-purple-500/20">
-                                <h3 className="text-sm font-semibold text-purple-300 uppercase mb-3">Suggested Questions</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {roleData.prompts.map((prompt, idx) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => handlePromptClick(prompt)}
-                                            className="text-left px-4 py-2 bg-purple-600/10 border border-purple-500/20 rounded-lg hover:bg-purple-600/20 transition-colors text-sm"
-                                        >
-                                            {prompt}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+**Recommendation:** Validate Customer Portal immediately OR pivot $2.4M investment to validated opportunities. Underfunded operational excellence threatens customer satisfaction.`
+    },
+    strategicRisks: {
+      query: "What are the biggest strategic risks to our business objectives and how do we mitigate them?",
+      response: `**Strategic Risk Assessment:**
 
-                        {/* Portfolio Pulse - Shows when relevant questions asked */}
-                        {showPortfolioPulse && (
-                            <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-purple-500/30 rounded-2xl p-6 mb-6 animate-fadeIn">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-bold flex items-center gap-2">
-                                        <BarChart />
-                                        Portfolio Pulse
-                                    </h3>
-                                    <button
-                                        onClick={() => setShowPortfolioPulse(false)}
-                                        className="text-sm text-purple-300 hover:text-white"
-                                    >
-                                        Hide
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-4">
-                                        <div className="text-xs text-purple-300 mb-1">OKR Progress</div>
-                                        <div className="text-2xl font-bold">5/8</div>
-                                        <div className="text-xs text-green-400">On Track</div>
-                                    </div>
-                                    <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-4">
-                                        <div className="text-xs text-purple-300 mb-1">Delivery Confidence</div>
-                                        <div className="text-2xl font-bold">78%</div>
-                                        <div className="text-xs text-yellow-400">Medium</div>
-                                    </div>
-                                    <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-4">
-                                        <div className="text-xs text-purple-300 mb-1">Teams at Risk</div>
-                                        <div className="text-2xl font-bold">3</div>
-                                        <div className="text-xs text-red-400">Critical</div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+**🔴 CRITICAL RISK: Revenue Target Miss**
+- **Threat:** Q4 revenue target ($6.8M) at risk due to validation gaps
+- **Root Cause:** Customer Portal ($2.4M value) built without customer proof
+- **Probability:** 35% chance of complete miss
+- **Business Impact:** Miss quarterly targets, investor confidence, market position
+- **Mitigation:** 
+  1. Fast-track Customer Portal validation (2 weeks)
+  2. Identify backup revenue opportunities ($1.4M needed)
+  3. Consider delaying launch vs shipping wrong solution
 
-                        {/* Compact Board View */}
-                        <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-purple-500/30 rounded-2xl p-6">
-                            <div className="flex items-center gap-4 mb-4 border-b border-purple-500/20 pb-3">
-                                <button className="px-4 py-2 bg-purple-600/30 border-b-2 border-purple-500 text-sm font-medium">
-                                    Portfolio Board
-                                </button>
-                                <button className="px-4 py-2 text-sm font-medium text-purple-300 hover:text-white">
-                                    Team Health
-                                </button>
-                            </div>
-                            
-                            <div className="grid grid-cols-8 gap-2">
-                                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                                    <div
-                                        key={i}
-                                        className="aspect-square bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-lg flex items-center justify-center text-xs font-bold cursor-pointer hover:scale-105 transition-transform"
-                                    >
-                                        {i}
-                                    </div>
-                                ))}
-                            </div>
-                            <p className="text-center text-xs text-purple-300 mt-4">
-                                Click any initiative to see details (existing modal behavior)
-                            </p>
-                        </div>
-                    </div>
+**🟡 MEDIUM RISK: Operational Excellence Degradation**
+- **Threat:** 92% uptime trending down, incident response slow
+- **Root Cause:** Infrastructure investment only 12% of portfolio
+- **Probability:** 60% chance uptime drops below 90%
+- **Business Impact:** Customer churn, brand damage, SLA penalties
+- **Mitigation:** Ring-fence infrastructure team capacity, pause 1-2 feature initiatives
 
-                    {/* AI Chat Modal */}
-                    {chatOpen && (
-                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                            <div className="bg-slate-900 border border-purple-500/30 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
-                                <div className="flex items-center justify-between p-4 border-b border-purple-500/30">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                            <Sparkles />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold">AlignVue AI</h3>
-                                            <p className="text-xs text-purple-300">Role: {roleNames[currentRole]}</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => setChatOpen(false)}
-                                        className="p-2 hover:bg-purple-600/20 rounded-lg transition-colors"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
+**🟡 MEDIUM RISK: Strategic Thrashing**
+- **Threat:** Initiative priorities changed 4 times this quarter
+- **Root Cause:** Unclear strategic bets, reactive to market signals
+- **Probability:** Will continue without intervention
+- **Business Impact:** $180K lost productivity, team morale, execution quality
+- **Mitigation:** Freeze priorities for 6 weeks, define strategic framework
 
-                                <div className="flex-1 overflow-y-auto p-6">
-                                    <div className="space-y-4">
-                                        {selectedPrompt && (
-                                            <>
-                                                <div className="flex justify-end">
-                                                    <div className="bg-purple-600 rounded-lg px-4 py-2 max-w-[80%]">
-                                                        {selectedPrompt}
-                                                    </div>
-                                                </div>
-                                                <div className="flex justify-start">
-                                                    <div className="bg-slate-800 border border-purple-500/30 rounded-lg px-4 py-3 max-w-[80%]">
-                                                        <p className="text-sm leading-relaxed mb-3">
-                                                            Based on your portfolio data as a <strong>{roleNames[currentRole]}</strong>, here's what I found:
-                                                        </p>
-                                                        {currentRole === 'executive' && selectedPrompt.includes('balance') && (
-                                                            <div className="space-y-2 text-sm">
-                                                                <p><strong>Current Balance:</strong></p>
-                                                                <ul className="list-disc list-inside space-y-1 text-purple-200">
-                                                                    <li>Strategic Work: 65% (target: 60-70%)</li>
-                                                                    <li>KTLO Work: 25% (target: 20-30%)</li>
-                                                                    <li>Emergent Work: 10% (target: 10-15%)</li>
-                                                                </ul>
-                                                                <p className="mt-3"><strong>Recommendation:</strong> Your balance is healthy overall, but Mobile Refresh team is 85% KTLO. Consider rebalancing.</p>
-                                                            </div>
-                                                        )}
-                                                        {currentRole === 'productManager' && selectedPrompt.includes('validation') && (
-                                                            <div className="space-y-2 text-sm">
-                                                                <p><strong>Validation Plan for Customer Portal:</strong></p>
-                                                                <ol className="list-decimal list-inside space-y-2 text-purple-200">
-                                                                    <li>Identify top 3 riskiest assumptions (Week 1)</li>
-                                                                    <li>Design smoke test experiment (Week 1-2)</li>
-                                                                    <li>Run user interviews with 5 customers (Week 2-3)</li>
-                                                                    <li>Analyze results and update opportunity canvas (Week 3-4)</li>
-                                                                </ol>
-                                                                <p className="mt-3"><strong>Success Criteria:</strong> 80% of users see value in proposed solution</p>
-                                                            </div>
-                                                        )}
-                                                        {!selectedPrompt.includes('balance') && !selectedPrompt.includes('validation') && (
-                                                            <p className="text-sm text-purple-200">
-                                                                I've analyzed your portfolio and can provide detailed insights. Would you like me to show specific metrics or make recommendations?
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
-                                        
-                                        {!selectedPrompt && (
-                                            <div className="text-center py-8">
-                                                <p className="text-purple-300 mb-4">Try asking:</p>
-                                                <div className="space-y-2">
-                                                    {roleData.prompts.map((prompt, idx) => (
-                                                        <button
-                                                            key={idx}
-                                                            onClick={() => handlePromptClick(prompt)}
-                                                            className="block w-full text-left px-4 py-3 bg-slate-800/50 border border-purple-500/20 rounded-lg hover:bg-slate-800 transition-colors text-sm"
-                                                        >
-                                                            {prompt}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+**🟢 LOW RISK: Market Expansion**
+- **Status:** 2 new markets on track, partnerships strong
+- **Confidence:** 95%
 
-                                <div className="p-4 border-t border-purple-500/30">
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Ask anything about your portfolio..."
-                                            className="flex-1 px-4 py-2 bg-slate-800 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500 text-white"
-                                        />
-                                        <button className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors font-medium">
-                                            Send
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+**🟢 LOW RISK: Customer Retention**
+- **Status:** Exceeding targets (12% churn reduction)
+- **Confidence:** 90%
 
-                    <style>{`
-                        @keyframes fadeIn {
-                            from { opacity: 0; transform: translateY(-10px); }
-                            to { opacity: 1; transform: translateY(0); }
-                        }
-                        .animate-fadeIn {
-                            animation: fadeIn 0.3s ease-out;
-                        }
-                    `}</style>
+**Portfolio Risk Score: 6.2/10 (Medium Risk)**
+
+**Biggest Leverage Point:** Validate Customer Portal in next 2 weeks. This single action reduces portfolio risk from 6.2 → 4.1 and protects $2.4M in Q4 value.`
+    }
+  },
+  resourceManager: {
+    overallocation: {
+      query: "Which teams are overallocated and what's the impact on delivery?",
+      response: `**Capacity Crisis Overview:**
+
+**3 Teams Over 100% Allocation:**
+
+**Mobile Refresh: 112%**
+- 6 engineers juggling 8 initiatives (1.33 per person)
+- Sprint velocity down 25% (was 45 points, now 34)
+- 3 initiatives slipped last sprint
+- Burnout risk: HIGH (2 engineers flagged)
+
+**Web Platform: 105%**
+- 5 engineers, 2 on-call rotation (effective capacity: 4)
+- Production incidents eating 30% of sprint capacity
+- Strategic work being deprioritized
+
+**Design System: 103%**
+- 4 designers supporting 12 product teams
+- Queue time for design requests: 2-3 weeks
+- Becoming a delivery bottleneck
+
+**Healthy Capacity Teams:**
+- Data Analytics: 75% (can absorb work)
+- Content Platform: 82% (slight room)
+- Payments: 85% (at capacity)
+
+**Immediate Actions:**
+1. Deprioritize 2 initiatives from Mobile Refresh
+2. Hire contractors for Web Platform on-call
+3. Limit concurrent design requests to 3 per team`
+    },
+    rebalancing: {
+      query: "How can I rebalance workload across teams more effectively?",
+      response: `**Rebalancing Strategy:**
+
+**OPTION 1: Move Work to Available Teams**
+- Customer Portal → Data Analytics team (they have mobile experience + 25% capacity)
+- Analytics v2 → Delay 1 quarter (not validated anyway)
+- Savings: Reduce Mobile Refresh to 95%, keep team healthy
+
+**OPTION 2: Hire Contractors**
+- 2 contractors for Web Platform on-call rotation
+- Cost: $40K/month
+- Benefit: Frees 30% capacity for strategic work
+- ROI: Positive if it prevents OKR miss ($2.4M revenue)
+
+**OPTION 3: Pause Low-Impact Work**
+- Settings Redesign (current validation: "nice to have")
+- Partner API v2 (only 2 partners using it)
+- Admin Dashboard refresh (internal tool)
+- Savings: 35% capacity across 3 teams
+
+**My Recommendation: Hybrid Approach**
+1. Move Customer Portal to Data Analytics (no cost)
+2. Hire 1 contractor for Web Platform ($20K/month)
+3. Pause Settings Redesign (lowest business impact)
+
+**Result:** All teams at 85-95% allocation, preserve strategic work, protect Q4 OKRs.`
+    }
+  },
+  teamMember: {
+    teamPerformance: {
+      query: "How is my team (Mobile Refresh) performing and what should we focus on?",
+      response: `**Mobile Refresh Team Health Report:**
+
+**Overall Score: 68/100 (⚠️ Yellow - Declining)**
+
+**What's Going Well:**
+- Delivery confidence on validated work: 85% (above average)
+- Code quality: Strong (95% test coverage)
+- Team collaboration: Good (peer reviews averaging 6 hours)
+
+**What's Concerning:**
+- **Workload:** 112% allocation (12% over capacity)
+- **Morale:** Declining (2 team members flagged low satisfaction)
+- **Velocity:** Down 25% from last quarter (45 → 34 points)
+- **Focus:** Juggling 8 initiatives (too much context switching)
+
+**Your Current Sprint:**
+- Payment Redesign (validated, 85% confidence) ✅
+- Push Notifications (in validation, 70% confidence) ⚠️
+- Customer Portal (not validated, 45% confidence) 🔴
+
+**Impact on OKRs:**
+- You're contributing to **KR #2: Increase acquisition 15%**
+- Customer Portal is critical path
+- But team capacity threatens delivery
+
+**What You Should Focus On:**
+1. **Finish Payment Redesign** (almost done, high confidence)
+2. **Complete Push Notifications validation** (don't start building until validated)
+3. **Push back on Customer Portal** until validation complete or team gets help
+
+**Talk to your manager about:** Reducing concurrent work from 8 → 5 initiatives.`
+    },
+    deliveryBlocks: {
+      query: "What's blocking our delivery confidence and how can we improve?",
+      response: `**Delivery Confidence Analysis:**
+
+**Current Confidence: 68% (Portfolio Average: 72%)**
+
+**Top 3 Blockers:**
+
+**1. Validation Gaps (40% of risk)**
+- Customer Portal: Not validated
+- Push Notifications: Partial validation only
+- Impact: Building without customer proof = rework risk
+
+**2. Capacity Overload (35% of risk)**
+- Team at 112% allocation
+- Context switching between 8 initiatives
+- Sprint velocity down 25%
+- Impact: Quality drops, timelines slip
+
+**3. Technical Unknowns (25% of risk)**
+- Payment Redesign has 3 unresolved technical spikes
+- Push Notifications needs iOS cert renewal (procurement blocked)
+- Impact: Unexpected delays mid-sprint
+
+**How to Improve Confidence:**
+
+**This Sprint (Immediate):**
+- Complete technical spikes for Payment Redesign (2 days)
+- Unblock iOS cert (escalate to manager)
+- Confidence gain: +8%
+
+**Next 2 Sprints:**
+- Finish Push Notifications validation (stop building, test first)
+- Deprioritize 2 of 8 initiatives
+- Confidence gain: +12%
+
+**Strategic (Next Quarter):**
+- Implement validation-before-build policy
+- Reduce max concurrent initiatives to 5
+- Confidence gain: +15%
+
+**Target Confidence: 85%+ (healthy range)**`
+    }
+  },
+  productManager: {
+    validationGaps: {
+      query: "Which initiatives need validation and what are the specific gaps?",
+      response: `**Validation Status Report:**
+
+**🔴 NOT VALIDATED (3 initiatives):**
+
+**Customer Portal Redesign**
+- **Problem:** Missing problem statement (customer pain not articulated)
+- **Assumptions:** 3 critical untested assumptions:
+  1. "Customers want self-service portal" (no user research)
+  2. "Mobile-first design increases engagement" (no data)
+  3. "Current portal is main friction point" (no analytics)
+- **Experiments:** NONE planned
+- **Risk:** Very High (building $200K feature on faith)
+- **Validation Plan:** 2-week discovery sprint needed
+
+**Analytics v2**
+- **Problem:** Feature-focused, not customer outcome focused
+- **Assumptions:** "Customers need advanced analytics" (only 2 customers asked)
+- **Experiments:** 1 smoke test (inconclusive, 40% signup)
+- **Risk:** High (unclear customer value)
+- **Validation Plan:** 10 customer interviews, usage analytics review
+
+**Partner API v3**
+- **Problem:** Solving technical debt, not partner problem
+- **Assumptions:** "Partners want REST over GraphQL" (not validated)
+- **Experiments:** NONE
+- **Risk:** Medium (low business impact if wrong)
+- **Validation Plan:** Survey 5 partners, prototype test
+
+**🟡 IN VALIDATION (2 initiatives):**
+- Push Notifications: 60% validated (needs iOS testing)
+- Settings Redesign: 70% validated (needs accessibility testing)
+
+**🟢 VALIDATED (3 initiatives):**
+- Payment Redesign ✅
+- Search Improvements ✅
+- Performance Optimization ✅`
+    },
+    validationPlan: {
+      query: "Generate a validation plan for Customer Portal with experiments and success criteria",
+      response: `**Customer Portal Validation Plan**
+
+**Phase 1: Problem Discovery (Week 1-2)**
+
+**Activities:**
+- 10 customer interviews (mix of power users and casual users)
+- Analytics deep-dive: current portal usage patterns
+- Support ticket analysis: portal-related issues
+- Competitive analysis: 5 competitor portals
+
+**Questions to Answer:**
+- What specific tasks are customers trying to accomplish?
+- Where do they get stuck today?
+- Is "portal friction" actually the problem?
+
+**Success Criteria:** Clear, validated problem statement + 3 customer quotes
+
+**Phase 2: Solution Validation (Week 3-4)**
+
+**Experiment 1: Fake Door Test**
+- Create landing page with "New Portal" teaser
+- Drive 500 customers to page
+- Measure signup rate
+- **Success:** >30% signup = strong interest
+
+**Experiment 2: Lo-Fi Prototype**
+- 5 usability tests with clickable prototype
+- Measure task completion rate
+- **Success:** >80% can complete key tasks
+
+**Experiment 3: Value Proposition Test**
+- A/B test email subject lines about portal benefits
+- Measure open rate
+- **Success:** >25% open rate = messaging resonates
+
+**Phase 3: Build Decision (Week 5)**
+
+**Go/No-Go Criteria:**
+- ✅ Problem validated by 8+ of 10 customers
+- ✅ Fake door test >30% signup
+- ✅ Prototype usability >80%
+- ✅ Team has capacity (not at risk)
+- ✅ OKR impact quantified (>$500K value)
+
+**If GO:** Proceed with MVP build (mobile-only first)
+**If NO-GO:** Pivot to validated alternative solution
+
+**Timeline:** 5 weeks validation before $200K build investment
+**Cost:** $15K (researcher time + tools)
+**Risk Reduction:** 70% (from "very high" to "low")`
+    }
+  }
+};
+
+const roleConfigs = {
+  executive: {
+    primaryMetric: { value: "$12.7M", label: "Portfolio Business Value", trend: "up" },
+    secondaryMetrics: [
+      { value: "1.49x", label: "ROI on Investment" },
+      { value: "73%", label: "Aligned to Strategy" }
+    ],
+    insightKeys: ['businessImpact', 'strategicAlignment', 'strategicRisks']
+  },
+  resourceManager: {
+    primaryMetric: { value: "112%", label: "Highest Team Allocation", trend: "up" },
+    secondaryMetrics: [
+      { value: "6", label: "Teams Managed" },
+      { value: "42", label: "Total Engineers" }
+    ],
+    insightKeys: ['overallocation', 'rebalancing']
+  },
+  teamMember: {
+    primaryMetric: { value: "68/100", label: "Team Health Score", trend: "down" },
+    secondaryMetrics: [
+      { value: "95%", label: "Team Capacity" },
+      { value: "85%", label: "Delivery Confidence" }
+    ],
+    insightKeys: ['teamPerformance', 'deliveryBlocks']
+  },
+  productManager: {
+    primaryMetric: { value: "3", label: "Initiatives Need Validation", trend: "down" },
+    secondaryMetrics: [
+      { value: "8", label: "Total Initiatives" },
+      { value: "5/8", label: "OKRs on Track" }
+    ],
+    insightKeys: ['validationGaps', 'validationPlan']
+  }
+};
+
+const AIProactiveDashboard = () => {
+  const [currentRole, setCurrentRole] = useState('executive');
+  const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [insights, setInsights] = useState({});
+  const [loadingInsights, setLoadingInsights] = useState(true);
+
+  const roleNames = {
+    executive: "Executive",
+    resourceManager: "Resource Manager",
+    teamMember: "Team Member",
+    productManager: "Product Manager"
+  };
+
+  const roleIcons = {
+    executive: <Target className="w-5 h-5" />,
+    resourceManager: <Users className="w-5 h-5" />,
+    teamMember: <CheckCircle className="w-5 h-5" />,
+    productManager: <Lightbulb className="w-5 h-5" />
+  };
+
+  // Simulate AI generating insights on page load
+  useEffect(() => {
+    const generateInsights = async () => {
+      setLoadingInsights(true);
+      setInsights({});
+
+      const roleInsights = aiInsights[currentRole];
+      const config = roleConfigs[currentRole];
+
+      if (!roleInsights || !config) {
+        console.error('Missing data for role:', currentRole);
+        setLoadingInsights(false);
+        return;
+      }
+
+      // Simulate progressive insight loading
+      for (let i = 0; i < config.insightKeys.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        const key = config.insightKeys[i];
+        if (roleInsights[key]) {
+          setInsights(prev => ({
+            ...prev,
+            [key]: roleInsights[key]
+          }));
+        }
+      }
+
+      setLoadingInsights(false);
+    };
+
+    generateInsights();
+  }, [currentRole]);
+
+  const formatAIResponse = (text) => {
+    if (!text) return null;
+    
+    return text.split('\n').map((line, idx) => {
+      if (line.startsWith('**') && line.endsWith('**')) {
+        return <div key={idx} className="font-bold text-white mt-3 mb-1">{line.slice(2, -2)}</div>;
+      }
+      if (line.startsWith('- ')) {
+        return <div key={idx} className="ml-4 text-purple-200 text-sm mb-1">• {line.slice(2)}</div>;
+      }
+      if (line.match(/^[🔴🟡🟢✅⚠️]/)) {
+        return <div key={idx} className="text-white text-sm mb-2 mt-2">{line}</div>;
+      }
+      if (line.trim() === '') {
+        return <div key={idx} className="h-2"></div>;
+      }
+      return <div key={idx} className="text-purple-200 text-sm mb-1">{line}</div>;
+    });
+  };
+
+  const config = roleConfigs[currentRole];
+
+  if (!config) {
+    return <div className="text-white p-8">Error: Invalid role configuration</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white">
+      {/* Header */}
+      <header className="border-b border-purple-800/30 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">AlignVue</h1>
+              <p className="text-xs text-purple-300">AI-Powered Portfolio Intelligence</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="relative z-[100]">
+              <button
+                onClick={() => setShowRoleMenu(!showRoleMenu)}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-lg hover:bg-purple-600/30 transition-colors"
+              >
+                {roleIcons[currentRole]}
+                <span className="font-medium">{roleNames[currentRole]}</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              
+              {showRoleMenu && (
+                <div 
+                  className="absolute top-full right-0 mt-2 w-56 bg-slate-800 border border-purple-500/30 rounded-lg shadow-2xl z-[9999]"
+                  style={{boxShadow: '0 20px 50px rgba(0,0,0,0.9)'}}
+                >
+                  {Object.keys(roleNames).map((role) => (
+                    <button
+                      key={role}
+                      onClick={() => {
+                        setCurrentRole(role);
+                        setShowRoleMenu(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-600/20 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                        currentRole === role ? 'bg-purple-600/30' : ''
+                      }`}
+                    >
+                      {roleIcons[role]}
+                      <span>{roleNames[role]}</span>
+                    </button>
+                  ))}
                 </div>
-            );
-        };
+              )}
+            </div>
+            
+            <button className="p-2 hover:bg-purple-600/20 rounded-lg transition-colors">
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </header>
 
+      <div className="px-6 py-6 max-w-7xl mx-auto">
+        {/* Role-Based Insight Panel */}
+        <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-purple-500/30 rounded-2xl p-6 mb-6 backdrop-blur">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-1">{roleNames[currentRole]} Dashboard</h2>
+              <p className="text-purple-300 text-sm flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                AI-generated insights for your role
+              </p>
+            </div>
+            <button
+              onClick={() => setChatOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors font-medium"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Ask VueSense AI
+            </button>
+          </div>
+
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="col-span-1 bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl p-6">
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-purple-300 text-sm font-medium">{config.primaryMetric.label}</span>
+                {config.primaryMetric.trend === 'up' ? (
+                  <TrendingUp className="w-4 h-4 text-green-400" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                )}
+              </div>
+              <div className="text-4xl font-bold mb-1">{config.primaryMetric.value}</div>
+            </div>
+
+            {config.secondaryMetrics.map((metric, idx) => (
+              <div key={idx} className="bg-slate-800/50 border border-purple-500/20 rounded-xl p-6">
+                <span className="text-purple-300 text-sm font-medium block mb-2">{metric.label}</span>
+                <div className="text-3xl font-bold">{metric.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* AI-Generated Insights */}
+          <div className="space-y-4">
+            {config.insightKeys.map((key, idx) => {
+              const insight = insights[key];
+              const isLoading = !insight && (loadingInsights || Object.keys(insights).length <= idx);
+
+              return (
+                <div
+                  key={key}
+                  className="bg-slate-800/50 border border-purple-500/30 rounded-xl p-5"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
+                      <div>
+                        <div className="text-sm font-medium text-purple-300 mb-1">
+                          VueSense AI is analyzing...
+                        </div>
+                        <div className="text-xs text-purple-400">
+                          Processing your portfolio data
+                        </div>
+                      </div>
+                    </div>
+                  ) : insight ? (
+                    <div>
+                      <div className="flex items-start gap-3 mb-3">
+                        <Sparkles className="w-5 h-5 text-purple-400 flex-shrink-0 mt-1" />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-purple-300 mb-1">
+                            {insight.query}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="ml-8 pl-4 border-l-2 border-purple-500/30">
+                        {formatAIResponse(insight.response)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-red-400">Error loading insight</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Ask More */}
+          {!loadingInsights && (
+            <div className="mt-6 p-4 bg-purple-600/10 border border-purple-500/30 rounded-lg">
+              <div className="text-center text-sm text-purple-300">
+                <button
+                  onClick={() => setChatOpen(true)}
+                  className="text-purple-400 hover:text-purple-300 font-medium underline"
+                >
+                  Ask VueSense AI more questions
+                </button>
+                {' '}about your portfolio
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Compact Board View */}
+        <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-purple-500/30 rounded-2xl p-6">
+          <div className="flex items-center gap-4 mb-4 border-b border-purple-500/20 pb-3">
+            <button className="px-4 py-2 bg-purple-600/30 border-b-2 border-purple-500 text-sm font-medium">
+              Portfolio Board
+            </button>
+            <button className="px-4 py-2 text-sm font-medium text-purple-300 hover:text-white">
+              Team Health
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-8 gap-2">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div
+                key={i}
+                className="aspect-square bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-lg flex items-center justify-center text-xs font-bold cursor-pointer hover:scale-105 transition-transform"
+              >
+                {i}
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-purple-300 mt-4">
+            Click any initiative to see details
+          </p>
+        </div>
+      </div>
+
+      {/* AI Chat Modal */}
+      {chatOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-purple-500/30 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-purple-500/30">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold">VueSense AI</h3>
+                  <p className="text-xs text-purple-300">Role: {roleNames[currentRole]}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setChatOpen(false)}
+                className="p-2 hover:bg-purple-600/20 rounded-lg transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="text-center py-8 text-purple-300">
+                Ask me anything about your portfolio...
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-purple-500/30">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Ask anything about your portfolio..."
+                  className="flex-1 px-4 py-2 bg-slate-800 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500 text-white"
+                />
+                <button className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors font-medium">
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+        
         // Render the app
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<RoleBasedDashboard />);
+        root.render(<AIProactiveDashboard />);
     </script>
 </body>
 </html>
