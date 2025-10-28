@@ -657,7 +657,7 @@ const AIProactiveDashboard = () => {
         return <div key={idx} className="font-bold text-white mt-3 mb-1">{line.slice(2, -2)}</div>;
       }
       if (line.startsWith('- ')) {
-        return <div key={idx} className="ml-4 text-purple-200 text-sm mb-1">â€¢ {line.slice(2)}</div>;
+        return <div key={idx} className="ml-4 text-purple-200 text-sm mb-1">• {line.slice(2)}</div>;
       }
       if (line.match(/^[🔴🟡🟢✅âš ï¸]/)) {
         return <div key={idx} className="text-white text-sm mb-2 mt-2">{line}</div>;
