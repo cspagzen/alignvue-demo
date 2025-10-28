@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlignVue AI - Role-Based Insights</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Icon Components
+        const Sparkles = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+                <path d="M20 2v4"/>
+                <path d="M22 4h-4"/>
+                <circle cx="4" cy="20" r="2"/>
+            </svg>
+        );
+        
+        const Target = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="6"/>
+                <circle cx="12" cy="12" r="2"/>
+            </svg>
+        );
+        
+        const Users = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+        );
+        
+        const CheckCircle = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+        );
+        
+        const Lightbulb = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+                <path d="M9 18h6"/>
+                <path d="M10 22h4"/>
+            </svg>
+        );
+        
+        const ChevronDown = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        );
+        
+        const MessageSquare = ({ className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+        );
+
+        // Conversational messages for each role
+        const roleMessages = {
+            executive: [
+                {
+                    type: 'ai',
+                    heading: 'Portfolio Business Value',
+                    metric: '$12.7M',
+                    content: `Your portfolio is generating **$12.7M in business value** this quarter against an $8.5M investment. That's a **1.49x ROI**.
+
+Here's where that value comes from:
+
+**Revenue Influence:** $8.2M (initiatives directly tied to revenue)
+**Cost Reduction:** $1.4M (efficiency and automation initiatives)  
+**Risk Mitigation:** $3.1M (prevented losses from compliance/security)
+
+**Top Value Creators:**
+1. Customer Portal Redesign - $2.4M revenue potential (Q4 acquisition goal)
+2. Payment Redesign - $1.8M (conversion improvement)
+3. Analytics v2 - $1.2M (upsell opportunities)
+
+**Top Value Destroyers:**
+1. Strategic Thrashing - $180K lost productivity (4 priority changes)
+2. Validation Gaps - $400K at risk (building without customer proof)
+3. Tech Debt - $95K/month operational drag
+
+**Bottom line:** You're investing wisely, but validation gaps and priority thrashing threaten $2.8M in Q4 value.`
+                },
+                {
+                    type: 'ai',
+                    heading: 'Strategic Alignment',
+                    metric: '73%',
+                    content: `**73% of your engineering investment is aligned to revenue goals.** Here's how your initiatives map to Q4 business objectives:
+
+**Q4 Objective 1: Grow Revenue 20% YoY**
+🟡 **At Risk** - Supporting initiatives project $5.4M but you need $6.8M for 20% growth. That's a $1.4M gap.
+Risk: Customer Portal ($2.4M value) is not validated.
+
+**Q4 Objective 2: Expand Market Position**
+✅ **On Track** - 4 initiatives supporting 2 new markets, 5 strategic partnerships. 95% confidence.
+
+**Q4 Objective 3: Operational Excellence**  
+🔴 **Behind** - 92% uptime vs 95% target. 8hr response time vs 4hr target.
+Risk: Customer satisfaction and potential churn.
+
+**Q4 Objective 4: Customer Retention**
+✅ **Exceeding** - Churn reduced 12% (target was 10%)
+
+**Strategic gaps:**
+- 15% of portfolio is unvalidated (high risk to outcomes)
+- 12% investment in technical foundation (may be underfunded)
+
+**Recommendation:** Validate Customer Portal immediately OR pivot that $2.4M to validated opportunities. Underfunded operational excellence threatens satisfaction.`
+                },
+                {
+                    type: 'ai',
+                    heading: 'Strategic Risks',
+                    content: `I've identified your biggest risks to Q4 objectives:
+
+**🔴 CRITICAL: Revenue Target Miss**
+- **Threat:** Q4 revenue target ($6.8M) at risk due to validation gaps
+- **Root Cause:** Customer Portal ($2.4M value) built without customer proof
+- **Probability:** 35% chance of complete miss
+- **Business Impact:** Miss quarterly targets, investor confidence, market position
+- **Mitigation:**
+  1. Fast-track Customer Portal validation (2 weeks)
+  2. Identify backup revenue opportunities ($1.4M needed)
+  3. Consider delaying launch vs shipping wrong solution
+
+**🟡 MEDIUM: Operational Excellence Degradation**
+- **Threat:** 92% uptime trending down, slow incident response
+- **Root Cause:** Infrastructure investment only 12% of portfolio
+- **Probability:** 60% chance uptime drops below 90%
+- **Mitigation:** Ring-fence infrastructure capacity, pause 1-2 feature initiatives
+
+**🟡 MEDIUM: Strategic Thrashing**
+- **Threat:** Initiative priorities changed 4 times this quarter
+- **Root Cause:** Unclear strategic bets, reactive to market signals
+- **Business Impact:** $180K lost productivity, team morale, execution quality
+- **Mitigation:** Freeze priorities for 6 weeks, define strategic framework
+
+**Portfolio Risk Score: 6.2/10 (Medium Risk)**
+
+**Biggest leverage point:** Validate Customer Portal in next 2 weeks. This single action reduces portfolio risk from 6.2 → 4.1 and protects $2.4M in Q4 value.`
+                }
+            ],
+            resourceManager: [
+                {
+                    type: 'ai',
+                    heading: 'Team Capacity Overview',
+                    metric: '112%',
+                    subtext: 'Highest Team Allocation',
+                    content: `You have **3 teams over 100% allocation**. Here's what that means:
+
+**Mobile Refresh: 112% Allocated**
+- 6 engineers juggling 8 initiatives (1.33 per person)
+- Sprint velocity down 25% (was 45 points, now 34)
+- 3 initiatives slipped last sprint
+- Burnout risk: **HIGH** (2 engineers flagged)
+
+**Web Platform: 105% Allocated**
+- 5 engineers, 2 on-call rotation (effective capacity: 4)
+- Production incidents eating 30% of sprint capacity
+- Strategic work being deprioritized
+
+**Design System: 103% Allocated**
+- 4 designers supporting 12 product teams
+- Queue time for design requests: 2-3 weeks
+- Becoming a delivery bottleneck
+
+**Teams with Available Capacity:**
+- Data Analytics: 75% (can absorb work)
+- Content Platform: 82% (slight room)
+- Payments: 85% (at capacity)`
+                },
+                {
+                    type: 'ai',
+                    heading: 'Rebalancing Options',
+                    content: `Here are three ways to rebalance workload across your teams:
+
+**OPTION 1: Move Work to Available Teams**
+- Move Customer Portal → Data Analytics team (they have mobile experience + 25% capacity)
+- Delay Analytics v2 one quarter (not validated anyway)
+- **Result:** Reduces Mobile Refresh to 95%, keeps team healthy
+
+**OPTION 2: Hire Contractors**
+- 2 contractors for Web Platform on-call rotation
+- **Cost:** $40K/month
+- **Benefit:** Frees 30% capacity for strategic work
+- **ROI:** Positive if it prevents OKR miss ($2.4M revenue)
+
+**OPTION 3: Pause Low-Impact Work**
+- Settings Redesign (validation: "nice to have")
+- Partner API v2 (only 2 partners using it)
+- Admin Dashboard refresh (internal tool)
+- **Result:** 35% capacity freed across 3 teams
+
+**My Recommendation: Hybrid Approach**
+1. Move Customer Portal to Data Analytics (no cost)
+2. Hire 1 contractor for Web Platform ($20K/month)
+3. Pause Settings Redesign (lowest business impact)
+
+**Result:** All teams at 85-95% allocation, preserve strategic work, protect Q4 OKRs.`
+                }
+            ],
+            teamMember: [
+                {
+                    type: 'ai',
+                    heading: 'Your Team Health',
+                    metric: '68/100',
+                    subtext: 'Team Health Score',
+                    content: `Your Mobile Refresh team health score is **68/100 (⚠️ Yellow - Declining)**.
+
+**What's Going Well:**
+- Delivery confidence on validated work: 85% (above average)
+- Code quality: Strong (95% test coverage)
+- Team collaboration: Good (peer reviews averaging 6 hours)
+
+**What's Concerning:**
+- **Workload:** 112% allocation (12% over capacity)
+- **Velocity:** Declining 25% over last 3 sprints
+- **Morale:** 2 team members flagged in recent surveys
+- **Context Switching:** 8 active initiatives (1.33 per engineer)
+
+**Impact on Your Work:**
+- Sprint commitments being reduced
+- Technical debt accumulating
+- Quality suffering under pressure
+- Team members working evenings/weekends
+
+**What needs to change:**
+Your leadership needs to deprioritize 2-3 initiatives OR move work to other teams. At current pace, team health will drop to red zone within 4 weeks.`
+                },
+                {
+                    type: 'ai',
+                    heading: 'Delivery Blockers',
+                    content: `Here's what's blocking your team's delivery right now:
+
+**3 Active Blockers (15% of sprint scope):**
+
+**Blocker 1: Backend API Dependency**
+- Blocking: Customer Portal stories (5 story points)
+- Waiting on: Platform team API endpoint
+- ETA: Unknown (not scheduled)
+- **Impact:** Customer Portal 3 weeks behind schedule
+
+**Blocker 2: Design System Component**
+- Blocking: Mobile navigation redesign (3 story points)
+- Waiting on: Design system team
+- ETA: 2 weeks (in queue)
+- **Impact:** Delaying 2 dependent features
+
+**Blocker 3: Third-party Integration**
+- Blocking: Push notification feature (8 story points)
+- Waiting on: Vendor API changes
+- ETA: 1 week
+- **Impact:** Sprint goal at risk
+
+**Velocity Impact:**
+These blockers are reducing your velocity by 25%. Your sprint capacity is effectively 26 points instead of 34.
+
+**Recommended Actions:**
+1. Escalate Backend API to leadership (highest impact)
+2. Work around Design System blocker with temporary solution
+3. Pull in backup stories while waiting on push notifications`
+                }
+            ],
+            productManager: [
+                {
+                    type: 'ai',
+                    heading: 'Initiative Health',
+                    metric: '3',
+                    subtext: 'Initiatives at Risk',
+                    content: `I've assessed the health of your initiatives. Here's what needs attention:
+
+**🔴 CRITICAL RISK: Customer Portal Redesign**
+- **Delivery Timeline:** 3 weeks behind schedule (projected: Feb 28 → Mar 21)
+- **Velocity Trend:** Declining 25% (was 34 pts/sprint, now 26 pts/sprint)
+- **Team Capacity:** Mobile Refresh at 112% allocation - burnout risk
+- **Blockers:** 3 stories blocked (15% of current sprint scope)
+  - Backend API dependency not ready
+  - Design system component missing
+  - Third-party integration delayed
+- **Validation Status:** ⚠️ NOT VALIDATED (building on assumptions)
+- **Overall Health:** 🔴 Critical - Multiple risk factors converging
+
+**Recommended Actions:**
+1. Pause new scope until blockers cleared
+2. Validate core assumptions before continuing build
+3. Request capacity relief for Mobile team
+
+**🟡 MEDIUM RISK: Analytics v2**
+- **Delivery Timeline:** On track for target date (Jan 30)
+- **Velocity Trend:** Stable (21 pts/sprint avg)
+- **Team Capacity:** Data Analytics at 75% - healthy
+- **Blockers:** 1 story blocked (5% impact) - Data warehouse schema approval pending
+- **Validation Status:** 🟡 IN VALIDATION (40% confidence, needs more research)
+- **Overall Health:** 🟡 Medium - Delivery solid but value uncertain
+
+**Recommended Actions:**
+1. Complete validation experiments this sprint
+2. Be ready to pivot scope based on learnings
+3. Consider MVPing to reduce investment risk
+
+**🟢 HEALTHY: Payment Redesign**
+- **Delivery Timeline:** On track (Feb 15 launch)
+- **Velocity Trend:** Accelerating 15% (23 pts/sprint → 26 pts/sprint)
+- **Team Capacity:** Payments team at 85% - sustainable
+- **Blockers:** 0 blocked stories
+- **Validation Status:** ✅ VALIDATED (customer research complete, 85% confidence)
+- **Overall Health:** 🟢 Healthy - Clear path to launch
+
+**No action needed - maintain momentum**
+
+**Key Insight:** 67% of your portfolio has delivery or validation risk. Focus on Customer Portal blockers and Analytics validation to protect Q1 outcomes.`
+                },
+                {
+                    type: 'ai',
+                    heading: 'Validation Gaps',
+                    content: `You have **3 initiatives that are NOT VALIDATED**. Here are the specific gaps:
+
+**🔴 Customer Portal Redesign**
+- **Problem:** Missing problem statement (customer pain not articulated)
+- **Assumptions:** 3 critical untested assumptions:
+  1. "Customers want self-service portal" (no user research)
+  2. "Mobile-first design increases engagement" (no data)
+  3. "Current portal is main friction point" (no analytics)
+- **Experiments:** NONE planned
+- **Risk:** Very High (building $200K feature on faith)
+- **Validation Plan:** 2-week discovery sprint needed
+
+**🔴 Analytics v2**
+- **Problem:** Feature-focused, not customer outcome focused
+- **Assumptions:** "Customers need advanced analytics" (only 2 customers asked)
+- **Experiments:** 1 smoke test (inconclusive, 40% signup)
+- **Risk:** High (unclear customer value)
+- **Validation Plan:** 10 customer interviews, usage analytics review
+
+**🔴 Partner API v3**
+- **Problem:** Solving technical debt, not partner problem
+- **Assumptions:** "Partners want REST over GraphQL" (not validated)
+- **Experiments:** NONE
+- **Risk:** Medium (low business impact if wrong)
+- **Validation Plan:** Survey 5 partners, prototype test
+
+**🟡 IN VALIDATION (2 initiatives):**
+- Push Notifications: 60% validated (needs iOS testing)
+- Settings Redesign: 70% validated (needs accessibility testing)
+
+**🟢 VALIDATED (3 initiatives):**
+- Payment Redesign ✅
+- Search Improvements ✅
+- Performance Optimization ✅`
+                },
+                {
+                    type: 'ai',
+                    heading: 'Validation Plan: Customer Portal',
+                    content: `Here's a 5-week validation plan for Customer Portal before you invest $200K in the build:
+
+**Phase 1: Problem Discovery (Week 1-2)**
+
+**Activities:**
+- 10 customer interviews (mix of power users and casual users)
+- Analytics deep-dive: current portal usage patterns
+- Support ticket analysis: portal-related issues
+- Competitive analysis: 5 competitor portals
+
+**Questions to Answer:**
+- What specific tasks are customers trying to accomplish?
+- Where do they get stuck today?
+- Is "portal friction" actually the problem?
+
+**Success Criteria:** Clear, validated problem statement + 3 customer quotes
+
+**Phase 2: Solution Validation (Week 3-4)**
+
+**Experiment 1: Fake Door Test**
+- Create landing page with "New Portal" teaser
+- Drive 500 customers to page
+- Measure signup rate
+- **Success:** >30% signup = strong interest
+
+**Experiment 2: Lo-Fi Prototype**
+- 5 usability tests with clickable prototype
+- Measure task completion rate
+- **Success:** >80% can complete key tasks
+
+**Experiment 3: Value Proposition Test**
+- A/B test email subject lines about portal benefits
+- Measure open rate
+- **Success:** >25% open rate = messaging resonates
+
+**Phase 3: Build Decision (Week 5)**
+
+**Go/No-Go Criteria:**
+- ✅ Problem validated by 8+ of 10 customers
+- ✅ Fake door test >30% signup
+- ✅ Prototype usability >80%
+- ✅ Team has capacity (not at risk)
+- ✅ OKR impact quantified (>$500K value)
+
+**If GO:** Proceed with MVP build (mobile-only first)
+**If NO-GO:** Pivot to validated alternative solution
+
+**Timeline:** 5 weeks validation before $200K build investment
+**Cost:** $15K (researcher time + tools)
+**Risk Reduction:** 70% (from "very high" to "low")`
+                }
+            ]
+        };
+
+        const ConversationalDashboard = () => {
+            const [currentRole, setCurrentRole] = useState('executive');
+            const [showRoleMenu, setShowRoleMenu] = useState(false);
+            const [messages, setMessages] = useState([]);
+            const [visibleMessages, setVisibleMessages] = useState(0);
+            const [userInput, setUserInput] = useState('');
+
+            const roleNames = {
+                executive: "Executive",
+                resourceManager: "Resource Manager",
+                teamMember: "Team Member",
+                productManager: "Product Manager"
+            };
+
+            const roleIcons = {
+                executive: <Target className="w-5 h-5" />,
+                resourceManager: <Users className="w-5 h-5" />,
+                teamMember: <CheckCircle className="w-5 h-5" />,
+                productManager: <Lightbulb className="w-5 h-5" />
+            };
+
+            // Load messages when role changes
+            useEffect(() => {
+                setMessages(roleMessages[currentRole]);
+                setVisibleMessages(0);
+                
+                // Progressive reveal
+                const timer = setInterval(() => {
+                    setVisibleMessages(prev => {
+                        if (prev < roleMessages[currentRole].length) {
+                            return prev + 1;
+                        }
+                        clearInterval(timer);
+                        return prev;
+                    });
+                }, 1500);
+
+                return () => clearInterval(timer);
+            }, [currentRole]);
+
+            const formatContent = (text) => {
+                return text.split('\n').map((line, idx) => {
+                    // Bold headers
+                    if (line.startsWith('**') && line.endsWith('**')) {
+                        return <div key={idx} className="font-bold text-white mt-3 mb-1">{line.slice(2, -2)}</div>;
+                    }
+                    // List items
+                    if (line.match(/^[•\-]\s/)) {
+                        return <div key={idx} className="ml-4 text-purple-200 text-sm mb-1">{line}</div>;
+                    }
+                    // Numbered lists
+                    if (line.match(/^\d+\.\s/)) {
+                        return <div key={idx} className="ml-4 text-purple-200 text-sm mb-1">{line}</div>;
+                    }
+                    // Emoji headers
+                    if (line.match(/^[🔴🟡🟢✅⚠️]/)) {
+                        return <div key={idx} className="text-white text-sm mb-2 mt-2">{line}</div>;
+                    }
+                    // Regular text
+                    if (line.trim()) {
+                        return <div key={idx} className="text-purple-100 text-sm mb-2 leading-relaxed">{line}</div>;
+                    }
+                    return null;
+                });
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white">
+                    {/* Header */}
+                    <header className="border-b border-purple-800/30 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+                        <div className="px-6 py-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <a href="index.html" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                                        <Sparkles className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-xl font-bold">AlignVue AI</h1>
+                                        <p className="text-xs text-purple-300">Portfolio Insights</p>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                {/* View Toggle */}
+                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 border border-purple-500/30 rounded-lg">
+                                    <span className="text-xs text-purple-300">View:</span>
+                                    <select 
+                                        onChange={(e) => window.location.href = e.target.value}
+                                        value="role-dashboard-conversational.html"
+                                        className="bg-transparent text-sm text-white border-none focus:outline-none cursor-pointer"
+                                    >
+                                        <option value="role-dashboard.html" className="bg-slate-800">Dashboard</option>
+                                        <option value="role-dashboard-conversational.html" className="bg-slate-800">Conversational</option>
+                                    </select>
+                                </div>
+
+                                <div className="relative">
+                                <button
+                                    onClick={() => setShowRoleMenu(!showRoleMenu)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-lg hover:bg-purple-600/30 transition-colors"
+                                >
+                                    {roleIcons[currentRole]}
+                                    <span className="font-medium">{roleNames[currentRole]}</span>
+                                    <ChevronDown className="w-4 h-4" />
+                                </button>
+                                
+                                {showRoleMenu && (
+                                    <div className="absolute top-full right-0 mt-2 w-56 bg-slate-800 border border-purple-500/30 rounded-lg shadow-xl z-[100]">
+                                        {Object.keys(roleNames).map((role) => (
+                                            <button
+                                                key={role}
+                                                onClick={() => {
+                                                    setCurrentRole(role);
+                                                    setShowRoleMenu(false);
+                                                }}
+                                                className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-600/20 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                                                    currentRole === role ? 'bg-purple-600/30' : ''
+                                                }`}
+                                            >
+                                                {roleIcons[role]}
+                                                <span>{roleNames[role]}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Conversational Feed */}
+                    <div className="max-w-4xl mx-auto px-4 py-6">
+                        {/* Date Divider */}
+                        <div className="flex items-center justify-center mb-6">
+                            <div className="px-4 py-1 bg-slate-800/50 border border-purple-500/20 rounded-full text-xs text-purple-300">
+                                Tuesday, October 28, 2025
+                            </div>
+                        </div>
+
+                        {/* Messages */}
+                        <div className="space-y-6">
+                            {messages.slice(0, visibleMessages).map((message, idx) => (
+                                <div key={idx} className="animate-fadeIn">
+                                    {/* AI Avatar + Name */}
+                                    <div className="flex items-start gap-3 mb-2">
+                                        <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Sparkles className="w-4 h-4" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-semibold text-sm">AlignVue AI</span>
+                                                <span className="text-xs text-purple-400">
+                                                    {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            
+                                            {/* Message Content */}
+                                            <div className="bg-slate-800/50 border border-purple-500/30 rounded-2xl rounded-tl-none p-5">
+                                                {message.heading && (
+                                                    <div className="mb-3 pb-3 border-b border-purple-500/20">
+                                                        <h3 className="text-lg font-bold text-white mb-1">{message.heading}</h3>
+                                                        {message.metric && (
+                                                            <div className="flex items-baseline gap-2">
+                                                                <span className="text-3xl font-bold text-purple-300">{message.metric}</span>
+                                                                {message.subtext && (
+                                                                    <span className="text-sm text-purple-400">{message.subtext}</span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                <div className="prose prose-invert prose-sm max-w-none">
+                                                    {formatContent(message.content)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Loading indicator */}
+                            {visibleMessages < messages.length && (
+                                <div className="flex items-start gap-3 animate-pulse">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <Sparkles className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="bg-slate-800/50 border border-purple-500/30 rounded-2xl rounded-tl-none p-5">
+                                            <div className="flex items-center gap-2 text-purple-400 text-sm">
+                                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Input Area */}
+                        {visibleMessages === messages.length && (
+                            <div className="mt-6 sticky bottom-4 bg-gradient-to-br from-slate-900 to-slate-800 border border-purple-500/30 rounded-2xl p-4 shadow-2xl">
+                                <div className="flex gap-3">
+                                    <input
+                                        type="text"
+                                        value={userInput}
+                                        onChange={(e) => setUserInput(e.target.value)}
+                                        placeholder="Ask me anything about your portfolio..."
+                                        className="flex-1 px-4 py-3 bg-slate-800 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500 text-white placeholder-purple-400"
+                                    />
+                                    <button className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors font-medium flex items-center gap-2">
+                                        <MessageSquare className="w-4 h-4" />
+                                        Send
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <style>{`
+                        @keyframes fadeIn {
+                            from { opacity: 0; transform: translateY(10px); }
+                            to { opacity: 1; transform: translateY(0); }
+                        }
+                        .animate-fadeIn {
+                            animation: fadeIn 0.5s ease-out;
+                        }
+                    `}</style>
+                </div>
+            );
+        };
+
+        // Render
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ConversationalDashboard />);
+    </script>
+</body>
+</html>

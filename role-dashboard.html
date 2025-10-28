@@ -628,6 +628,19 @@ const AIProactiveDashboard = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* View Toggle */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 border border-purple-500/30 rounded-lg">
+              <span className="text-xs text-purple-300">View:</span>
+              <select 
+                onChange={(e) => window.location.href = e.target.value}
+                value="role-dashboard.html"
+                className="bg-transparent text-sm text-white border-none focus:outline-none cursor-pointer"
+              >
+                <option value="role-dashboard.html" className="bg-slate-800">Dashboard</option>
+                <option value="role-dashboard-conversational.html" className="bg-slate-800">Conversational</option>
+              </select>
+            </div>
+
             <div className="relative z-[100]">
               <button
                 onClick={() => setShowRoleMenu(!showRoleMenu)}
