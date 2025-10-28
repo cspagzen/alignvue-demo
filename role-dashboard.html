@@ -4,22 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Role-Based Dashboard - AlignVue</title>
+    <link rel="stylesheet" href="styles.css">
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- AI Chatbot Files -->
+    <!-- AI Chatbot Files - Only essential ones for standalone mode -->
     <link rel="stylesheet" href="/ai-chat/ai-chat-modal.css">
     <script src="/ai-chat/ai-chat-config.js"></script>
-    <script src="/ai-chat/ai-system-prompt.js"></script>
-    <script src="/ai-chat/ai-chat-data-prep.js"></script>
-    <script src="/ai-chat/ai-chat-entity-links.js"></script>
-    <script src="/ai-chat/ai-chat-engine.js"></script>
     <script src="/ai-chat/ai-chat-modal.js"></script>
-    <script src="/ai-chat/ai-chat-diagnostics.js"></script>
 </head>
-<body>
+<body class="bg-gray-100">
+    
+<!-- Sidebar Navigation -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<nav class="sidebar-nav" id="sidebar-nav">
+   <div class="sidebar-content">
+       <!-- Quick Navigation -->
+<div class="sidebar-section-title">
+    NAVIGATION
+</div>
+
+<a href="index.html" class="sidebar-nav-item" data-tooltip="Portfolio Board">
+    <svg class="sidebar-nav-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M3 9h18"/>
+        <path d="M9 3v18"/>
+    </svg>
+    <span>Portfolio Board</span>
+</a>
+
+<div class="sidebar-section-title mt-4">
+    AI DASHBOARDS
+</div>
+
+<a href="role-dashboard.html" class="sidebar-nav-item active" data-tooltip="Role Dashboard">
+    <svg class="sidebar-nav-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+    </svg>
+    <span>Role Dashboard</span>
+</a>
+
+<a href="role-dashboard-conversational.html" class="sidebar-nav-item" data-tooltip="Conversational View">
+    <svg class="sidebar-nav-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    <span>Conversational View</span>
+</a>
+
+<!-- AlignVue Branding -->
+<div class="sidebar-branding">
+    <div class="sidebar-branding-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-brand-icon cursor-pointer" onclick="document.getElementById('sidebar-toggle').click()">
+            <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>
+            <circle cx="12" cy="12" r="10"/>
+        </svg>
+        <span class="sidebar-brand-text">AlignVue</span>
+    </div>
+</div> 
+       
+    </div>
+   
+   <button class="sidebar-toggle" id="sidebar-toggle">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/>
+    </svg>
+</button>
+</nav>
+
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect } = React;
@@ -150,24 +204,24 @@ const aiInsights = {
 - **Risk:** Customer Portal not validated ($2.4M value at risk)
 
 **Objective 2: Expand Market Position**
-- **Status:** âœ… On Track
+- **Status:** ✅ On Track
 - **Supporting Initiatives:** 4 (International, Partner API, Multi-tenant)
 - **Current Impact:** 2 new markets, 5 strategic partnerships
 - **Confidence:** 95%
 
 **Objective 3: Operational Excellence**
-- **Status:** ðŸ”´ Behind
+- **Status:** 🔴 Behind
 - **Supporting Initiatives:** 2 (Monitoring, Infrastructure)
 - **Current State:** 92% uptime (target: 95%), 8hr response time (target: 4hr)
 - **Impact:** Customer satisfaction risk, potential churn
 
 **Objective 4: Customer Retention**
-- **Status:** âœ… Exceeding
+- **Status:** ✅ Exceeding
 - **Supporting Initiatives:** 5 (Onboarding, Support Portal, Mobile App)
 - **Current Impact:** Churn reduced 12% (target: 10%)
 
 **Strategic Bets Analysis:**
-- 73% of engineering investment aligned to revenue goals âœ…
+- 73% of engineering investment aligned to revenue goals ✅
 - 15% of portfolio unvalidated (high risk to strategic outcomes) âš ï¸
 - 12% of investment in technical foundation (may be underfunded) âš ï¸
 
@@ -177,7 +231,7 @@ const aiInsights = {
       query: "What are the biggest strategic risks to our business objectives and how do we mitigate them?",
       response: `**Strategic Risk Assessment:**
 
-**ðŸ”´ CRITICAL RISK: Revenue Target Miss**
+**🔴 CRITICAL RISK: Revenue Target Miss**
 - **Threat:** Q4 revenue target ($6.8M) at risk due to validation gaps
 - **Root Cause:** Customer Portal ($2.4M value) built without customer proof
 - **Probability:** 35% chance of complete miss
@@ -295,9 +349,9 @@ const aiInsights = {
 - **Focus:** Juggling 8 initiatives (too much context switching)
 
 **Your Current Sprint:**
-- Payment Redesign (validated, 85% confidence) âœ…
+- Payment Redesign (validated, 85% confidence) ✅
 - Push Notifications (in validation, 70% confidence) âš ï¸
-- Customer Portal (not validated, 45% confidence) ðŸ”´
+- Customer Portal (not validated, 45% confidence) 🔴
 
 **Impact on OKRs:**
 - You're contributing to **KR #2: Increase acquisition 15%**
@@ -360,7 +414,7 @@ const aiInsights = {
       query: "What's the health and delivery risk for my initiatives?",
       response: `**Initiative Health Dashboard**
 
-**ðŸ”´ CRITICAL RISK: Customer Portal Redesign**
+**🔴 CRITICAL RISK: Customer Portal Redesign**
 - **Delivery Timeline:** 3 weeks behind schedule (projected: Feb 28 â†’ Mar 21)
 - **Velocity Trend:** Declining 25% (was 34 pts/sprint, now 26 pts/sprint)
 - **Team Capacity:** Mobile Refresh at 112% allocation - burnout risk
@@ -369,7 +423,7 @@ const aiInsights = {
   - Design system component missing
   - Third-party integration delayed
 - **Validation Status:** âš ï¸ NOT VALIDATED (building on assumptions)
-- **Overall Health:** ðŸ”´ Critical - Multiple risk factors converging
+- **Overall Health:** 🔴 Critical - Multiple risk factors converging
 
 **Recommended Actions:**
 1. Pause new scope until blockers cleared
@@ -399,7 +453,7 @@ const aiInsights = {
 - **Velocity Trend:** Accelerating 15% (23 pts/sprint â†’ 26 pts/sprint)
 - **Team Capacity:** Payments team at 85% - sustainable
 - **Blockers:** 0 blocked stories
-- **Validation Status:** âœ… VALIDATED (customer research complete, 85% confidence)
+- **Validation Status:** ✅ VALIDATED (customer research complete, 85% confidence)
 - **Overall Health:** 🟢 Healthy - Clear path to launch
 
 **No action needed - maintain momentum**
@@ -416,7 +470,7 @@ const aiInsights = {
       query: "Which initiatives need validation and what are the specific gaps?",
       response: `**Validation Status Report:**
 
-**ðŸ”´ NOT VALIDATED (3 initiatives):**
+**🔴 NOT VALIDATED (3 initiatives):**
 
 **Customer Portal Redesign**
 - **Problem:** Missing problem statement (customer pain not articulated)
@@ -447,9 +501,9 @@ const aiInsights = {
 - Settings Redesign: 70% validated (needs accessibility testing)
 
 **🟢 VALIDATED (3 initiatives):**
-- Payment Redesign âœ…
-- Search Improvements âœ…
-- Performance Optimization âœ…`
+- Payment Redesign ✅
+- Search Improvements ✅
+- Performance Optimization ✅`
     },
     validationPlan: {
       query: "Generate a validation plan for Customer Portal with experiments and success criteria",
@@ -491,11 +545,11 @@ const aiInsights = {
 **Phase 3: Build Decision (Week 5)**
 
 **Go/No-Go Criteria:**
-- âœ… Problem validated by 8+ of 10 customers
-- âœ… Fake door test >30% signup
-- âœ… Prototype usability >80%
-- âœ… Team has capacity (not at risk)
-- âœ… OKR impact quantified (>$500K value)
+- ✅ Problem validated by 8+ of 10 customers
+- ✅ Fake door test >30% signup
+- ✅ Prototype usability >80%
+- ✅ Team has capacity (not at risk)
+- ✅ OKR impact quantified (>$500K value)
 
 **If GO:** Proceed with MVP build (mobile-only first)
 **If NO-GO:** Pivot to validated alternative solution
@@ -605,7 +659,7 @@ const AIProactiveDashboard = () => {
       if (line.startsWith('- ')) {
         return <div key={idx} className="ml-4 text-purple-200 text-sm mb-1">â€¢ {line.slice(2)}</div>;
       }
-      if (line.match(/^[ðŸ”´🟡🟢âœ…âš ï¸]/)) {
+      if (line.match(/^[🔴🟡🟢✅âš ï¸]/)) {
         return <div key={idx} className="text-white text-sm mb-2 mt-2">{line}</div>;
       }
       if (line.trim() === '') {
@@ -840,6 +894,21 @@ const AIProactiveDashboard = () => {
                 size: 'large',
                 closeOnBackdrop: true
             });
+        });
+    </script>
+    
+    <!-- Sidebar Toggle Script -->
+    <script>
+        // Sidebar toggle functionality
+        document.getElementById('sidebar-toggle')?.addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar-nav');
+            sidebar.classList.toggle('collapsed');
+        });
+        
+        // Click outside to close sidebar on mobile
+        document.getElementById('sidebar-overlay')?.addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar-nav');
+            sidebar.classList.remove('collapsed');
         });
     </script>
 </body>
