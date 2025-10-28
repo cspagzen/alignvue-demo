@@ -10,14 +10,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- AI Chatbot Files -->
-    <link rel="stylesheet" href="ai-chat-modal.css">
-    <script src="ai-chat-config.js"></script>
-    <script src="ai-system-prompt.js"></script>
-    <script src="ai-chat-data-prep.js"></script>
-    <script src="ai-chat-entity-links.js"></script>
-    <script src="ai-chat-engine.js"></script>
-    <script src="ai-chat-modal.js"></script>
-    <script src="ai-chat-diagnostics.js"></script>
+    <link rel="stylesheet" href="/ai-chat/ai-chat-modal.css">
+    <script src="/ai-chat/ai-chat-config.js"></script>
+    <script src="/ai-chat/ai-system-prompt.js"></script>
+    <script src="/ai-chat/ai-chat-data-prep.js"></script>
+    <script src="/ai-chat/ai-chat-entity-links.js"></script>
+    <script src="/ai-chat/ai-chat-engine.js"></script>
+    <script src="/ai-chat/ai-chat-modal.js"></script>
+    <script src="/ai-chat/ai-chat-diagnostics.js"></script>
 </head>
 <body>
     <div id="root"></div>
@@ -112,18 +112,18 @@ Here's where that value comes from:
                     content: `**73% of your engineering investment is aligned to revenue goals.** Here's how your initiatives map to Q4 business objectives:
 
 **Q4 Objective 1: Grow Revenue 20% YoY**
-🟡 **At Risk** - Supporting initiatives project $5.4M but you need $6.8M for 20% growth. That's a $1.4M gap.
+ðŸŸ¡ **At Risk** - Supporting initiatives project $5.4M but you need $6.8M for 20% growth. That's a $1.4M gap.
 Risk: Customer Portal ($2.4M value) is not validated.
 
 **Q4 Objective 2: Expand Market Position**
-✅ **On Track** - 4 initiatives supporting 2 new markets, 5 strategic partnerships. 95% confidence.
+âœ… **On Track** - 4 initiatives supporting 2 new markets, 5 strategic partnerships. 95% confidence.
 
 **Q4 Objective 3: Operational Excellence**  
-🔴 **Behind** - 92% uptime vs 95% target. 8hr response time vs 4hr target.
+ðŸ”´ **Behind** - 92% uptime vs 95% target. 8hr response time vs 4hr target.
 Risk: Customer satisfaction and potential churn.
 
 **Q4 Objective 4: Customer Retention**
-✅ **Exceeding** - Churn reduced 12% (target was 10%)
+âœ… **Exceeding** - Churn reduced 12% (target was 10%)
 
 **Strategic gaps:**
 - 15% of portfolio is unvalidated (high risk to outcomes)
@@ -136,7 +136,7 @@ Risk: Customer satisfaction and potential churn.
                     heading: 'Strategic Risks',
                     content: `I've identified your biggest risks to Q4 objectives:
 
-**🔴 CRITICAL: Revenue Target Miss**
+**ðŸ”´ CRITICAL: Revenue Target Miss**
 - **Threat:** Q4 revenue target ($6.8M) at risk due to validation gaps
 - **Root Cause:** Customer Portal ($2.4M value) built without customer proof
 - **Probability:** 35% chance of complete miss
@@ -146,13 +146,13 @@ Risk: Customer satisfaction and potential churn.
   2. Identify backup revenue opportunities ($1.4M needed)
   3. Consider delaying launch vs shipping wrong solution
 
-**🟡 MEDIUM: Operational Excellence Degradation**
+**ðŸŸ¡ MEDIUM: Operational Excellence Degradation**
 - **Threat:** 92% uptime trending down, slow incident response
 - **Root Cause:** Infrastructure investment only 12% of portfolio
 - **Probability:** 60% chance uptime drops below 90%
 - **Mitigation:** Ring-fence infrastructure capacity, pause 1-2 feature initiatives
 
-**🟡 MEDIUM: Strategic Thrashing**
+**ðŸŸ¡ MEDIUM: Strategic Thrashing**
 - **Threat:** Initiative priorities changed 4 times this quarter
 - **Root Cause:** Unclear strategic bets, reactive to market signals
 - **Business Impact:** $180K lost productivity, team morale, execution quality
@@ -160,7 +160,7 @@ Risk: Customer satisfaction and potential churn.
 
 **Portfolio Risk Score: 6.2/10 (Medium Risk)**
 
-**Biggest leverage point:** Validate Customer Portal in next 2 weeks. This single action reduces portfolio risk from 6.2 → 4.1 and protects $2.4M in Q4 value.`
+**Biggest leverage point:** Validate Customer Portal in next 2 weeks. This single action reduces portfolio risk from 6.2 â†’ 4.1 and protects $2.4M in Q4 value.`
                 }
             ],
             resourceManager: [
@@ -198,7 +198,7 @@ Risk: Customer satisfaction and potential churn.
                     content: `Here are three ways to rebalance workload across your teams:
 
 **OPTION 1: Move Work to Available Teams**
-- Move Customer Portal → Data Analytics team (they have mobile experience + 25% capacity)
+- Move Customer Portal â†’ Data Analytics team (they have mobile experience + 25% capacity)
 - Delay Analytics v2 one quarter (not validated anyway)
 - **Result:** Reduces Mobile Refresh to 95%, keeps team healthy
 
@@ -228,7 +228,7 @@ Risk: Customer satisfaction and potential churn.
                     heading: 'Your Team Health',
                     metric: '68/100',
                     subtext: 'Team Health Score',
-                    content: `Your Mobile Refresh team health score is **68/100 (⚠️ Yellow - Declining)**.
+                    content: `Your Mobile Refresh team health score is **68/100 (âš ï¸ Yellow - Declining)**.
 
 **What's Going Well:**
 - Delivery confidence on validated work: 85% (above average)
@@ -292,42 +292,42 @@ These blockers are reducing your velocity by 25%. Your sprint capacity is effect
                     subtext: 'Initiatives at Risk',
                     content: `I've assessed the health of your initiatives. Here's what needs attention:
 
-**🔴 CRITICAL RISK: Customer Portal Redesign**
-- **Delivery Timeline:** 3 weeks behind schedule (projected: Feb 28 → Mar 21)
+**ðŸ”´ CRITICAL RISK: Customer Portal Redesign**
+- **Delivery Timeline:** 3 weeks behind schedule (projected: Feb 28 â†’ Mar 21)
 - **Velocity Trend:** Declining 25% (was 34 pts/sprint, now 26 pts/sprint)
 - **Team Capacity:** Mobile Refresh at 112% allocation - burnout risk
 - **Blockers:** 3 stories blocked (15% of current sprint scope)
   - Backend API dependency not ready
   - Design system component missing
   - Third-party integration delayed
-- **Validation Status:** ⚠️ NOT VALIDATED (building on assumptions)
-- **Overall Health:** 🔴 Critical - Multiple risk factors converging
+- **Validation Status:** âš ï¸ NOT VALIDATED (building on assumptions)
+- **Overall Health:** ðŸ”´ Critical - Multiple risk factors converging
 
 **Recommended Actions:**
 1. Pause new scope until blockers cleared
 2. Validate core assumptions before continuing build
 3. Request capacity relief for Mobile team
 
-**🟡 MEDIUM RISK: Analytics v2**
+**ðŸŸ¡ MEDIUM RISK: Analytics v2**
 - **Delivery Timeline:** On track for target date (Jan 30)
 - **Velocity Trend:** Stable (21 pts/sprint avg)
 - **Team Capacity:** Data Analytics at 75% - healthy
 - **Blockers:** 1 story blocked (5% impact) - Data warehouse schema approval pending
-- **Validation Status:** 🟡 IN VALIDATION (40% confidence, needs more research)
-- **Overall Health:** 🟡 Medium - Delivery solid but value uncertain
+- **Validation Status:** ðŸŸ¡ IN VALIDATION (40% confidence, needs more research)
+- **Overall Health:** ðŸŸ¡ Medium - Delivery solid but value uncertain
 
 **Recommended Actions:**
 1. Complete validation experiments this sprint
 2. Be ready to pivot scope based on learnings
 3. Consider MVPing to reduce investment risk
 
-**🟢 HEALTHY: Payment Redesign**
+**ðŸŸ¢ HEALTHY: Payment Redesign**
 - **Delivery Timeline:** On track (Feb 15 launch)
-- **Velocity Trend:** Accelerating 15% (23 pts/sprint → 26 pts/sprint)
+- **Velocity Trend:** Accelerating 15% (23 pts/sprint â†’ 26 pts/sprint)
 - **Team Capacity:** Payments team at 85% - sustainable
 - **Blockers:** 0 blocked stories
-- **Validation Status:** ✅ VALIDATED (customer research complete, 85% confidence)
-- **Overall Health:** 🟢 Healthy - Clear path to launch
+- **Validation Status:** âœ… VALIDATED (customer research complete, 85% confidence)
+- **Overall Health:** ðŸŸ¢ Healthy - Clear path to launch
 
 **No action needed - maintain momentum**
 
@@ -338,7 +338,7 @@ These blockers are reducing your velocity by 25%. Your sprint capacity is effect
                     heading: 'Validation Gaps',
                     content: `You have **3 initiatives that are NOT VALIDATED**. Here are the specific gaps:
 
-**🔴 Customer Portal Redesign**
+**ðŸ”´ Customer Portal Redesign**
 - **Problem:** Missing problem statement (customer pain not articulated)
 - **Assumptions:** 3 critical untested assumptions:
   1. "Customers want self-service portal" (no user research)
@@ -348,28 +348,28 @@ These blockers are reducing your velocity by 25%. Your sprint capacity is effect
 - **Risk:** Very High (building $200K feature on faith)
 - **Validation Plan:** 2-week discovery sprint needed
 
-**🔴 Analytics v2**
+**ðŸ”´ Analytics v2**
 - **Problem:** Feature-focused, not customer outcome focused
 - **Assumptions:** "Customers need advanced analytics" (only 2 customers asked)
 - **Experiments:** 1 smoke test (inconclusive, 40% signup)
 - **Risk:** High (unclear customer value)
 - **Validation Plan:** 10 customer interviews, usage analytics review
 
-**🔴 Partner API v3**
+**ðŸ”´ Partner API v3**
 - **Problem:** Solving technical debt, not partner problem
 - **Assumptions:** "Partners want REST over GraphQL" (not validated)
 - **Experiments:** NONE
 - **Risk:** Medium (low business impact if wrong)
 - **Validation Plan:** Survey 5 partners, prototype test
 
-**🟡 IN VALIDATION (2 initiatives):**
+**ðŸŸ¡ IN VALIDATION (2 initiatives):**
 - Push Notifications: 60% validated (needs iOS testing)
 - Settings Redesign: 70% validated (needs accessibility testing)
 
-**🟢 VALIDATED (3 initiatives):**
-- Payment Redesign ✅
-- Search Improvements ✅
-- Performance Optimization ✅`
+**ðŸŸ¢ VALIDATED (3 initiatives):**
+- Payment Redesign âœ…
+- Search Improvements âœ…
+- Performance Optimization âœ…`
                 },
                 {
                     type: 'ai',
@@ -412,11 +412,11 @@ These blockers are reducing your velocity by 25%. Your sprint capacity is effect
 **Phase 3: Build Decision (Week 5)**
 
 **Go/No-Go Criteria:**
-- ✅ Problem validated by 8+ of 10 customers
-- ✅ Fake door test >30% signup
-- ✅ Prototype usability >80%
-- ✅ Team has capacity (not at risk)
-- ✅ OKR impact quantified (>$500K value)
+- âœ… Problem validated by 8+ of 10 customers
+- âœ… Fake door test >30% signup
+- âœ… Prototype usability >80%
+- âœ… Team has capacity (not at risk)
+- âœ… OKR impact quantified (>$500K value)
 
 **If GO:** Proceed with MVP build (mobile-only first)
 **If NO-GO:** Pivot to validated alternative solution
@@ -474,7 +474,7 @@ These blockers are reducing your velocity by 25%. Your sprint capacity is effect
                         return <div key={idx} className="font-bold text-white mt-3 mb-1">{line.slice(2, -2)}</div>;
                     }
                     // List items
-                    if (line.match(/^[•\-]\s/)) {
+                    if (line.match(/^[â€¢\-]\s/)) {
                         return <div key={idx} className="ml-4 text-purple-200 text-sm mb-1">{line}</div>;
                     }
                     // Numbered lists
@@ -482,7 +482,7 @@ These blockers are reducing your velocity by 25%. Your sprint capacity is effect
                         return <div key={idx} className="ml-4 text-purple-200 text-sm mb-1">{line}</div>;
                     }
                     // Emoji headers
-                    if (line.match(/^[🔴🟡🟢✅⚠️]/)) {
+                    if (line.match(/^[ðŸ”´ðŸŸ¡ðŸŸ¢âœ…âš ï¸]/)) {
                         return <div key={idx} className="text-white text-sm mb-2 mt-2">{line}</div>;
                     }
                     // Regular text
@@ -555,6 +555,7 @@ These blockers are reducing your velocity by 25%. Your sprint capacity is effect
                                 )}
                             </div>
                         </div>
+                    </div>
                     </header>
 
                     {/* Conversational Feed */}
