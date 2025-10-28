@@ -112,7 +112,7 @@ Here's where that value comes from:
                     content: `**73% of your engineering investment is aligned to revenue goals.** Here's how your initiatives map to Q4 business objectives:
 
 **Q4 Objective 1: Grow Revenue 20% YoY**
-ðŸŸ¡ **At Risk** - Supporting initiatives project $5.4M but you need $6.8M for 20% growth. That's a $1.4M gap.
+🟡 **At Risk** - Supporting initiatives project $5.4M but you need $6.8M for 20% growth. That's a $1.4M gap.
 Risk: Customer Portal ($2.4M value) is not validated.
 
 **Q4 Objective 2: Expand Market Position**
@@ -146,13 +146,13 @@ Risk: Customer satisfaction and potential churn.
   2. Identify backup revenue opportunities ($1.4M needed)
   3. Consider delaying launch vs shipping wrong solution
 
-**ðŸŸ¡ MEDIUM: Operational Excellence Degradation**
+**🟡 MEDIUM: Operational Excellence Degradation**
 - **Threat:** 92% uptime trending down, slow incident response
 - **Root Cause:** Infrastructure investment only 12% of portfolio
 - **Probability:** 60% chance uptime drops below 90%
 - **Mitigation:** Ring-fence infrastructure capacity, pause 1-2 feature initiatives
 
-**ðŸŸ¡ MEDIUM: Strategic Thrashing**
+**🟡 MEDIUM: Strategic Thrashing**
 - **Threat:** Initiative priorities changed 4 times this quarter
 - **Root Cause:** Unclear strategic bets, reactive to market signals
 - **Business Impact:** $180K lost productivity, team morale, execution quality
@@ -308,26 +308,26 @@ These blockers are reducing your velocity by 25%. Your sprint capacity is effect
 2. Validate core assumptions before continuing build
 3. Request capacity relief for Mobile team
 
-**ðŸŸ¡ MEDIUM RISK: Analytics v2**
+**🟡 MEDIUM RISK: Analytics v2**
 - **Delivery Timeline:** On track for target date (Jan 30)
 - **Velocity Trend:** Stable (21 pts/sprint avg)
 - **Team Capacity:** Data Analytics at 75% - healthy
 - **Blockers:** 1 story blocked (5% impact) - Data warehouse schema approval pending
-- **Validation Status:** ðŸŸ¡ IN VALIDATION (40% confidence, needs more research)
-- **Overall Health:** ðŸŸ¡ Medium - Delivery solid but value uncertain
+- **Validation Status:** 🟡 IN VALIDATION (40% confidence, needs more research)
+- **Overall Health:** 🟡 Medium - Delivery solid but value uncertain
 
 **Recommended Actions:**
 1. Complete validation experiments this sprint
 2. Be ready to pivot scope based on learnings
 3. Consider MVPing to reduce investment risk
 
-**ðŸŸ¢ HEALTHY: Payment Redesign**
+**🟢 HEALTHY: Payment Redesign**
 - **Delivery Timeline:** On track (Feb 15 launch)
 - **Velocity Trend:** Accelerating 15% (23 pts/sprint â†’ 26 pts/sprint)
 - **Team Capacity:** Payments team at 85% - sustainable
 - **Blockers:** 0 blocked stories
 - **Validation Status:** âœ… VALIDATED (customer research complete, 85% confidence)
-- **Overall Health:** ðŸŸ¢ Healthy - Clear path to launch
+- **Overall Health:** 🟢 Healthy - Clear path to launch
 
 **No action needed - maintain momentum**
 
@@ -362,11 +362,11 @@ These blockers are reducing your velocity by 25%. Your sprint capacity is effect
 - **Risk:** Medium (low business impact if wrong)
 - **Validation Plan:** Survey 5 partners, prototype test
 
-**ðŸŸ¡ IN VALIDATION (2 initiatives):**
+**🟡 IN VALIDATION (2 initiatives):**
 - Push Notifications: 60% validated (needs iOS testing)
 - Settings Redesign: 70% validated (needs accessibility testing)
 
-**ðŸŸ¢ VALIDATED (3 initiatives):**
+**🟢 VALIDATED (3 initiatives):**
 - Payment Redesign âœ…
 - Search Improvements âœ…
 - Performance Optimization âœ…`
@@ -482,7 +482,7 @@ These blockers are reducing your velocity by 25%. Your sprint capacity is effect
                         return <div key={idx} className="ml-4 text-purple-200 text-sm mb-1">{line}</div>;
                     }
                     // Emoji headers
-                    if (line.match(/^[ðŸ”´ðŸŸ¡ðŸŸ¢âœ…âš ï¸]/)) {
+                    if (line.match(/^[ðŸ”´🟡🟢âœ…âš ï¸]/)) {
                         return <div key={idx} className="text-white text-sm mb-2 mt-2">{line}</div>;
                     }
                     // Regular text

@@ -80,16 +80,6 @@
     <span>Portfolio Pulse</span>
 </a>
        
-<a href="role-dashboard.html" class="sidebar-nav-item" data-tooltip="Role-Based Dashboard" onclick="window.location.href='role-dashboard.html'; return false;">
-    <svg class="sidebar-nav-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
-        <path d="M20 2v4"/>
-        <path d="M22 4h-4"/>
-        <circle cx="4" cy="20" r="2"/>
-    </svg>
-    <span>Role-Based Dashboard</span>
-</a>
-       
 <a href="#" class="sidebar-nav-item active" data-section="initiatives" data-tooltip="Initiative Prioritization">
     
     
@@ -110,6 +100,24 @@
         <path d="M18 12v6"/>
     </svg>
     <span>Team Health</span>
+</a>
+
+<div class="sidebar-section-title mt-4">
+    AI DASHBOARDS
+</div>
+
+<a href="role-dashboard.html" class="sidebar-nav-item" data-tooltip="Role-Based Dashboard">
+    <svg class="sidebar-nav-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+    </svg>
+    <span>Role Dashboard</span>
+</a>
+
+<a href="role-dashboard-conversational.html" class="sidebar-nav-item" data-tooltip="Conversational View">
+    <svg class="sidebar-nav-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    <span>Conversational View</span>
 </a>
        
     <a href="#" class="sidebar-nav-item" id="sidebar-sync-btn" data-action="manual-sync" data-tooltip="Sync data with Jira">
@@ -1223,7 +1231,7 @@
     <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
         <div class="modal-header">
             <h2 id="prioritize-modal-title">Select Priority Slot</h2>
-            <button onclick="closeQuickPrioritizeModal()" class="modal-close" aria-label="Close modal">×</button>
+            <button onclick="closeQuickPrioritizeModal()" class="modal-close" aria-label="Close modal">Ã—</button>
         </div>
         
         <div class="modal-body">
@@ -1239,7 +1247,7 @@
         
         <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
             <div style="font-size: 0.875rem; color: var(--text-secondary);">
-                💡 Tip: Higher rows = higher priority
+                ðŸ’¡ Tip: Higher rows = higher priority
             </div>
             <button onclick="closeQuickPrioritizeModal()" class="btn-secondary">Cancel</button>
         </div>
