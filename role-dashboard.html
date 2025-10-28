@@ -346,6 +346,62 @@ const aiInsights = {
     }
   },
   productManager: {
+    initiativeHealth: {
+      query: "What's the health and delivery risk for my initiatives?",
+      response: `**Initiative Health Dashboard**
+
+**🔴 CRITICAL RISK: Customer Portal Redesign**
+- **Delivery Timeline:** 3 weeks behind schedule (projected: Feb 28 → Mar 21)
+- **Velocity Trend:** Declining 25% (was 34 pts/sprint, now 26 pts/sprint)
+- **Team Capacity:** Mobile Refresh at 112% allocation - burnout risk
+- **Blockers:** 3 stories blocked (15% of current sprint scope)
+  - Backend API dependency not ready
+  - Design system component missing
+  - Third-party integration delayed
+- **Validation Status:** ⚠️ NOT VALIDATED (building on assumptions)
+- **Overall Health:** 🔴 Critical - Multiple risk factors converging
+
+**Recommended Actions:**
+1. Pause new scope until blockers cleared
+2. Validate core assumptions before continuing build
+3. Request capacity relief for Mobile team
+
+---
+
+**🟡 MEDIUM RISK: Analytics v2**
+- **Delivery Timeline:** On track for target date (Jan 30)
+- **Velocity Trend:** Stable (21 pts/sprint avg)
+- **Team Capacity:** Data Analytics at 75% - healthy
+- **Blockers:** 1 story blocked (5% impact)
+  - Data warehouse schema approval pending
+- **Validation Status:** 🟡 IN VALIDATION (40% confidence, needs more research)
+- **Overall Health:** 🟡 Medium - Delivery solid but value uncertain
+
+**Recommended Actions:**
+1. Complete validation experiments this sprint
+2. Be ready to pivot scope based on learnings
+3. Consider MVPing to reduce investment risk
+
+---
+
+**🟢 HEALTHY: Payment Redesign**
+- **Delivery Timeline:** On track (Feb 15 launch)
+- **Velocity Trend:** Accelerating 15% (23 pts/sprint → 26 pts/sprint)
+- **Team Capacity:** Payments team at 85% - sustainable
+- **Blockers:** 0 blocked stories
+- **Validation Status:** ✅ VALIDATED (customer research complete, 85% confidence)
+- **Overall Health:** 🟢 Healthy - Clear path to launch
+
+**No action needed - maintain momentum**
+
+---
+
+**Portfolio Summary:**
+- 1 initiative at critical risk requiring immediate intervention
+- 1 initiative needs validation clarity before scaling investment
+- 1 initiative healthy and on track
+- **Key Insight:** 67% of your portfolio has delivery or validation risk - focus on Customer Portal blockers and Analytics validation to protect Q1 outcomes`
+    },
     validationGaps: {
       query: "Which initiatives need validation and what are the specific gaps?",
       response: `**Validation Status Report:**
@@ -472,7 +528,7 @@ const roleConfigs = {
       { value: "8", label: "Total Initiatives" },
       { value: "5/8", label: "OKRs on Track" }
     ],
-    insightKeys: ['validationGaps', 'validationPlan']
+    insightKeys: ['initiativeHealth', 'validationGaps', 'validationPlan']
   }
 };
 
